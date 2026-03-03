@@ -386,54 +386,56 @@ const supabase = createBrowserClient(
       
       <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-8">
         
-        {/* --- 1. HERO SECTION --- */}
-        <div className="relative rounded-3xl overflow-hidden bg-[#2F4157] text-white shadow-2xl">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E56668] opacity-10 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-400 opacity-5 blur-[80px] rounded-full -translate-x-1/3 translate-y-1/3" />
+{/* --- 1. HERO SECTION --- */}
+        <div className="relative rounded-[32px] overflow-hidden bg-[#304156] text-white shadow-lg border border-[#CDC6BC]/20">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#CB2129] opacity-10 blur-[100px] rounded-full translate-x-1/3 -translate-y-1/3" />
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#577E90] opacity-10 blur-[80px] rounded-full -translate-x-1/3 translate-y-1/3" />
 
           <div className="relative z-10 p-8 lg:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2 mb-2">
+                {/* LOGIKA BADGE UDAH DIBENERIN 👇 */}
                 <span className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                  isExplorer ? "bg-white/10 border-white/20 text-yellow-300" : "bg-white/10 border-white/20 text-gray-300"
+                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                  !isExplorer ? "bg-white/10 border-[#CB2129] text-[#CB2129]" : "bg-white/10 border-[#CDC6BC]/30 text-[#CDC6BC]"
                 )}>
-                  {isExplorer ? "Pro Learner" : "Basic Member"}
+                  {!isExplorer ? "Insider Member" : "Explorer"}
                 </span>
                 <span className="text-white/40 text-xs">•</span>
-                <span className="text-white/60 text-xs font-medium tracking-wide">{data.user.batch}</span>
+                <span className="text-[#CDC6BC] text-xs font-bold tracking-widest uppercase">{data.user.batch}</span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold leading-tight">
+              <h1 className="text-3xl lg:text-4xl font-black leading-tight">
                 Welcome back, {data.user.name.split(" ")[0]}!
               </h1>
-              <p className="text-white/70 max-w-lg text-sm lg:text-base leading-relaxed">
+              <p className="text-[#CDC6BC] max-w-lg text-sm lg:text-base leading-relaxed">
                 Your learning journey continues. Track your progress and achieve your goals.
               </p>
             </div>
+            
             <div className="flex items-center gap-3">
-              {!isExplorer && (
+              {/* LOGIKA TOMBOL UDAH DIBENERIN 👇 */}
+              {isExplorer && (
                 <button 
                   onClick={() => setShowProModal(true)}
                   className="
                     flex items-center justify-center gap-2 
-                    px-6 py-3 rounded-full 
-                    bg-[#E56668] text-white font-bold 
-                    shadow-lg shadow-red-900/20
+                    px-8 py-4 rounded-2xl 
+                    bg-[#CB2129] text-white font-bold 
+                    shadow-lg shadow-[#CB2129]/20
                     transition-all duration-200 ease-out
-                    hover:bg-[#d65557]
-                    hover:scale-[1.02] 
-                    active:scale-[0.96] active:brightness-95
+                    hover:bg-[#a81b22]
+                    hover:scale-[1.02] hover:-translate-y-0.5
+                    active:scale-[0.96]
                     group
                   "
                 >
                   <Crown size={18} className="group-hover:rotate-12 transition-transform duration-300" />
-                  Upgrade to Pro
+                  Upgrade to Insider
                 </button>
               )}
             </div>
           </div>
         </div>
-
 
 {/* --- 2. STATS GRID --- */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">

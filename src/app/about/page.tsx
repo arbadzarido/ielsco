@@ -97,7 +97,7 @@ export default function About() {
       ]
     },
     {
-      category: "Business & Finance",
+      category: "Finance & Business",
       members: [
         { role: "Finance Manager", name: "Shalwa Allisya Keysha", image: "/images/people/leaders/shalwa.png", instagram: "#", linkedin: "#" },
         { role: "Business Manager", name: "Jihan Thufailah Putri", image: "/images/people/leaders/jihan.png", instagram: "#", linkedin: "#" }

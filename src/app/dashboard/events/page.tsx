@@ -1,40 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { createBrowserClient } from "@supabase/ssr";
 import { eventsData, EventData } from "@/data/events";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Calendar, Clock, MapPin, ExternalLink, CheckCircle2,
-  Filter, Loader2, Star, Trophy, AlertCircle, PlusCircle, MessageSquare
+  Filter, Loader2, Star, Trophy, AlertCircle, PlusCircle, MessageSquare, ArrowRight
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+// --- NOTE: Pastikan path import komponen ini benar sesuai struktur folder lu ---
+import GIFPopup from "@/components/GIFPopup"; 
 
 // --- TYPES ---
+type UserTier = "explorer" | "insider" | "visionary";
+
 type MergedEvent = EventData & {
   db_status: "registered" | "attended" | null;
   is_past: boolean;
-  eventDateObj: Date; // Helper date object
+  eventDateObj: Date;
 };
 
 // --- HELPER: GOOGLE CALENDAR LINK ---
 const getGoogleCalendarLink = (event: MergedEvent) => {
   const title = encodeURIComponent(event.title);
-  // Asumsi durasi 2 jam jika tidak ada info
   const start = new Date(event.startDate);
-  start.setHours(19, 0, 0); // Default jam 7 malam jika tidak ada data jam spesifik
-  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // +2 jam
+  start.setHours(19, 0, 0); 
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); 
 
   const formatDate = (date: Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
   
   return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatDate(start)}/${formatDate(end)}&details=Join+this+event+by+IELS!&sf=true&output=xml`;
 };
 
-export default function EventsPage() {
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key"
-);
+// --- KOMPONEN LOGIKA UTAMA ---
+function EventsContent() {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const [userData, setUserData] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    tier: UserTier;
+    avatar: string;
+  }>({ 
+    id: "", 
+    name: "Loading...", 
+    email: "", 
+    tier: "explorer",
+    avatar: "" 
+  });
 
   const [loading, setLoading] = useState(true);
   const [mergedEvents, setMergedEvents] = useState<MergedEvent[]>([]);
@@ -48,6 +70,28 @@ const supabase = createBrowserClient(
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        // SET USER DATA BIAR HEADER GAK KOSONG
+        const { data: dbUser } = await supabase
+          .from("users")
+          .select(`*, memberships(*)`)
+          .eq("id", user.id)
+          .single();
+
+        const dbMembership = dbUser?.memberships?.[0];
+        const dbTier = dbMembership?.tier;
+        let uiTier: UserTier = "explorer";
+
+        if (dbTier === "pro") uiTier = "insider";
+        else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
+
+        setUserData({
+          id: user.id,
+          name: user.user_metadata?.full_name || "Member",
+          email: user.email || "",
+          tier: uiTier,
+          avatar: user.user_metadata?.avatar_url || ""
+        });
+
         const { data: registrations } = await supabase
           .from("event_registrations")
           .select("event_id, attended")
@@ -73,9 +117,7 @@ const supabase = createBrowserClient(
           };
         });
 
-        // Sort: Upcoming (terdekat dulu), Past (terbaru dulu)
         processed.sort((a, b) => a.eventDateObj.getTime() - b.eventDateObj.getTime());
-        
         setMergedEvents(processed);
       }
       setLoading(false);
@@ -133,256 +175,314 @@ const supabase = createBrowserClient(
     return true;
   });
 
-  // Hero Event = Event Upcoming Paling Dekat
   const heroEvent = mergedEvents.find(e => !e.is_past);
 
   return (
-    <DashboardLayout userTier="explorer" userName="" userAvatar="">
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-10">
-        
-        {/* --- HEADER & STATS --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 bg-gradient-to-r from-[#2F4157] to-[#1a253a] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
-             <div className="relative z-10">
-                <h1 className="text-3xl font-bold mb-2">My Event Journey</h1>
-                <p className="text-white/80 max-w-xl">
-                  Track your participation, register for exclusive workshops, and build your learning portfolio.
-                </p>
-                <div className="flex gap-6 mt-8">
-                   <div>
-                      <p className="text-3xl font-bold">{attendedCount}</p>
-                      <p className="text-sm text-white/60 uppercase tracking-wider font-medium">Completed</p>
-                   </div>
-                   <div className="w-px bg-white/20 h-12"></div>
-                   <div>
-                      <p className="text-3xl font-bold">{upcomingCount}</p>
-                      <p className="text-sm text-white/60 uppercase tracking-wider font-medium">Upcoming</p>
-                   </div>
-                </div>
-             </div>
-             {/* Decor */}
-             <div className="absolute top-0 right-0 w-64 h-64 bg-[#E56668]/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-          </div>
-
-          {/* Quick Stat Card */}
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-center items-center text-center">
-             <div className="w-14 h-14 bg-yellow-50 rounded-full flex items-center justify-center mb-3">
-                <Trophy className="text-yellow-600" size={28} />
-             </div>
-             <p className="text-[#2F4157] font-bold text-lg">Participation Rate</p>
-             <p className="text-3xl font-bold text-[#E56668] mt-1">
-               {totalEvents > 0 ? Math.round((attendedCount / totalEvents) * 100) : 0}%
-             </p>
-             <p className="text-xs text-gray-400 mt-2">Keep it up!</p>
-          </div>
-        </div>
-
-        {/* --- TABS --- */}
-        <div className="flex items-center gap-2 border-b border-gray-200">
-           {(['upcoming', 'past', 'all'] as const).map((t) => (
-             <button
-               key={t}
-               onClick={() => setFilter(t)}
-               className={`px-6 py-3 font-medium text-sm transition-all relative ${
-                 filter === t 
-                   ? "text-[#E56668]" 
-                   : "text-gray-500 hover:text-gray-700"
-               }`}
-             >
-               {t.charAt(0).toUpperCase() + t.slice(1)}
-               {filter === t && (
-                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-[#E56668] rounded-t-full"></div>
-               )}
-             </button>
-           ))}
-        </div>
-
-        {loading ? (
-           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#E56668]" size={32}/></div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            
-            {/* --- HERO CARD (If filter is Upcoming & Hero exists) --- */}
-            {filter === "upcoming" && heroEvent && (
-               <div className="col-span-full mb-4">
-                  <div className="group relative rounded-3xl overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all">
-                     <div className="grid md:grid-cols-2 h-full">
-                        {/* Image Side */}
-                        <div className="relative h-64 md:h-auto overflow-hidden">
-                           <Image 
-                             src={heroEvent.poster} 
-                             alt={heroEvent.title}
-                             fill
-                             className="object-cover transition-transform duration-700 group-hover:scale-105"
-                           />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden"></div>
-                           <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-1.5 rounded-full text-xs font-bold text-[#E56668] uppercase tracking-wide">
-                              Recommended for You
-                           </div>
-                        </div>
-
-                        {/* Content Side */}
-                        <div className="p-8 md:p-10 flex flex-col justify-center">
-                           <div className="flex items-center gap-2 mb-3 text-sm text-gray-500 font-medium">
-                              <Calendar size={16} className="text-[#E56668]"/>
-                              {heroEvent.eventDateObj.toLocaleDateString("en-US", { weekday: 'long', day: 'numeric', month: 'long' })}
-                           </div>
-                           
-                           <h2 className="text-3xl font-bold text-[#2F4157] mb-4 leading-tight">{heroEvent.title}</h2>
-                           
-                           <div 
-                             className="text-gray-600 line-clamp-3 mb-8 prose prose-sm"
-                             dangerouslySetInnerHTML={{ __html: heroEvent.description }} 
-                           />
-
-                           <div className="flex flex-wrap gap-4">
-                              {heroEvent.db_status === "registered" ? (
-                                <button className="px-8 py-3 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold flex items-center gap-2 cursor-default">
-                                   <CheckCircle2 size={20}/> Registered
-                                </button>
-                              ) : (
-                                <button 
-                                  onClick={() => handleRegister(heroEvent)}
-                                  className="px-8 py-3 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#C04C4E] hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                                >
-                                  Register Now <ExternalLink size={18}/>
-                                </button>
-                              )}
-                              
-                              {/* Reminder Button */}
-                              <a 
-                                href={getGoogleCalendarLink(heroEvent)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
-                              >
-                                <PlusCircle size={18}/> Add Reminder
-                              </a>
-                           </div>
-                        </div>
+    <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
+      <div className="min-h-screen bg-[#F6F3EF]">
+        <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-10">
+          
+          {/* --- HEADER & STATS --- */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#CDC6BC]/20">
+               <div className="relative z-10">
+                  <h1 className="text-3xl md:text-4xl font-black mb-3">My Event Journey</h1>
+                  <p className="text-[#CDC6BC] max-w-xl text-sm md:text-base leading-relaxed">
+                    Track your participation, register for exclusive workshops, and build your global portfolio.
+                  </p>
+                  <div className="flex gap-8 mt-8">
+                     <div>
+                        <p className="text-4xl font-black text-white">{attendedCount}</p>
+                        <p className="text-xs text-[#577E90] uppercase tracking-widest font-bold mt-1">Completed</p>
+                     </div>
+                     <div className="w-px bg-white/10 h-14"></div>
+                     <div>
+                        <p className="text-4xl font-black text-white">{upcomingCount}</p>
+                        <p className="text-xs text-[#577E90] uppercase tracking-widest font-bold mt-1">Upcoming</p>
                      </div>
                   </div>
                </div>
-            )}
+               <div className="absolute top-0 right-0 w-80 h-80 bg-[#577E90]/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 mix-blend-screen"></div>
+            </div>
 
-            {/* --- STANDARD EVENT CARDS --- */}
-            {displayEvents.filter(e => e.id !== heroEvent?.id || filter !== 'upcoming').map((event) => (
-              <div 
-                key={event.id} 
-                className={`bg-white rounded-3xl border flex flex-col overflow-hidden transition-all duration-300 group ${
-                  event.is_past ? "border-gray-100 opacity-80 hover:opacity-100" : "border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-[#E56668]/30"
-                }`}
-              >
-                {/* Poster Image */}
-                <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
-                   {event.poster ? (
-                      <Image 
-                        src={event.poster} 
-                        alt={event.title} 
-                        fill
-                        className={`object-cover transition-transform duration-500 group-hover:scale-110 ${event.is_past ? 'grayscale' : ''}`}
-                      />
-                   ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#2F4157] to-[#4B5B6E]"></div>
-                   )}
-                   
-                   {/* Date Badge Overlay */}
-                   <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-2 text-center min-w-[60px] shadow-sm">
-                      <p className="text-xs font-bold text-[#E56668] uppercase">
-                        {event.eventDateObj.toLocaleDateString('en-US', { month: 'short' })}
-                      </p>
-                      <p className="text-xl font-bold text-[#2F4157]">
-                        {event.eventDateObj.getDate()}
-                      </p>
-                   </div>
-
-                   {/* Status Badge Overlay */}
-                   {event.db_status === 'attended' && (
-                      <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                         <Star size={12} fill="white"/> Completed
-                      </div>
-                   )}
-                </div>
-
-                {/* Content */}
-                <div className="p-6 flex-1 flex flex-col">
-                   <h3 className="text-lg font-bold text-[#2F4157] mb-2 line-clamp-2 group-hover:text-[#E56668] transition-colors">
-                     {event.title}
-                   </h3>
-                   
-                   <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
-                      <div className="flex items-center gap-1">
-                         <Clock size={14}/> 
-                         {event.eventDateObj.toLocaleDateString('en-US', { weekday: 'short' })}
-                      </div>
-                      <div className="flex items-center gap-1">
-                         <MapPin size={14}/> Online
-                      </div>
-                   </div>
-
-                   <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                      {/* LOGIC TOMBOL TERGANTUNG STATUS */}
-                      {!event.is_past ? (
-                         event.db_status === 'registered' ? (
-                            <div className="flex gap-2 w-full">
-                               <button 
-                                 onClick={() => window.open(event.registrationLink, "_blank")}
-                                 className="flex-1 py-2 bg-green-50 text-green-700 text-sm font-semibold rounded-lg hover:bg-green-100 transition"
-                               >
-                                 Open Link
-                               </button>
-                               <a 
-                                 href={getGoogleCalendarLink(event)}
-                                 target="_blank"
-                                 className="p-2 border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50"
-                                 title="Add to Calendar"
-                               >
-                                 <PlusCircle size={18}/>
-                               </a>
-                            </div>
-                         ) : (
-                            <button 
-                              onClick={() => handleRegister(event)}
-                              className="w-full py-2 bg-[#2F4157] text-white text-sm font-semibold rounded-lg hover:bg-[#1a253a] transition shadow-md shadow-gray-200"
-                            >
-                              Register
-                            </button>
-                         )
-                      ) : (
-                         /* LOGIC PAST EVENT */
-                         event.db_status === 'attended' ? (
-                            <button className="w-full py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 transition">
-                               <MessageSquare size={16}/> Give Feedback
-                            </button>
-                         ) : (
-                            <div className="w-full flex items-center justify-between gap-2">
-                               <p className="text-xs text-gray-400 italic">Joined this?</p>
-                               <button 
-                                 onClick={() => handleMarkAttended(event.id)}
-                                 className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-green-50 hover:text-green-700 transition"
-                               >
-                                 Yes, Count Me In
-                               </button>
-                            </div>
-                         )
-                      )}
-                   </div>
-                </div>
-              </div>
-            ))}
+            {/* Quick Stat Card */}
+            <div className="bg-white border border-[#CDC6BC] rounded-[32px] p-6 shadow-sm flex flex-col justify-center items-center text-center">
+               <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mb-4 border border-[#CDC6BC]/50">
+                  <Trophy className="text-[#304156]" size={32} />
+               </div>
+               <p className="text-[#577E90] font-bold text-xs uppercase tracking-widest">Participation</p>
+               <p className="text-4xl font-black text-[#CB2129] mt-1">
+                 {totalEvents > 0 ? Math.round((attendedCount / totalEvents) * 100) : 0}%
+               </p>
+            </div>
           </div>
-        )}
 
-        {!loading && displayEvents.length === 0 && (
-           <div className="text-center py-20">
-              <div className="inline-block p-4 bg-gray-50 rounded-full mb-4">
-                 <AlertCircle className="text-gray-400" size={32}/>
+          {/* --- GIF SINGAPORE PROMO SECTION --- */}
+          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#2F4055] via-[#914D4D] to-[#304156] text-white shadow-xl group ring-1 ring-white/10">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] opacity-20 blur-[80px] rounded-full translate-x-1/3 -translate-y-1/3 group-hover:opacity-30 transition-opacity duration-500" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#304156] opacity-30 blur-[60px] rounded-full -translate-x-1/3 translate-y-1/3" />
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay" />
+
+            <div className="relative z-10 p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left flex-1">
+                <div className="w-32 h-32 md:w-40 md:h-40 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shrink-0 p-4 shadow-lg transform group-hover:scale-105 transition-transform duration-300">
+                  <img src="/images/logos/events/gifsgp.png" alt="GIF Singapore" className="max-w-full max-h-full object-contain drop-shadow-md" />
+                </div>
+                <div className="space-y-3 max-w-2xl">
+                   <div className="inline-flex items-center gap-2 bg-[#914D4D] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest mx-auto md:mx-0 shadow-lg shadow-[#914D4D]/20 border border-white/20">
+                     <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                     </span>
+                     Registration Open
+                   </div>
+                   <h3 className="text-2xl md:text-3xl font-black leading-tight">
+                     Ready for Singapore? <span className="text-[#FFD1D1]">🇸🇬</span>
+                   </h3>
+                   <p className="text-white/90 text-sm md:text-base leading-relaxed font-light">
+                     Join <strong>Global Impact Fellowship 2026</strong>. Benchmark directly to <strong>NUS & Glints HQ</strong>. 
+                     Get a chance for <span className="text-[#FFD1D1] font-bold underline decoration-[#FFD1D1]/50 underline-offset-4">Fully Funded</span> & exclusive mentoring from IELS Founders.
+                   </p>
+                </div>
               </div>
-              <p className="text-gray-500">No events found in this category.</p>
-           </div>
-        )}
 
+              <div className="shrink-0 w-full md:w-auto">
+                 <Link href="/dashboard/gif" className="block w-full">
+                   <button className="w-full md:w-auto group/btn relative px-8 py-4 bg-white text-[#304156] font-bold rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden">
+                      <span className="uppercase tracking-wide text-sm relative z-10">Start Application</span>
+                      <div className="bg-[#304156] text-white p-2 rounded-full group-hover/btn:bg-[#914D4D] transition-colors relative z-10">
+                        <ArrowRight size={16} />
+                      </div>
+                      <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 group-hover/btn:animate-shine" />
+                   </button>
+                 </Link>
+                 <p className="text-white/60 text-[10px] text-center mt-3 font-bold tracking-widest uppercase">
+                   *Limited slots for Fast Track
+                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* --- TABS --- */}
+          <div className="flex items-center gap-6 border-b border-[#CDC6BC]">
+             {(['upcoming', 'past', 'all'] as const).map((t) => (
+               <button
+                 key={t}
+                 onClick={() => setFilter(t)}
+                 className={cn(
+                   "pb-4 font-bold text-sm tracking-wide transition-all relative uppercase",
+                   filter === t ? "text-[#CB2129]" : "text-[#577E90] hover:text-[#304156]"
+                 )}
+               >
+                 {t}
+                 {filter === t && (
+                   <div className="absolute bottom-0 left-0 w-full h-1 bg-[#CB2129] rounded-t-full"></div>
+                 )}
+               </button>
+             ))}
+          </div>
+
+          {loading ? (
+             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#CB2129]" size={40}/></div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              
+              {/* --- HERO EVENT (If filter is Upcoming & Hero exists) --- */}
+              {filter === "upcoming" && heroEvent && (
+                 <div className="col-span-full mb-4">
+                    <div className="group relative rounded-[32px] overflow-hidden bg-white border border-[#CDC6BC] shadow-sm hover:shadow-xl transition-all duration-300">
+                       <div className="grid md:grid-cols-5 h-full">
+                          {/* Image Side */}
+                          <div className="relative h-72 md:h-auto md:col-span-2 overflow-hidden bg-[#304156]">
+                             <Image 
+                               src={heroEvent.poster} 
+                               alt={heroEvent.title}
+                               fill
+                               className="object-cover transition-transform duration-700 group-hover:scale-105"
+                             />
+                             <div className="absolute inset-0 bg-gradient-to-t from-[#304156]/80 to-transparent md:hidden"></div>
+                             <div className="absolute top-6 left-6 bg-[#CB2129] px-4 py-2 rounded-xl text-xs font-black text-white uppercase tracking-widest shadow-lg">
+                               Featured
+                             </div>
+                          </div>
+
+                          {/* Content Side */}
+                          <div className="p-8 md:p-10 flex flex-col justify-center md:col-span-3">
+                             <div className="flex items-center gap-3 mb-4">
+                                <span className="text-xs font-black text-[#577E90] bg-[#F6F3EF] px-3 py-1.5 rounded-lg tracking-widest uppercase">
+                                  {heroEvent.eventDateObj.toLocaleDateString("en-US", { weekday: 'long', day: 'numeric', month: 'long' })}
+                                </span>
+                             </div>
+                             
+                             <h2 className="text-3xl md:text-4xl font-black text-[#304156] mb-4 leading-tight">{heroEvent.title}</h2>
+                             
+                             <div 
+                               className="text-[#577E90] line-clamp-3 mb-8 prose prose-sm"
+                               dangerouslySetInnerHTML={{ __html: heroEvent.description }} 
+                             />
+
+                             <div className="flex flex-wrap gap-4">
+                                {heroEvent.db_status === "registered" ? (
+                                  <button className="px-8 py-4 bg-[#F6F3EF] text-[#304156] border border-[#CDC6BC] rounded-2xl font-bold flex items-center gap-2 cursor-default">
+                                     <CheckCircle2 size={20} className="text-green-600"/> Registered
+                                  </button>
+                                ) : (
+                                  <button 
+                                    onClick={() => handleRegister(heroEvent)}
+                                    className="px-8 py-4 bg-[#CB2129] text-white rounded-2xl font-bold hover:bg-[#a81b22] hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                                  >
+                                    Register Now <ExternalLink size={18}/>
+                                  </button>
+                                )}
+                                
+                                {/* Reminder Button */}
+                                <a 
+                                  href={getGoogleCalendarLink(heroEvent)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-6 py-4 bg-white border border-[#CDC6BC] text-[#304156] rounded-2xl font-bold hover:bg-[#F6F3EF] transition-colors flex items-center gap-2"
+                                >
+                                  <PlusCircle size={18}/> Add Reminder
+                                </a>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              )}
+
+              {/* --- STANDARD EVENT CARDS --- */}
+              {displayEvents.filter(e => e.id !== heroEvent?.id || filter !== 'upcoming').map((event) => (
+                <div 
+                  key={event.id} 
+                  className={cn(
+                    "bg-white rounded-[32px] border flex flex-col overflow-hidden transition-all duration-300 group",
+                    event.is_past ? "border-[#CDC6BC]/50 opacity-80 hover:opacity-100" : "border-[#CDC6BC] hover:shadow-xl hover:-translate-y-1 hover:border-[#577E90]"
+                  )}
+                >
+                  {/* Poster Image */}
+                  <div className="relative h-56 w-full bg-[#304156] overflow-hidden">
+                     {event.poster ? (
+                        <Image 
+                          src={event.poster} 
+                          alt={event.title} 
+                          fill
+                          className={`object-cover transition-transform duration-500 group-hover:scale-105 ${event.is_past ? 'grayscale' : ''}`}
+                        />
+                     ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#304156] to-[#577E90]"></div>
+                     )}
+                     
+                     <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-2xl p-2 text-center min-w-[60px] shadow-sm border border-[#CDC6BC]/50">
+                        <p className="text-[10px] font-black text-[#CB2129] uppercase tracking-widest">
+                          {event.eventDateObj.toLocaleDateString('en-US', { month: 'short' })}
+                        </p>
+                        <p className="text-2xl font-black text-[#304156] leading-none mt-1">
+                          {event.eventDateObj.getDate()}
+                        </p>
+                     </div>
+
+                     {event.db_status === 'attended' && (
+                        <div className="absolute top-4 left-4 bg-green-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+                           <Star size={12} fill="white"/> Completed
+                        </div>
+                     )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-8 flex-1 flex flex-col">
+                     <h3 className="text-xl font-bold text-[#304156] mb-4 line-clamp-2 group-hover:text-[#CB2129] transition-colors leading-snug">
+                       {event.title}
+                     </h3>
+                     
+                     <div className="flex items-center gap-4 text-xs font-bold text-[#577E90] mb-6">
+                        <div className="flex items-center gap-1.5 bg-[#F6F3EF] px-3 py-1.5 rounded-lg">
+                           <Clock size={14}/> 
+                           {event.eventDateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-[#F6F3EF] px-3 py-1.5 rounded-lg">
+                           <MapPin size={14}/> Online
+                        </div>
+                     </div>
+
+                     <div className="mt-auto pt-6 border-t border-[#CDC6BC]/50 flex items-center justify-between">
+                        {!event.is_past ? (
+                           event.db_status === 'registered' ? (
+                              <div className="flex gap-3 w-full">
+                                 <button 
+                                   onClick={() => window.open(event.registrationLink, "_blank")}
+                                   className="flex-1 py-3 bg-[#F6F3EF] text-[#304156] text-sm font-bold rounded-xl hover:bg-[#CDC6BC]/50 transition border border-[#CDC6BC]"
+                                 >
+                                   Open Link
+                                 </button>
+                                 <a 
+                                   href={getGoogleCalendarLink(event)}
+                                   target="_blank"
+                                   className="p-3 border border-[#CDC6BC] text-[#304156] rounded-xl hover:bg-[#F6F3EF]"
+                                   title="Add to Calendar"
+                                 >
+                                   <PlusCircle size={18}/>
+                                 </a>
+                              </div>
+                           ) : (
+                              <button 
+                                onClick={() => handleRegister(event)}
+                                className="w-full py-3 bg-[#304156] text-white text-sm font-bold rounded-xl hover:bg-[#1e2a38] transition shadow-md"
+                              >
+                                Register Now
+                              </button>
+                           )
+                        ) : (
+                           event.db_status === 'attended' ? (
+                              <button className="w-full py-3 border border-[#CDC6BC] text-[#577E90] text-sm font-bold rounded-xl hover:bg-[#F6F3EF] flex items-center justify-center gap-2 transition">
+                                 <MessageSquare size={16}/> Give Feedback
+                              </button>
+                           ) : (
+                              <div className="w-full flex items-center justify-between gap-2 bg-[#F6F3EF] p-2 rounded-xl border border-[#CDC6BC]">
+                                 <p className="text-[10px] text-[#577E90] font-bold uppercase tracking-widest pl-2">Joined this?</p>
+                                 <button 
+                                   onClick={() => handleMarkAttended(event.id)}
+                                   className="px-4 py-2 bg-white text-[#304156] text-xs font-bold rounded-lg hover:text-[#CB2129] shadow-sm transition"
+                                 >
+                                   Count Me In
+                                 </button>
+                              </div>
+                           )
+                        )}
+                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && displayEvents.length === 0 && (
+             <div className="text-center py-20 border-2 border-dashed border-[#CDC6BC] rounded-[32px]">
+                <div className="inline-block p-4 bg-[#F6F3EF] rounded-full mb-4">
+                   <AlertCircle className="text-[#577E90]" size={32}/>
+                </div>
+                <p className="text-[#304156] font-bold">No events found in this category.</p>
+             </div>
+          )}
+
+        </div>
       </div>
+      
+      {/* Komponen Popup GIF */}
+      <GIFPopup />
     </DashboardLayout>
+  );
+}
+
+// --- FUNGSI UTAMA (MEMBUNGKUS DENGAN SUSPENSE) ---
+export default function EventsPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-12 flex items-center justify-center min-h-screen bg-[#F6F3EF]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#CB2129]"></div>
+      </div>
+    }>
+      <EventsContent />
+    </Suspense>
   );
 }
