@@ -4,7 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, X, Crown, Zap, Target } from 'lucide-react';
 
-const PricingModal = ({ onClose }: { onClose: () => void }) => {
+// === TAMBAHAN TYPESCRIPT DISINI ===
+interface PricingModalProps {
+  onClose: () => void;
+  isPreAuth?: boolean;
+}
+
+const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
   const [mounted, setMounted] = useState(false);
 
@@ -109,7 +115,7 @@ const PricingModal = ({ onClose }: { onClose: () => void }) => {
               </button>
             </div>
 
-        {/* TIER 2: INSIDER (PREMIUM) */}
+            {/* TIER 2: INSIDER (PREMIUM) */}
             <div className="bg-white rounded-3xl p-6 border-2 border-[#8B5CF6] shadow-xl relative transform md:-translate-y-2">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#8B5CF6] text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-sm uppercase tracking-wide">
                 Most Popular
@@ -247,4 +253,3 @@ const FeatureItem = ({
 };
 
 export default PricingModal;
-
