@@ -494,7 +494,7 @@ export default function Home() {
                   <span className="text-[#E56668]">Every Night</span> at IELS Lounge
                 </h2>
                 <p className="text-white/80 text-lg mb-10 leading-relaxed">
-                  Join 2,800+ members practicing English in real conversations. 
+                  Join 6,800+ members practicing English in real conversations. 
                   Build confidence, make friends, and improve naturally through daily speaking sessions.
                 </p>
                 <Button asChild className="bg-[#E56668] text-white font-bold hover:bg-[#c94f51] rounded-full px-10 py-3 text-lg group w-full sm:w-auto shadow-lg hover:-translate-y-1 transition-all duration-300">

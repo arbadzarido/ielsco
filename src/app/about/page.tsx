@@ -41,8 +41,8 @@ export default function About() {
       name: "Khairi Pandya",
       role: "Advisor & Mentor",
       image: "/images/people/directors/pandya.png",
-      instagram: "#",
-      linkedin: "#",
+      instagram: "https://www.instagram.com/khairi.pandya/",
+      linkedin: "https://www.linkedin.com/in/khairi-pandya/",
       point1: "Currently serving as Sr. OD Specialist at STAR Capital, focusing on Organizational Development and Structure.",
       point2: "Former Manager of Organization & Workforce Transformation at Deloitte, managing stakeholder relations and human capital initiatives for over 2 years.",
     },
@@ -58,7 +58,7 @@ export default function About() {
     {
       name: "Fadhila Qurotul Aini",
       role: "Principal of Growth & Finance",
-      image: "/images/people/directors/dhila.png",
+      image: "/images/people/directors/dhila2.png",
       instagram: "https://www.instagram.com/fadhilaqa._/",
       linkedin: "https://linkedin.com/in/fadhilaqa/",
       point1: "Successfully streamlined international outreach and digital operations to connect local talent with high-tier global aesthetic science networks.",
@@ -67,7 +67,7 @@ export default function About() {
     {
       name: "Syifa Hana Nabila",
       role: "Principal of Talent",
-      image: "/images/people/directors/hana.png",
+      image: "/images/people/directors/hana2.png",
       instagram: "https://www.instagram.com/ssyifahana/",
       linkedin: "https://www.linkedin.com/in/syifahana/",
       point1: "Alumna of the University of Malaya (UM) short course program, focusing on global leadership and organizational behavior in a multicultural environment.",
@@ -92,7 +92,7 @@ export default function About() {
       members: [
         { role: "Strategic Marketing Manager", name: "Shallom Febe Marissa", image: "/images/people/leaders/shallom.png", instagram: "#", linkedin: "#" },
         { role: "Content Marketing Manager", name: "Dzarratul Subagja", image: "/images/people/leaders/dzarratul.png", instagram: "#", linkedin: "#" },
-        { role: "Creative Manager", name: "Putri Maharani", image: "/images/people/leaders/putri.png", instagram: "#", linkedin: "#" },
+        { role: "Creative Manager", name: "Putri Maharani", image: "/images/people/leaders/putri1.png", instagram: "#", linkedin: "#" },
         { role: "Vice Creative Manager", name: "Zainufri Aziz", image: "/images/people/leaders/zainufri.png", instagram: "#", linkedin: "#" }
       ]
     },
