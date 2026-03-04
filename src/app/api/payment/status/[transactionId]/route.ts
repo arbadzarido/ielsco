@@ -1,26 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from "next/headers";
 
 export async function GET(
   request: NextRequest,
-  // DI SINI FIX-NYA: params sekarang harus berwujud Promise 👇
   { params }: { params: Promise<{ transactionId: string }> } 
 ) {
   try {
-    // KITA AWAIT PARAMS-NYA DULU BUAT NGAMBIL ID-NYA 👇
     const { transactionId } = await params; 
     
     const cookieStore = await cookies();
     
-    const supabase = createServerClient(
+    // 1. Auth Client
+    const supabaseAuth = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
+          get(name: string) { return cookieStore.get(name)?.value; },
           set(name: string, value: string, options: CookieOptions) {
             try { cookieStore.set({ name, value, ...options }); } catch (error) {}
           },
@@ -31,20 +29,26 @@ export async function GET(
       }
     );
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: transaction, error } = await supabase
+    // 2. Admin Client (Bypass RLS untuk baca status transaksi)
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: transaction, error: txError } = await supabaseAdmin
       .from("transactions")
       .select("*")
-      // PAKE VARIABEL YANG UDAH DI-AWAIT TADI 👇
       .eq("id", transactionId) 
       .eq("user_id", user.id)
       .single();
 
-    if (error || !transaction) {
+    if (txError || !transaction) {
+      console.error("Fetch Transaction Error:", txError);
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
 
@@ -55,9 +59,6 @@ export async function GET(
 
   } catch (error) {
     console.error("Status check error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

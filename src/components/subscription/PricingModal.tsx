@@ -2,17 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, X, Crown, Zap, Target } from 'lucide-react';
+import { Check, X, Crown, Zap, Target, Loader2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createBrowserClient } from '@supabase/ssr';
 
-// === TAMBAHAN TYPESCRIPT DISINI ===
 interface PricingModalProps {
   onClose: () => void;
   isPreAuth?: boolean;
 }
 
+// === TAHAP 1: SIAPIN LINK MAYAR LU DI SINI ===
+const MAYAR_LINKS = {
+  // Link produk Insider / Pro (Monthly/Yearly biasanya diatur di dalam produk Mayar)
+  pro: "https://ielsco.myr.id/m/insider-iels-lounge-premium", 
+  
+  // Link produk Visionary / Lifetime (LU HARUS BIKIN PRODUK INI DI MAYAR & GANTI LINKNYA)
+  visionary: "https://ielsco.myr.id/m/LINK-BUAT-VISIONARY-LU" 
+};
+
 const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
   const [mounted, setMounted] = useState(false);
+  
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -22,11 +35,43 @@ const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
     };
   }, []);
 
+  // === TAHAP 2: FUNGSI REDIRECT YANG BENAR ===
+  const handleUpgrade = async (tier: "pro" | "visionary") => {
+    setLoadingTier(tier);
+    setErrorMsg(null);
+    
+    try {
+      // 1. Tarik data user yang lagi login
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // 2. Pilih link yang bener sesuai tombol yang diklik (Insider atau Visionary)
+      const baseMayarLink = MAYAR_LINKS[tier];
+      
+      // 3. Sisipkan email ke URL biar form Mayar langsung keisi otomatis.
+      // Kita pakai parameter '?email=' dan '&customer_email=' biar cover semua format Mayar.
+      const finalLink = user?.email 
+        ? `${baseMayarLink}?email=${encodeURIComponent(user.email)}&customer_email=${encodeURIComponent(user.email)}` 
+        : baseMayarLink;
+
+      // 4. Buka halaman pembayaran Mayar
+      window.location.href = finalLink;
+
+    } catch (error) {
+      console.error("Redirect error:", error);
+      setErrorMsg("Gagal membuka halaman pembayaran. Silakan coba lagi.");
+      setLoadingTier(null);
+    }
+  };
+
   if (!mounted) return null;
 
   const modalContent = (
     <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4">
-      
       {/* BACKDROP */}
       <div 
         onClick={onClose}
@@ -82,6 +127,31 @@ const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
             </span>
           </div>
         </div>
+
+        {/* === ERROR BANNER === */}
+        <AnimatePresence>
+          {errorMsg && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0, y: -10 }} 
+              animate={{ opacity: 1, height: 'auto', y: 0 }} 
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              className="bg-[#CB2129]/10 border-b border-[#CB2129]/20 px-6 py-4 flex items-center justify-between gap-4 overflow-hidden"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#CB2129]/20 flex items-center justify-center shrink-0">
+                  <AlertCircle size={16} className="text-[#CB2129]" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#CB2129]">Navigation Failed</p>
+                  <p className="text-xs text-[#CB2129]/80">{errorMsg}</p>
+                </div>
+              </div>
+              <button onClick={() => setErrorMsg(null)} className="p-2 hover:bg-[#CB2129]/10 rounded-full transition text-[#CB2129]">
+                <X size={16} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* === SCROLLABLE CONTENT === */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50">
@@ -147,19 +217,16 @@ const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
                 <FeatureItem text="Verified Insider Badge" />
               </ul>
               
-              {/* UPDATED BUTTON FOR INSIDER */}
               <button 
-                onClick={() => {
-                  // Direct to Mayar Payment Link
-                  const paymentUrl = billingCycle === 'monthly' 
-                    ? 'https://ielsco.myr.id/m/iels-lounge-premium' // Monthly Link
-                    : 'https://ielsco.myr.id/m/iels-lounge-premium'; // Ganti dengan Link Tahunan jika ada
-                  
-                  window.open(paymentUrl, '_blank');
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold hover:bg-[#7C3AED] hover:shadow-lg transition transform active:scale-95 text-sm"
+                onClick={() => handleUpgrade("pro")}
+                disabled={loadingTier !== null}
+                className="w-full py-2.5 rounded-xl bg-[#8B5CF6] text-white font-bold hover:bg-[#7C3AED] hover:shadow-lg transition transform active:scale-95 text-sm flex justify-center items-center gap-2 disabled:opacity-70"
               >
-                {billingCycle === 'monthly' ? 'Start Monthly Plan' : 'Get Yearly Access'}
+                {loadingTier === "pro" ? (
+                  <><Loader2 size={16} className="animate-spin" /> Redirecting...</>
+                ) : (
+                  billingCycle === 'monthly' ? 'Start Monthly Plan' : 'Get Yearly Access'
+                )}
               </button>
             </div>
 
@@ -187,22 +254,22 @@ const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
                 <FeatureItem text="All Future Features Unlocked" darkTheme />
               </ul>
 
-              {/* UPDATED BUTTON FOR VISIONARY */}
               <button 
-                onClick={() => {
-                  // Direct to Mayar Payment Link for Visionary
-                  // Ganti URL ini dengan link checkout Mayar khusus paket Visionary/Lifetime
-                  window.open('https://ielsco.myr.id/m/iels-lounge-premium', '_blank'); 
-                }}
-                className="w-full py-2.5 rounded-xl bg-yellow-400 text-[#2F4157] font-bold hover:bg-yellow-500 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95 transition relative z-10 text-sm"
+                onClick={() => handleUpgrade("visionary")}
+                disabled={loadingTier !== null}
+                className="w-full py-2.5 rounded-xl bg-yellow-400 text-[#2F4157] font-bold hover:bg-yellow-500 hover:shadow-lg hover:shadow-yellow-400/20 active:scale-95 transition relative z-10 text-sm flex justify-center items-center gap-2 disabled:opacity-70"
               >
-                Become Visionary
+                {loadingTier === "visionary" ? (
+                  <><Loader2 size={16} className="animate-spin" /> Redirecting...</>
+                ) : (
+                  "Become Visionary"
+                )}
               </button>
             </div>
           </div>
           
           <div className="text-center mt-8 pb-4 text-gray-400 text-xs">
-            <p>Secure payment via QRIS / Bank Transfer. Questions? <a href="#" className="underline hover:text-[#8B5CF6]">Chat with us</a></p>
+            <p>Secure payment via Mayar. Auto-activation upon success. <a href="#" className="underline hover:text-[#8B5CF6]">Chat with us</a></p>
           </div>
         </div>
       </div>
