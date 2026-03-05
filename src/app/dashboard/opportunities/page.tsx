@@ -132,46 +132,48 @@ export default function OpportunitiesPage() {
   const [filter, setFilter] = useState<"all" | "scholarship" | "internship" | "leadership">("all");
   const [opportunities] = useState(MOCK_OPPORTUNITIES);
 
-  // 1. Fetch Real User Data
-  useEffect(() => {
-    const initData = async () => {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/sign-in");
-        return;
-      }
+  // --- SINKRONISASI TIER & DATA ---
+useEffect(() => {
+  const fetchUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`*, memberships(tier)`)
-        .eq("id", user.id)
-        .single();
+    // 1. Ambil data Membership langsung (Source of Truth Tier)
+    const { data: dbMembership } = await supabase
+      .from("memberships")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      // Mapping logic
-      const dbTier = dbUser?.memberships?.[0]?.tier;
-      let uiTier: UserTier = "explorer";
+    // 2. Ambil data Profile (Nama & Avatar terbaru dari tabel users)
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
 
-      if (dbTier === "pro") {
-        uiTier = "insider";
-      } else if (dbTier === "premium" || dbTier === "visionary") {
-        uiTier = "visionary";
-      } else {
-        uiTier = "explorer";
-      }
+    // 3. Mapping Tier (Mapping premium/visionary -> visionary)
+    const dbTier = dbMembership?.tier;
+    let uiTier: UserTier = "explorer";
 
-      setUserData({
-        id: user.id,
-        name: user.user_metadata?.full_name || "Member",
-        tier: uiTier,
-        avatar: user.user_metadata?.avatar_url || ""
-      });
-      setLoading(false);
-    };
-    initData();
-  }, [router, supabase]);
+    if (dbTier === "pro") {
+      uiTier = "insider";
+    } else if (dbTier === "premium" || dbTier === "visionary") {
+      uiTier = "visionary";
+    }
 
+    setUserData({
+      id: user.id, // Simpan ID auth ke state
+      name: dbUser?.full_name || user.user_metadata?.full_name || "Member",
+      avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || "",
+      tier: uiTier,
+    });
+    
+    setLoading(false);
+  };
+
+  fetchUser();
+}, [supabase]);
   // Logic: Siapa yang bisa lihat? Insider & Visionary
   const hasAccess = userData.tier === "insider" || userData.tier === "visionary";
 

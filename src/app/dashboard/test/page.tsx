@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { 
@@ -78,25 +79,36 @@ export default function IELSTestDashboard() {
           return;
         }
 
-        // 2. Get Profile & Tier
+        // 2. Get Profile & Tier (SINKRONISASI MEMBERSHIP)
         const { data: dbUser } = await supabase
           .from("users")
-          .select(`*, memberships(tier)`)
+          .select(`
+            *,
+            memberships (
+              tier
+            )
+          `)
           .eq("id", user.id)
           .single();
 
         if (!isMounted) return;
 
+        // --- MAPPING LOGIC STANDAR IELS ---
+        // Kita pastiin 'pro' jadi 'insider', 'premium' jadi 'visionary'
         const dbTier = dbUser?.memberships?.[0]?.tier;
         let uiTier: UserTier = "explorer";
-        if (dbTier === "visionary") uiTier = "visionary";
-        else if (dbTier === "insider" || dbTier === "pro") uiTier = "insider";
+        
+        if (dbTier === "pro") {
+          uiTier = "insider";
+        } else if (dbTier === "premium" || dbTier === "visionary") {
+          uiTier = "visionary";
+        }
 
         const userInfo = {
           id: user.id,
-          name: user.user_metadata?.full_name || dbUser?.full_name || "Member",
+          name: dbUser?.full_name || user.user_metadata?.full_name || "Member",
           email: user.email || "",
-          tier: uiTier,
+          tier: uiTier, // Sekarang udah sinkron
           avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || ""
         };
         setUserData(userInfo);
@@ -190,8 +202,12 @@ export default function IELSTestDashboard() {
   return (
     <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
       <div className="min-h-screen pb-24 bg-[#FDFDFD]">
-        {/* 1. Hero Section */}
-<div className="relative bg-[#2F4157] text-white overflow-hidden">
+      {/* Hero Section dengan Tier-based Color */}
+<div className={cn(
+  "relative text-white overflow-hidden transition-colors duration-500",
+  userData.tier === "visionary" ? "bg-gradient-to-r from-yellow-700 to-yellow-900" :
+  userData.tier === "insider" ? "bg-[#E56668]" : "bg-[#2F4157]"
+)}>
   {/* Background Decoration */}
   <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 

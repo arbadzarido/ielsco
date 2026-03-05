@@ -82,44 +82,62 @@ export default function CoursesDashboardPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key"
   );
 
-  const [userData, setUserData] = useState<{ id: string; name: string; tier: UserTier; avatar: string }>({
-    id: "", name: "", tier: "explorer", avatar: ""
-  });
-  const [loading, setLoading] = useState(true);
+ // --- UPDATE STATE (Tambahkan id supaya error TS ilang) ---
+const [userData, setUserData] = useState({
+  id: "", // WAJIB ADA buat handleEnrollment
+  name: "Member",
+  avatar: "",
+  tier: "explorer" as UserTier,
+});
+const [loading, setLoading] = useState(true);
 
   // Modal State
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [enrollmentSuccess, setEnrollmentSuccess] = useState(false);
 
-  useEffect(() => {
-    const initData = async () => {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/sign-in");
-        return;
-      }
+  // --- GANTI ISI useEffect fetchUser ---
+useEffect(() => {
+  const fetchUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`*, memberships(tier)`)
-        .eq("id", user.id)
-        .single();
+    // 1. Ambil data Membership langsung (Source of Truth Tier)
+    const { data: dbMembership } = await supabase
+      .from("memberships")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      const dbTier = dbUser?.memberships?.[0]?.tier || "explorer";
-      setUserData({
-        id: user.id,
-        name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-        tier: dbTier as UserTier,
-        avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || "",
-      });
-      setLoading(false);
-    };
+    // 2. Ambil data Profile (Nama & Avatar terbaru dari tabel users)
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    initData();
-  }, [router, supabase]);
+    // 3. Mapping Tier (Mapping premium/visionary -> visionary)
+    const dbTier = dbMembership?.tier;
+    let uiTier: UserTier = "explorer";
 
+    if (dbTier === "pro") {
+      uiTier = "insider";
+    } else if (dbTier === "premium" || dbTier === "visionary") {
+      uiTier = "visionary";
+    }
+
+    setUserData({
+      id: user.id, // Simpan ID auth ke state
+      name: dbUser?.full_name || user.user_metadata?.full_name || "Member",
+      avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || "",
+      tier: uiTier,
+    });
+    
+    setLoading(false);
+  };
+
+  fetchUser();
+}, [supabase]);
   // --- FUNGSI DAFTAR COURSE KE SUPABASE ---
   const handleEnrollment = async () => {
     if (!selectedCourse || !userData.id) return;

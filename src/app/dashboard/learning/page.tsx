@@ -291,11 +291,12 @@ function useGoals(userId: string | null): { goals: Goal[]; loading: boolean } {
 
 export default function LearningSpacePage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [userData, setUserData] = useState({
-    name: "",
-    avatar: "",
-    tier: "explorer",
-  });
+  // --- UPDATE STATE ---
+const [userData, setUserData] = useState({
+  name: "Member",
+  avatar: "",
+  tier: "explorer" as "explorer" | "insider" | "visionary",
+});
   const [userLoading, setUserLoading] = useState(true);
 
   const supabase = createBrowserClient(
@@ -303,23 +304,49 @@ export default function LearningSpacePage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        setUserData({
-          name: user.user_metadata.full_name || "Member",
-          avatar: user.user_metadata.avatar_url,
-          tier: "explorer",
-        });
-      }
-      setUserLoading(false);
-    };
-    fetchUser();
-  }, [supabase]);
+  // --- GANTI ISI useEffect fetchUser ---
+useEffect(() => {
+  const fetchUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setUserId(user.id);
+
+    // 1. Ambil data Membership (Source of Truth)
+    const { data: dbMembership } = await supabase
+      .from("memberships")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    // 2. Ambil data Profile (Nama & Avatar terbaru)
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    // 3. Mapping Tier (Standard IELS)
+    const dbTier = dbMembership?.tier;
+    let uiTier: "explorer" | "insider" | "visionary" = "explorer";
+
+    if (dbTier === "pro") {
+      uiTier = "insider";
+    } else if (dbTier === "premium" || dbTier === "visionary") {
+      uiTier = "visionary";
+    }
+
+    setUserData({
+      name: dbUser?.full_name || user.user_metadata?.full_name || "Member",
+      avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || "",
+      tier: uiTier,
+    });
+    
+    setUserLoading(false);
+  };
+
+  fetchUser();
+}, [supabase]);
 
   const { items: activeLearning, loading: learningLoading } =
     useActiveLearning(userId);
@@ -332,7 +359,7 @@ export default function LearningSpacePage() {
     <DashboardLayout
       userName={userData.name}
       userAvatar={userData.avatar}
-      userTier={userData.tier as any}
+      userTier={userData.tier}
     >
       <div className="min-h-screen bg-[#F7F8FA] pb-20">
 

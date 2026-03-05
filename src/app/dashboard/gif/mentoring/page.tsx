@@ -115,23 +115,39 @@ export default function MentoringDashboard() {
           return;
         }
 
-        // 1. Fetch User Profile & Tier
-        const { data: dbUser } = await supabase
-          .from('users')
-          .select('*, memberships(tier)')
-          .eq('id', user.id)
-          .single();
+  // --- GANTI DENGAN INI ---
+// 1. Ambil data Membership langsung (Source of Truth Tier)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-        const dbTier = dbUser?.memberships?.[0]?.tier || "explorer";
-        const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+// 2. Ambil data Profile (Nama & Avatar)
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name, avatar_url")
+  .eq("id", user.id)
+  .maybeSingle();
 
-        setUserProfile({
-          full_name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-          email: user.email || "",
-          avatar_url: avatarUrl,
-          tier: dbTier
-        });
+// 3. Mapping Tier (Insider/Visionary)
+const dbTier = dbMembership?.tier;
+let uiTier: "explorer" | "insider" | "visionary" = "explorer";
 
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+}
+
+const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+
+setUserProfile({
+  full_name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+  email: user.email || "",
+  avatar_url: avatarUrl,
+  tier: uiTier
+});
         // 2. Check Mentoring Registration
         const { data } = await supabase
           .from('gif_registrations')

@@ -76,24 +76,40 @@ export default function GIFDashboardPage() {
           return;
         }
 
-        // 1. Fetch Extended Profile
-        const { data: dbUser } = await supabase
-          .from('users')
-          .select('*, memberships(tier)')
-          .eq('id', user.id)
-          .single();
+   // --- GANTI DENGAN INI ---
+// 1. Ambil data Membership langsung (Source of Truth Akses)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-        const dbTier = dbUser?.memberships?.[0]?.tier || "explorer";
-        const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+// 2. Ambil data Profile User
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name, avatar_url")
+  .eq("id", user.id)
+  .maybeSingle();
 
-        const profile: UserProfile = {
-          full_name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-          email: user.email || "",
-          avatar_url: avatarUrl,
-          tier: dbTier
-        };
-        setUserProfile(profile);
+// 3. Mapping Tier (Pro -> Insider, Premium/Visionary -> Visionary)
+const dbTier = dbMembership?.tier;
+let uiTier: "explorer" | "insider" | "visionary" = "explorer";
 
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+}
+
+const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+
+const profile: UserProfile = {
+  full_name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+  email: user.email || "",
+  avatar_url: avatarUrl,
+  tier: uiTier // Sekarang tier sudah akurat
+};
+setUserProfile(profile);
         // 2. Fetch Registration Data
         const { data, error } = await supabase
           .from('gif_registrations')
@@ -170,7 +186,8 @@ export default function GIFDashboardPage() {
     regData?.is_lounge_member === true
   ].filter(Boolean).length;
 
-  const isLoungeDone = allRequirementsMet || regData?.is_lounge_member;
+  const isLoungeDone = allRequirementsMet || regData?.is_lounge_member || userProfile?.tier === "insider" || 
+  userProfile?.tier === "visionary";
 
   return (
     <DashboardLayout 

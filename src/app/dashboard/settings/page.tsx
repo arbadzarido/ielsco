@@ -5,7 +5,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { 
   User, Lock, Bell, Globe, Shield, 
-  CreditCard, Camera, Trash2, Check,
+  CreditCard, Camera, Trash2, Check, Crown,
   Languages, Clock, Moon, Eye, EyeOff,
   AlertCircle, Loader2, CheckCircle2, X
 } from "lucide-react";
@@ -36,22 +36,40 @@ export default function SettingsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Fetch user data
+  // Fetch user data & membership
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserData({ ...user, ...profile });
-          setLanguage(profile.language || "en");
-          setTimezone(profile.timezone || "WIB");
-        }
+      if (!user) return;
+
+      // 1. Fetch Profile
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      // 2. Fetch Membership (SINKRONISASI DI SINI)
+      const { data: membership } = await supabase
+        .from('memberships')
+        .select('tier')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Mapping logic tier DB ke UI
+      const dbTier = membership?.tier;
+      let uiTier = "explorer";
+      if (dbTier === "pro") uiTier = "insider";
+      else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
+      
+      if (profile) {
+        setUserData({ 
+          ...user, 
+          ...profile, 
+          uiTier // Masukin tier hasil sinkronisasi ke state
+        });
+        setLanguage(profile.language || "en");
+        setTimezone(profile.timezone || "WIB");
       }
       setLoading(false);
     };
@@ -178,9 +196,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <DashboardLayout 
+<DashboardLayout 
       userName={userData?.full_name?.split(' ')[0] || "User"} 
-      userTier="explorer"
+      userTier={userData?.uiTier || "explorer"} // SEKARANG SUDAH DINAMIS
       userAvatar={userData?.avatar_url}
     >
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 pb-20">
@@ -264,6 +282,28 @@ export default function SettingsPage() {
     </div>
 
     <div className="space-y-4">
+      {/* 0. Current Membership Info - Tambahin di paling atas Preferences */}
+<div className="p-4 sm:p-6 bg-gradient-to-br from-[#2F4157] to-[#1e2b3a] rounded-2xl border border-white/10 text-white mb-6 shadow-xl relative overflow-hidden">
+  <div className="absolute top-0 right-0 p-3 opacity-20">
+    <Crown size={60} />
+  </div>
+  <div className="relative z-10">
+    <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Your Current Tier</p>
+    <div className="flex items-center gap-3">
+       <h3 className="text-2xl font-black capitalize tracking-tight">
+         {userData?.uiTier || "Explorer"}
+       </h3>
+       <span className="px-2 py-0.5 bg-white/20 rounded-md text-[10px] font-bold uppercase">
+         Active
+       </span>
+    </div>
+    <p className="text-xs text-white/60 mt-2">
+      {userData?.uiTier === "explorer" 
+        ? "Upgrade to unlock public portfolio & certificates" 
+        : "All premium features unlocked"}
+    </p>
+  </div>
+</div>
       {/* 1. Language - Stack on Mobile, Row on Tablet/Desktop */}
       <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-purple-50/30 rounded-2xl border border-blue-100">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">

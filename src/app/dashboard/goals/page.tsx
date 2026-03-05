@@ -55,23 +55,37 @@ export default function GoalsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/sign-in"); return; }
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select("*, memberships(tier)")
-        .eq("id", user.id)
-        .single();
+// REPLACE DENGAN INI
+// 1. Ambil data Membership langsung (Source of Truth untuk Tier)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-      const dbTier = dbUser?.memberships?.[0]?.tier;
-      let uiTier: UserTier = "explorer";
-      if      (dbTier === "pro")                         uiTier = "insider";
-      else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
+// 2. Ambil data Profile (Hanya untuk Nama & Avatar)
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name, avatar_url")
+  .eq("id", user.id)
+  .maybeSingle();
 
-      setUserData({
-        id:     user.id,
-        name:   dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-        tier:   uiTier,
-        avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
-      });
+// 3. Mapping Tier (Samain dengan Dashboard & Community)
+const dbTier = dbMembership?.tier;
+let uiTier: UserTier = "explorer";
+
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+}
+
+setUserData({
+  id: user.id,
+  name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+  tier: uiTier,
+  avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
+});
 
       await fetchGoals(user.id);
       setLoading(false);

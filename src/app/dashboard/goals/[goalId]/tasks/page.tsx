@@ -60,31 +60,38 @@ export default function TasksPage() {
         router.push("/sign-in");
         return;
       }
+// --- GANTI DENGAN INI ---
+// 1. Ambil data Membership langsung (Source of Truth untuk akses Konsultasi)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`*, memberships(tier)`)
-        .eq("id", user.id)
-        .single();
+// 2. Ambil data User (Nama & Profile)
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name")
+  .eq("id", user.id)
+  .maybeSingle();
 
-      // Logic Mapping Tier
-      const dbTier = dbUser?.memberships?.[0]?.tier;
-      let uiTier: UserTier = "explorer";
+// 3. Mapping Tier (Konsisten: Visionary dapet akses penuh)
+const dbTier = dbMembership?.tier;
+let uiTier: UserTier = "explorer";
 
-      if (dbTier === "pro") {
-        uiTier = "insider";
-      } else if (dbTier === "premium" || dbTier === "visionary") {
-        uiTier = "visionary";
-      } else {
-        uiTier = "explorer";
-      }
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+} else {
+  uiTier = "explorer";
+}
 
-      setUserData({
-        id: user.id,
-        name: user.user_metadata?.full_name || "Learner",
-        tier: uiTier
-      });
-
+setUserData({
+  id: user.id,
+  name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+  tier: uiTier,
+});
       if (goalId) {
         const goalData = await getGoalById(goalId);
         if (goalData) setGoal(goalData);

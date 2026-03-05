@@ -71,26 +71,38 @@ function EventsContent() {
       
       if (user) {
         // SET USER DATA BIAR HEADER GAK KOSONG
-        const { data: dbUser } = await supabase
-          .from("users")
-          .select(`*, memberships(*)`)
-          .eq("id", user.id)
-          .single();
+   // --- GANTI DENGAN INI ---
+// 1. Ambil data Membership langsung (Source of Truth Tier)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-        const dbMembership = dbUser?.memberships?.[0];
-        const dbTier = dbMembership?.tier;
-        let uiTier: UserTier = "explorer";
+// 2. Ambil data User (Nama & Avatar)
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name, avatar_url")
+  .eq("id", user.id)
+  .maybeSingle();
 
-        if (dbTier === "pro") uiTier = "insider";
-        else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
+// 3. Mapping Tier (Samain dengan Dashboard & Community)
+const dbTier = dbMembership?.tier;
+let uiTier: UserTier = "explorer";
 
-        setUserData({
-          id: user.id,
-          name: user.user_metadata?.full_name || "Member",
-          email: user.email || "",
-          tier: uiTier,
-          avatar: user.user_metadata?.avatar_url || ""
-        });
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+}
+
+setUserData({
+  id: user.id,
+  name: dbUser?.full_name || user.user_metadata?.full_name || "Member",
+  email: user.email || "",
+  tier: uiTier,
+  avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || ""
+});
 
         const { data: registrations } = await supabase
           .from("event_registrations")

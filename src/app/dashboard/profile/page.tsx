@@ -74,6 +74,7 @@ export default function ProfilePage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key"
   );
 
+// --- STATE DECLARATIONS (Bersihin yang duplikat) ---
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,7 +83,7 @@ export default function ProfilePage() {
   const [clickCount, setClickCount] = useState(0);
   const [easterEggActive, setEasterEggActive] = useState(false);
 
-  // User State
+  // User State (Cukup satu aja, gak perlu ada userData lagi)
   const [user, setUser] = useState<UserData>({
     id: "",
     name: "",
@@ -107,53 +108,70 @@ export default function ProfilePage() {
     goals: ""
   });
 
+  // --- SINKRONISASI TIER & DATA ---
   useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
+    const fetchUser = async () => {
+      // 1. Ambil Auth User (Gue alias jadi authUser biar gak rancu sama state 'user')
       const { data: { user: authUser } } = await supabase.auth.getUser();
-
-      if (authUser) {
-        const { data: dbUser } = await supabase
-          .from('users')
-          .select(`*, memberships(tier)`)
-          .eq('id', authUser.id)
-          .single();
-
-        const dbTier = dbUser?.memberships?.[0]?.tier;
-        // Normalize tier
-        let finalTier: TierType = "explorer";
-        if (dbTier === "insider") finalTier = "insider";
-        if (dbTier === "visionary" || dbTier === "visionary") finalTier = "visionary";
-
-        setUser({
-          id: authUser.id,
-          name: authUser.user_metadata?.full_name || dbUser?.full_name || "Student",
-          email: authUser.email || "",
-          tier: finalTier,
-          avatar: authUser.user_metadata?.avatar_url || "",
-          user_id_code: dbUser?.user_id_code || "IELS-MEMBER"
-        });
-
-        setFormData({
-          gender: dbUser?.gender || "",
-          birth_date: dbUser?.birth_date || "",
-          phone: dbUser?.phone || "",
-          domicile: dbUser?.domicile || "",
-          occupation: dbUser?.occupation || "Student",
-          institution_name: dbUser?.institution_name || dbUser?.institution || "",
-          institution_role: dbUser?.institution_role || "",
-          instagram: dbUser?.instagram || "",
-          linkedin: dbUser?.linkedin || "",
-          english_level: dbUser?.english_level || "",
-          goals: dbUser?.goals || ""
-        });
+      if (!authUser) {
+        setLoading(false);
+        return;
       }
+
+      // 2. Ambil data Membership (Source of Truth Tier)
+      const { data: dbMembership } = await supabase
+        .from("memberships")
+        .select("tier")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+
+      // 3. Ambil data Profile Lengkap dari tabel users
+      const { data: dbUser } = await supabase
+        .from("users")
+        .select("*") // Tarik semua buat ngisi form
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+      // 4. Mapping Tier
+      const dbTier = dbMembership?.tier;
+      let uiTier: TierType = "explorer";
+
+      if (dbTier === "pro") {
+        uiTier = "insider";
+      } else if (dbTier === "premium" || dbTier === "visionary") {
+        uiTier = "visionary";
+      }
+
+      // 5. Update State 'user' (Untuk UI Dashboard & Header)
+      setUser({
+        id: authUser.id,
+        name: dbUser?.full_name || authUser.user_metadata?.full_name || "Student",
+        email: authUser.email || "",
+        tier: uiTier,
+        avatar: dbUser?.avatar_url || authUser.user_metadata?.avatar_url || "",
+        user_id_code: dbUser?.user_id_code || "IELS-MEMBER"
+      });
+
+      // 6. Update State 'formData' (Untuk form input)
+      setFormData({
+        gender: dbUser?.gender || "",
+        birth_date: dbUser?.birth_date || "",
+        phone: dbUser?.phone || "",
+        domicile: dbUser?.domicile || "",
+        occupation: dbUser?.occupation || "Student",
+        institution_name: dbUser?.institution_name || dbUser?.institution || "",
+        institution_role: dbUser?.institution_role || "",
+        instagram: dbUser?.instagram || "",
+        linkedin: dbUser?.linkedin || "",
+        english_level: dbUser?.english_level || "",
+        goals: dbUser?.goals || ""
+      });
+
       setLoading(false);
     };
 
-    fetchUserData();
+    fetchUser();
   }, [supabase]);
-
   // --- HANDLERS ---
   const handleAvatarClick = () => {
     if (isEditing && fileInputRef.current) {

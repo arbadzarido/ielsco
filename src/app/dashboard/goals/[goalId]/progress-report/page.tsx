@@ -40,10 +40,13 @@ export default function ProgressReportPage() {
     id: string;
     name: string;
     tier: UserTier;
+    avatar: string; // <-- Tambahin field ini
   }>({ 
     id: "", 
     name: "", 
-    tier: "explorer" // Default value
+    tier: "explorer", // Default value
+    avatar: ""
+    
   });
 
   const [goal, setGoal] = useState<GoalWithTasks | null>(null);
@@ -60,30 +63,39 @@ export default function ProgressReportPage() {
         return;
       }
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`*, memberships(tier)`)
-        .eq("id", user.id)
-        .single();
+    // --- GANTI DENGAN INI ---
+// 1. Ambil data Membership langsung (Source of Truth untuk akses Konsultasi)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-      // 2. Logic Mapping Tier
-      const dbTier = dbUser?.memberships?.[0]?.tier;
-      let uiTier: UserTier = "explorer";
+// 2. Ambil data User (Nama & Profile)
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name, avatar_url")
+  .eq("id", user.id)
+  .maybeSingle();
 
-      if (dbTier === "pro") {
-        uiTier = "insider";
-      } else if (dbTier === "premium" || dbTier === "visionary") {
-        uiTier = "visionary";
-      } else {
-        uiTier = "explorer";
-      }
+// 3. Mapping Tier (Konsisten: Visionary dapet akses penuh)
+const dbTier = dbMembership?.tier;
+let uiTier: UserTier = "explorer";
 
-      setUserData({
-        id: user.id,
-        name: user.user_metadata?.full_name || "Learner",
-        tier: uiTier
-      });
-
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+} else {
+  uiTier = "explorer";
+}
+const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || "";
+setUserData({
+  id: user.id,
+  name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+  tier: uiTier,
+  avatar: avatarUrl
+});
       if (goalId) {
         const goalData = await getGoalById(goalId);
         const analyticsData = await getGoalAnalytics(goalId);
@@ -137,7 +149,7 @@ export default function ProgressReportPage() {
 
   return (
     // 3. Pass userData.tier ke Layout
-    <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar="">
+    <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
       <div className="min-h-screen bg-[#F7F8FA]">
         <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
           

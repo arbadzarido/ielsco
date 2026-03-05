@@ -79,30 +79,43 @@ export default function GoalDetailPage() {
         router.push("/sign-in");
         return;
       }
+// --- GANTI DENGAN INI ---
+// 1. Ambil data Membership langsung (Source of Truth Status)
+const { data: dbMembership } = await supabase
+  .from("memberships")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`*, memberships(tier)`)
-        .eq("id", user.id)
-        .single();
+// 2. Ambil data User (Nama & Avatar saja)
+const { data: dbUser } = await supabase
+  .from("users")
+  .select("full_name, avatar_url")
+  .eq("id", user.id)
+  .maybeSingle();
 
-      const dbTier = dbUser?.memberships?.[0]?.tier;
-      let uiTier: UserTier = "explorer";
-      if (dbTier === "pro") uiTier = "insider";
-      else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
+// 3. Mapping Tier (Konsisten: Pro -> Insider, Visionary -> Visionary)
+const dbTier = dbMembership?.tier;
+let uiTier: UserTier = "explorer";
 
-      const avatarUrl =
-        dbUser?.avatar_url ||
-        user.user_metadata?.avatar_url ||
-        user.user_metadata?.picture ||
-        "";
+if (dbTier === "pro") {
+  uiTier = "insider";
+} else if (dbTier === "premium" || dbTier === "visionary") {
+  uiTier = "visionary";
+}
 
-      setUserData({
-        id: user.id,
-        name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-        tier: uiTier,
-        avatar: avatarUrl,
-      });
+const avatarUrl =
+  dbUser?.avatar_url ||
+  user.user_metadata?.avatar_url ||
+  user.user_metadata?.picture ||
+  "";
+
+setUserData({
+  id: user.id,
+  name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+  tier: uiTier,
+  avatar: avatarUrl,
+});
 
       if (goalId) {
         await loadGoalDetails(goalId);
@@ -464,7 +477,7 @@ const executeDeleteGoal = async () => {
                   </Link>
 
                   <Link
-                    href={`/dashboard/goals/${goalId}/consultation`}
+                    href={`/dashboard/goals/${goalId}/consultations`}
                     className={cn(
                       "group w-full flex items-center justify-between p-4 rounded-xl transition-all text-left border",
                       hasPremiumAccess

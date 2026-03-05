@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { createBrowserClient } from "@supabase/ssr";
 import {
   MessageCircle,
+  Shield,
   Users,
   Award,
   Crown,
@@ -78,6 +79,21 @@ function CommunityContent() {
   const [counts, setCounts] = useState({ members: 0, stories: 0, careers: 0, abroad: 0 });
   const [todayActivity, setTodayActivity] = useState<any>(null);
 
+  const TierBadge = ({ tier }: { tier: UserTier }) => {
+  const config = {
+    explorer: { icon: Shield, label: "Explorer", bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
+    insider: { icon: Zap, label: "Insider", bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-300" },
+    visionary: { icon: Crown, label: "Visionary", bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-300" }
+  };
+  const { icon: Icon, label, bg, text, border } = config[tier];
+  
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border-2", bg, text, border)}>
+      <Icon size={14} strokeWidth={3} />
+      {label}
+    </span>
+  );
+};
   // Check for payment success
   useEffect(() => {
     const paymentSuccess = searchParams.get('payment');
@@ -90,60 +106,59 @@ function CommunityContent() {
 
   // Data Initialization & Auth
   useEffect(() => {
-    const initData = async () => {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/sign-in");
-        return;
-      }
+   const initData = async () => {
+  setLoading(true);
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    router.push("/sign-in");
+    return;
+  }
 
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`*, memberships(*)`)
-        .eq("id", user.id)
-        .single();
+  // TEMBAK LANGSUNG KE TABEL MEMBERSHIPS
+  const { data: dbMembership, error } = await supabase
+    .from("memberships")
+    .select("*")
+    .eq("user_id", user.id) // Pakai user_id sesuai kolom di SQL tadi
+    .maybeSingle(); // Pakai maybeSingle biar nggak error kalau datanya emang belum ada
 
-      // Map tier
-      const dbMembership = dbUser?.memberships?.[0];
-      const dbTier = dbMembership?.tier;
-      let uiTier: UserTier = "explorer";
+  // Mapping Tier
+  const dbTier = dbMembership?.tier;
+  let uiTier: UserTier = "explorer";
 
-      if (dbTier === "pro") {
-        uiTier = "insider";
-      } else if (dbTier === "premium" || dbTier === "visionary") {
-        uiTier = "visionary";
-      } else {
-        uiTier = "explorer";
-      }
+  if (dbTier === "pro") {
+    uiTier = "insider";
+  } else if (dbTier === "visionary" || dbTier === "premium") {
+    uiTier = "visionary";
+  } else {
+    uiTier = "explorer";
+  }
 
-      setUserData({
-        id: user.id,
-        name: user.user_metadata?.full_name || "Member",
-        email: user.email || "",
-        tier: uiTier,
-        avatar: user.user_metadata?.avatar_url || ""
-      });
+  setUserData({
+    id: user.id,
+    name: user.user_metadata?.full_name || "Member",
+    email: user.email || "",
+    tier: uiTier,
+    avatar: user.user_metadata?.avatar_url || ""
+  });
 
-      // Set membership data
-      if (dbMembership) {
-        const endDate = new Date(dbMembership.end_date);
-        const today = new Date();
-        const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (dbMembership) {
+    const endDate = new Date(dbMembership.end_date);
+    const today = new Date();
+    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-        setMembership({
-          tier: uiTier,
-          status: dbMembership.status,
-          startDate: dbMembership.start_date,
-          endDate: dbMembership.end_date,
-          daysRemaining: daysRemaining,
-          autoRenew: dbMembership.auto_renew || false,
-        });
-      }
+    setMembership({
+      tier: uiTier,
+      status: dbMembership.status,
+      startDate: dbMembership.start_date,
+      endDate: dbMembership.end_date,
+      daysRemaining: daysRemaining,
+      autoRenew: dbMembership.auto_renew || false,
+    });
+  }
 
-      setLoading(false);
-    };
+  setLoading(false);
+};
     initData();
   }, [router, supabase]);
 

@@ -88,43 +88,55 @@ const faqCategories = [
 
   export default function HelpCenterPage() {
   // --- TAMBAHAN KODE MULAI DARI SINI ---
-  const [userData, setUserData] = useState({
-    name: "Member",
-    tier: "basic",
-    avatar: ""
-  });
-
-  const supabase = createBrowserClient(
+    const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+ // --- GANTI STATE AWAL ---
+const [userData, setUserData] = useState({
+  name: "Learner",
+  tier: "explorer" as "explorer" | "insider" | "visionary",
+  avatar: ""
+});
 
-  useEffect(() => {
-    const getUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Ambil nama & avatar dari metadata login (Google/Email)
-        const fullName = user.user_metadata?.full_name || "Student";
-        const avatarUrl = user.user_metadata?.avatar_url || "";
-        
-        // Cek tier membership dari database (opsional, jika pakai table memberships)
-        const { data: dbUser } = await supabase
-          .from("users")
-          .select(`*, memberships(tier)`)
-          .eq("id", user.id)
-          .single();
-          
-        const userTier = dbUser?.memberships?.[0]?.tier === "insider" ? "insider" : "explorer";
+useEffect(() => {
+  const getUserData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-        setUserData({
-          name: fullName,
-          tier: userTier,
-          avatar: avatarUrl
-        });
-      }
-    };
-    getUserData();
-  }, [supabase]);
+    // 1. Ambil data Membership langsung (Source of Truth)
+    const { data: dbMembership } = await supabase
+      .from("memberships")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    // 2. Ambil data User (Nama & Profile)
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    // 3. Mapping Tier (Standard IELS)
+    const dbTier = dbMembership?.tier;
+    let uiTier: "explorer" | "insider" | "visionary" = "explorer";
+
+    if (dbTier === "pro") {
+      uiTier = "insider";
+    } else if (dbTier === "premium" || dbTier === "visionary") {
+      uiTier = "visionary";
+    }
+
+    setUserData({
+      name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+      tier: uiTier,
+      avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || ""
+    });
+  };
+  
+  getUserData();
+}, [supabase]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("goals");
   const [openFaq, setOpenFaq] = useState<string | null>(null);
@@ -137,11 +149,12 @@ const faqCategories = [
 
   return (
     // GANTI BAGIAN INI:
-    <DashboardLayout 
-      userName={userData.name} 
-      userTier={userData.tier as "explorer" | "insider" | "visionary"} 
-      userAvatar={userData.avatar}
-    >
+// --- GANTI BAGIAN RETURN INI ---
+<DashboardLayout 
+  userName={userData.name} 
+  userTier={userData.tier} 
+  userAvatar={userData.avatar}
+>
       <div className="min-h-screen bg-[#FDFDFD] pb-20">
         
         {/* === HERO SECTION === */}
