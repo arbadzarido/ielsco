@@ -506,7 +506,7 @@ function CommunityContent() {
                       Manage Membership
                     </Link>
                     <a
-                      href="https://chat.whatsapp.com/YOUR_EXCLUSIVE_GROUP_LINK"
+                      href="https://chat.whatsapp.com/JHjrP9w7iXAII1I2JtGlrw"
                       target="_blank"
                       className="w-full text-center px-6 py-3 bg-[#25D366] rounded-2xl font-bold hover:bg-[#1ea952] transition-all flex items-center justify-center gap-2"
                     >
@@ -650,7 +650,7 @@ function CommunityContent() {
                   <p className="text-white/80 text-sm mb-6">Exclusive for Insider members. Priority mentoring and networking.</p>
                   {hasPremiumAccess ? (
                     <a 
-                      href="https://chat.whatsapp.com/YOUR_EXCLUSIVE_GROUP_LINK" 
+                      href="https://chat.whatsapp.com/JHjrP9w7iXAII1I2JtGlrw" 
                       target="_blank"
                       className="inline-flex items-center gap-2 bg-white text-[#25D366] px-6 py-2.5 rounded-2xl font-bold hover:bg-gray-100 transition-all"
                     >
