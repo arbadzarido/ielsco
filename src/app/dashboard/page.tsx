@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import GoalDashboardWidget from "@/components/goals/GoalDashboardWidget";
@@ -247,9 +247,9 @@ const DashboardSkeleton = () => (
 );
 
 // --- MAIN PAGE COMPONENT ---
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // Hook ini sekarang aman karena di bawah Suspense
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -665,5 +665,13 @@ useEffect(() => {
       </DashboardLayout>
       <GIFPopup />
     </>
+  );
+}
+// 3. Tambahkan Default Export baru sebagai Wrapper
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
