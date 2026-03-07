@@ -286,20 +286,7 @@ return (
             {/* PROFILE MENU */}
             {isProfileOpen && (
               <div className="absolute right-0 mt-4 w-72 bg-white rounded-2xl shadow-2xl py-2 border border-gray-100 transform transition-all origin-top-right z-540 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#2F4157] flex items-center justify-center text-white font-bold text-lg shrink-0">
-                    {userName?.charAt(0)}
-                  </div>
-                  <div className="overflow-hidden w-full">
-                    <p className="text-sm font-bold text-[#2F4157] truncate">{userName}</p>
-                    <div className="mt-1 scale-90 origin-left">
-                      <span className="text-[10px] font-bold text-gray-500 border border-gray-200 bg-white px-2 py-0.5 rounded-full uppercase tracking-wide">
-                        {userTier}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
+            
                 <div className="p-2 space-y-1">
                   <Link href="/dashboard/profile" className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#2F4157] rounded-xl transition-colors">
                     <User size={18} className="text-gray-400" />
