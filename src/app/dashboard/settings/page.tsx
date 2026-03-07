@@ -1,17 +1,23 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // <-- IMPORT INI DITAMBAHKAN
 import { createBrowserClient } from "@supabase/ssr";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { 
-  User, Lock, Bell, Globe, Shield, 
+  User, Lock, Bell, Globe, Shield, ArrowRight, 
   CreditCard, Camera, Trash2, Check, Crown,
   Languages, Clock, Moon, Eye, EyeOff,
   AlertCircle, Loader2, CheckCircle2, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// --- TYPE DITAMBAHKAN DI SINI BIAR GAK ERROR ---
+type UserTier = "explorer" | "insider" | "visionary";
+
 export default function SettingsPage() {
+  const router = useRouter(); // <-- INIT ROUTER DITAMBAHKAN
+  
   const [activeTab, setActiveTab] = useState("preferences");
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,45 +42,59 @@ export default function SettingsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Fetch user data & membership
+  // --- DATA FETCHING (REVISED: ALIGNED WITH SETTINGS PAGE) ---
   useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // 1. Fetch Profile
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+    const fetchData = async () => {
+      setLoading(true);
       
-      // 2. Fetch Membership (SINKRONISASI DI SINI)
-      const { data: membership } = await supabase
-        .from('memberships')
-        .select('tier')
-        .eq('user_id', user.id)
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        router.push("/sign-in");
+        return;
+      }
+
+      // 1. TEMBAK LANGSUNG KE MEMBERSHIPS (Bypass tabel users)
+      const { data: dbMembership } = await supabase
+        .from("memberships")
+        .select("*")
+        .eq("user_id", authUser.id)
         .maybeSingle();
 
-      // Mapping logic tier DB ke UI
-      const dbTier = membership?.tier;
-      let uiTier = "explorer";
-      if (dbTier === "pro") uiTier = "insider";
-      else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
-      
-      if (profile) {
-        setUserData({ 
-          ...user, 
-          ...profile, 
-          uiTier // Masukin tier hasil sinkronisasi ke state
-        });
-        setLanguage(profile.language || "en");
-        setTimezone(profile.timezone || "WIB");
+      // 2. Ambil Profil (WAJIB masukin language & timezone buat form settings)
+      const { data: dbUser } = await supabase
+        .from("users")
+        .select(`full_name, language, timezone, avatar_url, user_profiles(institution, batch)`)
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+      // 3. MAPPING TIER (Harus Konsisten!)
+      const dbTier = dbMembership?.tier;
+      let uiTier: UserTier = "explorer";
+
+      if (dbTier === "pro") {
+        uiTier = "insider";
+      } else if (dbTier === "premium" || dbTier === "visionary") {
+        uiTier = "visionary";
       }
+
+      // 4. Update Form States dengan data dari DB
+      setLanguage(dbUser?.language || "en");
+      setTimezone(dbUser?.timezone || "WIB");
+
+      // 5. Update State Data (Bentuknya diratain/flat khusus buat Settings)
+      setUserData({
+        id: authUser.id,
+        email: authUser.email, // Dibutuhkan buat form reset password & display
+        full_name: dbUser?.full_name || authUser.user_metadata?.full_name || "User",
+        uiTier: uiTier, 
+        avatar_url: dbUser?.avatar_url || authUser.user_metadata?.avatar_url || "",
+      });
+
       setLoading(false);
     };
-    fetchUserData();
-  }, [supabase]);
+
+    fetchData();
+  }, [router, supabase]);
 
   // Show message helper
   const showMessage = (type: 'success' | 'error', text: string) => {
@@ -187,7 +207,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout userName="User" userTier="explorer" userAvatar="">
+      <DashboardLayout userName="Loading..." userTier="explorer" userAvatar="">
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-[#E56668]" />
         </div>
@@ -282,28 +302,43 @@ export default function SettingsPage() {
     </div>
 
     <div className="space-y-4">
-      {/* 0. Current Membership Info - Tambahin di paling atas Preferences */}
-<div className="p-4 sm:p-6 bg-gradient-to-br from-[#2F4157] to-[#1e2b3a] rounded-2xl border border-white/10 text-white mb-6 shadow-xl relative overflow-hidden">
-  <div className="absolute top-0 right-0 p-3 opacity-20">
-    <Crown size={60} />
-  </div>
-  <div className="relative z-10">
-    <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Your Current Tier</p>
-    <div className="flex items-center gap-3">
-       <h3 className="text-2xl font-black capitalize tracking-tight">
-         {userData?.uiTier || "Explorer"}
-       </h3>
-       <span className="px-2 py-0.5 bg-white/20 rounded-md text-[10px] font-bold uppercase">
-         Active
-       </span>
-    </div>
-    <p className="text-xs text-white/60 mt-2">
-      {userData?.uiTier === "explorer" 
-        ? "Upgrade to unlock public portfolio & certificates" 
-        : "All premium features unlocked"}
-    </p>
-  </div>
-</div>
+       {/* SECTION 2: Membership Connect */}
+                    <div className="space-y-6">
+                      <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Subscription</h3>
+                      
+                      <div className="p-6 sm:p-8 bg-gradient-to-br from-[#2F4157] to-[#1e2b3a] rounded-[2rem] border border-white/10 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                        <div className="absolute top-0 right-0 p-3 opacity-10">
+                          <Crown size={120} />
+                        </div>
+                        <div className="relative z-10">
+                          <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-2">Your Current Plan</p>
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-3xl font-black capitalize tracking-tight">
+                              IELS {userData?.uiTier || "Explorer"}
+                            </h3>
+                            <span className="px-3 py-1 bg-white/20 rounded-md text-[10px] font-bold uppercase tracking-widest">
+                              Active
+                            </span>
+                          </div>
+                          <p className="text-sm text-white/70 mt-2">
+                            {userData?.uiTier === "explorer" 
+                              ? "Upgrade to unlock public portfolio & mentoring." 
+                              : "You have access to premium Lounge features."}
+                          </p>
+                        </div>
+                        
+                        {/* THE REDIRECT BUTTON TO MANAGE SUBSCRIPTION */}
+                        <Link 
+                          href="/dashboard/settings/membership"
+                          className="relative z-10 w-full sm:w-auto px-6 py-4 bg-white text-[#2F4157] rounded-xl font-black text-sm hover:bg-gray-100 transition-all shadow-lg flex items-center justify-center gap-2 group"
+                        >
+                          Manage Subscription 
+                          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
+                    </div>
+
+                    <hr className="border-gray-100" />
       {/* 1. Language - Stack on Mobile, Row on Tablet/Desktop */}
       <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-purple-50/30 rounded-2xl border border-blue-100">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
