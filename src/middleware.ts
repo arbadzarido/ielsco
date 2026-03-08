@@ -7,6 +7,21 @@ const requestTracker = new Map<string, { count: number; timestamp: number }>();
 // --------------------------------------------------
 
   export async function middleware(request: NextRequest) {
+
+  const host = request.headers.get('host');
+  const url = request.nextUrl.clone();
+
+  // --- PROTEKSI URL VERCEL ---
+  // Jika ada yang akses pake .vercel.app, langsung lempar ke domain utama
+  if (host && host.includes('.vercel.app')) {
+    url.host = 'ielsco.com';
+    url.protocol = 'https:';
+    url.port = '';
+    return NextResponse.redirect(url, 301); // 301 = Pindah Permanen
+  }
+  
+  // ... sisa kode pembunuh bot & supabase lo di bawahnya ...
+
   // --- 1. MESIN PEMBUNUH BOT (JALAN PALING AWAL) ---
   const userAgent = request.headers.get('user-agent') || '';
   const ip = request.headers.get('x-forwarded-for') || 'unknown-ip';
