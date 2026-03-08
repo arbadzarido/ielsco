@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const requestTracker = new Map<string, { count: number; timestamp: number }>();
 // --------------------------------------------------
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
 
   const host = request.headers.get('host');
   const url = request.nextUrl.clone();
