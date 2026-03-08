@@ -9,10 +9,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+  // TAMBAHIN INI SEMENTARA BUAT MATIIN API
+ 
+
+  // ... sisa kode lo dibawahnya
+
 export async function POST(request: NextRequest) {
   try {
     const { attemptId } = await request.json();
-
+ return NextResponse.json({ error: "API Disabled temporarily to stop loop" }, { status: 503 });
     if (!attemptId) {
       return NextResponse.json(
         { error: 'Attempt ID is required' },
