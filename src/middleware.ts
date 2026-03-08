@@ -2,68 +2,68 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// --- TAMBAHAN SATPAM (Anti-Spam / Rate Limiter) ---
+// --- SECURITY ADDITION (Anti-Spam / Rate Limiter) ---
 const requestTracker = new Map<string, { count: number; timestamp: number }>();
 // --------------------------------------------------
 
-  export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
 
   const host = request.headers.get('host');
   const url = request.nextUrl.clone();
 
-  // --- PROTEKSI URL VERCEL ---
-  // Jika ada yang akses pake .vercel.app, langsung lempar ke domain utama
+  // --- VERCEL URL PROTECTION ---
+  // If accessed via .vercel.app, redirect immediately to the main domain
   if (host && host.includes('.vercel.app')) {
     url.host = 'ielsco.com';
     url.protocol = 'https:';
     url.port = '';
-    return NextResponse.redirect(url, 301); // 301 = Pindah Permanen
+    return NextResponse.redirect(url, 301); // 301 = Permanent Redirect
   }
   
-  // ... sisa kode pembunuh bot & supabase lo di bawahnya ...
-
-  // --- 1. MESIN PEMBUNUH BOT (JALAN PALING AWAL) ---
+  // --- 1. BOT KILLER ENGINE (RUNS FIRST) ---
   const userAgent = request.headers.get('user-agent') || '';
   const ip = request.headers.get('x-forwarded-for') || 'unknown-ip';
 
-  // Daftar Hitam Bot (Kemaren bot hey/0.0.1 yang nyerang lo)
+  // Bot Blacklist (The hey/0.0.1 bot that attacked recently)
   const blockedAgents = ['hey/0.0.1', 'curl', 'PostmanRuntime', 'python-requests'];
   
   const isBot = blockedAgents.some(bot => userAgent.includes(bot));
-  // Tambahin di dalam fungsi middleware lo, di paling atas:
-if (request.nextUrl.pathname === '/') {
-  const ip = request.headers.get('x-forwarded-for') || 'unknown';
-  const now = Date.now();
   
-  // Ambil data limit khusus homepage
-  const homeRecord = requestTracker.get(`home-${ip}`) || { count: 0, timestamp: now };
-  
-  if (now - homeRecord.timestamp < 5000) { // Cek per 5 detik
-    homeRecord.count++;
-  } else {
-    homeRecord.count = 1;
-    homeRecord.timestamp = now;
-  }
-  
-  requestTracker.set(`home-${ip}`, homeRecord);
+  // Specific rate limit for the homepage
+  if (request.nextUrl.pathname === '/') {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    const now = Date.now();
+    
+    // Get specific limit data for homepage
+    const homeRecord = requestTracker.get(`home-${ip}`) || { count: 0, timestamp: now };
+    
+    if (now - homeRecord.timestamp < 5000) { // Check every 5 seconds
+      homeRecord.count++;
+    } else {
+      homeRecord.count = 1;
+      homeRecord.timestamp = now;
+    }
+    
+    requestTracker.set(`home-${ip}`, homeRecord);
 
-  if (homeRecord.count > 5) {
-    return new NextResponse("Sabar bang, pelan-pelan aksesnya.", { status: 429 });
+    if (homeRecord.count > 5) {
+      return new NextResponse("Too many requests. Please slow down.", { status: 429 });
+    }
   }
-}
+
   if (isBot) {
-    console.warn(`[KILL SHOT] Bot terdeteksi dan diblokir: ${userAgent} dari IP: ${ip}`);
-    // Tendang langsung dengan status 403 (Forbidden)
+    console.warn(`[KILL SHOT] Bot detected and blocked: ${userAgent} from IP: ${ip}`);
+    // Kick immediately with 403 (Forbidden) status
     return new NextResponse("Access Denied. Bot activity detected.", { status: 403 });
   }
 
-  // --- MULAI BLOK PROTEKSI API (Jalan duluan sebelum Supabase) ---
+  // --- START API PROTECTION BLOCK (Runs before Supabase) ---
   if (request.nextUrl.pathname.startsWith('/api/')) {
     
     const ip = request.headers.get('x-forwarded-for') || 'unknown-ip';
     const now = Date.now();
-    const WINDOW_MS = 10000; // 10 detik
-    const MAX_REQUESTS = 20; // Maksimal 20 request per 10 detik
+    const WINDOW_MS = 10000; // 10 seconds
+    const MAX_REQUESTS = 20; // Maximum 20 requests per 10 seconds
 
     const record = requestTracker.get(ip) || { count: 0, timestamp: now };
 
@@ -77,7 +77,7 @@ if (request.nextUrl.pathname === '/') {
     requestTracker.set(ip, record);
 
     if (record.count > MAX_REQUESTS) {
-      console.warn(`[SECURITY ALERT] IP ${ip} diblokir karena spam API.`);
+      console.warn(`[SECURITY ALERT] IP ${ip} blocked due to API spam.`);
       return new NextResponse(
         JSON.stringify({ 
           success: false, 
@@ -87,21 +87,21 @@ if (request.nextUrl.pathname === '/') {
       );
     }
   }
-  // --- SELESAI BLOK PROTEKSI API ---
+  // --- END API PROTECTION BLOCK ---
 
 
   // =====================================================================
-  // KODE ASLI LO DI BAWAH INI (TIDAK ADA YANG DIUBAH SAMA SEKALI)
+  // ORIGINAL CODE BELOW
   // =====================================================================
 
-  // 1. Inisialisasi Response awal
+  // 1. Initialize initial Response
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  // 2. Setup Supabase Client untuk Middleware
+  // 2. Setup Supabase Client for Middleware
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -128,24 +128,24 @@ if (request.nextUrl.pathname === '/') {
     }
   )
 
-  // 3. PENTING: getUser() akan memvalidasi token & me-refresh session cookie jika perlu.
+  // 3. IMPORTANT: getUser() will validate the token & refresh the session cookie if necessary.
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 4. ATURAN REDIRECT
+  // 4. REDIRECT RULES
   const isAuthRoute = request.nextUrl.pathname.startsWith('/sign-in') || 
                       request.nextUrl.pathname.startsWith('/sign-up');
 
-  // Semua halaman dalam forgot password flow — bukan cuma new-password
+  // All pages in the forgot password flow — not just new-password
   const isForgotPasswordFlow = request.nextUrl.pathname.startsWith('/sign-in/forgot');
 
-  // Jika user SUDAH login tapi buka halaman Auth
+  // If user is ALREADY logged in but opens an Auth page
   if (user && isAuthRoute) {
-    // Biarin seluruh forgot password flow lewat (forgot, verify, new-password)
+    // Let the entire forgot password flow pass (forgot, verify, new-password)
     if (isForgotPasswordFlow) {
       return response;
     }
     
-    // Selain itu, tendang ke Dashboard
+    // Otherwise, redirect to Dashboard
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
@@ -154,7 +154,7 @@ if (request.nextUrl.pathname === '/') {
 
 export const config = {
   matcher: [
-    // HANYA HAPUS KATA 'api/test' DARI SINI BIAR MIDDLEWARE BISA NANGKEP SPAM-NYA
+    // ONLY REMOVED THE WORD 'api/test' FROM HERE SO MIDDLEWARE CAN CATCH THE SPAM
     '/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
