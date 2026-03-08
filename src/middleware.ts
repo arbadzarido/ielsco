@@ -6,10 +6,45 @@ import { NextResponse, type NextRequest } from 'next/server'
 const requestTracker = new Map<string, { count: number; timestamp: number }>();
 // --------------------------------------------------
 
-export async function middleware(request: NextRequest) {
+  export async function middleware(request: NextRequest) {
+  // --- 1. MESIN PEMBUNUH BOT (JALAN PALING AWAL) ---
+  const userAgent = request.headers.get('user-agent') || '';
+  const ip = request.headers.get('x-forwarded-for') || 'unknown-ip';
+
+  // Daftar Hitam Bot (Kemaren bot hey/0.0.1 yang nyerang lo)
+  const blockedAgents = ['hey/0.0.1', 'curl', 'PostmanRuntime', 'python-requests'];
   
+  const isBot = blockedAgents.some(bot => userAgent.includes(bot));
+  // Tambahin di dalam fungsi middleware lo, di paling atas:
+if (request.nextUrl.pathname === '/') {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown';
+  const now = Date.now();
+  
+  // Ambil data limit khusus homepage
+  const homeRecord = requestTracker.get(`home-${ip}`) || { count: 0, timestamp: now };
+  
+  if (now - homeRecord.timestamp < 5000) { // Cek per 5 detik
+    homeRecord.count++;
+  } else {
+    homeRecord.count = 1;
+    homeRecord.timestamp = now;
+  }
+  
+  requestTracker.set(`home-${ip}`, homeRecord);
+
+  if (homeRecord.count > 5) {
+    return new NextResponse("Sabar bang, pelan-pelan aksesnya.", { status: 429 });
+  }
+}
+  if (isBot) {
+    console.warn(`[KILL SHOT] Bot terdeteksi dan diblokir: ${userAgent} dari IP: ${ip}`);
+    // Tendang langsung dengan status 403 (Forbidden)
+    return new NextResponse("Access Denied. Bot activity detected.", { status: 403 });
+  }
+
   // --- MULAI BLOK PROTEKSI API (Jalan duluan sebelum Supabase) ---
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    
     const ip = request.headers.get('x-forwarded-for') || 'unknown-ip';
     const now = Date.now();
     const WINDOW_MS = 10000; // 10 detik
