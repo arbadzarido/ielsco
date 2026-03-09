@@ -62,7 +62,7 @@ export const QUESTIONS: Question[] = [
       { id: "beg", label: "I'm just getting started", points: { beginner: 3 } },
       { id: "beg", label: "I can understand a bit, but speaking still hard", points: { beginner: 2 } },
       { id: "mid", label: "I use English sometimes, but I want to be more fluent", points: { intermediate: 2 } },
-      { id: "adv", label: "I feel confortable using English in most situations", points: { advanced: 2 } }
+      { id: "adv", label: "I feel comfortable using English in most situations", points: { advanced: 2 } }
     ],
   },
   {

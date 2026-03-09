@@ -7,6 +7,11 @@ import { createBrowserClient } from "@supabase/ssr";
 import { 
   AlertCircle, 
   PlayCircle, 
+  BookOpen,
+  Target,
+  ArrowRight,
+  TrendingUp,
+  Award,
   Sparkles, 
   Lock, 
   Bell,
@@ -175,83 +180,181 @@ export default function IELSTestDashboard() {
     );
   }
 
-  // --- Not Registered View ---
-  if (!registration) {
-    return (
-      <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
-        <div className="min-h-[80vh] flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white rounded-[40px] p-10 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-[#CB2129]" />
-            <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-8">
-              <AlertCircle className="text-[#CB2129]" size={48} />
+
+ // --- NOT REGISTERED VIEW ---
+if (!registration) {
+  return (
+    <DashboardLayout
+      userTier={userData.tier}
+      userName={userData.name}
+      userAvatar={userData.avatar}
+    >
+      <div className="min-h-screen bg-[#F7F8FA]">
+        
+   
+        
+
+        <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
+ {/* HERO & Stats Grid */}
+         
+            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#CDC6BC]/20">
+              <div className="text-center max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
+                 <Target size={16} />
+                <span>My Test</span>
+              </div>
+
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
+                Mock Up Assessment
+              </h1>
+
+              <p className="text-white/80 text-base lg:text-lg leading-relaxed">
+                Register now to access your personalized test dashboard,
+                track progress, and achieve your target score.
+              </p>
             </div>
-            <h2 className="text-3xl font-black text-[#304156] mb-4 tracking-tighter">Access Denied</h2>
-            <p className="text-gray-500 mb-10 leading-relaxed font-medium">
-              We couldn't verify an active test registration for <span className="text-[#304156] font-bold">{userData.email}</span>. Please ensure you have registered via our official Form.
-            </p>
-            <a href="https://forms.gle/iZsfxutCF5NYWqWn7" target="_blank" className="block w-full py-4 bg-[#CB2129] text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-red-900/20 hover:scale-105 transition-all">
-              Register Now
-            </a>
           </div>
         </div>
-      </DashboardLayout>
-    );
-  }
 
-  // --- Main Dashboard View ---
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
+          {/* Access Denied Card */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+            <div className="lg:col-span-2 bg-white border border-[#CDC6BC] rounded-[32px] p-8 md:p-10 shadow-sm text-center">
+              <div className="w-20 h-20 bg-[#F6F3EF] rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-[#304156]">
+                <Target className="text-[#304156]" size={40} />
+              </div>
+              <h2 className="text-3xl font-bold text-[#304156] mb-3">
+                Access Required
+              </h2>
+              <p className="text-[#577E90] mb-8 leading-relaxed max-w-md mx-auto">
+                We couldn't find an active test registration for{" "}
+                <span className="text-[#304156] font-bold">
+                  {userData.email}
+                </span>
+                . Please register via our official form to unlock your test
+                dashboard.
+              </p>
+              
+              {/* FIXED TAG DI SINI */}
+              <a 
+                href="https://forms.gle/iZsfxutCF5NYWqWn7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#304156] text-white rounded-2xl font-bold hover:bg-[#253344] transition-all shadow-lg"
+              >
+                Register for IELTS Test
+                <ArrowRight size={20} />
+              </a>
+            </div>
+
+            <div className="bg-gradient-to-br from-[#304156] to-[#3d4f66] rounded-[32px] p-6 text-white flex flex-col justify-center items-center text-center shadow-sm">
+              <Sparkles className="mb-4" size={48} />
+              <p className="text-xs font-bold uppercase tracking-wider mb-2">
+                Official Portal
+              </p>
+              <p className="text-2xl font-bold">IELS Assessment</p>
+            </div>
+          </div>
+          {/* Benefits Section */}
+          <div className="bg-white border border-[#CDC6BC] rounded-[32px] p-8 md:p-10 shadow-sm">
+            <h3 className="text-2xl font-bold text-[#304156] mb-8 text-center">
+              What You'll Get After Registration
+            </h3>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#CDC6BC]">
+                  <BookOpen className="text-[#304156]" size={28} />
+                </div>
+                <h4 className="font-bold text-[#304156] mb-2">
+                  Study Materials
+                </h4>
+                <p className="text-sm text-[#577E90] leading-relaxed">
+                  Access premium preparation resources and practice tests
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#CDC6BC]">
+                  <TrendingUp className="text-[#304156]" size={28} />
+                </div>
+                <h4 className="font-bold text-[#304156] mb-2">
+                  Progress Tracking
+                </h4>
+                <p className="text-sm text-[#577E90] leading-relaxed">
+                  Monitor your improvement with detailed analytics
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#CDC6BC]">
+                  <Award className="text-[#304156]" size={28} />
+                </div>
+                <h4 className="font-bold text-[#304156] mb-2">
+                  Official Certificate
+                </h4>
+                <p className="text-sm text-[#577E90] leading-relaxed">
+                  Earn your verified IELTS score certificate
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
+  
+// --- Main Dashboard View ---
   return (
     <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
       <div className="min-h-screen pb-24 bg-[#FDFDFD]">
-      {/* Hero Section dengan Tier-based Color */}
-<div className={cn(
-  "relative text-white overflow-hidden transition-colors duration-500",
-  userData.tier === "visionary" ? "bg-gradient-to-r from-yellow-700 to-yellow-900" :
-  userData.tier === "insider" ? "bg-[#E56668]" : "bg-[#2F4157]"
-)}>
-  {/* Background Decoration */}
-  <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-  <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12 lg:py-16 relative z-10">
-    {/* Parent Flex: col & center on mobile | row & justify on desktop */}
-    <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-10">
-      
-      {/* LEFT CONTENT: Text & Badge */}
-      <div className="flex flex-col items-center md:items-start text-center md:text-left">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] sm:text-xs font-medium mb-4 backdrop-blur-sm">
-          <Sparkles size={12} className="text-yellow-400" />
-          <span className="uppercase tracking-wider">Official Assessment Portal</span>
-        </div>
         
-        <h1 className="text-3xl lg:text-5xl font-black tracking-tight leading-tight">
-          Your {registration.test_type.toUpperCase()} Journey
-        </h1>
-        
-        <p className="text-gray-300 max-w-xl text-sm sm:text-lg leading-relaxed mt-4">
-          Track your progress, access premium materials, and achieve your target score.
-        </p>
-      </div>
+        {/* ── HERO: REGISTERED USER ─────────────────────────────────────── */}
+        <div className="relative bg-[#304156] text-white overflow-hidden py-12 lg:py-16 px-4 sm:px-8 lg:px-12">
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#577E90]/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
-      {/* RIGHT CONTENT: Stats Cards */}
-      {/* justify-center on mobile | justify-end on desktop */}
-      <div className="flex flex-row flex-wrap justify-center md:justify-end gap-3 sm:gap-4 w-full md:w-auto">
-        <div className="bg-white/5 backdrop-blur-xl px-6 py-4 sm:px-8 sm:py-5 rounded-[24px] border border-white/10 text-center min-w-[130px] sm:min-w-[140px] flex-1 sm:flex-none">
-          <p className="text-[9px] sm:text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Status</p>
-          <p className="font-black text-green-400 uppercase text-xs sm:text-sm tracking-widest">Active</p>
-        </div>
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+              <div className="text-center md:text-left max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
+                  <Target size={16} />
+                  <span>My Test</span>
+                </div>
 
-        {(preTest?.overall_score || preTest?.ielts_band) && (
-          <div className="bg-white/5 backdrop-blur-xl px-6 py-4 sm:px-8 sm:py-5 rounded-[24px] border border-white/10 text-center min-w-[130px] sm:min-w-[140px] flex-1 sm:flex-none">
-            <p className="text-[9px] sm:text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Current Band</p>
-            <p className="font-black text-[#CB2129] text-xl sm:text-2xl tracking-tighter">
-              {preTest?.overall_score || preTest?.ielts_band}
-            </p>
+                <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-4 text-white">
+                  Your {registration.test_type.toUpperCase()} Journey
+                </h1>
+
+                <p className="text-white/80 text-base lg:text-lg leading-relaxed">
+                  Track your progress, access premium materials, and achieve your
+                  target score with personalized guidance.
+                </p>
+              </div>
+
+              {/* RIGHT CONTENT: Stats Cards */}
+              <div className="flex flex-row flex-wrap justify-center md:justify-end gap-3 sm:gap-4 w-full md:w-auto">
+                <div className="bg-white/5 backdrop-blur-xl px-6 py-4 sm:px-8 sm:py-5 rounded-[24px] border border-white/10 text-center min-w-[130px] sm:min-w-[140px] flex-1 sm:flex-none">
+                  <p className="text-[9px] sm:text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Status</p>
+                  <p className="font-black text-green-400 uppercase text-xs sm:text-sm tracking-widest">Active</p>
+                </div>
+
+                {(preTest?.overall_score || preTest?.ielts_band) && (
+                  <div className="bg-white/5 backdrop-blur-xl px-6 py-4 sm:px-8 sm:py-5 rounded-[24px] border border-white/10 text-center min-w-[130px] sm:min-w-[140px] flex-1 sm:flex-none">
+                    <p className="text-[9px] sm:text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Current Band</p>
+                    <p className="font-black text-[#CB2129] text-xl sm:text-2xl tracking-tighter">
+                      {preTest?.overall_score || preTest?.ielts_band}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
 
-    </div>
-  </div>
-</div>
+        {/* ── MAIN CONTENT ── */}
         <div className="max-w-7xl mx-auto px-6 lg:px-12 -mt-6 relative z-20 space-y-16">
           
           {/* 2. Registration Status */}
@@ -259,16 +362,15 @@ export default function IELSTestDashboard() {
 
           {/* 3. Assessment Modules Grid */}
           <section>
-<div className="space-y-2 mb-10">
-  {/* Label Kecil di Atas (Optional, biar makin mirip style Master Class) */}
-  <div className="flex items-center gap-2">
-    <h2 className="text-3xl font-bold text-[#304156] tracking-tight font-geologica">
-      Required Modules
-    </h2>
-    <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
-  </div>
-</div>
-            
+            <div className="space-y-2 mb-10">
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-bold text-[#304156] tracking-tight font-geologica">
+                  Required Modules
+                </h2>
+                <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-8">
               {/* Pre-Test Module */}
               <TestCard
@@ -280,14 +382,14 @@ export default function IELSTestDashboard() {
                 score={preTest?.overall_score || preTest?.ielts_band}
                 testType="pre-test"
                 isLocked={false}
-              // --- LOGIC BARU DI SINI ---
-  href={
-    preTest?.status === 'completed' 
-      ? `/dashboard/test/results/${preTest.id}` // Jika sudah selesai, ke halaman hasil
-      : `/dashboard/test/${registration.test_type.toUpperCase()}/pre-test` // Jika belum, ke halaman test
-  } />
+                href={
+                  preTest?.status === 'completed'
+                    ? `/dashboard/test/results/${preTest.id}`
+                    : `/dashboard/test/${registration.test_type.toUpperCase()}/pre-test`
+                }
+              />
 
-              {/* Post-Test Module: Unlocks ONLY after Pre-test completion */}
+              {/* Post-Test Module */}
               <TestCard
                 title="FINAL POST-TEST"
                 description="The ultimate benchmark. Take this after completing your Masterclasses to see your growth."
@@ -296,62 +398,55 @@ export default function IELSTestDashboard() {
                 status={postTest?.status || 'not_started'}
                 score={postTest?.overall_score || postTest?.ielts_band}
                 testType="post-test"
-                isLocked={!canTakePostTest} 
+                isLocked={!canTakePostTest}
                 lockReason={!canTakePostTest ? "Complete Diagnostic Pre-Test first" : undefined}
-
-  // ... prop lainnya
-  href={
-    postTest?.status === 'completed'
-      ? `/dashboard/test/results/${postTest.id}`
-      : canTakePostTest 
-        ? `/dashboard/test/${registration.test_type.toUpperCase()}/post-test`
-        : undefined
-  }
-/>
+                href={
+                  postTest?.status === 'completed'
+                    ? `/dashboard/test/results/${postTest.id}`
+                    : canTakePostTest
+                    ? `/dashboard/test/${registration.test_type.toUpperCase()}/post-test`
+                    : undefined
+                }
+              />
             </div>
           </section>
 
-{/* 5. Resources & Training (IELTS Exclusive) */}
-{isIELTS && (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
-    
-    {/* LEFT COLUMN: Master Class & Resources */}
-    <div className="lg:col-span-2 space-y-12 sm:space-y-16">
-      
-      {/* 1. Master Class - Fully visible, but constrained to prevent overflow */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-4 border-b border-[#CDC6BC]/30 pb-4">
-          <h3 className="text-xl sm:text-2xl font-bold text-[#304156] tracking-tight font-geologica">
-            IELTS Master Class
-          </h3>
-          <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
-        </div>
-        
-        {/* Anti-Offside Wrapper: Ensuring videos don't leak out */}
-        <div className="w-full max-w-full overflow-hidden px-1">
-          <MasterClassSection />
-        </div>
-      </div>
+          {/* 5. Resources & Training (IELTS Exclusive) */}
+          {isIELTS && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
+              
+              {/* LEFT COLUMN: Master Class & Resources */}
+              <div className="lg:col-span-2 space-y-12 sm:space-y-16">
+                
+                {/* 1. Master Class */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 border-b border-[#CDC6BC]/30 pb-4">
+                    <h3 className="text-xl sm:text-2xl font-bold text-[#304156] tracking-tight font-geologica">
+                      IELTS Master Class
+                    </h3>
+                    <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
+                  </div>
+                  <div className="w-full max-w-full overflow-hidden px-1">
+                    <MasterClassSection />
+                  </div>
+                </div>
 
-      {/* 2. Resource Library */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-4 border-b border-[#CDC6BC]/30 pb-4">
-          <h3 className="text-xl sm:text-2xl font-bold text-[#304156] tracking-tight font-geologica">
-            IELTS Resources
-          </h3>
-          <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
-        </div>
-        
-        <div className="w-full max-w-full overflow-hidden px-1">
-          <ResourceLibrary />
-        </div>
-      </div>
-    </div>
+                {/* 2. Resource Library */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 border-b border-[#CDC6BC]/30 pb-4">
+                    <h3 className="text-xl sm:text-2xl font-bold text-[#304156] tracking-tight font-geologica">
+                      IELTS Resources
+                    </h3>
+                    <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
+                  </div>
+                  <div className="w-full max-w-full overflow-hidden px-1">
+                    <ResourceLibrary />
+                  </div>
+                </div>
+              </div>
+
               {/* RIGHT COLUMN: Sidebar Content */}
               <aside className="space-y-8">
-                
-
-                {/* Upcoming Ecosystems */}
                 <div className="bg-[#F6F3EF] p-6 sm:p-8 rounded-[32px] border border-[#CDC6BC]/40 shadow-sm lg:sticky lg:top-24">
                   <h3 className="text-[10px] font-black text-[#577E90] uppercase tracking-[0.2em] mb-8 border-b border-[#CDC6BC]/50 pb-4">Upcoming Systems</h3>
                   <div className="space-y-3">

@@ -17,7 +17,7 @@ const MAYAR_LINKS = {
   pro: "https://ielsco.myr.id/m/insider-iels-lounge-premium", 
   
   // Link produk Visionary / Lifetime (LU HARUS BIKIN PRODUK INI DI MAYAR & GANTI LINKNYA)
-  visionary: "https://ielsco.myr.id/m/LINK-BUAT-VISIONARY-LU" 
+  visionary: "https://ielsco.myr.id/m/visionary-iels-lounge-exclusive" 
 };
 
 const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {

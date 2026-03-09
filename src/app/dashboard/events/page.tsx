@@ -7,7 +7,7 @@ import { eventsData, EventData } from "@/data/events";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Calendar, Clock, MapPin, ExternalLink, CheckCircle2,
+  Calendar, Clock, MapPin, ExternalLink, CheckCircle2, CalendarDays,
   Filter, Loader2, Star, Trophy, AlertCircle, PlusCircle, MessageSquare, ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 // --- NOTE: Pastikan path import komponen ini benar sesuai struktur folder lu ---
 import GIFPopup from "@/components/GIFPopup"; 
+import { Schedule } from "@mui/icons-material";
 
 // --- TYPES ---
 type UserTier = "explorer" | "insider" | "visionary";
@@ -194,11 +195,16 @@ setUserData({
       <div className="min-h-screen bg-[#F6F3EF]">
         <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-10">
           
-          {/* --- HEADER & STATS --- */}
+          {/* --- HEADER Dashboard Events & STATS --- */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#CDC6BC]/20">
-               <div className="relative z-10">
-                  <h1 className="text-3xl md:text-4xl font-black mb-3">My Event Journey</h1>
+               <div className="inline-flex items-left gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
+                                <CalendarDays size={16} />
+                                <span>My Schedule</span>
+                              </div>
+                              <div className="relative z-10">
+                 
+                  <h1 className="text-3xl md:text-4xl font-black mb-3">Event Journey</h1>
                   <p className="text-[#CDC6BC] max-w-xl text-sm md:text-base leading-relaxed">
                     Track your participation, register for exclusive workshops, and build your global portfolio.
                   </p>

@@ -134,109 +134,109 @@ setUserData({
       userTier={userData.tier}
       userAvatar={userData.avatar}
     >
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <div className="relative bg-[#2F4157] text-white overflow-hidden py-8 lg:py-12 px-4 sm:px-8 lg:px-12">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#E56668]/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
+  {/* ── HERO: MY LEARNING GOALS ─────────────────────────────────────── */}
+<div className="relative bg-[#304156] text-white overflow-hidden py-12 lg:py-16 px-4 sm:px-8 lg:px-12">
+  {/* Decorative blurs */}
+  <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+  <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#577E90]/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+  <div className="max-w-7xl mx-auto relative z-10">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
 
-            {/* Left: heading */}
-            <div className="lg:col-span-7 flex flex-col items-center text-center md:items-start md:text-left space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-[#E56668]">
-                <Target size={14} />
-                <span>Commitment Space</span>
-              </div>
+      {/* Left: Heading & Description */}
+      <div className="lg:col-span-7 flex flex-col items-center text-center md:items-start md:text-left space-y-4">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider">
+          <Target size={16} />
+          <span>GOALS & PROGRESS</span>
+        </div>
 
-              <h1 className="text-3xl lg:text-5xl font-black tracking-tight leading-tight">
-                My Learning <br className="hidden sm:block" /> Goals & Vision
-              </h1>
+        <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
+          Track Your Roadmap
+        </h1>
 
-              <p className="text-gray-300 text-sm sm:text-base leading-relaxed max-w-xl mx-auto md:mx-0 opacity-80">
-                Set clear objectives, track real-time progress, and let consistency
-                shape your academic or professional journey.
-              </p>
+        <p className="text-white/80 text-base lg:text-lg leading-relaxed max-w-xl mx-auto md:mx-0">
+          Set clear objectives, track your progress in real-time, and let consistency shape your journey to success.
+        </p>
 
-              {/* Goal limit indicator */}
-              <div className="flex items-center gap-3 pt-1">
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        i < activeGoals.length ? "bg-[#E56668]" : "bg-white/20"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs text-white/50 font-medium">
-                  {activeGoals.length}/{MAX_GOALS} active goals
-                  {isGoalLimitHit && " — limit reached"}
-                </span>
-              </div>
-            </div>
-
-            {/* Right: CTA + stats */}
-            <div className="lg:col-span-5 flex flex-col items-center md:items-end gap-4 w-full">
-              <div className="w-full sm:max-w-xs space-y-3">
-
-                {/* New goal button — locked when limit hit */}
-                <button
-                  onClick={() => { if (!isGoalLimitHit) setShowWizard(true); }}
-                  disabled={isGoalLimitHit}
-                  title={isGoalLimitHit ? "Delete an existing goal first (max 3 active)" : "Create a new goal"}
-                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl transition-all ${
-                    isGoalLimitHit
-                      ? "bg-white/10 text-white/30 cursor-not-allowed border border-white/10"
-                      : "bg-[#E56668] text-white shadow-red-900/20 hover:scale-[1.02] active:scale-95"
-                  }`}
-                >
-                  {isGoalLimitHit ? (
-                    <>
-                      <Lock size={16} strokeWidth={3} />
-                      Max 3 Goals Reached
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={18} strokeWidth={3} />
-                      Set a New Goal
-                    </>
-                  )}
-                </button>
-
-                {/* Limit tooltip when hit */}
-                {isGoalLimitHit && (
-                  <p className="text-center text-xs text-white/40 leading-relaxed">
-                    Complete or delete an active goal to unlock a new slot.
-                  </p>
-                )}
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl text-center">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Active</p>
-                    <p className="text-xl font-black leading-none">
-                      {loading ? "—" : String(activeGoals.length).padStart(2, "0")}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl text-center">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Completed</p>
-                    <p className="text-xl font-black leading-none text-green-400">
-                      {loading ? "—" : String(completedGoals.length).padStart(2, "0")}
-                    </p>
-                  </div>
-                </div>
-
-                <button className="w-full py-3 bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2">
-                  <Activity size={14} />
-                  View Analysis History
-                </button>
-              </div>
-            </div>
+        {/* Goal limit indicator */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  i < activeGoals.length ? "bg-[#577E90]" : "bg-white/20"
+                }`}
+              />
+            ))}
           </div>
+          <span className="text-sm text-white/60 font-medium">
+            {activeGoals.length}/{MAX_GOALS} active goals
+            {isGoalLimitHit && " — limit reached"}
+          </span>
         </div>
       </div>
+
+      {/* Right: CTA & Stats */}
+      <div className="lg:col-span-5 flex flex-col items-center md:items-end gap-4 w-full">
+        <div className="w-full sm:max-w-xs space-y-3">
+
+          {/* New goal button */}
+          <button
+            onClick={() => { if (!isGoalLimitHit) setShowWizard(true); }}
+            disabled={isGoalLimitHit}
+            title={isGoalLimitHit ? "Delete an existing goal first (max 3 active)" : "Create a new goal"}
+            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold uppercase tracking-wide text-sm shadow-lg transition-all ${
+              isGoalLimitHit
+                ? "bg-white/10 text-white/40 cursor-not-allowed border border-white/20"
+                : "bg-[#577E90] text-white hover:bg-[#486b7a] hover:scale-[1.02] active:scale-95"
+            }`}
+          >
+            {isGoalLimitHit ? (
+              <>
+                <Lock size={18} />
+                Max 3 Goals Reached
+              </>
+            ) : (
+              <>
+                <Plus size={20} />
+                Set a New Goal
+              </>
+            )}
+          </button>
+
+          {/* Limit tooltip */}
+          {isGoalLimitHit && (
+            <p className="text-center text-xs text-white/50 leading-relaxed">
+              Complete or delete an active goal to unlock a new slot.
+            </p>
+          )}
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">Active</p>
+              <p className="text-2xl font-bold leading-none">
+                {loading ? "—" : String(activeGoals.length).padStart(2, "0")}
+              </p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">Completed</p>
+              <p className="text-2xl font-bold leading-none text-green-400">
+                {loading ? "—" : String(completedGoals.length).padStart(2, "0")}
+              </p>
+            </div>
+          </div>
+
+          <button className="w-full py-3 bg-white/5 border border-white/10 text-white font-semibold uppercase tracking-wide text-xs rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+            <Activity size={16} />
+            View Analysis History
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* ── GOALS LIST ───────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">

@@ -195,24 +195,29 @@ useEffect(() => {
     <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
       <div className="min-h-screen bg-[#F7F8FA] pb-20">
         
-        {/* ── HERO HEADER ── */}
-        <div className="bg-[#2F4157] text-white py-12 px-4 sm:px-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#E56668]/10 blur-3xl rounded-full translate-x-1/3 -translate-y-1/3 pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest text-[#E56668] mb-4">
-              <GraduationCap size={14} />
-              Learning Hub
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-3">
-              Premium Courses & Materials
-            </h1>
-            <p className="text-gray-300 max-w-2xl text-sm leading-relaxed">
-              Unlock exclusive video recordings, templates, and e-books. Complete the Coursera-style assessment flow to earn your verified certificate.
-            </p>
-          </div>
-        </div>
+   
+        
 
+        <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
+ {/* HERO & Stats Grid */}
+          <div className="mb-12">
+            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#CDC6BC]/20">
+              <div className="text-center max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
+                <GraduationCap size={16} />
+                <span>My Courses</span>
+              </div>
+
+             <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
+                Premium Learning Hub
+              </h1>
+
+              <p className="text-white/80 text-base lg:text-lg leading-relaxed">
+                Access exclusive video courses, templates, and e-books. Complete
+                assessments to earn verified certificates.
+              </p>
+              </div></div></div>
+</div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 -mt-8 relative z-20 space-y-10">
           
           {/* ── COURSE LIST ── */}

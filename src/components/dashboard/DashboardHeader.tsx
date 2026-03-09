@@ -105,19 +105,19 @@ export default function DashboardHeader({
       icon: LayoutDashboard 
     },
     { 
-      name: "My Goals", 
+      name: "Goals", 
       path: "/dashboard/goals", 
       icon: Trophy 
     },
     { 
-      name: "My Learning", 
+      name: "Learning", 
       path: "/dashboard/learning",
       icon: BookOpen,
       children: [
         { name: "My Test", path: "/dashboard/test", icon: FileText },
-        { name: "My Courses", path: "/dashboard/courses", icon: GraduationCap },
+        { name: "My Courses", path: "/dashboard/learning/courses", icon: GraduationCap },
         { name: "My Schedule", path: "/dashboard/events", icon: CalendarDays },
-        { name: "My Library", path: "/dashboard/library", icon: Library },
+        { name: "My Library", path: "/dashboard/learning/library", icon: Library },
       ]
     },
     { 

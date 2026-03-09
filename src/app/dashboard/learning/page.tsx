@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import {
   BookOpen,
   PlayCircle,
+  Activity,
   CalendarDays,
   FileText,
   ArrowRight,
@@ -362,61 +363,60 @@ useEffect(() => {
       userTier={userData.tier}
     >
       <div className="min-h-screen bg-[#F7F8FA] pb-20">
+{/* ── HERO: MY LEARNING SPACE ─────────────────────────────────────── */}
+<div className="relative bg-[#304156] text-white overflow-hidden py-12 lg:py-16 px-4 sm:px-8 lg:px-12">
+  {/* Decorative blurs */}
+  <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+  <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#577E90]/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
-        {/* === HERO === */}
-        <div className="bg-[#2F4157] text-white pt-10 pb-20 sm:pb-24 px-4 lg:px-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#E56668]/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
-
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="flex flex-col items-center text-center md:flex-row md:items-end md:text-left justify-between gap-6">
-              <div className="w-full">
-                <div className="flex items-center justify-center md:justify-start gap-2 text-[#E56668] font-bold text-sm tracking-wider uppercase mb-3">
-                  Hey, {firstName}! 👋
-                </div>
-                <h1 className="text-3xl lg:text-5xl font-black tracking-tight leading-tight">
-                  My Learning Space
-                </h1>
-                <p className="text-gray-300 max-w-xl text-base sm:text-lg leading-relaxed mx-auto md:mx-0 mt-4">
-                  {activeCount > 0 ? (
-                    <>
-                      You have{" "}
-                      <strong className="text-white">
-                        {activeCount} active {activeCount === 1 ? "activity" : "activities"}
-                      </strong>{" "}
-                      waiting for you today.
-                    </>
-                  ) : (
-                    <>Start your learning journey — explore courses, tests, resources & events below.</>
-                  )}
-                </p>
-              </div>
-
-              <div className="w-full md:w-auto flex justify-center md:justify-end">
-                <Link
-                  href="/dashboard/goals"
-                  className="flex items-center gap-2 px-6 py-3.5 bg-white/10 backdrop-blur-md border border-white/10 hover:bg-[#E56668] rounded-2xl transition-all font-bold text-sm shadow-xl"
-                >
-                  <Target size={18} />
-                  Manage My Goals
-                </Link>
-              </div>
-            </div>
-          </div>
+  <div className="max-w-7xl mx-auto relative z-10">
+    <div className="flex flex-col items-center text-center md:flex-row md:items-end md:text-left justify-between gap-6">
+      
+      <div className="w-full">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-4 md:mb-6">
+          <Activity size={16} />
+          <span>LEARNING CENTER</span>
         </div>
+        
+        <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-3">
+          Sharpen Your Skills
+        </h1>
+        
+        <p className="text-white/80 text-base lg:text-lg leading-relaxed max-w-xl mx-auto md:mx-0">
+          {activeCount > 0 ? (
+            <>
+              You have{" "}
+              <strong className="text-white font-semibold">
+                {activeCount} active {activeCount === 1 ? "activity" : "activities"}
+              </strong>{" "}
+              waiting for you today. Let's keep the momentum going!
+            </>
+          ) : (
+            <>Access exclusive mentorship sessions and materials to boost your fluency.</>
+          )}
+        </p>
+      </div>
+
+      <div className="w-full md:w-auto flex justify-center md:justify-end">
+        <Link
+          href="/dashboard/goals"
+          className="flex items-center gap-2 px-6 py-3.5 bg-white/10 backdrop-blur-md border border-white/20 hover:bg-[#577E90] rounded-2xl transition-all font-semibold text-sm shadow-lg"
+        >
+          <Target size={18} />
+          Manage My Goals
+        </Link>
+      </div>
+    </div>
+  </div>
+</div>
 
         <div className="max-w-7xl mx-auto px-4 lg:px-12 -mt-16 relative z-20 space-y-12">
 
           {/* === SECTION 1: CONTINUE LEARNING === */}
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#2F4157]">Continue Learning</h2>
-              <Link
-                href="/dashboard/library"
-                className="text-sm font-medium text-gray-500 hover:text-[#E56668] flex items-center gap-1 transition-colors"
-              >
-                View All <ChevronRight size={16} />
-              </Link>
+            <div className="flex items-center justify-between mb-12">
+            
+      
             </div>
 
             {learningLoading ? (
@@ -686,7 +686,7 @@ useEffect(() => {
                 description="Access premium e-books, templates, and recorded masterclass sessions."
                 icon={Download}
                 color="bg-[#E56668]"
-                href="/dashboard/learning/resources"
+                href="/dashboard/learning/library"
                 stats="Digital Library"
               />
               <EcosystemCard
@@ -768,7 +768,7 @@ useEffect(() => {
                 {/* CTA */}
                 <div className="flex flex-col gap-3 items-center shrink-0">
                   <Link
-                    href="/dashboard/events/gif-sg"
+                    href="/dashboard/gif"
                     className="px-8 py-4 bg-white text-[#2F4055] rounded-2xl font-black text-sm hover:bg-[#FFD1D1] transition-all shadow-2xl hover:shadow-white/20 transform hover:-translate-y-0.5"
                   >
                     Explore Fellowship →

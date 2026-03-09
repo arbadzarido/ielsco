@@ -30,6 +30,8 @@ const hiddenPaths = [
   "/events/gif",
   "/privacy-policy",
   "/terms-of-service",
+  "/welcome/start",
+  "/welcome/result",
   "/sign-in",
   "/sign-up", // Tambahkan ini!
   "/api/auth"

@@ -321,59 +321,29 @@ function CommunityContent() {
     <DashboardLayout userTier={userData.tier} userName={userData.name} userAvatar={userData.avatar}>
       <div className="min-h-screen bg-[#F6F3EF]">
         
-        {/* Hero Section */}
-        <div className="bg-gradient-to-br from-[#304156] via-[#3d4f66] to-[#304156] text-white">
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-16">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm font-semibold mb-6 border border-white/20">
-                <Users size={16} />
-                IELS Community Hub
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-                Learn, Empower, Inspire Together
-              </h1>
-              <p className="text-white/80 text-lg">
-                Join thousands of ambitious learners on their journey to global opportunities
-              </p>
-            </div>
+      {/* ── HERO: COMMUNITY HUB ─────────────────────────────────────── */}
+<div className="relative bg-[#304156] text-white overflow-hidden py-12 lg:py-16 px-4 sm:px-8 lg:px-12">
+  {/* Decorative blurs */}
+  <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+  <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#577E90]/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
-            {/* Stats Counter */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2">
-                  {counts.members.toLocaleString()}+
-                </div>
-                <div className="text-sm text-white/60 uppercase tracking-wider font-semibold">Members</div>
-                <div className="text-xs text-white/50 mt-1">Active learners worldwide</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2">
-                  {counts.stories}+
-                </div>
-                <div className="text-sm text-white/60 uppercase tracking-wider font-semibold">Winning Stories</div>
-                <div className="text-xs text-white/50 mt-1">National & international achievements</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2">
-                  {counts.careers}+
-                </div>
-                <div className="text-sm text-white/60 uppercase tracking-wider font-semibold">Global Careers</div>
-                <div className="text-xs text-white/50 mt-1">Remote work & internships abroad</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold mb-2">
-                  {counts.abroad}+
-                </div>
-                <div className="text-sm text-white/60 uppercase tracking-wider font-semibold">Study Abroad</div>
-                <div className="text-xs text-white/50 mt-1">International study journeys</div>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div className="max-w-7xl mx-auto relative z-10">
+    <div className="text-center max-w-3xl mx-auto">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
+        <Users size={16} />
+        <span>IELS LOUNGE</span>
+      </div>
+      
+      <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
+        Practice and Connect
+      </h1>
+      
+      <p className="text-white/80 text-base lg:text-lg leading-relaxed">
+       Grow together with ambitious peers in our safe space for daily activities.
+      </p>
+    </div>
+  </div>
+</div>
 
         <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
           
@@ -437,87 +407,87 @@ function CommunityContent() {
             </motion.div>
           )}
 
-          {/* ACTIVE MEMBERSHIP STATUS */}
-          {hasPremiumAccess && membership && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-12"
+{/* ACTIVE MEMBERSHIP STATUS */}
+{hasPremiumAccess && membership && (
+  <motion.div
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="mb-12"
+  >
+    <div className={cn(
+      "rounded-[32px] p-6 md:p-8 shadow-sm relative overflow-hidden border",
+      membership.status === "active" && membership.daysRemaining > 7
+        ? "bg-gradient-to-br from-[#304156] to-[#3d4f66] text-white border-[#304156]"
+        : "bg-gradient-to-br from-[#CB2129] to-[#a81b22] text-white border-[#CB2129]"
+    )}>
+      <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24" />
+      
+      <div className="relative z-10 grid lg:grid-cols-3 gap-6 items-center">
+        {/* Status Info */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
+              {membership.status === "active" && membership.daysRemaining > 7 ? (
+                <CheckCircle size={24} />
+              ) : (
+                <Clock size={24} />
+              )}
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold capitalize">
+                {userData.tier} Membership {membership.status === "active" && membership.daysRemaining > 7 ? "Active" : "Expiring Soon"}
+              </h3>
+              <p className="text-white/70 text-sm">
+                {membership.daysRemaining > 7
+                  ? `Valid until ${new Date(membership.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                  : `Only ${membership.daysRemaining} days remaining`
+                }
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <p className="text-white/60 text-xs uppercase tracking-wider font-bold mb-1">Days Remaining</p>
+              <p className="text-3xl font-bold">{membership.daysRemaining}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <p className="text-white/60 text-xs uppercase tracking-wider font-bold mb-1">Auto-Renew</p>
+              <p className="text-3xl font-bold">{membership.autoRenew ? "ON" : "OFF"}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3">
+          {membership.daysRemaining <= 7 && (
+            <button
+              onClick={() => setShowPricingModal(true)}
+              className="w-full px-6 py-4 bg-white text-[#304156] rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg flex items-center justify-center gap-2"
             >
-              <div className={cn(
-                "rounded-[32px] p-6 md:p-8 shadow-sm relative overflow-hidden border",
-                membership.status === "active" && membership.daysRemaining > 7
-                  ? "bg-gradient-to-br from-[#304156] to-[#3d4f66] text-white border-[#304156]"
-                  : "bg-gradient-to-br from-[#CB2129] to-[#a81b22] text-white border-[#CB2129]"
-              )}>
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24" />
-                
-                <div className="relative z-10 grid lg:grid-cols-3 gap-6 items-center">
-                  {/* Status Info */}
-                  <div className="lg:col-span-2">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-                        {membership.status === "active" && membership.daysRemaining > 7 ? (
-                          <CheckCircle size={24} />
-                        ) : (
-                          <Clock size={24} />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold capitalize">
-                          {userData.tier} Membership {membership.status === "active" && membership.daysRemaining > 7 ? "Active" : "Expiring Soon"}
-                        </h3>
-                        <p className="text-white/70 text-sm">
-                          {membership.daysRemaining > 7
-                            ? `Valid until ${new Date(membership.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                            : `Only ${membership.daysRemaining} days remaining`
-                          }
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                        <p className="text-white/60 text-xs uppercase tracking-wider font-bold mb-1">Days Remaining</p>
-                        <p className="text-3xl font-bold">{membership.daysRemaining}</p>
-                      </div>
-                      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                        <p className="text-white/60 text-xs uppercase tracking-wider font-bold mb-1">Auto-Renew</p>
-                        <p className="text-3xl font-bold">{membership.autoRenew ? "ON" : "OFF"}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-3">
-                    {membership.daysRemaining <= 7 && (
-                      <button
-                        onClick={() => setShowPricingModal(true)}
-                        className="w-full px-6 py-4 bg-white text-[#304156] rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg flex items-center justify-center gap-2"
-                      >
-                        <Zap size={18} />
-                        Renew Now
-                      </button>
-                    )}
-                    <Link
-                      href="/dashboard/settings/membership"
-                      className="w-full text-center px-6 py-3 border-2 border-white/30 rounded-2xl font-semibold hover:bg-white/10 transition-all"
-                    >
-                      Manage Membership
-                    </Link>
-                    <a
-                      href="https://chat.whatsapp.com/JHjrP9w7iXAII1I2JtGlrw"
-                      target="_blank"
-                      className="w-full text-center px-6 py-3 bg-[#25D366] rounded-2xl font-bold hover:bg-[#1ea952] transition-all flex items-center justify-center gap-2"
-                    >
-                      <MessageCircle size={18} />
-                      Join WhatsApp Group
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+              <Zap size={18} />
+              Renew Now
+            </button>
           )}
+          <Link
+            href="/dashboard/settings/membership"
+            className="w-full text-center px-6 py-3 border-2 border-white/30 rounded-2xl font-semibold hover:bg-white/10 transition-all"
+          >
+            Manage Membership
+          </Link>
+          {/* 🔁 Replaced WhatsApp button with onboarding guide link */}
+          <Link
+            href="/dashboard/community/start"
+            className="w-full text-center px-6 py-3 bg-[#577E90] rounded-2xl font-bold hover:bg-[#4a6d7d] transition-all flex items-center justify-center gap-2"
+          >
+            <Sparkles size={18} />
+            View Onboarding Guide
+          </Link>
+        </div>
+      </div>
+    </div>
+  </motion.div>
+)}
 
           {/* TODAY'S ACTIVITY REMINDER */}
           {todayActivity && (
@@ -545,9 +515,9 @@ function CommunityContent() {
                 
                 {(!todayActivity.requiresPremium || hasPremiumAccess) ? (
                   <a
-                    href="https://zoom.us/j/YOUR_MEETING_ID"
+                    href="https://discord.gg/ak6nYUME"
                     target="_blank"
-                    className="px-8 py-3 bg-[#CB2129] text-white rounded-2xl font-bold hover:bg-[#a81b22] transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
+                    className="px-8 py-3 bg-[#304156] text-white rounded-2xl font-bold hover:bg-[#304156]/90 transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
                   >
                     <ExternalLink size={16} />
                     Join Session
@@ -633,149 +603,103 @@ function CommunityContent() {
                 </div>
               </section>
 
-              {/* Channels Section */}
-              <section className="grid md:grid-cols-2 gap-6">
-                <div className="p-8 bg-[#5865F2] rounded-[24px] text-white shadow-sm relative overflow-hidden group">
-                  <MessageCircle className="absolute -bottom-6 -right-6 text-white/10 w-32 h-32 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-2xl font-bold mb-2">Discord Global Server</h3>
-                  <p className="text-white/80 text-sm mb-6">Free for all members. Resource sharing and general discussions.</p>
-                  <a href="https://s.id/Lounge-DC" target="_blank" className="inline-flex items-center gap-2 bg-white text-[#5865F2] px-6 py-2.5 rounded-2xl font-bold hover:bg-gray-100 transition-all">
-                    Open Discord <ExternalLink size={16} />
-                  </a>
-                </div>
-
-                <div className="p-8 bg-[#25D366] rounded-[24px] text-white shadow-sm relative overflow-hidden group">
-                  <MessageCircle className="absolute -bottom-6 -right-6 text-white/10 w-32 h-32" />
-                  <h3 className="text-2xl font-bold mb-2">WhatsApp Inner Circle</h3>
-                  <p className="text-white/80 text-sm mb-6">Exclusive for Insider members. Priority mentoring and networking.</p>
-                  {hasPremiumAccess ? (
-                    <a 
-                      href="https://chat.whatsapp.com/JHjrP9w7iXAII1I2JtGlrw" 
-                      target="_blank"
-                      className="inline-flex items-center gap-2 bg-white text-[#25D366] px-6 py-2.5 rounded-2xl font-bold hover:bg-gray-100 transition-all"
-                    >
-                      Join Group <ExternalLink size={16} />
-                    </a>
-                  ) : (
-                    <button 
-                      onClick={() => setShowPricingModal(true)} 
-                      className="inline-flex items-center gap-2 bg-white text-[#25D366] px-6 py-2.5 rounded-2xl font-bold hover:bg-gray-100 transition-all"
-                    >
-                      See Benefits <ArrowRight size={16} />
-                    </button>
-                  )}
-                </div>
-              </section>
             </div>
 
-            {/* ===== RIGHT SIDEBAR ===== */}
-            <aside className="lg:w-1/3 space-y-6">
-              <div className="sticky top-24 space-y-6">
-                
-                {/* Referral Program */}
-                {hasPremiumAccess && membership && membership.daysRemaining > 30 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-[#577E90] to-[#304156] rounded-[24px] p-6 text-white shadow-sm relative overflow-hidden"
-                  >
-                    <Gift className="absolute -top-4 -right-4 text-white/10 w-24 h-24 rotate-12" />
-                    <div className="relative z-10">
-                      <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                        <Star size={18} fill="white" />
-                        Refer & Earn Rewards
-                      </h3>
-                      <p className="text-white/90 text-sm leading-relaxed mb-4">
-                        Invite friends and get 1 month FREE for every 3 successful referrals!
-                      </p>
-                      <Link
-                        href="/dashboard/referrals"
-                        className="block w-full text-center py-3 bg-white text-[#304156] rounded-2xl font-bold hover:bg-gray-100 transition-all"
-                      >
-                        Get Referral Link
-                      </Link>
-                    </div>
-                  </motion.div>
-                )}
+        {/* ===== RIGHT SIDEBAR ===== */}
+<aside className="lg:w-1/3 space-y-6">
+  <div className="sticky top-24 space-y-6">
 
-                {/* Member Spotlight Section */}
-                <div className="bg-white border border-[#CDC6BC] rounded-[24px] p-6 shadow-sm">
-                  <Image
-                    src="/images/contents/general/iels_insight.png"
-                    alt="IELS Insight"
-                    width={180}
-                    height={40}
-                    className="mb-6"
-                  />
-                  <h3 className="text-xl font-bold text-[#304156] mb-6 border-b border-[#CDC6BC] pb-4">
-                    Member Spotlight
-                  </h3>
+    {/* Member Spotlight + Share Your Journey — ONE unified card */}
+    <div className="bg-white border border-gray-200 rounded-[24px] overflow-hidden shadow-sm">
+      
+      {/* Header area */}
+      <div className="p-6 pb-0">
+        <Image
+          src="/images/contents/general/iels_insight.png"
+          alt="IELS Insight"
+          width={180}
+          height={40}
+          className="mb-6"
+        />
+        <h3 className="text-xl font-bold text-[#304156] mb-4 border-b border-gray-100 pb-4">
+          Member Spotlight
+        </h3>
+      </div>
 
-                  <div className="space-y-6">
-                    {memberStoriesData.slice(0, 3).map((item, idx) => (
-                      <div key={idx} className="flex gap-4 items-start group">
-                        <div className="relative w-[80px] h-[80px] rounded-2xl overflow-hidden flex-shrink-0 border-2 border-[#CDC6BC] shadow-sm">
-                          <Image
-                            src={item.author.avatar}
-                            alt={item.author.name}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        </div>
+      {/* Stories list */}
+      <div className="px-6 space-y-5 pb-6">
+        {memberStoriesData.slice(0, 3).map((item, idx) => (
+          <div key={idx} className="flex gap-4 items-start group">
+            <div className="relative w-[72px] h-[72px] rounded-2xl overflow-hidden flex-shrink-0 border-2 border-gray-100 shadow-sm">
+              <Image
+                src={item.author.avatar}
+                alt={item.author.name}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <p className="text-[10px] font-black uppercase text-[#577E90] tracking-widest">
+                {item.location}
+              </p>
+              <p className="font-bold text-[#304156] leading-tight line-clamp-2 text-sm group-hover:text-[#577E90] transition-colors">
+                {item.title}
+              </p>
+              <Link
+                href={`https://ielsco.com/stories/${generateSlug(item.title)}`}
+                target="_blank"
+                className="text-[10px] font-bold text-[#577E90] hover:underline mt-1 flex items-center gap-1"
+              >
+                Read More <ArrowRight size={10} />
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
 
-                        <div className="flex flex-col gap-1 flex-1">
-                          <p className="text-[10px] font-black uppercase text-[#CB2129] tracking-widest">
-                            {item.location}
-                          </p>
-                          <p className="font-bold text-[#304156] leading-tight line-clamp-2 text-sm group-hover:text-[#CB2129] transition-colors">
-                            {item.title}
-                          </p>
-                          <Link
-                            href={`https://ielsco.com/stories/${generateSlug(item.title)}`}
-                            target="_blank"
-                            className="text-[10px] font-bold text-[#577E90] hover:underline mt-1 flex items-center gap-1"
-                          >
-                            Read More <ArrowRight size={10} />
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+      {/* Explore All Stories button */}
+      <div className="px-6 pb-6">
+        <Link
+          href="https://ielsco.com/stories"
+          target="_blank"
+          className="flex items-center justify-center gap-2 w-full py-3 bg-[#304156] text-white rounded-2xl font-bold text-xs hover:bg-[#253344] transition-all"
+        >
+          Explore All Stories
+        </Link>
+      </div>
 
-                  <Link
-                    href="https://ielsco.com/stories"
-                    target="_blank"
-                    className="mt-8 flex items-center justify-center gap-2 w-full py-3 bg-[#304156] text-white rounded-2xl font-bold text-xs hover:bg-[#253344] transition-all"
-                  >
-                    Explore All Stories
-                  </Link>
-                </div>
+      {/* Divider */}
+      <div className="mx-6 border-t border-gray-100" />
 
-                {/* Share Your Story Section */}
-                <div className="bg-[#CB2129] rounded-[24px] p-6 text-white shadow-sm relative overflow-hidden group">
-                  <Sparkles className="absolute -top-4 -right-4 text-white/20 w-20 h-20 rotate-12 group-hover:scale-110 transition-transform" />
-                  
-                  <div className="relative z-10">
-                    <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                      <Heart size={18} fill="white" />
-                      Share Your Journey
-                    </h3>
-                    <p className="text-white/80 text-xs leading-relaxed mb-6">
-                      Did you ace your IELTS or get a scholarship? Inspire 6,800+ members!
-                    </p>
+      {/* Share Your Journey — same card, different bg */}
+      <div className="p-6 bg-[#304156] relative overflow-hidden">
+        {/* Decorative circle */}
+        <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#577E90]/30 rounded-full" />
+        <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/5 rounded-full" />
 
-                    <button
-                      onClick={() => setShowStoryModal(true)}
-                      className="w-full py-3 bg-white text-[#CB2129] rounded-2xl font-bold text-sm hover:bg-gray-100 transition-all shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <Plus size={16} />
-                      Submit Story
-                    </button>
-                  </div>
-                </div>
+        <div className="relative z-10">
+          <h3 className="text-base font-bold text-white mb-2 flex items-center gap-2">
+            <Heart size={16} fill="white" className="text-white" />
+            Share Your Journey
+          </h3>
+          <p className="text-white/70 text-xs leading-relaxed mb-5">
+            Did you ace your IELTS or get a scholarship? Inspire 6,800+ members!
+          </p>
+          <button
+            onClick={() => setShowStoryModal(true)}
+            className="w-full py-3 bg-white text-[#304156] rounded-2xl font-bold text-sm hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2"
+          >
+            <Plus size={16} />
+            Submit Story
+          </button>
+        </div>
+      </div>
 
-              </div>
-            </aside>
+    </div>
+    {/* end unified card */}
+
+  </div>
+</aside>
             
           </div>
         </div>
@@ -806,7 +730,7 @@ function CommunityContent() {
                    <label className="text-xs font-black uppercase tracking-widest text-[#577E90] block mb-2">Description</label>
                    <textarea rows={4} className="w-full bg-[#F6F3EF] border border-[#CDC6BC] rounded-2xl p-4 text-sm focus:ring-2 focus:ring-[#CB2129] focus:border-transparent outline-none resize-none" />
                  </div>
-                 <button type="button" onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdpfik-xAviTLsauSN_h4yVI-Af19ydbRC6-nM0QGDmuPEWIA/viewform')} className="w-full bg-[#CB2129] text-white py-4 rounded-2xl font-bold shadow-sm hover:bg-[#a81b22] transition-all">
+                 <button type="button" onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdpfik-xAviTLsauSN_h4yVI-Af19ydbRC6-nM0QGDmuPEWIA/viewform')} className="w-full bg-[#304156] text-white py-4 rounded-2xl font-bold shadow-sm hover:bg-[#a81b22] transition-all">
                     Proceed to Official Form
                  </button>
               </form>
