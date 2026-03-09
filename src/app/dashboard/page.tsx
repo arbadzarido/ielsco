@@ -533,7 +533,7 @@ function DashboardContent() {
           </div>
         </div>
 
-        <GIFPopup />
+        
         {showProModal && <PricingModal onClose={() => setShowProModal(false)} />}
       </DashboardLayout>
       <GIFPopup />
