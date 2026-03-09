@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight,
@@ -1071,7 +1071,7 @@ const FinalSlide = ({ onComplete }: { onComplete: () => void }) => (
 // === MAIN COMPONENT ===
 export default function OnboardingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
