@@ -13,7 +13,7 @@ export async function proxy(request: NextRequest) {
 
   // --- VERCEL URL PROTECTION ---
   // If accessed via .vercel.app, redirect immediately to the main domain
-  if (host && host.includes('.netlify.app')) {
+  if (host && host.includes('.vercel.app')) {
     url.host = 'ielsco.com';
     url.protocol = 'https:';
     url.port = '';
