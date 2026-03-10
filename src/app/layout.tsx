@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geologica } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 
 
 // Import Wrapper baru tadi (bukan Header langsung)
@@ -39,7 +40,7 @@ export default function RootLayout({
         <LayoutWrapper>
           {children}
         </LayoutWrapper>
-
+        <Analytics />
       </body>
     </html>
   );
