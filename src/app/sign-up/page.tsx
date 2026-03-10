@@ -271,7 +271,13 @@ export default function RegisterPage() {
                 onClick={handleGoogleSignUp}
                 className="inline-flex items-center justify-center gap-3 rounded-full w-full py-3.5 bg-[#294154] text-white font-bold hover:shadow-lg transition active:scale-[0.97]"
               >
-                <Image src="/images/contents/general/google.png" width={20} height={20} alt="Google" />
+                <Image 
+                  src="https://authjs.dev/img/providers/google.svg" 
+                  alt="Google" 
+                  width="20" 
+                  height="20" 
+                  className="mr-2"
+                />
                 Continue with Google
               </button>
 
