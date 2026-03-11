@@ -51,7 +51,12 @@ type GIFRegistration = {
   essay_motivation: string;
   is_mentoring_participant: boolean;
 };
-
+// Helper: prefill email ke form Mayar supaya user tidak salah email
+function buildMayarUrl(baseUrl: string, email?: string | null): string {
+  if (!email) return baseUrl;
+  const encoded = encodeURIComponent(email);
+  return `${baseUrl}?email=${encoded}&customer_email=${encoded}`;
+}
 export default function GIFDashboardPage() {
   const router = useRouter();
   // ✅ PERF: Inisialisasi Supabase client sekali pakai useMemo biar ga re-create tiap render
@@ -601,7 +606,7 @@ export default function GIFDashboardPage() {
                   </Link>
                 ) : (
                   <Button
-                    onClick={() => window.open("https://ielsco.myr.id/m/iels-lounge-premium", "_blank")}
+                    onClick={() => window.open(buildMayarUrl("https://ielsco.myr.id/m/insider-iels-lounge-premium/", userProfile?.email), "_blank")}
                     className="w-full py-3 rounded-xl font-bold bg-gradient-to-br from-[#2F4055] to-[#914D4D] hover:to-gradient-to-br text-white shadow-md hover:shadow-xl transition-all group"
                   >
                     <span className="flex items-center justify-center">
