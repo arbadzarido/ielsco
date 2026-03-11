@@ -17,17 +17,15 @@ const geologica = Geologica({
 
 export const metadata: Metadata = {
   title: "IELS | English Community",
-  description:
-    "Empowering youths for global success through a supportive community and mentorship. Join our Community",
+  description: "Empowering youths for global success through a supportive community and mentorship. Join our Community",
   icons: {
     icon: [
-      // Logo Biru untuk tampilan standar (Light Mode)
+      { url: "/favicon.ico" },  // ← tambah ini sebagai fallback utama
       { url: "/images/logos/iels_blue.png", media: "(prefers-color-scheme: light)" },
-      // Logo Putih untuk pengguna yang pakai Dark Mode
       { url: "/images/logos/iels_white.png", media: "(prefers-color-scheme: dark)" },
     ],
-    // Logo buat shortcut di HP iPhone / iPad (pakai yang biru aja biar kontras)
-    apple: "/images/logos/iels_blue.png", 
+    shortcut: "/favicon.ico",   // ← tambah ini
+    apple: "/images/logos/iels_blue.png",
   },
 };
 
