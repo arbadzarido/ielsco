@@ -1,447 +1,405 @@
 "use client";
 // src/app/courses/page.tsx
-/* Server component - exports metadata (App Router) */
 
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
+import { useRef, useState } from "react";
+// Import MENTORS dari file data lu juga harus ada
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import CurriculumModal from "@/components/courses/CurriculumModal";
+import MentorCard from "@/components/courses/MentorCard";
+import CourseCard from "@/components/courses/CourseCard";
+import {
+  MENTORS, COURSE_PACKAGES, TRACK_META, GOOGLE_FORM_URL, WHATSAPP_URL,
+  CoursePackage, CourseTrack, Mentor, PRICE_PER_SESSION
+} from "@/data/courses";
+import {
+  ChevronDown, Filter, Search, Sliders, MessageCircle,
+  ExternalLink, Check, Zap, Star, Award, Users, ArrowRight
+} from "lucide-react";
+
+function formatIDR(n: number) {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
+}
 
 export default function CoursesPage() {
+  const [selectedTrack, setSelectedTrack] = useState<CourseTrack | null>(null);
+  const [filterMentor, setFilterMentor] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterTrack, setFilterTrack] = useState<string>("all");
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customSessions, setCustomSessions] = useState(10);
+  // --- Carousel State & Logic buat Mentors ---
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const itemWidth = target.scrollWidth / MENTORS.length;
+    const newIndex = Math.round(target.scrollLeft / itemWidth);
+    setActiveIndex(newIndex);
+  };
+
+  const scrollToMentor = (index: number) => {
+    if (!scrollRef.current) return;
+    const target = scrollRef.current;
+    const itemWidth = target.scrollWidth / MENTORS.length;
+    target.scrollTo({
+      left: index * itemWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const filteredPackages = COURSE_PACKAGES.filter((p) => {
+    if (filterMentor !== "all" && p.mentorId !== filterMentor) return false;
+    if (filterType !== "all" && p.type !== filterType) return false;
+    if (filterTrack !== "all" && p.trackId !== filterTrack) return false;
+    return true;
+  });
+
+  const handleSelectTrack = (track: CourseTrack) => {
+    setFilterTrack(track);
+    // scroll to courses
+    document.getElementById("courses-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#ffffff] to-[#eaf2ff] text-[#294154] font-geologica">
-       <Header />
+    <main className="min-h-screen bg-[#F7F8FA] text-[#294154] font-geologica">
+      <Header />
 
-      {/* Container */}
-      <div className="max-w-6xl mx-auto px-6 py-16 space-y-16">
-
-        {/* HERO */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight">
-              Master English with Personalized Mentorship — From Beginner to Global Professional
-            </h1>
-
-            <p className="text-lg text-gray-700 max-w-2xl">
-              Join Arba&apos;s 1-on-1 or semi-private English programs tailored for your goals — whether it&apos;s speaking fluency, writing,
-              or IELTS preparation. Learn with mentorship, custom materials, and a supportive community.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-4">
-              <Button asChild className="bg-[#E56668] text-white font-semibold px-6 py-3 hover:bg-[#C04C4E]">
-              <Link
-                href="https://forms.gle/t8xijoi6umFeYAu86"
-                target="_blank"
-                rel="noopener noreferrer"
-                 >
-                Register Now
-              </Link></Button>
-              <Button asChild className="bg-[#294154] text-white font-semibold px-6 py-3 hover:bg-[#21363f]">
-              <Link
-                href="#packages"
-               
-              >
-                View Class Packages
-              </Link></Button>
-            </div>
-
-            <p className="text-sm text-gray-600 mt-3">
-              Transparent pricing · Mentor-led sessions · Placement & certificate included
-            </p>
-          </div>
-
-          <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <div className="relative w-[320px] sm:w-[360px] lg:w-[420px]">
-              <Image
-                src="/images/contents/about/arba.png"
-                alt="Arbadza Rido Adzariyat — IELS"
-                width={880}
-                height={880}
-                className="rounded-2xl shadow-xl object-cover"
-                priority
-              />
-              <div className="absolute -bottom-4 right-4 bg-white/90 border border-[#294154]/10 rounded-full px-3 py-1 text-xs font-semibold text-[#294154]">
-                IELS Course — Mentor: Arba
+     {/* ─── HERO ─── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#2F4157] via-[#243344] to-[#1e2a38] text-white">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #E56668 0%, transparent 50%), radial-gradient(circle at 80% 20%, #4A90E2 0%, transparent 40%)" }} />
+        
+        <div className="max-w-6xl mx-auto px-6 py-20 lg:py-28 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider">
+                🎓 IELS Personalized Courses
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ABOUT ARBA */}
-        <section className="bg-white rounded-2xl p-8 shadow-sm border border-[#294154]/8">
-          <div className="flex flex-col lg:flex-row items-center gap-6">
-      
-            </div>
-
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold">Meet Your Teacher — Arbadza Rido Adzariyat</h2>
-              <p className="text-gray-700 mt-2">
-                English teacher across Southeast Asia with 3+ years of experience, specializing in personalized courses for students,
-                professionals, and exam preparation.
+              <h1 className="text-4xl lg:text-5xl font-black leading-tight">
+                Learn English with<br />
+                <span className="text-[#E56668]">3 Expert Mentors</span><br />
+                Built for Your Goals
+              </h1>
+              <p className="text-white/80 text-lg leading-relaxed max-w-lg">
+                Grammar, Speaking, Writing, Test Prep, Remote Careers — every course is led by a dedicated IELS Principal, personalized to your level, and designed for real outcomes.
               </p>
-
-              <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
-                <li>• Founder & Principal of IELS</li>
-                <li>• TEFL & TESL certified (Arizona State University)</li>
-                <li>• Project Manager, Pertamina Training Consulting, 2024</li>
-                <li>• Volunteer, Tech in Asia & TEDx Jakarta, 2023</li>
-                
-              </ul>
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                <a
-                  href="/docs/arba-credentials.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full px-4 py-2 bg-[#294154] text-white font-semibold hover:bg-[#21363f] transition transform hover:scale-[1.02]"
-                >
-                  View Credentials
-                </a>
-                <a
-                  href="https://linkedin.com/in/arbadzarido"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full px-4 py-2 bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] transition transform hover:scale-[1.02]"
-                >
-                  🔗 LinkedIn
-                </a>
-                <a
-                  href="https://instagram.com/arbadzarido"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full px-4 py-2 bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] transition transform hover:scale-[1.02]"
-                >
-                  📸 Instagram
-                </a>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <Check size={16} className="text-emerald-400" /> 1-on-1 mentorship
+                </div>
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <Check size={16} className="text-emerald-400" /> Certificate included
+                </div>
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <Check size={16} className="text-emerald-400" /> IELS Lounge 1yr free
+                </div>
               </div>
-             
-          </div>
-        </section>
-
- {/* COURSE FOCUS */}
-<section>
-  <h3 className="text-2xl font-bold mb-4">Choose Your Focus</h3>
-  <p className="text-gray-700 mb-6">
-    Each course is designed for a specific global outcome.  
-    Choose your focus and explore the full program details.
-  </p>
-
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    {/* 🔥 FEATURED: Singapore Global Insight Trip */}
-    <Link
-      href="/events/sgit/mentoring"
-      className="relative bg-white rounded-2xl p-5 shadow-sm border-2 border-[#E56668]
-                 flex flex-col gap-3 hover:shadow-lg hover:-translate-y-1 transition"
-    >
-      {/* Badge */}
-      <span className="absolute -top-3 left-4 bg-[#E56668] text-white text-xs font-semibold px-3 py-1 rounded-full">
-        Featured Program
-      </span>
-
-      <div className="text-3xl">🇸🇬</div>
-      <h4 className="font-semibold text-lg leading-tight">
-        Singapore Global Insight <br /> Trip Mentoring
-      </h4>
-      <p className="text-sm text-gray-600">
-        Intensive mentoring for project proposal, interview,
-        and presentation preparation for SG Global Insight Trip 2026.
-      </p>
-
-      <p className="text-sm font-semibold text-[#E56668] mt-auto">
-        View program →
-      </p>
-    </Link>
-
-    {/* Speaking */}
-    <Link
-      href="/courses/speaking"
-      className="bg-white rounded-2xl p-4 shadow-sm border border-[#294154]/6
-                 flex flex-col gap-3 hover:shadow-md hover:-translate-y-1 transition"
-    >
-      <div className="text-3xl">🗣</div>
-      <h4 className="font-semibold">Speaking Fluency</h4>
-      <p className="text-sm text-gray-600">
-        Build real-world confidence, pronunciation,
-        and professional conversation skills.
-      </p>
-      <p className="text-sm font-semibold text-[#294154] mt-auto">
-        Explore →
-      </p>
-    </Link>
-
-    {/* Writing */}
-    <Link
-      href="/courses/writing"
-      className="bg-white rounded-2xl p-4 shadow-sm border border-[#294154]/6
-                 flex flex-col gap-3 hover:shadow-md hover:-translate-y-1 transition"
-    >
-      <div className="text-3xl">✍</div>
-      <h4 className="font-semibold">Writing Excellence</h4>
-      <p className="text-sm text-gray-600">
-        Academic essays, project proposals,
-        and professional writing with clarity.
-      </p>
-      <p className="text-sm font-semibold text-[#294154] mt-auto">
-        Explore →
-      </p>
-    </Link>
-
-    {/* IELTS */}
-    <Link
-      href="/courses/ielts"
-      className="bg-white rounded-2xl p-4 shadow-sm border border-[#294154]/6
-                 flex flex-col gap-3 hover:shadow-md hover:-translate-y-1 transition"
-    >
-      <div className="text-3xl">🎓</div>
-      <h4 className="font-semibold">IELTS / TOEFL Prep</h4>
-      <p className="text-sm text-gray-600">
-        Strategy-driven preparation
-        for academic and global mobility goals.
-      </p>
-      <p className="text-sm font-semibold text-[#294154] mt-auto">
-        Explore →
-      </p>
-    </Link>
-  </div>
-</section>
-
-        {/* BENEFITS */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-[#294154]/8">
-          <h3 className="text-2xl font-bold mb-4">Why Learners Love the IELS Course</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <BenefitCard title="Flexible schedule" desc="Pick times that suit your routine." emoji="🕒" />
-            <BenefitCard title="Personalized materials" desc="Materials tailored to your goals." emoji="📚" />
-            <BenefitCard title="Placement & progress" desc="Track real improvement with tests and reports." emoji="📈" />
-            <BenefitCard title="Certificate" desc="Receive an international certificate upon completion." emoji="🎖" />
-            <BenefitCard title="Free e-books" desc="Access IELS e-books included with your course." emoji="📘" />
-            <BenefitCard title="Community access" desc="1-year free IELS Lounge Premium access (speaking clubs)." emoji="💬" />
-          </div>
-
-          <p className="mt-6 text-gray-700">
-            Every course comes with mentorship, feedback, and community — because English is not just a skill, it’s your global passport.
-          </p>
-        </section>
-
-        {/* LEARNING FLOW */}
-        <section>
-          <h3 className="text-2xl font-bold mb-4">Learning Flow — Before → During → After</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <FlowColumn
-              color="[#DFF6E9]"
-              title="Before the Course"
-              items={[
-                "Tell Me About You",
-                "Take a Placement Test",
-                "Receive Level Report",
-                "Book Your Schedule",
-              ]}
-            />
-            <FlowColumn
-              color="[#FFF4D9]"
-              title="During the Course"
-              items={[
-                "Receive Personalized Materials",
-                "Join the 90-min Class",
-                "Take Quick Quizzes",
-                "Receive Personalized Feedback",
-              ]}
-            />
-            <FlowColumn
-              color="[#EAF4FF]"
-              title="After the Course"
-              items={[
-                "Take Post-Test",
-                "Earn Your Certificate",
-                "Join IELS Community",
-                "Continue Practice in Lounge",
-              ]}
-            />
-          </div>
-
-          <p className="mt-4 text-gray-700">
-            You&apos;re not just taking a course — you&apos;re joining a global mentorship journey.
-          </p>
-        </section>
-
-        {/* PERSONAL TOUCH */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-[#294154]/8 flex flex-col lg:flex-row items-center gap-6">
-          <div className="flex-shrink-0 w-28 h-28 relative rounded-full overflow-hidden">
-            <Image src="/images/arba.png" alt="Arba" fill className="object-cover" />
-          </div>
-
-          <div>
-            <blockquote className="text-xl italic text-gray-800">
-              “I&apos;ll personally accompany you throughout your learning journey — from zero until you reach your dream goal.
-              It&apos;s not just about learning English. I&apos;ll ask where you want to go, what your dream career is, and help you build the path to get there.”
-            </blockquote>
-
-            <p className="mt-4 text-gray-700">You&apos;re not only learning. You&apos;re connecting to real opportunities.</p>
-
-            <div className="mt-4">
-              <Button asChild className="bg-[#E56668] text-white font-semibold px-6 py-3 hover:bg-[#C04C4E]">
-                <Link href="/stories" >
-                Discover Member Stories
-              </Link></Button>
-            </div>
-          </div>
-        </section>
-
-
-
-        {/* FAQ */}
-        <section>
-          <h3 className="text-2xl font-bold mb-4">Frequently Asked Questions</h3>
-          <div className="space-y-3">
-            <details className="bg-white rounded-2xl p-4 border border-[#294154]/8">
-              <summary className="font-semibold cursor-pointer">Can I reschedule a session?</summary>
-              <p className="mt-2 text-gray-700">Yes — simply notify us 24 hours in advance and we&apos;ll rearrange your session.</p>
-            </details>
-
-            <details className="bg-white rounded-2xl p-4 border border-[#294154]/8">
-              <summary className="font-semibold cursor-pointer">What if I don&apos;t reach my target level?</summary>
-              <p className="mt-2 text-gray-700">We offer a level-up guarantee: one free evaluation session and retake if needed.</p>
-            </details>
-
-            <details className="bg-white rounded-2xl p-4 border border-[#294154]/8">
-              <summary className="font-semibold cursor-pointer">What materials are included?</summary>
-              <p className="mt-2 text-gray-700">Personalized materials, practice tests, and free access to IELS e-books are included.</p>
-            </details>
-
-            <details className="bg-white rounded-2xl p-4 border border-[#294154]/8">
-              <summary className="font-semibold cursor-pointer">Will I still get support after the course?</summary>
-              <p className="mt-2 text-gray-700">Yes — lifetime access to IELS Lounge and continued community support.</p>
-            </details>
-          </div>
-        </section>
-
-{/* REGISTER CTA */}
-<section className="bg-[#294154] text-white rounded-2xl p-12 text-center space-y-8">
-  <div>
-    <h3 className="text-3xl font-bold mb-3">Ready to Start Your English Journey?</h3>
-    <p className="text-white/90 max-w-3xl mx-auto text-lg leading-relaxed">
-      Getting started with IELS is simple. Follow the steps below — and you&apos;ll be learning with Arba and the IELS community in no time.
-    </p>
-  </div>
-
-{/* STEPS */}
-<div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-  <div className="bg-white/10 rounded-xl p-5 border border-white/20">
-    <div className="text-3xl mb-2">📝</div>
-    <h4 className="font-semibold text-lg">1. Fill the Registration Form</h4>
-    <p className="text-sm text-white/80">
-      Complete the registration form with your personal details,
-      learning goals, and preferred program.
-      <br />
-      <span className="italic">
-        This helps us understand you before the program starts.
-      </span>
-    </p>
-  </div>
-
-  <div className="bg-white/10 rounded-xl p-5 border border-white/20">
-    <div className="text-3xl mb-2">💳</div>
-    <h4 className="font-semibold text-lg">2. Confirm & Transfer Payment</h4>
-    <p className="text-sm text-white/80">
-      After confirmation, complete your payment to:
-      <br />
-      <strong>Bank Jago</strong><br />
-      <strong>103196849968</strong><br />
-      (a.n. Arbadza Rido Adzariyat)
-    </p>
-  </div>
-
-  <div className="bg-white/10 rounded-xl p-5 border border-white/20">
-    <div className="text-3xl mb-2">🚀</div>
-    <h4 className="font-semibold text-lg">3. Start Learning</h4>
-    <p className="text-sm text-white/80">
-      Receive onboarding instructions, schedule details,
-      and start your learning journey with IELS.
-    </p>
-  </div>
-</div>
-
-{/* CTA BUTTONS */}
-<div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-  
-  <Button asChild className="bg-[#E56668] text-white font-semibold px-6 py-3 hover:bg-[#C04C4E]">
-    <Link
-    href="https://forms.gle/t8xijoi6umFeYAu86"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="inline-flex items-center justify-center rounded-full px-6 py-3 bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] transition transform hover:scale-[1.02]"
-  > Register Now
-    
-  </Link></Button>
-
-  <Button asChild className="bg-white text-[#294154] font-semibold px-6 py-3 hover:bg-gray-200">
-    <Link
-    href="https://wa.me/6288297253491"
-    target="_blank"
-    rel="noopener noreferrer"
-  
-  >
-    💬 Ask via WhatsApp
-  </Link></Button>
-</div>
-      </section>
-
-      {/* COMMUNITY INVITE */}
-      <section className="bg-white rounded-2xl p-10 shadow-md border border-[#294154]/10 text-center">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-5">
+              <div className="flex gap-3 flex-wrap">
+                <Link href={GOOGLE_FORM_URL} target="_blank"
+                  className="px-6 py-3 bg-[#E56668] hover:bg-[#C04C4E] text-white font-bold rounded-xl transition-all shadow-lg flex items-center gap-2">
+                  Register Now <ExternalLink size={16} />
+                </Link>
+                <Link href={WHATSAPP_URL} target="_blank"
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-all flex items-center gap-2">
+                  <MessageCircle size={16} /> Chat on WhatsApp
+                </Link>
+              </div>
+              <p className="text-xs text-white/50">{formatIDR(PRICE_PER_SESSION)}/session · Placement Test included · Flexible scheduling</p>
             </div>
 
-            <div className="text-left">
-              <h4 className="text-xl font-semibold text-[#294154]">
-                Continue Your Growth in IELS Lounge Premium 🌍
-              </h4>
-              <p className="text-gray-700 mt-1 text-base leading-relaxed">
-                After completing your course, keep practicing daily in our exclusive Lounge. Join live speaking clubs, storytelling nights, 
-                and professional networking sessions — all in English.
-              </p>
+            {/* 3 MENTOR AVATARS (DIPERBESAR & DISESUAIKAN) */}
+            <div className="hidden lg:flex items-center justify-center gap-4 relative">
+              {MENTORS.map((mentor, i) => (
+                <div key={mentor.id}
+                  className="relative transition-transform duration-500 hover:z-30"
+                  style={{ 
+                    // Scale tengah lebih gede dikit, dan posisi diatur biar overlapping cantik
+                    transform: i === 1 ? "scale(1.15) translateY(-16px)" : "scale(0.95)", 
+                    zIndex: i === 1 ? 2 : 1 
+                  }}>
+                  {/* Container digedein dari w-36 h-44 jadi w-48 h-60 */}
+                  <div className="w-48 h-60 rounded-[24px] overflow-hidden border border-white/20 shadow-2xl relative group">
+                    <Image 
+                      src={mentor.image} 
+                      alt={mentor.name} 
+                      fill 
+                      className="object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1e2a38]/90 via-[#1e2a38]/20 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      {/* Teks digedein dikit biar kebaca enak di box yang baru */}
+                      <p className="text-white font-black text-lg leading-tight mb-0.5">{mentor.name.split(" ")[0]}</p>
+                      <p className="text-white/70 text-xs font-medium tracking-wide">{mentor.tagline}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-
-          <Button asChild className="bg-[#E56668] text-white font-semibold px-6 py-3 hover:bg-[#C04C4E]">
-            <Link
-            href="/iels-lounge"
-            className="inline-flex items-center justify-center rounded-full px-6 py-3 bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] transition transform hover:scale-[1.02] whitespace-nowrap"
-          >
-            Explore IELS Lounge
-          </Link></Button>
         </div>
       </section>
-      
-      </div>
+
+{/* ─── MEET THE MENTORS ─── */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <span className="inline-block px-4 py-1.5 bg-[#2F4157]/10 text-[#2F4157] rounded-full text-xs font-black uppercase tracking-widest mb-3">
+            The Principals
+          </span>
+          <h2 className="text-3xl font-black text-[#2F4157]">Meet Your Mentors</h2>
+          <p className="text-gray-500 mt-2 max-w-xl mx-auto text-sm">
+            Three IELS Principals, three specializations. Click a course track to filter programs.
+          </p>
+        </div>
+
+        {/* --- CAROUSEL WRAPPER --- */}
+        <div className="relative">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-6 -mx-6 px-6 md:mx-0 md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          >
+            {MENTORS.map((mentor) => (
+              <div 
+                key={mentor.id} 
+                // w-[85vw] bikin card-nya lebar tapi nyisain sedikit view ke card selanjutnya (biar user tau bisa diswipe)
+                className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center md:snap-align-none flex justify-center"
+              >
+                <div className="w-full">
+                  <MentorCard mentor={mentor} onSelectTrack={handleSelectTrack} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+  {/* --- DOT INDICATORS (Mobile Only) --- */}
+          <div className="flex justify-center gap-2 mt-4 md:hidden">
+            {MENTORS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollToMentor(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  activeIndex === i ? "w-6 bg-[#E56668]" : "w-2 bg-gray-300"
+                }`}
+                aria-label={`Go to mentor ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+{/* ─── COURSE PACKAGES ─── */}
+      <section id="courses-section" className="max-w-6xl mx-auto px-6 pb-20">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-black text-[#2F4157]">Signature Programs</h2>
+          <p className="text-gray-500 mt-3 text-sm max-w-lg mx-auto leading-relaxed">
+            Choose from our 6 specialized tracks. Switch between Intensive (8 sessions) or Extensive (21 sessions) to fit your pace.
+          </p>
+        </div>
+
+        {/* ── Filters (Disederhanakan & Clean) ── */}
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-10 flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest pl-2">
+              <Filter size={14} /> Filter
+            </div>
+            
+            {/* Mentor filter */}
+            <select 
+              value={filterMentor} 
+              onChange={e => setFilterMentor(e.target.value)}
+              className="text-xs font-bold bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-[#2F4157] cursor-pointer hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#E56668]/30"
+            >
+              <option value="all">All Mentors</option>
+              {MENTORS.map(m => <option key={m.id} value={m.id}>{m.name.split(" ")[0]}</option>)}
+            </select>
+
+            {/* Track filter */}
+            <select 
+              value={filterTrack} 
+              onChange={e => setFilterTrack(e.target.value)}
+              className="text-xs font-bold bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-[#2F4157] cursor-pointer hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#E56668]/30"
+            >
+              <option value="all">All Topics</option>
+              {Object.entries(TRACK_META).map(([id, t]) => (
+                <option key={id} value={id}>{t.emoji} {t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {(filterMentor !== "all" || filterTrack !== "all") && (
+            <button 
+              onClick={() => { setFilterMentor("all"); setFilterTrack("all"); }}
+              className="text-xs font-bold text-[#E56668] hover:text-[#C04C4E] hover:bg-[#E56668]/10 px-3 py-2 rounded-lg transition-colors"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+     {/* ── Grid of Tracks ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {Object.keys(TRACK_META)
+            .filter(trackId => filterTrack === "all" || trackId === filterTrack)
+            .map(trackId => {
+              const mentor = MENTORS.find(m => m.tracks.includes(trackId as CourseTrack));
+              if (!mentor || (filterMentor !== "all" && mentor.id !== filterMentor)) return null;
+
+              const intensive = COURSE_PACKAGES.find(p => p.trackId === trackId && p.type === "intensive");
+              const extensive = COURSE_PACKAGES.find(p => p.trackId === trackId && p.type === "extensive");
+              if (!intensive || !extensive) return null;
+
+              return (
+                <CourseCard 
+                  key={trackId} 
+                  trackId={trackId as CourseTrack} 
+                  mentor={mentor} 
+                  intensive={intensive} 
+                  extensive={extensive} 
+                  onViewCurriculum={setSelectedTrack} // <-- Tembak langsung ke state trackId
+                />
+              );
+          })}
+        </div>
+      </section>
+      {/* ─── CUSTOM PACKAGE ─── */}
+      <section className="max-w-6xl mx-auto px-6 pb-16">
+        <div className="bg-gradient-to-br from-[#2F4157] to-[#1e2a38] rounded-[32px] p-8 lg:p-12 text-white overflow-hidden relative">
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #E56668 0%, transparent 50%)" }} />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
+            <div className="flex-1">
+              <div className="inline-block px-3 py-1 bg-white/10 border border-white/20 rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+                🎛️ Custom Package
+              </div>
+              <h2 className="text-3xl font-black mb-3">Not Sure How Many Sessions You Need?</h2>
+              <p className="text-white/70 max-w-lg text-sm leading-relaxed">
+                Build your own package — choose your mentor, topic, and number of sessions. We'll customize a curriculum just for you after a quick consultation call.
+              </p>
+              <ul className="mt-4 space-y-2">
+                {["1-on-1 consultation to understand your goals", "Custom curriculum tailored to your timeline", "Same rate: Rp 90.000/session + free Lounge access"].map(i => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-white/80">
+                    <Check size={14} className="text-emerald-400 shrink-0" /> {i}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 w-full lg:w-80 shrink-0">
+              <p className="font-black text-white mb-4">Estimate Your Investment</p>
+              
+              <div className="mb-4">
+                <label className="text-xs text-white/60 font-bold uppercase tracking-wider">Sessions</label>
+                <div className="flex items-center gap-3 mt-2">
+                  <input
+                    type="range" min={1} max={40} value={customSessions}
+                    onChange={e => setCustomSessions(Number(e.target.value))}
+                    className="flex-1 accent-[#E56668]"
+                  />
+                  <span className="font-black text-2xl text-white w-10 text-center">{customSessions}</span>
+                </div>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-4 space-y-2 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60">Sessions cost</span>
+                  <span className="font-bold">{formatIDR(customSessions * PRICE_PER_SESSION)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60">IELS Lounge (1yr)</span>
+                  <span className="font-bold text-emerald-400">FREE</span>
+                </div>
+                <div className="border-t border-white/20 pt-2 flex justify-between">
+                  <span className="font-black">Total</span>
+                  <span className="font-black text-[#E56668] text-xl">{formatIDR(customSessions * PRICE_PER_SESSION)}</span>
+                </div>
+              </div>
+
+              <Link href={WHATSAPP_URL} target="_blank"
+                className="w-full py-3 bg-[#E56668] hover:bg-[#C04C4E] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all">
+                <MessageCircle size={16} /> Start Custom Consultation
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── LEARNING FLOW ─── */}
+      <section className="max-w-6xl mx-auto px-6 pb-16">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-[#2F4157]">How It Works</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { step: "01", icon: "📝", title: "Register & Fill Form", desc: "Fill out the registration form with your learning goals and preferred course." },
+            { step: "02", icon: "🎯", title: "Placement Test", desc: "Take a free diagnostic test so your mentor can personalize your curriculum." },
+            { step: "03", icon: "🚀", title: "Start Learning", desc: "Join 1-on-1 sessions with your mentor, follow your personalized curriculum." },
+            { step: "04", icon: "🎓", title: "Earn Certificate", desc: "Complete the post-test, pass with 80%+, and receive your IELS certificate." },
+          ].map((s, i) => (
+            <div key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative">
+              <span className="absolute top-4 right-4 text-5xl font-black text-gray-100">{s.step}</span>
+              <div className="text-3xl mb-3">{s.icon}</div>
+              <h4 className="font-black text-[#2F4157] mb-1">{s.title}</h4>
+              <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── FAQ ─── */}
+      <section className="max-w-4xl mx-auto px-6 pb-16">
+        <h2 className="text-3xl font-black text-[#2F4157] mb-6 text-center">FAQ</h2>
+        <div className="space-y-3">
+          {[
+            { q: "Can I reschedule a session?", a: "Yes — notify us 24 hours in advance and we'll rearrange your session." },
+            { q: "What if I don't reach my target level?", a: "We offer a level-up guarantee: one free evaluation session and retake if needed." },
+            { q: "Can I switch mentors or topics mid-course?", a: "Yes, with advance notice. Your progress is tracked so you won't lose anything." },
+            { q: "What's included in IELS Lounge Premium?", a: "1 year access to live speaking clubs, storytelling nights, and professional networking sessions — all in English." },
+            { q: "How do I pay?", a: "Transfer to Bank Jago · 103196849968 (a.n. Arbadza Rido Adzariyat) after registration confirmation." },
+          ].map((faq, i) => (
+            <details key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm group">
+              <summary className="font-bold cursor-pointer list-none flex items-center justify-between text-[#2F4157]">
+                {faq.q}
+                <ChevronDown size={16} className="text-gray-400 group-open:rotate-180 transition-transform" />
+              </summary>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">{faq.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── FINAL CTA ─── */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <div className="bg-[#2F4157] rounded-[32px] p-10 text-center text-white">
+          <h2 className="text-4xl font-black mb-3">Ready to Start?</h2>
+          <p className="text-white/70 max-w-xl mx-auto text-sm mb-8">
+            Register now or chat with us first. Either way, your IELS journey starts today.
+          </p>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link href={GOOGLE_FORM_URL} target="_blank"
+              className="px-8 py-4 bg-[#E56668] hover:bg-[#C04C4E] text-white font-black rounded-xl transition-all shadow-lg flex items-center gap-2">
+              Register Now <ArrowRight size={18} />
+            </Link>
+            <Link href={WHATSAPP_URL} target="_blank"
+              className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-all flex items-center gap-2">
+              <MessageCircle size={18} /> Ask via WhatsApp
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <Footer />
+
+      {/* Modal Kurikulum */}
+      <CurriculumModal 
+        trackId={selectedTrack} 
+        onClose={() => setSelectedTrack(null)} isDashboard={false} />
     </main>
-  );
-}
-
-/* Small presentational helpers (server-safe) */
-
-function BenefitCard({ title, desc, emoji }: { title: string; desc: string; emoji: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-[#294154]/8 shadow-sm flex items-start gap-3">
-      <div className="text-2xl">{emoji}</div>
-      <div>
-        <div className="font-semibold">{title}</div>
-        <div className="text-sm text-gray-600 mt-1">{desc}</div>
-      </div>
-    </div>
-  );
-}
-
-function FlowColumn({ title, items, color }: { title: string; items: string[]; color?: string }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-[#294154]/8 shadow-sm">
-      <h4 className="font-semibold mb-3">{title}</h4>
-      <ol className="list-decimal list-inside text-sm text-gray-700 space-y-2">
-        {items.map((it) => (
-          <li key={it}>{it}</li>
-        ))}
-      </ol>
-    </div>
-    
   );
 }
