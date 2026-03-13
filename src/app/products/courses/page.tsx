@@ -97,7 +97,7 @@ export default function CoursesPage() {
                   <Check size={16} className="text-emerald-400" /> Certificate included
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/70">
-                  <Check size={16} className="text-emerald-400" /> IELS Lounge 1yr free
+                  <Check size={16} className="text-emerald-400" /> IELS Lounge Exclusive Lifetime
                 </div>
               </div>
               <div className="flex gap-3 flex-wrap">
@@ -312,7 +312,7 @@ export default function CoursesPage() {
                   <span className="font-bold">{formatIDR(customSessions * PRICE_PER_SESSION)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-white/60">IELS Lounge (1yr)</span>
+                  <span className="text-white/60">IELS Lounge Exclusive Lifetime</span>
                   <span className="font-bold text-emerald-400">FREE</span>
                 </div>
                 <div className="border-t border-white/20 pt-2 flex justify-between">
@@ -360,7 +360,7 @@ export default function CoursesPage() {
             { q: "Can I reschedule a session?", a: "Yes — notify us 24 hours in advance and we'll rearrange your session." },
             { q: "What if I don't reach my target level?", a: "We offer a level-up guarantee: one free evaluation session and retake if needed." },
             { q: "Can I switch mentors or topics mid-course?", a: "Yes, with advance notice. Your progress is tracked so you won't lose anything." },
-            { q: "What's included in IELS Lounge Premium?", a: "1 year access to live speaking clubs, storytelling nights, and professional networking sessions — all in English." },
+            { q: "What's included in IELS Lounge Premium?", a: "Lifetime access to live speaking clubs, storytelling nights, and professional networking sessions — all in English." },
             { q: "How do I pay?", a: "Transfer to Bank Jago · 103196849968 (a.n. Arbadza Rido Adzariyat) after registration confirmation." },
           ].map((faq, i) => (
             <details key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm group">
