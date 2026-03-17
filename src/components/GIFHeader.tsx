@@ -133,10 +133,10 @@ export default function GIFHeader() {
   const closeMobileMenu  = () => setIsMobileMenuOpen(false);
 
   const navItems = [
-    { name: "About GIF", path: "/events/gif",            icon: Info     },
+    { name: "About", path: "/events/gif",            icon: Info     },
     { name: "Agenda",    path: "/events/gif/itinerary",  icon: Calendar },
     {
-      name: "Project Output", path: "#", icon: Target,
+      name: "Output", path: "#", icon: Target,
       children: [
         { name: "Project Realization", path: "/events/gif/project",  icon: Rocket   },
         { name: "Academic Research",   path: "/events/gif/research", icon: FileText },
