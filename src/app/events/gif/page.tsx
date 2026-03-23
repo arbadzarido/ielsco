@@ -109,16 +109,6 @@ export default function SGITPage() {
             </div>
           </div>
 
-          {/* CTA BUTTON - Using Accent Color */}
-          <div className="flex flex-col items-center gap-3">
-             <Button asChild className="bg-[#914D4D] text-white font-semibold px-6 py-3 rounded-full hover:bg-[#7a3e3e] shadow-lg shadow-[#914D4D]/20 transition-all">
-                <Link href="/dashboard/gif">Apply For Fully Funded!  <ArrowRight className="w-5 h-5"/></Link>
-             </Button> 
-            
-            <span className="text-xs text-gray-300 font-medium tracking-wide uppercase">
-              Limited & Selective Program
-            </span>
-          </div>
 
         </div>
       </section>

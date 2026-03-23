@@ -173,7 +173,7 @@ export default function GIFHeader() {
               className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-[#E56668] text-white font-bold hover:bg-[#C04C4E] transition-all shadow-lg"
             >
               <LogIn size={20} />
-              Register
+              Dashboard
             </Link>
           </div>
         );
@@ -184,7 +184,7 @@ export default function GIFHeader() {
           className="ml-2 inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] transition transform hover:scale-[1.02] shadow-lg shadow-red-900/20"
         >
           <LogIn size={18} />
-          Register
+          Dashboard
         </Link>
       );
     }
