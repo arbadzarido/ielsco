@@ -1,5 +1,74 @@
 "use client";
 
+/**
+ * ============================================================
+ * GIF SINGAPORE 2026 — APPLICATION DASHBOARD
+ * ============================================================
+ *
+ * SUPABASE INTEGRATION GUIDE
+ * --------------------------
+ * Run the SQL below in Supabase SQL Editor to add the required
+ * columns to gif_registrations:
+ *
+ * -- 1. Mark that admin has verified/confirmed this user's Phase 1 submission
+ * --    Admin sets this to TRUE via SQL after matching the Google Form email.
+ * ALTER TABLE gif_registrations
+ *   ADD COLUMN IF NOT EXISTS phase1_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ *
+ * -- 2. Phase 2 submission result — null until admin shortlists
+ * --    Values: null | 'passed' | 'failed'
+ * --    (screening_status column already exists from previous iteration)
+ *
+ * -- 3. (Optional but recommended) index for fast lookup by email
+ * CREATE INDEX IF NOT EXISTS idx_gif_reg_email ON gif_registrations(email);
+ *
+ *
+ * HOW ADMIN MARKS PHASE 1 AS VERIFIED (manual SQL workflow):
+ * -----------------------------------------------------------
+ * After downloading the Google Form responses, run:
+ *
+ *   UPDATE gif_registrations
+ *   SET phase1_verified = TRUE
+ *   WHERE email = 'applicant@email.com';
+ *
+ * Bulk update from a list:
+ *
+ *   UPDATE gif_registrations
+ *   SET phase1_verified = TRUE
+ *   WHERE email IN (
+ *     'user1@email.com',
+ *     'user2@email.com',
+ *     'user3@email.com'
+ *   );
+ *
+ *
+ * HOW ADMIN MARKS SCREENING RESULT (Phase 2 passed/failed):
+ * ----------------------------------------------------------
+ *   UPDATE gif_registrations
+ *   SET screening_status = 'passed'   -- or 'failed'
+ *   WHERE email = 'applicant@email.com';
+ *
+ *
+ * PHASE LOGIC SUMMARY
+ * -------------------
+ * Phase 1 card:
+ *   - Before Mar 24       → normal form card (original)
+ *   - Mar 24–Apr 3        → "submitted_screening" (verified=true) OR "closed_not_submitted" (verified=false)
+ *   - After Apr 3         → "passed" (screening_status='passed') OR "failed"
+ *   - Mentoring           → auto-complete (no changes)
+ *
+ * Phase 2 card:
+ *   - phase1_verified = false         → LOCKED (not verified / never submitted)
+ *   - phase1_verified = true
+ *       + before Apr 11 deadline      → UNLOCKED (can view guideline & submit)
+ *       + after Apr 11 + not submitted → LOCKED (deadline passed)
+ *       + submitted                   → show submission state
+ *   - screening_status = 'passed'
+ *       (post-announcement)           → show PASSED state
+ *   - Mentoring                       → auto-complete (no changes)
+ * ============================================================
+ */
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -50,21 +119,27 @@ type UserProfile = {
 type GIFRegistration = {
   id: string;
   phase1_status: "open" | "submitted";
+  /** TRUE = admin has confirmed this email in the Google Form responses */
+  phase1_verified: boolean;
   phase2_status: "open" | "submitted";
   is_lounge_member: boolean;
   project_drive_link: string;
   essay_motivation: string;
   is_mentoring_participant: boolean;
+  /** null = not yet determined | 'passed' | 'failed' */
   screening_status: "passed" | "failed" | null;
 };
 
 // --- DATE CONSTANTS ---
-const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00");
-const SCREENING_END_DATE = new Date("2026-04-03T23:59:59");
+const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00"); // Phase 1 closes
+const SCREENING_END_DATE      = new Date("2026-04-03T23:59:59"); // Phase 1 announcement
+const PHASE2_DEADLINE         = new Date("2026-04-11T23:59:59"); // Phase 2 submission closes
 const NOW = new Date();
 
-const IS_SCREENING_PHASE = NOW >= REGISTRATION_CLOSE_DATE && NOW <= SCREENING_END_DATE;
+const IS_SCREENING_PHASE   = NOW >= REGISTRATION_CLOSE_DATE && NOW <= SCREENING_END_DATE;
 const IS_POST_ANNOUNCEMENT = NOW > SCREENING_END_DATE;
+const IS_PHASE2_OPEN       = NOW <= PHASE2_DEADLINE;
+const IS_PHASE2_CLOSED     = NOW > PHASE2_DEADLINE;
 
 function buildMayarUrl(baseUrl: string, email?: string | null): string {
   if (!email) return baseUrl;
@@ -76,7 +151,7 @@ function buildMayarUrl(baseUrl: string, email?: string | null): string {
 // SUB-COMPONENTS — Phase 1 card variants (palette: #2F4055 #914D4D #304156)
 // ============================================================
 
-/** Screening phase — user SUBMITTED phase 1 */
+/** Screening phase — user's Phase 1 has been VERIFIED by admin */
 function Phase1SubmittedCard() {
   return (
     <motion.div
@@ -86,7 +161,6 @@ function Phase1SubmittedCard() {
       className="bg-white rounded-3xl border border-[#304156]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden"
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]" />
-
       <div className="flex justify-between items-start mb-6">
         <div className="bg-[#304156] p-4 rounded-2xl shadow-lg">
           <CheckCircle className="w-7 h-7 text-white" />
@@ -121,14 +195,14 @@ function Phase1SubmittedCard() {
       <div className="bg-[#2F4055]/5 border border-[#2F4055]/15 rounded-2xl p-4 flex items-start gap-3">
         <Info className="w-4 h-4 text-[#2F4055] mt-0.5 shrink-0" />
         <p className="text-xs text-[#2F4055]/80 leading-relaxed">
-          <span className="font-bold">While you wait —</span> start preparing your essay and project proposal so you're ready if you advance to Phase 2!
+          <span className="font-bold">While you wait —</span> you can already start reviewing the Essay &amp; Project guidelines below!
         </p>
       </div>
     </motion.div>
   );
 }
 
-/** Screening phase — user did NOT submit phase 1 */
+/** Screening phase — user's Phase 1 is NOT verified (never submitted the form) */
 function Phase1ClosedCard() {
   return (
     <motion.div
@@ -138,7 +212,6 @@ function Phase1ClosedCard() {
       className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-80"
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]/30" />
-
       <div className="flex justify-between items-start mb-6">
         <div className="bg-[#304156]/20 p-4 rounded-2xl">
           <User className="w-7 h-7 text-[#304156]/40" />
@@ -171,7 +244,7 @@ function Phase1ClosedCard() {
   );
 }
 
-/** Post-announcement — user PASSED screening */
+/** Post-announcement — user PASSED Phase 1 screening */
 function Phase1PassedCard() {
   return (
     <motion.div
@@ -181,7 +254,6 @@ function Phase1PassedCard() {
       className="bg-white rounded-3xl border border-[#304156]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden"
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]" />
-
       <div className="flex justify-between items-start mb-6">
         <div className="bg-[#304156] p-4 rounded-2xl shadow-lg">
           <CheckCircle className="w-7 h-7 text-white" />
@@ -200,7 +272,7 @@ function Phase1PassedCard() {
             Congratulations — you passed Phase 1! 🎉
           </p>
           <p className="text-xs text-[#304156]/70 leading-relaxed">
-            Your application has been shortlisted by our delegate team. Proceed to complete your Essay &amp; Project Proposal to continue your GIF journey.
+            Your application has been shortlisted by our delegate team. Complete your Essay &amp; Project Proposal to continue your GIF journey.
           </p>
         </div>
       </div>
@@ -208,7 +280,7 @@ function Phase1PassedCard() {
   );
 }
 
-/** Post-announcement — user FAILED / not selected */
+/** Post-announcement — user was NOT selected in Phase 1 */
 function Phase1FailedCard() {
   return (
     <motion.div
@@ -218,7 +290,6 @@ function Phase1FailedCard() {
       className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-80"
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]/30" />
-
       <div className="flex justify-between items-start mb-6">
         <div className="bg-[#304156]/20 p-4 rounded-2xl">
           <User className="w-7 h-7 text-[#304156]/40" />
@@ -248,65 +319,206 @@ function Phase1FailedCard() {
   );
 }
 
-/** Phase 2 locked */
-function Phase2LockedCard({ reason }: { reason: "screening" | "failed" | "not_submitted" }) {
-  const messages: Record<typeof reason, { title: string; body: string }> = {
-    screening: {
-      title: "Under Review",
-      body: "Phase 2 will unlock once Phase 1 screening results are announced on April 3, 2026.",
-    },
-    failed: {
-      title: "Not Available",
-      body: "Phase 2 is only accessible for applicants who passed Phase 1 screening.",
-    },
-    not_submitted: {
-      title: "Registration Closed",
-      body: "Phase 2 requires completing Phase 1 registration, which has now closed.",
-    },
-  };
-  const msg = messages[reason];
+// ============================================================
+// Phase 2 card variants
+// ============================================================
+
+type Phase2CardState =
+  | "not_verified"      // phase1_verified = false → hard locked
+  | "unlocked"          // phase1_verified = true + deadline not passed → accessible
+  | "deadline_passed"   // phase1_verified = true + deadline passed + not submitted
+  | "submitted"         // phase2_status = "submitted"
+  | "passed";           // screening_status = "passed" (post-announcement)
+
+function Phase2Card({
+  state,
+  phase2Status,
+}: {
+  state: Phase2CardState;
+  phase2Status: "open" | "submitted";
+}) {
+  // ── HARD LOCKED: not verified ──
+  if (state === "not_verified") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-50"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]/20" />
+        <div className="flex justify-between items-start mb-6">
+          <div className="bg-[#914D4D]/10 p-4 rounded-2xl">
+            <Lock className="w-7 h-7 text-[#914D4D]/40" />
+          </div>
+          <span className="bg-[#914D4D]/10 text-[#914D4D]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+            <Lock className="w-3.5 h-3.5" /> Locked
+          </span>
+        </div>
+        <h3 className="text-xl font-bold text-[#2F4157]/40 mb-3">Essay &amp; Project Proposal</h3>
+        <p className="text-sm text-[#2F4157]/30 mb-6 leading-relaxed">
+          Submit your motivation essay and SDG-focused project proposal.
+        </p>
+        <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
+          <Lock className="w-4 h-4 text-[#914D4D]/50 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-[#914D4D]/60 mb-1">Phase 1 Required</p>
+            <p className="text-xs text-[#914D4D]/50 leading-relaxed">
+              You need to complete Phase 1 Administration first to access this section.
+            </p>
+          </div>
+        </div>
+        <div className="mt-auto pt-4">
+          <Button disabled className="w-full py-3 rounded-xl font-bold bg-[#914D4D]/10 text-[#914D4D]/30 cursor-not-allowed border border-[#914D4D]/10">
+            <Lock className="w-4 h-4 mr-2" /> Locked
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── DEADLINE PASSED: verified but didn't submit in time ──
+  if (state === "deadline_passed") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-60"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]/30" />
+        <div className="flex justify-between items-start mb-6">
+          <div className="bg-[#914D4D]/10 p-4 rounded-2xl">
+            <Clock className="w-7 h-7 text-[#914D4D]/50" />
+          </div>
+          <span className="bg-[#914D4D]/10 text-[#914D4D]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+            <XCircle className="w-3.5 h-3.5" /> Deadline Passed
+          </span>
+        </div>
+        <h3 className="text-xl font-bold text-[#2F4157]/50 mb-3">Essay &amp; Project Proposal</h3>
+        <p className="text-sm text-[#2F4157]/40 mb-6 leading-relaxed">
+          Submit your motivation essay and SDG-focused project proposal.
+        </p>
+        <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
+          <AlertCircle className="w-4 h-4 text-[#914D4D]/60 mt-0.5 shrink-0" />
+          <p className="text-xs text-[#914D4D]/60 leading-relaxed">
+            The Phase 2 submission deadline (April 11, 2026) has passed. Submissions are no longer accepted for this batch.
+          </p>
+        </div>
+        <div className="mt-auto pt-4">
+          <Button disabled className="w-full py-3 rounded-xl font-bold bg-[#914D4D]/10 text-[#914D4D]/30 cursor-not-allowed border border-[#914D4D]/10">
+            <Lock className="w-4 h-4 mr-2" /> Submission Closed
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── PASSED: post-announcement screening passed ──
+  if (state === "passed") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]" />
+        <div className="flex justify-between items-start mb-6">
+          <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg">
+            <CheckCircle className="w-7 h-7 text-white" />
+          </div>
+          <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-[#914D4D]/20">
+            <CheckCircle className="w-3.5 h-3.5" /> Phase 2 Passed
+          </span>
+        </div>
+        <h3 className="text-xl font-bold text-[#2F4157] mb-2">Essay &amp; Project Proposal</h3>
+        <div className="bg-[#914D4D]/5 border border-[#914D4D]/15 rounded-2xl p-5 flex items-start gap-4">
+          <PartyPopper className="w-6 h-6 text-[#914D4D] shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-[#914D4D] text-sm mb-1">
+              You've been selected as a GIF Fellow! 🎉
+            </p>
+            <p className="text-xs text-[#914D4D]/70 leading-relaxed">
+              Your Essay &amp; Project Proposal has been reviewed and accepted. Our team will reach out with the next steps for your fellowship journey.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── UNLOCKED or SUBMITTED: phase1 verified, deadline still open ──
+  // (both states use the same full card, just button/badge differs)
+  const isSubmitted = state === "submitted" || phase2Status === "submitted";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-50"
+      className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group"
     >
-      <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]/20" />
-
-      <div className="flex justify-between items-start mb-6">
-        <div className="bg-[#914D4D]/10 p-4 rounded-2xl">
-          <Lock className="w-7 h-7 text-[#914D4D]/40" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]" />
+      <div className="relative z-10">
+        <div className="flex justify-between items-start mb-6">
+          <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg">
+            <FileText className="w-7 h-7 text-white" />
+          </div>
+          {isSubmitted ? (
+            <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100">
+              <CheckCircle className="w-3.5 h-3.5" /> Submitted
+            </span>
+          ) : (
+            <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+              Required
+            </span>
+          )}
         </div>
-        <span className="bg-[#914D4D]/10 text-[#914D4D]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-          <Lock className="w-3.5 h-3.5" /> Locked
-        </span>
-      </div>
 
-      <h3 className="text-xl font-bold text-[#2F4157]/40 mb-3">Essay &amp; Project Proposal</h3>
-      <p className="text-sm text-[#2F4157]/30 mb-6 leading-relaxed">
-        Submit your motivation essay and SDG-focused project proposal.
-      </p>
+        <h3 className="text-xl font-bold text-[#2F4157] mb-3">Essay &amp; Project Proposal</h3>
+        <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+          Submit your motivation essay and SDG-focused project proposal. We'll guide you through every step!
+        </p>
 
-      <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
-        <Lock className="w-4 h-4 text-[#914D4D]/50 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-xs font-bold text-[#914D4D]/60 mb-1">{msg.title}</p>
-          <p className="text-xs text-[#914D4D]/50 leading-relaxed">{msg.body}</p>
+        {/* Phase 2 deadline reminder */}
+        {!isSubmitted && (
+          <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-xl p-3 mb-4 flex items-center gap-3">
+            <Clock className="w-4 h-4 text-[#2F4055] shrink-0" />
+            <p className="text-xs text-[#2F4055]/80">
+              <span className="font-bold">Deadline: April 11, 2026</span> (23:59 WIB)
+            </p>
+          </div>
+        )}
+
+        <div className="bg-[#914D4D]/5 rounded-xl p-4 mb-6 border border-[#914D4D]/10">
+          <div className="text-xs font-bold text-[#914D4D] mb-2 uppercase tracking-wide">What You'll Get:</div>
+          <ul className="space-y-2 text-xs text-[#914D4D]">
+            <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>Essay writing frameworks</span></li>
+            <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>Project proposal templates</span></li>
+            <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>SDG impact framework</span></li>
+          </ul>
         </div>
-      </div>
 
-      <div className="mt-auto pt-4">
-        <Button disabled className="w-full py-3 rounded-xl font-bold bg-[#914D4D]/10 text-[#914D4D]/30 cursor-not-allowed border border-[#914D4D]/10">
-          <Lock className="w-4 h-4 mr-2" /> Locked
-        </Button>
+        <div className="mt-auto">
+          <Link href="/dashboard/gif/essay-project" className="block">
+            <Button className="w-full py-3 rounded-xl font-bold bg-[#914D4D] hover:bg-[#7a3e3e] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
+              <span className="relative z-10 flex items-center justify-center">
+                {isSubmitted ? "View Submission" : "Start Submission"}
+                <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </Button>
+          </Link>
+        </div>
       </div>
     </motion.div>
   );
 }
 
-/** Mentoring upsell — closed version */
+// ============================================================
+// Mentoring closed banner
+// ============================================================
+
 function MentoringClosedBanner() {
   return (
     <motion.div
@@ -383,6 +595,7 @@ export default function GIFDashboardPage() {
         setUserProfile(profile);
 
         if (!gifRegRes.data) {
+          // Only auto-create row during open registration window
           if (NOW < REGISTRATION_CLOSE_DATE) {
             const { data: newData, error: insertError } = await supabase
               .from("gif_registrations")
@@ -392,6 +605,7 @@ export default function GIFDashboardPage() {
                 email: profile.email,
                 avatar_url: profile.avatar_url,
                 phase1_status: "open",
+                phase1_verified: false,
                 phase2_status: "open",
                 is_lounge_member: false,
                 is_mentoring_participant: false,
@@ -402,6 +616,7 @@ export default function GIFDashboardPage() {
             if (insertError) console.error("GAGAL INSERT GIF REG:", insertError.message);
             else setRegData(newData);
           }
+          // After close date: no row = never registered, show locked states
         } else {
           setRegData(gifRegRes.data);
         }
@@ -417,6 +632,8 @@ export default function GIFDashboardPage() {
 
   const handlePhase1Click = async () => {
     window.open("https://forms.gle/EYGdX54TtvQvaaM89", "_blank");
+    // Note: phase1_verified is set by admin via SQL, NOT by the frontend click.
+    // The frontend click only records that the user visited the form link.
     if (regData?.phase1_status !== "submitted") {
       setRegData(prev => prev ? { ...prev, phase1_status: "submitted" } : null);
       await supabase.from("gif_registrations").update({
@@ -432,12 +649,16 @@ export default function GIFDashboardPage() {
     </div>
   );
 
-  // --- DERIVED STATE ---
-  const isMentoring = regData?.is_mentoring_participant === true;
+  // ============================================================
+  // DERIVED STATE
+  // ============================================================
+
+  const isMentoring       = regData?.is_mentoring_participant === true;
   const allRequirementsMet = isMentoring;
+  const isVerified        = regData?.phase1_verified === true;
 
   const completedStepsCount = allRequirementsMet ? 3 : [
-    regData?.phase1_status === "submitted",
+    isVerified,                                   // Phase 1 = verified by admin
     regData?.phase2_status === "submitted",
     regData?.is_lounge_member === true,
   ].filter(Boolean).length;
@@ -453,23 +674,37 @@ export default function GIFDashboardPage() {
     Math.ceil((new Date("2026-03-23T23:59:59").getTime() - Date.now()) / (1000 * 60 * 60 * 24))
   );
 
+  // ── Phase 1 card variant ──
   type Phase1Variant = "normal" | "submitted_screening" | "closed_not_submitted" | "passed" | "failed";
   let phase1Variant: Phase1Variant = "normal";
   if (!isMentoring) {
     if (IS_SCREENING_PHASE) {
-      phase1Variant = regData?.phase1_status === "submitted" ? "submitted_screening" : "closed_not_submitted";
+      // During screening: verified = submitted, not verified = closed
+      phase1Variant = isVerified ? "submitted_screening" : "closed_not_submitted";
     } else if (IS_POST_ANNOUNCEMENT) {
       phase1Variant = regData?.screening_status === "passed" ? "passed" : "failed";
     }
+    // Before REGISTRATION_CLOSE_DATE → stays "normal" (original card)
   }
 
-  type Phase2Lock = "none" | "screening" | "failed" | "not_submitted";
-  let phase2Lock: Phase2Lock = "none";
+  // ── Phase 2 card state ──
+  let phase2State: Phase2CardState = "not_verified";
   if (!isMentoring) {
-    if (IS_SCREENING_PHASE) {
-      phase2Lock = "screening";
-    } else if (IS_POST_ANNOUNCEMENT && regData?.screening_status !== "passed") {
-      phase2Lock = regData?.phase1_status === "submitted" ? "failed" : "not_submitted";
+    if (!isVerified) {
+      // Not verified by admin → hard locked regardless of date
+      phase2State = "not_verified";
+    } else if (regData?.screening_status === "passed" && IS_POST_ANNOUNCEMENT) {
+      // Post-announcement passed state
+      phase2State = "passed";
+    } else if (regData?.phase2_status === "submitted") {
+      // Already submitted
+      phase2State = "submitted";
+    } else if (IS_PHASE2_CLOSED) {
+      // Verified but deadline passed without submitting
+      phase2State = "deadline_passed";
+    } else {
+      // Verified + deadline still open → fully unlocked
+      phase2State = "unlocked";
     }
   }
 
@@ -626,9 +861,9 @@ export default function GIFDashboardPage() {
             <div className="absolute top-5 left-8 h-1 bg-[#914D4D] transition-all duration-500" style={{ width: `calc(${(completedStepsCount / 3) * 100}% - 4rem)` }}></div>
             <div className="relative flex justify-between items-start">
               {[
-                { label: "Administration Data", done: allRequirementsMet || regData?.phase1_status === "submitted" },
-                { label: "Essay & Project", done: allRequirementsMet || regData?.phase2_status === "submitted" },
-                { label: "IELS Lounge", done: !!isLoungeDone },
+                { label: "Administration Data", done: allRequirementsMet || isVerified },
+                { label: "Essay & Project",     done: allRequirementsMet || regData?.phase2_status === "submitted" },
+                { label: "IELS Lounge",         done: !!isLoungeDone },
               ].map((step, i) => (
                 <div key={i} className="flex flex-col items-center text-center w-24">
                   <div className={cn("w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-lg mb-2 transition-all", step.done ? "bg-[#914D4D]" : "bg-gray-200")}>
@@ -673,12 +908,13 @@ export default function GIFDashboardPage() {
               </div>
             </motion.div>
           ) : phase1Variant === "normal" ? (
+            // Original card — registration window still open
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#304156]/30 transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]"></div>
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6">
                   <div className="bg-[#304156] p-4 rounded-2xl shadow-lg"><User className="w-7 h-7 text-white" /></div>
-                  {regData?.phase1_status === "submitted" ? (
+                  {isVerified ? (
                     <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100"><CheckCircle className="w-3.5 h-3.5" /> Submitted</span>
                   ) : (
                     <span className="bg-[#304156]/10 text-[#304156] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">Required</span>
@@ -697,7 +933,7 @@ export default function GIFDashboardPage() {
                 <div className="mt-auto space-y-3">
                   <Button onClick={handlePhase1Click} className="w-full py-3 rounded-xl font-bold bg-[#304156] hover:bg-[#2F4055] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
                     <span className="relative z-10 flex items-center justify-center">
-                      {regData?.phase1_status === "submitted" ? "View Form Response" : "Fill Administration Form"}
+                      {isVerified ? "View Form Response" : "Fill Administration Form"}
                       <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </span>
                   </Button>
@@ -716,6 +952,7 @@ export default function GIFDashboardPage() {
 
           {/* ── PHASE 2 CARD ── */}
           {isMentoring ? (
+            // Mentoring auto-complete — original, unchanged
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]"></div>
               <div className="relative z-10">
@@ -740,42 +977,11 @@ export default function GIFDashboardPage() {
                 </div>
               </div>
             </motion.div>
-          ) : phase2Lock !== "none" ? (
-            <Phase2LockedCard reason={phase2Lock} />
           ) : (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]"></div>
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg"><FileText className="w-7 h-7 text-white" /></div>
-                  {regData?.phase2_status === "submitted" ? (
-                    <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100"><CheckCircle className="w-3.5 h-3.5" /> Submitted</span>
-                  ) : (
-                    <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">Required</span>
-                  )}
-                </div>
-                <h3 className="text-xl font-bold text-[#2F4157] mb-3">Essay &amp; Project Proposal</h3>
-                <p className="text-sm text-gray-600 mb-6 leading-relaxed">Submit your motivation essay and SDG-focused project proposal. We'll guide you through every step!</p>
-                <div className="bg-[#914D4D]/5 rounded-xl p-4 mb-6 border border-[#914D4D]/10">
-                  <div className="text-xs font-bold text-[#914D4D] mb-2 uppercase tracking-wide">What You'll Get:</div>
-                  <ul className="space-y-2 text-xs text-[#914D4D]">
-                    <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>Essay writing frameworks</span></li>
-                    <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>Project proposal templates</span></li>
-                    <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>SDG impact framework</span></li>
-                  </ul>
-                </div>
-                <div className="mt-auto">
-                  <Link href="/dashboard/gif/essay-project" className="block">
-                    <Button className="w-full py-3 rounded-xl font-bold bg-[#914D4D] hover:bg-[#7a3e3e] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
-                      <span className="relative z-10 flex items-center justify-center">
-                        {regData?.phase2_status === "submitted" ? "View Submission" : "Start Submission"}
-                        <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
+            <Phase2Card
+              state={phase2State}
+              phase2Status={regData?.phase2_status ?? "open"}
+            />
           )}
 
           {/* ── IELS LOUNGE CARD (unchanged) ── */}
