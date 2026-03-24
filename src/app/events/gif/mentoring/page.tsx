@@ -56,7 +56,7 @@ const curriculum: CurriculumItem[] = [
 ];
 
 
-const DEADLINE = new Date("2026-03-24T23:59:59+07:00");
+const DEADLINE = new Date("2026-03-25T11:59:59+07:00");
 
 function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState<number>(
