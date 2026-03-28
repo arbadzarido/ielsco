@@ -18,37 +18,37 @@ type CurriculumItem = {
 
 const curriculum: CurriculumItem[] = [
   {
-    date: "25 Mar 2026",
+    date: "5 April 2026",
     title: "Session 01: Micro-Problem Identification",
     desc: "Narrowing down broad education issues into a specific, data-backed problem statement focused on SDG 4 (Quality Education).",
     output: "Validated SDG 4 problem statement.",
   },
   {
-    date: "29 Mar 2026",
+    date: "12 April 2026",
     title: "Session 02: Building the MVP - Solution Architecture",
     desc: "Designing a Minimum Viable Project. Learning how to build a creative yet feasible solution framework for absolute beginners.",
     output: "Initial project concept note.",
   },
   {
-    date: "02 Apr 2026",
+    date: "19 Apr 2026",
     title: "Session 03: Operational Blueprint",
     desc: "Mapping out the technical 'how-to' of your project. Creating a step-by-step workflow, timeline, and resource requirements.",
     output: "Technical operational flowchart.",
   },
   {
-    date: "06 Apr 2026",
+    date: "26 Apr 2026",
     title: "Session 04: Impact Logic & Measurement",
     desc: "Learning the Theory of Change. Defining how your project creates real impact and how to measure success using clear indicators.",
     output: "Impact M&E framework.",
   },
   {
-    date: "09 Apr 2026",
+    date: "03 May 2026",
     title: "Session 05: Stress-Testing & Final Refinement",
     desc: "Final logic check and risk mitigation. Sharpening the technical project specs to ensure it's bulletproof for final selection.",
     output: "Final project specification.",
   },
   {
-    date: "11 Apr 2026",
+    date: "04 May 2026",
     title: "DEADLINE: Final Project Deck Submission",
     desc: "The final gate. Submitting your complete project deck and technical specs for the Global Impact Fellowship selection.",
     output: "Submitted Golden Ticket application.",
@@ -56,7 +56,7 @@ const curriculum: CurriculumItem[] = [
 ];
 
 
-const DEADLINE = new Date("2026-03-25T11:59:59+07:00");
+const DEADLINE = new Date("2026-03-28T11:59:59+07:00");
 
 function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState<number>(
