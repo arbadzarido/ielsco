@@ -682,7 +682,9 @@ export default function GIFDashboardPage() {
       // During screening: verified = submitted, not verified = closed
       phase1Variant = isVerified ? "submitted_screening" : "closed_not_submitted";
     } else if (IS_POST_ANNOUNCEMENT) {
-      phase1Variant = regData?.screening_status === "passed" ? "passed" : "failed";
+      // PERBAIKAN: Lolos Phase 1 ditandai dengan isVerified (phase1_verified === true)
+      // screening_status HANYA dipakai untuk hasil akhir (Phase 2)
+      phase1Variant = isVerified ? "passed" : "failed";
     }
     // Before REGISTRATION_CLOSE_DATE → stays "normal" (original card)
   }
@@ -694,7 +696,7 @@ export default function GIFDashboardPage() {
       // Not verified by admin → hard locked regardless of date
       phase2State = "not_verified";
     } else if (regData?.screening_status === "passed" && IS_POST_ANNOUNCEMENT) {
-      // Post-announcement passed state
+      // Post-announcement passed state (Hasil akhir Phase 2)
       phase2State = "passed";
     } else if (regData?.phase2_status === "submitted") {
       // Already submitted
@@ -707,6 +709,7 @@ export default function GIFDashboardPage() {
       phase2State = "unlocked";
     }
   }
+
 
   const showMentoringClosed = !isMentoring && (IS_SCREENING_PHASE || IS_POST_ANNOUNCEMENT);
 
