@@ -133,7 +133,7 @@ type GIFRegistration = {
 // --- DATE CONSTANTS ---
 const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00"); // Phase 1 closes
 const SCREENING_END_DATE      = new Date("2026-04-03T23:59:59"); // Phase 1 announcement
-const PHASE2_DEADLINE         = new Date("2026-04-11T23:59:59"); // Phase 2 submission closes
+const PHASE2_DEADLINE         = new Date("2026-04-25T23:59:59"); // Phase 2 submission closes
 const NOW = new Date();
 
 const IS_SCREENING_PHASE   = NOW >= REGISTRATION_CLOSE_DATE && NOW <= SCREENING_END_DATE;
@@ -402,7 +402,7 @@ function Phase2Card({
         <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
           <AlertCircle className="w-4 h-4 text-[#914D4D]/60 mt-0.5 shrink-0" />
           <p className="text-xs text-[#914D4D]/60 leading-relaxed">
-            The Phase 2 submission deadline (April 11, 2026) has passed. Submissions are no longer accepted for this batch.
+            The Phase 2 submission deadline (April 25, 2026) has passed. Submissions are no longer accepted for this batch.
           </p>
         </div>
         <div className="mt-auto pt-4">
@@ -486,7 +486,7 @@ function Phase2Card({
           <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-xl p-3 mb-4 flex items-center gap-3">
             <Clock className="w-4 h-4 text-[#2F4055] shrink-0" />
             <p className="text-xs text-[#2F4055]/80">
-              <span className="font-bold">Deadline: April 11, 2026</span> (23:59 WIB)
+              <span className="font-bold">Deadline: April 25, 2026</span> (23:59 WIB)
             </p>
           </div>
         )}

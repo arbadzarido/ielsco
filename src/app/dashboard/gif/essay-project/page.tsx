@@ -82,7 +82,7 @@ export default function EssayProjectPage() {
   };
 
   // DEADLINE LOGIC: April 11, 2026
-  const DEADLINE = new Date("2026-04-11T23:59:59");
+  const DEADLINE = new Date("2026-04-25T23:59:59");
   const now = new Date();
   const isPastDeadline = now > DEADLINE;
 
@@ -153,7 +153,7 @@ setUserProfile({
 
   const handleSubmit = async () => {
     if (isPastDeadline) {
-      showModal("Deadline Passed", "The submission deadline (April 11th) has passed. Updates are no longer accepted.", "warning");
+      showModal("Deadline Passed", "The submission deadline (April 25th) has passed. Updates are no longer accepted.", "warning");
       return;
     }
 
@@ -640,7 +640,7 @@ setUserProfile({
                 
                 <div className="space-y-3">
                   {[
-                    { num: "1", title: "Cover Slide", content: "Project title, your name, team (if any), date. Make it visually compelling!" },
+                    { num: "1", title: "Cover Slide", content: "Project title, your name, date. Make it visually compelling!" },
                     { num: "2-3", title: "Problem Statement", content: "What social/environmental problem are you addressing? Use data and real-world examples. Connect to specific SDG(s)." },
                     { num: "4-5", title: "Target Audience & Impact", content: "Who will benefit from your project? How many people? What specific change do you aim to create?" },
                     { num: "6-8", title: "Solution/Innovation", content: "Your proposed solution. What makes it innovative? How does it work? Include visuals, diagrams, or prototypes if possible." },

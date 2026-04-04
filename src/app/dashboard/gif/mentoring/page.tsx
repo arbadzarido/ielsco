@@ -503,7 +503,7 @@ setUserProfile({
               </div>
               
               <div className="flex items-center gap-2 text-sm font-bold text-[#914D4D]">
-                <Calendar className="w-4 h-4" /> DEADLINE: 11 April 2026 (23:59 WIB)
+                <Calendar className="w-4 h-4" /> DEADLINE: 2 May 2026 (23:59 WIB)
               </div>
             </div>
 

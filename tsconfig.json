@@ -17,8 +17,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    /* ✅ ADDITIONS BELOW */
-    "baseUrl": ".", // Allow absolute paths like "@/utils/email"
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
