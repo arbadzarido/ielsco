@@ -224,8 +224,13 @@ export default function MentoringDashboard() {
       alert("Please enter your project link");
       return;
     }
-    if (!projectLink.includes("drive.google.com") && !projectLink.includes("docs.google.com")) {
-      alert("Please enter a valid Google Drive link");
+    // VALIDASI BARU: Terima Google Drive, Google Docs, atau Canva
+    if (
+      !projectLink.includes("drive.google.com") && 
+      !projectLink.includes("docs.google.com") && 
+      !projectLink.includes("canva.com")
+    ) {
+      alert("Please enter a valid Google Drive or Canva link");
       return;
     }
 
@@ -240,7 +245,7 @@ export default function MentoringDashboard() {
         .eq('id', userData?.id);
 
       if (!error) {
-        alert("Project submitted successfully!");
+        alert("Project submitted successfully! You can update this link anytime before the final deadline.");
         setUserData((prev: any) => ({ ...prev, project_drive_link: projectLink }));
       } else {
         alert("Error submitting. Please try again.");
@@ -558,7 +563,7 @@ export default function MentoringDashboard() {
                       <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
                       <div>
                         <span className="font-semibold text-[#914D4D]">Submission:</span>
-                        <span className="text-[#304156]"> Google Drive link (view access)</span>
+                        <span className="text-[#304156]"> Canva Link (Review) or Google Drive (Final PDF)</span>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
@@ -621,63 +626,83 @@ export default function MentoringDashboard() {
               </div>
               
               <div>
-                <h2 className="text-3xl font-black text-[#304156] mb-2">Final Project Deck Submission</h2>
+                <h2 className="text-3xl font-black text-[#304156] mb-2">Project Deck Submission</h2>
                 <p className="text-[#304156]/70 text-base leading-relaxed">
-                  Submit your complete project deck and technical specs. This is your Golden Ticket application for the Global Impact Fellowship selection.
+                  Submit your project deck for mentoring review, and update it to your final PDF before the ultimate deadline.
                 </p>
               </div>
 
               <div className="bg-[#304156]/5 rounded-2xl p-5 border border-[#304156]/10">
-                <h3 className="font-bold text-[#304156] mb-3 text-sm uppercase tracking-wide">Checklist Requirements:</h3>
+                <h3 className="font-bold text-[#304156] mb-3 text-sm uppercase tracking-wide">Submission Timeline:</h3>
                 <ul className="space-y-3 text-sm text-[#304156]/80">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
-                    <span>Validated SDG 4 problem statement & root cause analysis.</span>
+                    <Clock className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                    <span><strong>Phase 1 (Review):</strong> Submit your Canva link by <strong className="text-[#304156]">8 May 2026</strong> for progress tracking and feedback.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
-                    <span>Complete project deck presentation (Maximum 15 slides).</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
-                    <span>Impact M&E framework & Technical operational flowchart included.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
-                    <span>Valid Google Drive link with "Anyone with link can view" permission.</span>
+                    <span><strong>Phase 2 (Final):</strong> Update this form with your final Google Drive link (PDF format) by <strong className="text-[#304156]">15 May 2026</strong>.</span>
                   </li>
                 </ul>
               </div>
               
-              <div className="flex items-center gap-2 text-sm font-bold text-[#914D4D]">
-                <Calendar className="w-4 h-4" /> DEADLINE: 15 May 2026 (23:59 WIB)
+              <div className="flex flex-col gap-2 text-sm font-bold text-[#914D4D]">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> REVIEW DEADLINE: 8 May 2026
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> FINAL DEADLINE: 15 May 2026 (23:59 WIB)
+                </div>
               </div>
             </div>
 
             <div className="w-full lg:w-[400px] flex flex-col justify-center">
               {userData?.project_drive_link ? (
-                <div className="bg-[#304156]/5 border border-[#304156]/10 rounded-2xl p-8 text-center">
-                  <CheckCircle className="w-16 h-16 mx-auto mb-4 text-[#304156]" />
-                  <h3 className="font-black text-xl text-[#304156] mb-2">Golden Ticket Submitted!</h3>
-                  <p className="text-sm text-[#304156]/70 mb-6 leading-relaxed">
-                    Your final project deck is secured and currently under review by the judging panel.
-                  </p>
-                  <Button
-                    onClick={() => window.open(projectLink, "_blank")}
-                    className="w-full bg-white text-[#304156] border-2 border-[#304156]/20 hover:bg-[#304156]/5 shadow-sm py-5 rounded-xl font-bold"
-                  >
-                    View Your Document
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <label className="block text-sm font-bold text-[#304156] mb-2">Google Drive URL <span className="text-[#914D4D]">*</span></label>
+                <div className="bg-[#304156]/5 border border-[#304156]/10 rounded-2xl p-6 shadow-sm">
+                  <div className="text-center mb-4">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-3 text-[#304156]" />
+                    <h3 className="font-black text-xl text-[#304156]">Link Saved!</h3>
+                    <p className="text-xs text-[#304156]/70 mt-1">You can update your link until the final deadline.</p>
+                  </div>
+                  
+                  <label className="block text-sm font-bold text-[#304156] mb-2">Update URL <span className="text-[#914D4D]">*</span></label>
                   <input
                     type="url"
                     value={projectLink}
                     onChange={(e) => setProjectLink(e.target.value)}
-                    placeholder="https://drive.google.com/..."
+                    placeholder="https://canva.com/... or https://drive..."
+                    className="w-full px-4 py-3.5 rounded-xl bg-white border border-gray-200 text-[#304156] focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition mb-4 text-sm"
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.open(userData.project_drive_link, "_blank")}
+                      className="w-1/3 bg-white text-[#304156] border border-[#304156]/20 hover:bg-[#304156]/5 py-3 rounded-xl font-bold shadow-sm"
+                      title="View current link"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={handleProjectSubmit}
+                      disabled={submitting || projectLink === userData.project_drive_link}
+                      className="w-2/3 py-3 rounded-xl font-bold text-base bg-[#914D4D] text-white hover:bg-[#7a3e3e] shadow-md transition-all"
+                    >
+                      {submitting ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        "Update Link"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm">
+                  <label className="block text-sm font-bold text-[#304156] mb-2">Canva / Drive URL <span className="text-[#914D4D]">*</span></label>
+                  <input
+                    type="url"
+                    value={projectLink}
+                    onChange={(e) => setProjectLink(e.target.value)}
+                    placeholder="https://canva.com/... or https://drive..."
                     className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-[#304156] focus:bg-white focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition mb-4 text-sm"
                   />
                   <Button
@@ -691,12 +716,12 @@ export default function MentoringDashboard() {
                       </>
                     ) : (
                       <>
-                        <Upload className="w-5 h-5 mr-2" /> Submit Project Deck
+                        <Upload className="w-5 h-5 mr-2" /> Submit Link
                       </>
                     )}
                   </Button>
                   <p className="text-xs text-center text-gray-500 mt-3 font-medium">
-                    Ensure link access is set to public.
+                    Ensure link access is set to public (Anyone with link can view).
                   </p>
                 </div>
               )}
