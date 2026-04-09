@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
@@ -22,7 +22,10 @@ import {
   BookOpen,
   ArrowRight,
   Clock,
-  Rocket
+  Rocket,
+  ChevronDown,
+  ChevronUp,
+  Info
 } from "lucide-react";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -42,7 +45,7 @@ type MentoringSession = {
   title: string;
   desc: string;
   output: string;
-  date: string;
+  displayDate: string;
   status: 'upcoming' | 'completed' | 'locked';
   recording_url?: string;
   materials_url?: string;
@@ -61,50 +64,94 @@ export default function MentoringDashboard() {
   const [userData, setUserData] = useState<any>(null);
   const [projectLink, setProjectLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [projectGuideOpen, setProjectGuideOpen] = useState(false);
 
-  // --- REAL CURRICULUM DATA ---
-  const sessions: MentoringSession[] = [
+  // --- REAL CURRICULUM DATA (Base) ---
+  const rawSessions = [
     {
       week: 1,
       title: "Session 01: Micro-Problem Identification",
       desc: "Narrowing down broad education issues into a specific, data-backed problem statement focused on SDG 4.",
       output: "Validated SDG 4 problem statement.",
-      date: "25 Mar 2026",
-      status: 'upcoming', // Set to upcoming logically before the date
+      dateString: "2026-04-05T23:59:59", // Batas akhir hari untuk hitung completed
+      displayDate: "05 Apr 2026",
     },
     {
       week: 2,
       title: "Session 02: Building the MVP",
       desc: "Designing a Minimum Viable Project. Learning how to build a creative yet feasible solution framework.",
       output: "Initial project concept note.",
-      date: "29 Mar 2026",
-      status: 'locked',
+      dateString: "2026-04-12T23:59:59",
+      displayDate: "12 Apr 2026",
     },
     {
       week: 3,
       title: "Session 03: Operational Blueprint",
       desc: "Mapping out the technical 'how-to' of your project. Creating a step-by-step workflow, timeline, and resource requirements.",
       output: "Technical operational flowchart.",
-      date: "02 Apr 2026",
-      status: 'locked',
+      dateString: "2026-04-19T23:59:59",
+      displayDate: "19 Apr 2026",
     },
     {
       week: 4,
       title: "Session 04: Impact Logic & Measurement",
       desc: "Learning the Theory of Change. Defining how your project creates real impact and how to measure success.",
       output: "Impact M&E framework.",
-      date: "06 Apr 2026",
-      status: 'locked',
+      dateString: "2026-04-26T23:59:59",
+      displayDate: "26 Apr 2026",
     },
     {
       week: 5,
       title: "Session 05: Stress-Testing & Final Refinement",
       desc: "Final logic check and risk mitigation. Sharpening the technical project specs to ensure it's bulletproof.",
       output: "Final project specification.",
-      date: "09 Apr 2026",
-      status: 'locked',
+      dateString: "2026-05-03T23:59:59",
+      displayDate: "03 May 2026",
     }
   ];
+
+  // Dynamic status logic
+  const sessions: MentoringSession[] = useMemo(() => {
+    const now = new Date();
+    
+    return rawSessions.map((session, index, arr) => {
+      const sessionDate = new Date(session.dateString);
+      const isCompleted = now > sessionDate;
+      
+      let status: 'completed' | 'upcoming' | 'locked' = 'locked';
+      
+      if (isCompleted) {
+        status = 'completed';
+      } else {
+        // Jika sesi sebelumnya sudah lewat (completed) atau ini sesi pertama, maka upcoming
+        if (index === 0) {
+          status = 'upcoming';
+        } else {
+          const prevSessionDate = new Date(arr[index - 1].dateString);
+          if (now > prevSessionDate) {
+            status = 'upcoming';
+          } else {
+            status = 'locked';
+          }
+        }
+      }
+
+      // Beri link default ke GDrive kalau statusnya completed
+      const recording_url = status === 'completed' ? "https://drive.google.com/drive/folders/1SIc6tGryDeCBBucCMZpo0b1CftW3osUT?usp=drive_link" : undefined;
+      const materials_url = status === 'completed' ? "https://drive.google.com/drive/folders/1H9hrLhZdZKNbkjpMhUU3Ed5Qd_Ww0nnq?usp=sharing" : undefined;
+
+      return {
+        week: session.week,
+        title: session.title,
+        desc: session.desc,
+        output: session.output,
+        displayDate: session.displayDate,
+        status,
+        recording_url,
+        materials_url
+      };
+    });
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -115,39 +162,39 @@ export default function MentoringDashboard() {
           return;
         }
 
-  // --- GANTI DENGAN INI ---
-// 1. Ambil data Membership langsung (Source of Truth Tier)
-const { data: dbMembership } = await supabase
-  .from("memberships")
-  .select("*")
-  .eq("user_id", user.id)
-  .maybeSingle();
+        // 1. Ambil data Membership langsung (Source of Truth Tier)
+        const { data: dbMembership } = await supabase
+          .from("memberships")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-// 2. Ambil data Profile (Nama & Avatar)
-const { data: dbUser } = await supabase
-  .from("users")
-  .select("full_name, avatar_url")
-  .eq("id", user.id)
-  .maybeSingle();
+        // 2. Ambil data Profile (Nama & Avatar)
+        const { data: dbUser } = await supabase
+          .from("users")
+          .select("full_name, avatar_url")
+          .eq("id", user.id)
+          .maybeSingle();
 
-// 3. Mapping Tier (Insider/Visionary)
-const dbTier = dbMembership?.tier;
-let uiTier: "explorer" | "insider" | "visionary" = "explorer";
+        // 3. Mapping Tier (Insider/Visionary)
+        const dbTier = dbMembership?.tier;
+        let uiTier: "explorer" | "insider" | "visionary" = "explorer";
 
-if (dbTier === "pro") {
-  uiTier = "insider";
-} else if (dbTier === "premium" || dbTier === "visionary") {
-  uiTier = "visionary";
-}
+        if (dbTier === "pro") {
+          uiTier = "insider";
+        } else if (dbTier === "premium" || dbTier === "visionary") {
+          uiTier = "visionary";
+        }
 
-const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        const avatarUrl = dbUser?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
 
-setUserProfile({
-  full_name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-  email: user.email || "",
-  avatar_url: avatarUrl,
-  tier: uiTier
-});
+        setUserProfile({
+          full_name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+          email: user.email || "",
+          avatar_url: avatarUrl,
+          tier: uiTier
+        });
+
         // 2. Check Mentoring Registration
         const { data } = await supabase
           .from('gif_registrations')
@@ -415,7 +462,7 @@ setUserProfile({
                       <h3 className="text-lg font-bold text-[#304156]">{session.title}</h3>
                       <div className="flex items-center gap-2 text-sm font-semibold">
                         <Calendar className="w-4 h-4 text-[#304156]/60" />
-                        <span className="text-[#304156]/80">{session.date}</span>
+                        <span className="text-[#304156]/80">{session.displayDate}</span>
                       </div>
                     </div>
                     
@@ -461,6 +508,106 @@ setUserProfile({
           </div>
         </div>
 
+        {/* PROJECT PROPOSAL GUIDE SECTION */}
+        <div className="bg-white rounded-2xl border border-[#914D4D]/20 overflow-hidden shadow-sm">
+          <button
+            onClick={() => setProjectGuideOpen(!projectGuideOpen)}
+            className="w-full px-6 py-5 flex items-center justify-between hover:bg-gray-50 transition"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-[#914D4D]/10 p-2 rounded-lg">
+                <Target className="w-5 h-5 text-[#914D4D]" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-xl font-bold text-[#304156]">Project Proposal Framework</h2>
+                <p className="text-sm text-gray-500">Step-by-step guide for your SDG project</p>
+              </div>
+            </div>
+            {projectGuideOpen ? <ChevronUp className="w-5 h-5 text-[#914D4D]" /> : <ChevronDown className="w-5 h-5 text-[#914D4D]" />}
+          </button>
+
+          {projectGuideOpen && (
+            <div className="px-6 pb-6 space-y-6">
+              <div className="h-px bg-gray-200"></div>
+
+              {/* Format Requirements */}
+              <div className="bg-[#914D4D]/5 rounded-xl p-6 border border-[#914D4D]/20">
+                <h3 className="font-bold text-[#914D4D] mb-4 flex items-center gap-2">
+                  <Info className="w-5 h-5" />
+                  Presentation Format Requirements
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-semibold text-[#914D4D]">Format:</span>
+                        <span className="text-[#304156]"> PowerPoint, Google Slides, or Canva</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-semibold text-[#914D4D]">Length:</span>
+                        <span className="text-[#304156]"> Maximum 15 slides</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-semibold text-[#914D4D]">Submission:</span>
+                        <span className="text-[#304156]"> Google Drive link (view access)</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-semibold text-[#914D4D]">Focus:</span>
+                        <span className="text-[#304156]"> Must align with SDGs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide-by-Slide Framework */}
+              <div>
+                <h3 className="font-bold text-[#304156] mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-[#914D4D]" />
+                  Recommended Slide Structure
+                </h3>
+                
+                <div className="space-y-3">
+                  {[
+                    { num: "1", title: "Cover Slide", content: "Project title, your name, date. Make it visually compelling!" },
+                    { num: "2-3", title: "Problem Statement", content: "What social/environmental problem are you addressing? Use data and real-world examples. Connect to specific SDG(s)." },
+                    { num: "4-5", title: "Target Audience & Impact", content: "Who will benefit from your project? How many people? What specific change do you aim to create?" },
+                    { num: "6-8", title: "Solution/Innovation", content: "Your proposed solution. What makes it innovative? How does it work? Include visuals, diagrams, or prototypes if possible." },
+                    { num: "9-10", title: "Implementation Plan", content: "Timeline, key activities, resources needed. Be realistic but ambitious." },
+                    { num: "11-12", title: "Budget & Sustainability", content: "Estimated costs breakdown. How will the project sustain itself? Revenue model or funding strategy." },
+                    { num: "13-14", title: "Team & Metrics", content: "Your team's strengths and how you will measure success (KPIs)." },
+                    { num: "15", title: "Call to Action", content: "What support do you need? How can GIF help you scale your impact?" }
+                  ].map((slide, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:border-[#914D4D] transition">
+                      <div className="flex items-start gap-3">
+                        <div className="bg-[#304156] text-white px-3 py-1 rounded-lg font-bold text-sm flex-shrink-0">
+                          Slide {slide.num}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-[#304156] mb-1">{slide.title}</h4>
+                          <p className="text-sm text-gray-600">{slide.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Project Submission Section */}
         <div className="bg-white border border-[#914D4D]/20 rounded-3xl p-8 md:p-10 relative overflow-hidden shadow-xl">
           {/* Subtle Background Accent */}
@@ -503,7 +650,7 @@ setUserProfile({
               </div>
               
               <div className="flex items-center gap-2 text-sm font-bold text-[#914D4D]">
-                <Calendar className="w-4 h-4" /> DEADLINE: 2 May 2026 (23:59 WIB)
+                <Calendar className="w-4 h-4" /> DEADLINE: 15 May 2026 (23:59 WIB)
               </div>
             </div>
 
