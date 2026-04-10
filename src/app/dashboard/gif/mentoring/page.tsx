@@ -219,18 +219,9 @@ export default function MentoringDashboard() {
     init();
   }, [router, supabase]);
 
-  const handleProjectSubmit = async () => {
+const handleProjectSubmit = async () => {
     if (!projectLink.trim()) {
       alert("Please enter your project link");
-      return;
-    }
-    // VALIDASI BARU: Terima Google Drive, Google Docs, atau Canva
-    if (
-      !projectLink.includes("drive.google.com") && 
-      !projectLink.includes("docs.google.com") && 
-      !projectLink.includes("canva.com")
-    ) {
-      alert("Please enter a valid Google Drive or Canva link");
       return;
     }
 
@@ -256,7 +247,6 @@ export default function MentoringDashboard() {
       setSubmitting(false);
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -613,7 +603,7 @@ export default function MentoringDashboard() {
           )}
         </div>
 
-        {/* Project Submission Section */}
+       {/* Project Submission Section */}
         <div className="bg-white border border-[#914D4D]/20 rounded-3xl p-8 md:p-10 relative overflow-hidden shadow-xl">
           {/* Subtle Background Accent */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#914D4D]/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -628,7 +618,7 @@ export default function MentoringDashboard() {
               <div>
                 <h2 className="text-3xl font-black text-[#304156] mb-2">Project Deck Submission</h2>
                 <p className="text-[#304156]/70 text-base leading-relaxed">
-                  Submit your project deck for mentoring review, and update it to your final PDF before the ultimate deadline.
+                  Submit your project deck for mentoring review, and update it to your final document before the ultimate deadline.
                 </p>
               </div>
 
@@ -637,11 +627,11 @@ export default function MentoringDashboard() {
                 <ul className="space-y-3 text-sm text-[#304156]/80">
                   <li className="flex items-start gap-3">
                     <Clock className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
-                    <span><strong>Phase 1 (Review):</strong> Submit your Canva link by <strong className="text-[#304156]">8 May 2026</strong> for progress tracking and feedback.</span>
+                    <span><strong>Phase 1 (Review):</strong> Submit your draft link by <strong className="text-[#304156]">8 May 2026</strong> for progress tracking and feedback.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#914D4D]" />
-                    <span><strong>Phase 2 (Final):</strong> Update this form with your final Google Drive link (PDF format) by <strong className="text-[#304156]">15 May 2026</strong>.</span>
+                    <span><strong>Phase 2 (Final):</strong> Update this form with your final link by <strong className="text-[#304156]">15 May 2026</strong>.</span>
                   </li>
                 </ul>
               </div>
@@ -670,7 +660,7 @@ export default function MentoringDashboard() {
                     type="url"
                     value={projectLink}
                     onChange={(e) => setProjectLink(e.target.value)}
-                    placeholder="https://canva.com/... or https://drive..."
+                    placeholder="Paste any link here..."
                     className="w-full px-4 py-3.5 rounded-xl bg-white border border-gray-200 text-[#304156] focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition mb-4 text-sm"
                   />
                   
@@ -697,12 +687,12 @@ export default function MentoringDashboard() {
                 </div>
               ) : (
                 <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm">
-                  <label className="block text-sm font-bold text-[#304156] mb-2">Canva / Drive URL <span className="text-[#914D4D]">*</span></label>
+                  <label className="block text-sm font-bold text-[#304156] mb-2">Project URL <span className="text-[#914D4D]">*</span></label>
                   <input
                     type="url"
                     value={projectLink}
                     onChange={(e) => setProjectLink(e.target.value)}
-                    placeholder="https://canva.com/... or https://drive..."
+                    placeholder="Paste any link here..."
                     className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-[#304156] focus:bg-white focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition mb-4 text-sm"
                   />
                   <Button
@@ -721,7 +711,7 @@ export default function MentoringDashboard() {
                     )}
                   </Button>
                   <p className="text-xs text-center text-gray-500 mt-3 font-medium">
-                    Ensure link access is set to public (Anyone with link can view).
+                    Ensure link access is set to public so mentors can view it.
                   </p>
                 </div>
               )}
@@ -729,7 +719,7 @@ export default function MentoringDashboard() {
             
           </div>
         </div>
-
+        
         {/* Community & Support */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm hover:shadow-md transition-shadow">
