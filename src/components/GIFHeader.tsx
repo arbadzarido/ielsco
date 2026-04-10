@@ -139,7 +139,6 @@ export default function GIFHeader() {
       name: "Output", path: "#", icon: Target,
       children: [
         { name: "Project Realization", path: "/events/gif/project",  icon: Rocket   },
-        { name: "Academic Research",   path: "/events/gif/research", icon: FileText },
       ],
     },
     {

@@ -29,7 +29,6 @@ export default function ItineraryPage() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay" />
         
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight">
             The Incubation <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD1D1] to-[#FFFFFF]">Masterclass.</span>
@@ -57,7 +56,7 @@ export default function ItineraryPage() {
         {/* --- DAY 1: ARRIVAL --- */}
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
           <div className="lg:w-5/12 flex flex-col justify-center h-full">
-            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-xs mb-3">Tuesday, May 5</div>
+            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-xs mb-3">Day 1 • Tuesday, July 7</div>
             <h2 className="text-4xl md:text-5xl font-extrabold text-[#304156] mb-5 tracking-tight leading-tight">Arrival &<br/>Onboarding</h2>
             <p className="text-[#304156]/70 leading-relaxed mb-8 text-lg">
               Touch down in the Lion City. We begin with cultural immersion at Jewel Changi, followed by dormitory check-in at the National University of Singapore.
@@ -102,7 +101,7 @@ export default function ItineraryPage() {
         <div className="flex flex-col xl:flex-row items-stretch gap-10 bg-[#FFFFFF] p-8 md:p-12 rounded-[3rem] shadow-lg border border-gray-100">
           <div className="xl:w-1/2 flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 bg-[#304156]/10 text-[#304156] px-3 py-1 rounded-full text-xs font-bold mb-4 w-max"><Lightbulb className="w-4 h-4" /> Academic Core: Day 1</div>
-            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Wednesday, May 6</div>
+            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Day 2 • Wednesday, July 8</div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#304156] mb-4">The Discovery Phase</h2>
             <p className="text-[#304156]/80 leading-relaxed mb-6">
               <strong>Mastering Step 1 & 2 (Empathize & Design).</strong> How did Singapore transform its education system in just one generation? We dissect Singapore's policy frameworks and apply them to map the root causes of Indonesia's SDG 4 challenges.
@@ -155,7 +154,7 @@ export default function ItineraryPage() {
         <div className="flex flex-col xl:flex-row-reverse items-stretch gap-10 bg-[#FFFFFF] p-8 md:p-12 rounded-[3rem] shadow-lg border border-gray-100">
           <div className="xl:w-1/2 flex flex-col justify-center">
              <div className="inline-flex items-center gap-2 bg-[#304156]/10 text-[#304156] px-3 py-1 rounded-full text-xs font-bold mb-4 w-max"><Microscope className="w-4 h-4" /> Academic Core: Day 2</div>
-            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Thursday, May 7</div>
+            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Day 3 • Thursday, July 9</div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#304156] mb-4">The Research Core</h2>
             <p className="text-[#304156]/80 leading-relaxed mb-6">
               <strong>Mastering Step 3 (Ideate).</strong> Good intentions are useless without proof. We visit NUS Research Labs to master "Evidence-Based Impact." You will learn how to structure Pre-Test/Post-Test metrics.
@@ -208,7 +207,7 @@ export default function ItineraryPage() {
         <div className="flex flex-col xl:flex-row items-stretch gap-10 bg-[#FFFFFF] p-8 md:p-12 rounded-[3rem] shadow-lg border border-gray-100">
           <div className="xl:w-1/2 flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 bg-[#304156]/10 text-[#304156] px-3 py-1 rounded-full text-xs font-bold mb-4 w-max"><Rocket className="w-4 h-4" /> Academic Core: Day 3</div>
-            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Friday, May 8</div>
+            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Day 4 • Friday, July 10</div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#304156] mb-4">Execution Blueprint</h2>
             <p className="text-[#304156]/80 leading-relaxed mb-6">
               <strong>Mastering Step 4 & 5 (Prototype & Test).</strong> Ideas are cheap; execution is everything. We visit <em>The Hangar</em> (NUS Enterprise) to learn how startups build MVPs. 
@@ -257,62 +256,58 @@ export default function ItineraryPage() {
           </div>
         </div>
 
-        {/* --- DAY 5 & 6: WEEKEND TRIP --- */}
+        {/* --- DAY 5: WEEKEND TRIP (COMBINED SATURDAY) --- */}
         <div className="space-y-10">
           <div className="text-center pt-10 border-t border-gray-200">
              <Compass className="w-12 h-12 text-[#914D4D] mx-auto mb-4" />
-             <h2 className="text-4xl font-extrabold text-[#304156] mb-4">Weekend Impact Trip</h2>
-             <p className="text-[#304156]/70 max-w-2xl mx-auto text-lg">Two days dedicated to cultural benchmarking, understanding urbanization, and team bonding.</p>
+             <h2 className="text-4xl font-extrabold text-[#304156] mb-4">Day 5: Weekend Impact Trip</h2>
+             <p className="text-[#304156]/70 max-w-2xl mx-auto text-lg">A full day dedicated to cultural benchmarking, exploring heritage, understanding urbanization, and team bonding.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-10">
-             {/* Saturday */}
-             <div className="bg-[#FFFFFF] rounded-3xl p-8 border border-gray-100 shadow-lg group hover:border-[#914D4D]/30 transition-all">
-               <div className="h-48 mb-6 rounded-2xl overflow-hidden">
-                 <img src="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000&auto=format&fit=crop" alt="Marina Bay Sands" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-               </div>
-               <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Saturday, May 9</div>
-               <h3 className="text-2xl font-bold text-[#304156] mb-4">Future of Urbanization</h3>
-               <ul className="space-y-3 text-sm text-[#304156]/80">
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>09:00:</strong> MRT & Bus from NUS to Chinatown</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>13:00:</strong> Lunch at Maxwell Hawker Centre</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>15:00:</strong> Merlion, Marina Bay Walk, Gardens by the Bay</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>18:00:</strong> Dinner at Lau Pa Sat</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>20:30:</strong> Garden Rhapsody Light Show</li>
-               </ul>
-             </div>
-
-             {/* Sunday */}
+             {/* Morning - Heritage */}
              <div className="bg-[#FFFFFF] rounded-3xl p-8 border border-gray-100 shadow-lg group hover:border-[#914D4D]/30 transition-all">
                <div className="h-48 mb-6 rounded-2xl overflow-hidden">
                  <img src="https://images.unsplash.com/photo-1620216508316-24dfbc52bc23?q=80&w=1000&auto=format&fit=crop" alt="Kampong Glam" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                </div>
-               <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Sunday, May 10</div>
+               <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Saturday, July 11 (Morning)</div>
                <h3 className="text-2xl font-bold text-[#304156] mb-4">Heritage & Identity</h3>
                <ul className="space-y-3 text-sm text-[#304156]/80">
                  <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>09:00:</strong> Bus & MRT from NUS to Bugis</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>10:00:</strong> Explore Bugis Street & Souvenir Hunting</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>13:00:</strong> Lunch at Albert Centre Hawker</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>14:00:</strong> Explore Haji Lane & Kampong Glam</li>
-                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>18:45:</strong> Return to NUS for Dinner</li>
+                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>10:00:</strong> Explore Haji Lane & Kampong Glam</li>
+                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>12:30:</strong> Lunch at Albert Centre Hawker</li>
+               </ul>
+             </div>
+
+             {/* Afternoon - Urbanization */}
+             <div className="bg-[#FFFFFF] rounded-3xl p-8 border border-gray-100 shadow-lg group hover:border-[#914D4D]/30 transition-all">
+               <div className="h-48 mb-6 rounded-2xl overflow-hidden">
+                 <img src="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000&auto=format&fit=crop" alt="Marina Bay Sands" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+               </div>
+               <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Saturday, July 11 (Afternoon)</div>
+               <h3 className="text-2xl font-bold text-[#304156] mb-4">Future of Urbanization</h3>
+               <ul className="space-y-3 text-sm text-[#304156]/80">
+                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>14:30:</strong> Merlion Park & Marina Bay Walk</li>
+                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>17:30:</strong> Dinner at Lau Pa Sat</li>
+                 <li className="flex gap-2"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]" /> <strong>20:30:</strong> Garden Rhapsody Light Show</li>
                </ul>
              </div>
           </div>
         </div>
 
-        {/* --- DAY 7: INDUSTRY (GLINTS) --- */}
+        {/* --- DAY 6: INDUSTRY DAY & GALA --- */}
         <div className="flex flex-col lg:flex-row items-stretch gap-10 bg-gradient-to-r from-[#2F4055] to-[#304156] text-[#FFFFFF] p-8 md:p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] opacity-30 blur-[100px] rounded-full"></div>
           
           <div className="lg:w-1/2 flex flex-col justify-center relative z-10">
             <div className="inline-flex items-center gap-2 bg-[#FFFFFF]/10 text-[#FFFFFF] px-3 py-1 rounded-full text-xs font-bold mb-4 w-max border border-[#FFFFFF]/20"><Briefcase className="w-4 h-4" /> Professional Exposure</div>
-            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Monday, May 11</div>
-            <h2 className="text-4xl font-extrabold mb-4">Global Industry Day</h2>
+            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-sm mb-2">Day 6 • Sunday, July 12</div>
+            <h2 className="text-4xl font-extrabold mb-4">Global Industry Day & Gala</h2>
             <p className="text-white/70 leading-relaxed mb-6">
-              Transition from academia to the professional world. We visit <strong>Glints HQ</strong> to understand global career pathways. The day ends with the Final Impact Presentation and Farewell Gala.
+              Transition from academia to the professional world. We meet with startup leaders to understand global career pathways. The day ends with the Final Impact Presentation and Farewell Gala.
             </p>
             <div className="space-y-4 text-sm mb-8">
-              <div className="flex items-start gap-3"><Clock className="w-5 h-5 text-[#914D4D] shrink-0" /> <span><strong>10:00:</strong> Glints HQ Company Visit</span></div>
+              <div className="flex items-start gap-3"><Clock className="w-5 h-5 text-[#914D4D] shrink-0" /> <span><strong>10:00:</strong> Startup Ecosystem Visit / Workshop</span></div>
               <div className="flex items-start gap-3"><Clock className="w-5 h-5 text-[#914D4D] shrink-0" /> <span><strong>14:00:</strong> Final Impact Presentation</span></div>
               <div className="flex items-start gap-3"><Clock className="w-5 h-5 text-[#914D4D] shrink-0" /> <span><strong>18:00:</strong> Farewell Gala & Award Ceremony</span></div>
               <div className="flex items-start gap-3"><Clock className="w-5 h-5 text-[#914D4D] shrink-0" /> <span><strong>20:45:</strong> Reflection Night & Bonding at NUS</span></div>
@@ -324,9 +319,9 @@ export default function ItineraryPage() {
                  <img src="https://glints.com/images/glints-logo-black.png" alt="Glints" className="w-10 object-contain" />
                </div>
                <div>
-                 <p className="text-xs text-[#914D4D] font-bold tracking-widest uppercase mb-1">Company Visit</p>
-                 <h4 className="text-xl font-bold mb-1">Glints Singapore HQ</h4>
-                 <p className="text-sm text-[#304156]/70">Networking with HR experts on global employability.</p>
+                 <p className="text-xs text-[#914D4D] font-bold tracking-widest uppercase mb-1">Industry Exposure</p>
+                 <h4 className="text-xl font-bold mb-1">Global HQ Network</h4>
+                 <p className="text-sm text-[#304156]/70">Networking with experts on global employability.</p>
                </div>
             </div>
             <div className="bg-[#914D4D] rounded-3xl p-6 text-[#FFFFFF] flex items-center gap-6 shadow-xl h-full">
@@ -342,16 +337,16 @@ export default function ItineraryPage() {
           </div>
         </div>
 
-        {/* --- DAY 8: DEPARTURE --- */}
+        {/* --- DAY 7: DEPARTURE --- */}
         <div className="bg-[#FFFFFF] rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#914D4D]/5 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
           
           <div className="md:w-2/3 text-center md:text-left">
-            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-xs mb-3">Tuesday, May 12</div>
-            <h3 className="text-3xl font-extrabold text-[#304156] mb-4">Day 8: Departure</h3>
+            <div className="text-[#914D4D] font-bold tracking-widest uppercase text-xs mb-3">Day 7 • Monday, July 13</div>
+            <h3 className="text-3xl font-extrabold text-[#304156] mb-4">Departure</h3>
             
             <div className="space-y-3 text-sm text-[#304156]/80 max-w-xl mx-auto md:mx-0 mb-4">
-              <div className="flex gap-3 items-center"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]"/> <span><strong>08:00:</strong> Morning Briefing</span></div>
+              <div className="flex gap-3 items-center"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]"/> <span><strong>08:00:</strong> Morning Briefing & Checkout</span></div>
               <div className="flex gap-3 items-center"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]"/> <span><strong>08:30:</strong> Commute to Changi Airport (MRT + Bus)</span></div>
               <div className="flex gap-3 items-center"><Clock className="w-4 h-4 shrink-0 text-[#914D4D]"/> <span><strong>13:00:</strong> Departure Flight to Indonesia</span></div>
             </div>

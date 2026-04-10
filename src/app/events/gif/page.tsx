@@ -1,5 +1,5 @@
 "use client";
-import { BookOpen, Briefcase, Clock, Search, Rocket, FileText, ArrowRight, CheckCircle, XCircle, Calendar, ShieldCheck, Gem, Users } from 'lucide-react';
+import { Plane, Building2, Utensils, MessageCircle, Info, Download, Briefcase, Lightbulb, Award, Gift, ExternalLink, Clock, Search, Rocket, FileText, ArrowRight, CheckCircle, XCircle, Calendar, ShieldCheck, Gem, Users } from 'lucide-react';
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
@@ -13,45 +13,69 @@ type TimelineItem = {
   desc: string;
 };
 
-const timeline: TimelineItem[] = [
-  {
-    phase: "GIF Selection — Phase 1",
-    date: "15 Feb – 23 Mar 2026",
-    title: "Administration Screening",
-    desc: "Initial screening of motivation, background, and readiness to join a global exposure program.",
-  },
-  {
-    phase: "GIF Selection — Phase 2",
-    date: "4 – 11 Apr 2026",
-    title: "Essay & Project Submission",
-    desc: "Participants submit essays and SDG-aligned project ideas. Mentoring participants receive priority advantage.",
-  },
-  {
-    phase: "GIF Selection — Phase 3",
-    date: "15 – 22 Apr 2026",
-    title: "Project Presentation",
-    desc: "Final evaluation through structured interviews and project presentations.",
-  },
-  {
-    phase: "Final Announcement",
-    date: "25 Apr 2026",
-    title: "Selected Participants Revealed",
-    desc: "Official announcement of GIF 2026 delegates.",
-  },
-  {
-    phase: "Global Impact Fellowship in Singapore",
-    date: "5 – 12 May 2026",
-    title: "Academic & Career Immersion",
-    desc: "Academic immersion at NUS and career exposure at Glints with structured global learning experience.",
-  },
-];
+const timeline = [
+    {
+      phase: "Phase 1",
+      title: "Administration Screening",
+      date: "15 Feb – 23 Mar 2026",
+      desc: "Initial screening of motivation, background, and readiness to join a global exposure program."
+    },
+    {
+      phase: "Milestone",
+      title: "Phase 1 Announcement",
+      date: "3 April 2026",
+      desc: "Official announcement of candidates advancing to the next stage of the selection process."
+    },
+    {
+      phase: "Phase 2",
+      title: "Essay & Project Submission",
+      date: "4 – 20 April 2026",
+      desc: "Deep dive into your ideas. Candidates submit essays and project concepts addressing specific SDG challenges."
+    },
+    {
+      phase: "Milestone",
+      title: "Phase 2 Announcement",
+      date: "27 April 2026",
+      desc: "Shortlisted candidates who successfully passed the essay and project review are revealed."
+    },
+    {
+      phase: "Phase 3",
+      title: "Video Pitch Submission",
+      date: "14 – 21 May 2026",
+      desc: "The final gate. Pitch your project to our panel by submitting a comprehensive and compelling video presentation."
+    },
+    {
+      phase: "Self-Funded",
+      title: "Registration Closes",
+      date: "20 May 2026",
+      desc: "Final deadline for general delegates to secure their spot through the self-funded pathway."
+    },
+    {
+      phase: "Milestone",
+      title: "Final Selection Announcement",
+      date: "27 May 2026",
+      desc: "The ultimate reveal of the Global Impact Fellowship delegates across all funding tracks."
+    },
+    {
+      phase: "Preparation",
+      title: "Onboarding & Project Prep",
+      date: "6 June – Late June 2026",
+      desc: "Official onboarding on June 6, followed by team bonding, project preparation, and pre-departure socialization."
+    },
+    {
+      phase: "Execution",
+      title: "Departure to Singapore",
+      date: "7 – 13 July 2026",
+      desc: "The core fellowship! A week of intensive campus visits, HQ tours, networking, and executing your project."
+    }
+  ];
 
 export default function SGITPage() {
   return (
     <main className="min-h-screen bg-white text-[#304156] font-geologica">
       <Header />
 
-      {/* ================= HERO SECTION ================= */}
+   {/* ================= HERO SECTION ================= */}
       {/* Background set to NightFall Blue fallback, with Gradient Overlay */}
       <section className="relative min-h-[65vh] flex items-center justify-center overflow-hidden bg-[#304156]">
         
@@ -90,7 +114,11 @@ export default function SGITPage() {
             </div>
           </div>
 
-       
+          {/* DEPARTURE DATE BADGE */}
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white font-bold text-sm mb-6 shadow-sm">
+            <Calendar className="w-4 h-4 text-[#914D4D]" />
+            Departure: July 7 - 13, 2026
+          </div>
 
           {/* SUBHEADLINE */}
           <p className="text-base md:text-lg text-gray-200 max-w-xl mx-auto leading-relaxed mb-8 font-light">
@@ -109,98 +137,197 @@ export default function SGITPage() {
             </div>
           </div>
 
+          {/* SELF FUNDED ANNOUNCEMENT */}
+          <div className="mt-4 bg-[#304156]/40 border border-white/10 backdrop-blur-xl rounded-2xl p-6 md:p-8 text-center max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
+            {/* Subtle glow inside the card */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#914D4D] rounded-full blur-[70px] opacity-30 pointer-events-none"></div>
+            
+            <h3 className="text-xl md:text-2xl font-black text-white mb-2 flex items-center justify-center gap-2">
+              <Rocket className="w-6 h-6 text-white" />
+              Now Open for Self-Funded Registration!
+            </h3>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 relative z-10">
+              {/* Early Bird */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex-1">
+                <div className="text-white text-xs font-black uppercase tracking-widest mb-1">Early Bird</div>
+                <div className="text-white font-bold text-sm">Ends April 25, 2026</div>
+              </div>
+              {/* Normal Price */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex-1">
+                <div className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Normal Price</div>
+                <div className="text-white font-bold text-sm">Ends May 20, 2026</div>
+              </div>
+            </div>
+
+            {/* CALL TO ACTIONS */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 relative z-10">
+              <a 
+                href="https://forms.gle/YOUR_FORM_LINK" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex-1 bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center transition-all shadow-lg text-sm"
+              >
+                Register Now
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </a>
+              <a 
+                href="https://drive.google.com/YOUR_BOOKLET_LINK" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center transition-all shadow-sm text-sm"
+              >
+                See Guidebook
+                <Download className="w-4 h-4 ml-2" />
+              </a>
+            </div>
+          </div>
 
         </div>
       </section>
 
-      {/* ================= FUNDING & QUOTA ================= */}
-      <section className="py-12 px-6 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-5xl mx-auto">
+   {/* ================= FUNDING & QUOTA ================= */}
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto">
+          
           <div className="text-center mb-16">
             <h2 className="text-3xl font-extrabold text-[#304156] mb-4">
               Merit-Based. Transparent. <br/> <span className="text-[#914D4D]">No Hidden Business Models.</span>
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Unlike commercial programs where "1 Fully Funded" seat is subsidized by hundreds of paid participants, 
-              <strong> GIF is genuinely sponsored</strong>. We invest in 20 leaders who have the potential to change Indonesia.
+              <strong> GIF is genuinely sponsored</strong>. We invest in leaders who have the potential to change Indonesia.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* === PRICING CARDS === */}
+          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+            
             {/* FULLY FUNDED CARD */}
-            <div className="relative bg-white rounded-3xl p-8 border-2 border-[#914D4D] shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+            <div className="relative bg-white rounded-3xl p-8 border-2 border-[#914D4D] shadow-2xl transform hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
               <div className="absolute top-0 right-0 bg-[#914D4D] text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl rounded-tr-2xl uppercase tracking-wider">
                 Top 10 Candidates
               </div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-[#914D4D]/10 rounded-xl text-[#914D4D]">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3.5 bg-[#914D4D]/10 rounded-2xl text-[#914D4D]">
                   <Gem className="w-8 h-8" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-[#304156]">Fully Funded</h3>
-                  <p className="text-sm text-gray-500">10 Seats Available</p>
+                  <p className="text-sm text-[#304156]/60 font-medium">10 Seats Available</p>
                 </div>
               </div>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "NUS Campus Accommodation",
-                  "3x Meals per day & Transport in SG",
-                  "Program & Workshop Fees",
-                  "Visa & Travel Insurance",
-                  "Round-trip Flights (Jakarta - SG)"
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700">
-                    <CheckCircle className="w-5 h-5 text-[#914D4D] shrink-0" />
-                    <span className="text-sm font-medium">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="text-center bg-[#914D4D]/10 text-[#914D4D] py-2 rounded-lg text-sm font-bold">
-                $0 Cost for Delegates
+              
+              <div className="flex-1 flex flex-col justify-center mb-8">
+                <div className="text-3xl md:text-4xl font-black text-[#914D4D] leading-tight">
+                  100%<br/>Scholarship
+                </div>
+                <div className="text-sm font-bold text-[#304156]/50 mt-2">All Expenses Covered</div>
+              </div>
+              
+              <div className="mt-auto text-center bg-[#914D4D]/10 text-[#914D4D] py-4 rounded-xl text-sm font-bold">
+                By Merit Selection Only
               </div>
             </div>
 
             {/* PARTIALLY FUNDED CARD */}
-            <div className="relative bg-white rounded-3xl p-8 border border-gray-200 shadow-lg hover:border-[#304156]/30 transform hover:-translate-y-2 transition-all duration-300">
+            <div className="relative bg-white rounded-3xl p-8 border border-gray-200 shadow-lg hover:border-[#304156]/30 transform hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
               <div className="absolute top-0 right-0 bg-[#304156] text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl rounded-tr-2xl uppercase tracking-wider">
-                Next Top 10 Candidates
+                Next Top 10
               </div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-[#304156]/10 rounded-xl text-[#304156]">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3.5 bg-[#304156]/10 rounded-2xl text-[#304156]">
                   <Users className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-[#304156]">Partially Funded</h3>
-                  <p className="text-sm text-gray-500">10 Seats Available</p>
+                  <h3 className="text-2xl font-bold text-[#304156]">Partial Funded</h3>
+                  <p className="text-sm text-[#304156]/60 font-medium">10 Seats Available</p>
                 </div>
               </div>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "NUS Campus Accommodation",
-                  "3x Meals per day & Transport in SG",
-                  "Program & Workshop Fees"
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700">
-                    <CheckCircle className="w-5 h-5 text-[#304156] shrink-0" />
-                    <span className="text-sm font-medium">{item}</span>
-                  </li>
-                ))}
-                <li className="flex items-start gap-3 text-gray-400 line-through decoration-gray-400">
-                  <XCircle className="w-5 h-5 text-gray-300 shrink-0" />
-                  <span className="text-sm">"Visa & Travel Insurance"</span></li>
-                <li className="flex items-start gap-3 text-gray-400 line-through decoration-gray-400">
-                  <XCircle className="w-5 h-5 text-gray-300 shrink-0" />
-                  <span className="text-sm">Round-trip Flights (Self-Funded)</span>
-                </li>
-              </ul>
-              <div className="text-center bg-gray-100 text-gray-600 py-2 rounded-lg text-sm font-bold">
-                Flights Covered by Delegate
+
+              <div className="flex-1 flex flex-col justify-center mb-8">
+                <div className="text-3xl md:text-4xl font-black text-[#304156]">IDR 8.99M</div>
+                <div className="text-sm font-bold text-[#304156]/50 mt-2">Scholarship Subsidy</div>
+              </div>
+              
+              <div className="mt-auto text-center bg-gray-50 text-gray-500 py-4 rounded-xl text-sm font-bold border border-gray-100">
+                Flight Included
               </div>
             </div>
+
+            {/* SELF FUNDED CARD */}
+            <div className="relative bg-white rounded-3xl p-8 border border-gray-200 shadow-lg hover:border-[#304156]/30 transform hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
+              <div className="absolute top-0 right-0 bg-gray-200 text-[#304156] text-xs font-bold px-4 py-1.5 rounded-bl-2xl rounded-tr-2xl uppercase tracking-wider">
+                General
+              </div>
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3.5 bg-gray-100 rounded-2xl text-[#304156]">
+                  <Rocket className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-[#304156]">Self Funded</h3>
+                  <p className="text-sm text-[#304156]/60 font-medium">Limited Batch Quota</p>
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col justify-center mb-8">
+                <div className="flex items-end gap-2">
+                  <div className="text-3xl md:text-4xl font-black text-[#304156]">12.9M</div>
+                  <div className="text-base text-gray-400 font-bold line-through mb-1">15.9M</div>
+                </div>
+                <div className="text-sm font-bold text-[#914D4D] mt-2">Early Bird Price (IDR)</div>
+              </div>
+              
+              <div className="mt-auto">
+                <Button 
+                  onClick={() => window.open("https://drive.google.com/", "_blank")}
+                  className="w-full bg-white text-[#304156] border-2 border-[#304156]/20 hover:bg-[#304156]/5 hover:border-[#304156]/40 py-3 rounded-xl font-bold shadow-sm transition-all"
+                >
+                  See Guidebook
+                  <ExternalLink className="w-3 h-3 ml-2" />
+                </Button>
+              </div>
+            </div>
+            
           </div>
+
+          {/* === ALL-IN BENEFITS SECTION === */}
+          <div className="max-w-5xl mx-auto bg-white rounded-3xl p-8 md:p-12 border border-[#304156]/10 shadow-xl relative overflow-hidden">
+            {/* Subtle background decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#304156]/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="text-center mb-10 relative z-10">
+              <h3 className="text-2xl md:text-3xl font-black text-[#304156] mb-2">Program Core Benefits</h3>
+              <p className="text-gray-500 font-medium">Comprehensive facilities provided during the fellowship</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 relative z-10">
+              {[
+                { icon: Plane, title: "Round Trip Airfare*" },
+                { icon: Building2, title: "Accommodation at NUS Dorm" },
+                { icon: Utensils, title: "3x Meals per Day" },
+                { icon: Briefcase, title: "NUS & Glints HQ Tours" },
+                { icon: Lightbulb, title: "Project Incubation" },
+                { icon: Award, title: "International Certificate" },
+                { icon: Gift, title: "Exclusive Merchandise" },
+                { icon: ShieldCheck, title: "Travel Insurance*" }
+              ].map((benefit, i) => (
+                <div key={i} className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-center flex flex-col items-center justify-center hover:bg-white hover:border-[#304156]/20 hover:shadow-md transition-all">
+                  <div className="bg-white p-3 rounded-xl shadow-sm mb-3">
+                    <benefit.icon className="w-6 h-6 text-[#304156]" />
+                  </div>
+                  <span className="text-sm font-bold text-[#304156] leading-tight">
+                    {benefit.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+
+          </div>
+
         </div>
       </section>
-
       {/* ================= WHAT IS GIF (Definition) ================= */}
       <section className="max-w-5xl mx-auto px-6 py-12">
         <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -248,165 +375,33 @@ export default function SGITPage() {
         </div>
       </section>
 
-      {/* ================= DUAL TRACK LEARNING ================= 
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-extrabold text-[#304156] mb-4">Dual-Track Learning Ecosystem</h2>
-            <p className="text-gray-600">Benchmarking against the best in Academia and Industry.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* NUS Track 
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-[#304156] transition-colors">
-                <BookOpen className="w-6 h-6 text-[#304156] group-hover:text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-[#304156] mb-2">Academic Excellence</h3>
-              <p className="text-sm font-semibold text-[#914D4D] mb-4 tracking-wide uppercase">National University of Singapore (NUS)</p>
-              <p className="text-gray-600 mb-6">
-                Fellows conduct applied research inspired by Singapore’s education system.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex gap-3 text-sm text-gray-700">
-                  <span className="text-[#914D4D]">•</span> Innovation culture & research rigor
-                </li>
-                <li className="flex gap-3 text-sm text-gray-700">
-                  <span className="text-[#914D4D]">•</span> English as an academic mobility tool
-                </li>
-                <li className="flex gap-3 text-sm text-gray-700">
-                  <span className="text-[#914D4D]">•</span> Output: <strong>Research Paper</strong>
-                </li>
-              </ul>
-            </div>
-
-            {/* Glints Track 
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group">
-              <div className="w-12 h-12 bg-[#914D4D]/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-[#914D4D] transition-colors">
-                <Briefcase className="w-6 h-6 text-[#914D4D] group-hover:text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-[#304156] mb-2">Career Readiness</h3>
-              <p className="text-sm font-semibold text-[#914D4D] mb-4 tracking-wide uppercase">Glints Singapore HQ</p>
-              <p className="text-gray-600 mb-6">
-                Fellows analyze how global hiring ecosystems operate in Southeast Asia.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex gap-3 text-sm text-gray-700">
-                  <span className="text-[#914D4D]">•</span> International employability standards
-                </li>
-                <li className="flex gap-3 text-sm text-gray-700">
-                  <span className="text-[#914D4D]">•</span> Remote work & regional career paths
-                </li>
-                <li className="flex gap-3 text-sm text-gray-700">
-                  <span className="text-[#914D4D]">•</span> Output: <strong>Career Roadmap</strong>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= SDG FOCUS ================= 
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          {/* HEADER 
-          <div className="text-center mb-20">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-[#304156] mb-4">
-              Core Focus Areas
-            </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto">
-              GIF is designed to create <b>measurable educational and economic impact</b>,
-              aligned with global Sustainable Development Goals.
-            </p>
-          </div>
-
-          {/* GRID 
-          <div className="grid gap-10 sm:grid-cols-2">
-            {/* SDG 4
-            <div className="group relative rounded-3xl overflow-hidden border bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#914D4D]/60">
-              {/* IMAGE 
-              <div className="relative h-56">
-                <img
-                  src="/images/contents/general/sdg4.jpg"
-                  alt="SDG 4 Quality Education"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#304156]/90 via-[#304156]/30 to-transparent" />
-                <div className="absolute bottom-5 left-6 right-6">
-                  <h3 className="text-2xl font-bold text-white">
-                    SDG 4 — Quality Education
-                  </h3>
-                </div>
-              </div>
-
-              {/* CONTENT
-              <div className="relative p-8">
-                {/* ACCENT BAR 
-                <div className="absolute left-0 top-8 bottom-8 w-1 rounded-full bg-[#914D4D]" />
-                <div className="pl-4 space-y-3 text-gray-700 text-sm leading-relaxed">
-                  <p>
-                    GIF expands access to international education exposure —
-                    connecting English learning with real academic environments.
-                  </p>
-                  <ul className="space-y-2">
-                    <li>• International education pathways awareness</li>
-                    <li>• Exposure to global academic ecosystems</li>
-                    <li>• English used in real academic contexts</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* SDG 8 
-            <div className="group relative rounded-3xl overflow-hidden border bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#914D4D]/60">
-              {/* IMAGE
-              <div className="relative h-56">
-                <img
-                  src="/images/contents/careers/iels_team_0.png"
-                  alt="SDG 8 Decent Work"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#304156]/90 via-[#304156]/30 to-transparent" />
-                <div className="absolute bottom-5 left-6 right-6">
-                  <h3 className="text-2xl font-bold text-white">
-                    SDG 8 — Decent Work & Economic Growth
-                  </h3>
-                </div>
-              </div>
-
-              {/* CONTENT 
-              <div className="relative p-8">
-                {/* ACCENT BAR 
-                <div className="absolute left-0 top-8 bottom-8 w-1 rounded-full bg-[#914D4D]" />
-                <div className="pl-4 space-y-3 text-gray-700 text-sm leading-relaxed">
-                  <p>
-                    Participants learn how global career systems work —
-                    and how English functions as professional infrastructure.
-                  </p>
-                  <ul className="space-y-2">
-                    <li>• Global hiring & career readiness standards</li>
-                    <li>• English for professional & remote work</li>
-                    <li>• Exposure to international employability models</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      */}
-
-      {/* ================= PROGRAM STRUCTURE & TIMELINE ================= */}
-      <section className="py-10 overflow-hidden">
+{/* ================= PROGRAM STRUCTURE & TIMELINE ================= */}
+      <section className="py-16 overflow-hidden bg-white">
         {/* HEADER */}
         <div className="text-center mb-10 px-6">
           <h2 className="text-3xl font-extrabold text-[#304156] mb-3">
             Program Structure & Timeline
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto mb-6">
             A multi-phase journey — from preparation and selection
             to global exposure and post-trip impact.
           </p>
+
+        {/* TIMELINE ADJUSTMENT NOTE */}
+          <div className="max-w-3xl mx-auto px-5 py-4 bg-[#914D4D]/5 border border-[#914D4D]/20 rounded-xl text-left shadow-sm">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-[#914D4D] mt-0.5 shrink-0" />
+              <div className="text-sm text-[#304156]/80 leading-relaxed">
+                <strong>Schedule Update:</strong> Due to recent global aviation instability, we have adjusted the Singapore departure to <strong>July 7 - 13, 2026</strong> to ensure the uncompromising quality of your program experience.<br/>
+                <Link 
+                  href="/events/gif/timeline-adjustment" 
+                  className="font-bold text-[#914D4D] hover:text-[#7a3e3e] hover:underline mt-1.5 inline-flex items-center transition-colors"
+                >
+                  Read the full clarification from our Principal &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* OUTER FRAME */}
@@ -415,31 +410,31 @@ export default function SGITPage() {
           <div className="absolute left-0 right-0 top-1/2 h-[6px] bg-[#914D4D]/30 rounded-full -translate-y-1/2" />
 
           {/* GRADIENT FADE */}
-          <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-[#F7F8FA] to-transparent z-10" />
-          <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-[#F7F8FA] to-transparent z-10" />
+          <div className="pointer-events-none absolute left-0 top-0 h-full w-12 lg:w-32 bg-gradient-to-r from-white to-transparent z-10" />
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-12 lg:w-32 bg-gradient-to-l from-white to-transparent z-10" />
 
           {/* SCROLL AREA */}
-          <div className="overflow-x-auto scrollbar-none px-12">
+          <div className="overflow-x-auto scrollbar-none px-6 lg:px-24">
             <div className="flex gap-8 w-max py-6 mx-auto">
               {timeline.map((item, i) => (
                 <div
                   key={i}
-                  className="group relative min-w-[320px] max-w-[320px] rounded-3xl bg-white p-6 border border-gray-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  className="group relative min-w-[300px] max-w-[300px] rounded-3xl bg-white p-6 border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:border-[#914D4D]/30"
                 >
                   {/* PHASE */}
-                  <p className="text-xs font-semibold text-[#914D4D] mb-2 uppercase tracking-wide">
+                  <p className="text-xs font-black text-[#914D4D] mb-2 uppercase tracking-widest">
                     {item.phase}
                   </p>
                   {/* TITLE */}
-                  <h3 className="text-lg font-bold text-[#304156] mb-1">
+                  <h3 className="text-lg font-bold text-[#304156] mb-2">
                     {item.title}
                   </h3>
                   {/* DATE */}
-                  <p className="text-sm text-gray-500 mb-3">
+                  <div className="inline-block px-3 py-1 bg-[#304156]/5 text-[#304156] text-xs font-bold rounded-md mb-4">
                     {item.date}
-                  </p>
+                  </div>
                   {/* DESC */}
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p className="text-sm text-gray-600 leading-relaxed font-medium">
                     {item.desc}
                   </p>
                 </div>
@@ -449,17 +444,17 @@ export default function SGITPage() {
         </div>
 
         {/* FOOTNOTE */}
-        <p className="mt-10 text-sm text-gray-600 max-w-4xl mx-auto px-6 text-center">
+        <p className="mt-10 text-sm text-gray-500 max-w-4xl mx-auto px-6 text-center font-medium">
           Timeline is subject to refinement. Detailed briefings and
           official instructions will be shared with selected participants.
         </p>
       </section>
-
-    <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
+{/* ================= POST-RESIDENCY PHASE ================= */}
+      <section className="py-12 px-6">
+        <div className="max-w-5xl mx-auto">
           
           {/* HEADER SECTION */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-[#914D4D]/10 text-[#304156] px-4 py-1.5 rounded-full text-sm font-bold mb-4 border border-[#914D4D]/20">
               <Clock className="w-4 h-4 text-[#914D4D]" />
               <span>Post-Residency Phase</span>
@@ -469,134 +464,81 @@ export default function SGITPage() {
             </h2>
             <p className="text-gray-600 max-w-3xl mx-auto text-lg leading-relaxed">
               The Singapore trip is just the spark. Upon returning to Indonesia, Fellows enter a 
-              <strong> 6-month implementation period</strong> facilitated by IELS to turn their insights into tangible outcomes.
+              <strong> 4-month implementation period</strong> facilitated by IELS to turn their insights into tangible outcomes.
             </p>
           </div>
 
-          {/* CONTENT GRID */}
-          <div className="grid md:grid-cols-2 gap-8">
-            
-            {/* CARD 1: PROJECT REALIZATION (CLICKABLE) */}
-            <Link 
-              href="/events/gif/project"
-              className="relative bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 group block cursor-pointer flex flex-col h-full"
-            >
-              {/* ICON HEADER */}
-              <div className="w-16 h-16 bg-[#914D4D]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#914D4D] transition-colors duration-300">
-                <Rocket className="w-8 h-8 text-[#914D4D] group-hover:text-white transition-colors" />
-              </div>
-
-              <h3 className="text-2xl font-bold text-[#304156] mb-3">Project Realization</h3>
+          {/* SINGLE CONTENT CARD: PROJECT REALIZATION */}
+          <Link 
+            href="/events/gif/project"
+            className="relative bg-white rounded-3xl p-8 md:p-10 border border-gray-200 shadow-sm hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 group block cursor-pointer"
+          >
+            <div className="flex flex-col md:flex-row gap-10 items-stretch">
               
-              <p className="text-gray-600 mb-4 leading-relaxed">
-                Execute your proposed social project (SDG 4) in Indonesia. Conducted in <strong>groups of 5</strong>, this phase requires an intensive 2-3 week on-site volunteership in a target region.
-              </p>
+              {/* LEFT COLUMN: DESCRIPTION */}
+              <div className="flex-1 flex flex-col">
+                <div className="w-16 h-16 bg-[#914D4D]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#914D4D] transition-colors duration-300">
+                  <Rocket className="w-8 h-8 text-[#914D4D] group-hover:text-white transition-colors" />
+                </div>
 
-              {/* IMPORTANT NOTE: GROUP MATCHING */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-6">
-                <p className="text-xs text-yellow-800 leading-relaxed">
-                  <strong>*Team Formation:</strong> Groups are NOT formed during registration. IELS will match the 20 final delegates into 4 teams based on professional backgrounds and project idea similarity after the final announcement.
+                <h3 className="text-2xl md:text-3xl font-bold text-[#304156] mb-4">Project Realization</h3>
+                
+                <p className="text-gray-600 mb-8 leading-relaxed text-lg">
+                  Execute your proposed social project (SDG 4) in Indonesia. Conducted in <strong>groups of 5</strong>, this phase requires an intensive 2-3 week on-site volunteership in a target region.
                 </p>
-              </div>
 
-              {/* IELS SUPPORT BLOCK */}
-              <div className="bg-[#F7F8FA] rounded-xl p-5 border border-gray-100 mt-auto">
-                <div className="flex items-center gap-2 mb-3">
-                  <ShieldCheck className="w-5 h-5 text-[#304156]" />
-                  <span className="text-sm font-bold text-[#304156] uppercase tracking-wide">Facilitated by IELS</span>
+                {/* ACTION LINK */}
+                <div className="mt-auto flex items-center text-[#914D4D] font-bold text-sm md:text-base group-hover:translate-x-2 transition-transform">
+                  Read Project Guidelines <ArrowRight className="w-5 h-5 ml-2" />
                 </div>
-                <ul className="space-y-2 mb-4">
-                  <li className="flex items-start gap-2 text-sm text-gray-600">
-                    <span className="text-[#914D4D] mt-1">•</span>
-                    <span>Access to IELS community pool (2,800+ members) for volunteer recruitment.</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm text-gray-600">
-                    <span className="text-[#914D4D] mt-1">•</span>
-                    <span>Monthly progress monitoring & project funding support.</span>
-                  </li>
-                </ul>
               </div>
 
-              {/* ACTION LINK */}
-              <div className="mt-6 flex items-center text-[#914D4D] font-bold text-sm group-hover:translate-x-2 transition-transform">
-                Read Project Guidelines <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
-            </Link>
-
-            {/* CARD 2: ACADEMIC RESEARCH (CLICKABLE) */}
-            <Link 
-              href="/events/gif/research"
-              className="relative bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 group block cursor-pointer flex flex-col h-full"
-            >
-              {/* ICON HEADER */}
-              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#304156] transition-colors duration-300">
-                <FileText className="w-8 h-8 text-[#304156] group-hover:text-white transition-colors" />
-              </div>
-
-              <h3 className="text-2xl font-bold text-[#304156] mb-3">Academic Research</h3>
-              
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Working within your matched project group, you will collect field data during your execution phase. The goal is to publish an evidence-based paper validating your project's impact using the frameworks learned at NUS.
-              </p>
-
-              {/* IELS SUPPORT BLOCK */}
-              <div className="bg-[#F7F8FA] rounded-xl p-5 border border-gray-100 mt-auto">
-                <div className="flex items-center gap-2 mb-3">
-                  <Search className="w-5 h-5 text-[#304156]" />
-                  <span className="text-sm font-bold text-[#304156] uppercase tracking-wide">Facilitated by IELS</span>
+              {/* RIGHT COLUMN: SUPPORT & NOTES */}
+              <div className="flex-1 flex flex-col gap-4">
+                {/* IMPORTANT NOTE: GROUP MATCHING */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5">
+                  <p className="text-sm text-yellow-800 leading-relaxed">
+                    <strong>*Team Formation:</strong> Groups are NOT formed during registration. IELS will match the 20 final delegates into 4 teams based on professional backgrounds and project idea similarity after the final announcement.
+                  </p>
                 </div>
-                <ul className="space-y-2 mb-4">
-                  <li className="flex items-start gap-2 text-sm text-gray-600">
-                    <span className="text-[#914D4D] mt-1">•</span>
-                    <span>Mentorship on data processing, validation, and paper structure.</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm text-gray-600">
-                    <span className="text-[#914D4D] mt-1">•</span>
-                    <span>Guaranteed publication opportunity in the IELS Knowledge Hub.</span>
-                  </li>
-                </ul>
+
+                {/* IELS SUPPORT BLOCK */}
+                <div className="bg-[#F7F8FA] rounded-2xl p-6 border border-gray-100 flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <ShieldCheck className="w-6 h-6 text-[#304156]" />
+                    <span className="text-sm font-bold text-[#304156] uppercase tracking-wide">Facilitated by IELS</span>
+                  </div>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3 text-gray-600">
+                      <span className="text-[#914D4D] mt-1 text-lg leading-none">•</span>
+                      <span>Access to IELS community pool (2,800+ members) for volunteer recruitment.</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-600">
+                      <span className="text-[#914D4D] mt-1 text-lg leading-none">•</span>
+                      <span>Monthly progress monitoring & project funding support.</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
-              {/* ACTION LINK */}
-              <div className="mt-6 flex items-center text-[#914D4D] font-bold text-sm group-hover:translate-x-2 transition-transform">
-                Read Research Guidelines <ArrowRight className="w-4 h-4 ml-2" />
-              </div>
-            </Link>
-          </div>
+            </div>
+          </Link>
 
           {/* TIMELINE VISUALIZATION */}
           <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-4 text-center text-sm text-gray-500 bg-gray-50 p-6 rounded-2xl border border-dashed border-gray-300">
              <span className="font-semibold text-[#304156]">Timeline Overview:</span>
-             <span className="bg-white px-3 py-1 rounded-md border border-gray-200">May (Singapore Incubation)</span>
+             <span className="bg-white px-3 py-1 rounded-md border border-gray-200 shadow-sm">July (Singapore Trip)</span>
              <span className="text-gray-300 hidden md:block">→</span>
              <div className="flex flex-col items-center">
-               <span className="font-bold text-[#914D4D] bg-[#914D4D]/10 px-3 py-1 rounded-md">June - Nov (Execution & Data Collection)</span>
+               <span className="font-bold text-[#914D4D] bg-[#914D4D]/10 px-3 py-1 rounded-md">Aug - Nov (Project Execution)</span>
                <span className="text-xs text-gray-400 mt-1">*Includes 2-3 weeks intensive volunteership</span>
              </div>
              <span className="text-gray-300 hidden md:block">→</span>
-             <span className="bg-white px-3 py-1 rounded-md border border-gray-200">Dec (Final Impact Report)</span>
+             <span className="bg-white px-3 py-1 rounded-md border border-gray-200 shadow-sm">Dec (Final Impact Report)</span>
           </div>
           
         </div>
-      </section>
-
-      {/* ================= CLOSING CTA ================= */}
-      <section className="py-12 mb-16 px-6 text-center">
-        <div className="max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-[#914D4D]/10 text-[#914D4D] px-4 py-1.5 rounded-full text-sm font-bold mb-6">
-            <ShieldCheck className="w-4 h-4" /> 20 Exclusive Seats Available
-          </div>
-          <h2 className="text-3xl font-bold text-[#304156] mb-6">Ready to Bridge the Gap?</h2>
-          <p className="text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto">
-            This is a merit-based selection process. We are looking for the top 20 emerging leaders who are ready to research, lead, and implement real change in Indonesia.
-          </p>
-          <Button asChild className="bg-[#914D4D] text-white font-semibold px-6 py-3 rounded-full hover:bg-[#7a3e3e] shadow-lg">
-             <Link href="/dashboard/gif">Apply for Fully Funded <ArrowRight className="w-5 h-5"/></Link>
-          </Button> 
-        </div>
-      </section>
-
-      {/* ================= MENTORSHIP CTA ================= */}
+      </section>{/* ================= SELF-FUNDED CTA ================= */}
       {/* Background Gradient Linear: #2F4055 -> #914D4D */}
       <section className="relative bg-gradient-to-r from-[#2F4055] to-[#914D4D] py-20 overflow-hidden">
         
@@ -613,7 +555,7 @@ export default function SGITPage() {
               <div className="absolute left-4 sm:left-6 lg:left-0 top-10 sm:top-8 lg:top-10 w-[78%] sm:w-[70%] lg:w-[65%] rotate-[-3deg] lg:rotate-[-6deg] rounded-3xl border-4 border-white shadow-2xl overflow-hidden z-10">
                 <Image
                   src="/images/contents/careers/iels_team_2.png"
-                  alt="GIF Mentoring Session"
+                  alt="GIF Singapore Activities"
                   width={600}
                   height={420}
                   className="object-cover"
@@ -647,66 +589,85 @@ export default function SGITPage() {
 
               {/* HEADLINE */}
               <h2 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-6">
-                Want to <span className="text-[#ffcccc]">Increase Your Chance</span> of GIF Selection?
+                Ready to Make an Impact? <br/>
+                <span className="text-[#ffcccc]">Join the Self-Funded Track</span>
               </h2>
 
               {/* DESCRIPTION */}
               <p className="text-white/90 leading-relaxed max-w-xl mb-8">
-                Join <b>GIF Project Prep Mentoring</b> — a principal-led preparation
-                program focused on <b>project clarity</b>, <b>English communication</b>,
-                and <b>interview readiness</b>.
-                <br /><br />
-                This is not a webinar.  
-                This is where serious candidates are sharpened.
+                Secure your spot directly in the Global Impact Fellowship. Experience the full Singapore incubation, exclusive campus and HQ tours, and comprehensive project execution without going through the competitive scholarship selection.
               </p>
 
               {/* PROOF POINTS */}
-              <ul className="space-y-3 text-sm text-white/80 mb-10">
-                <li>• Principal-led mentoring & real project feedback</li>
-                <li>• Priority advantage in GIF Phase 3, which Project Presentation</li>
-                <li>• International-standard project preparation</li>
+              <ul className="space-y-3 text-sm text-white/80 mb-8">
+                <li>• <strong className="text-white">Limited Quota:</strong> Seats are allocated on a first-come, first-served basis.</li>
+                <li>• <strong className="text-white">Early Bird Ends:</strong> April 25, 2026.</li>
+                <li>• <strong className="text-white">All-Inclusive:</strong> NUS Accommodation, Meals, Tours, and Project Incubation.</li>
               </ul>
 
-              {/* CTA */}
-              <Button asChild className="bg-[#914D4D] text-white font-semibold px-6 py-3 rounded-full hover:bg-[#7a3e3e] transition-all duration-300 active:scale-[0.97] shadow-lg hover:shadow-xl w-full sm:w-auto max-w-full">
-                <Link href="/events/gif/mentoring">
-                  Join GIF Project Prep
-                </Link>
-              </Button>
+              {/* CTA BUTTONS */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <a 
+                  href="https://forms.gle/YOUR_FORM_LINK" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-white text-[#914D4D] font-bold px-6 py-3.5 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl text-center flex items-center justify-center"
+                >
+                  Register Now
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </a>
+                <a 
+                  href="https://drive.google.com/YOUR_BOOKLET_LINK" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-transparent border border-white/30 text-white font-bold px-6 py-3.5 rounded-xl hover:bg-white/10 transition-all duration-300 text-center flex items-center justify-center"
+                >
+                  See Guidebook
+                  <Download className="w-4 h-4 ml-2" />
+                </a>
+              </div>
+
+              {/* CONTACT INFO */}
+              <div className="flex items-center gap-4 text-sm text-white/90 bg-white/10 border border-white/20 p-4 rounded-2xl w-fit backdrop-blur-sm">
+                <div className="bg-[#ffcccc]/20 p-2 rounded-full">
+                  <MessageCircle className="w-5 h-5 text-[#ffcccc]" />
+                </div>
+                <div>
+                  <p className="font-bold text-white mb-0.5">Questions about registration?</p>
+                  <p>Contact Dhila: <a href="https://wa.me/6285770024261" target="_blank" rel="noopener noreferrer" className="text-[#ffcccc] hover:underline font-bold tracking-wide">+62 857-7002-4261</a></p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
 
         {/* ================= FOOTER NOTE ================= */}
-        <div className="max-w-6xl mx-auto px-6 py-15 mt-10">
-          <div className="relative rounded-3xl border border-[#914D4D]/30 bg-[#FFF7F7] p-8 md:p-10">
+        <div className="max-w-6xl mx-auto px-6 py-15 mt-16">
+          <div className="relative rounded-3xl border border-[#914D4D]/30 bg-[#FFF7F7] p-8 md:p-10 shadow-sm">
             {/* ACCENT BAR */}
-            <div className="absolute left-0 top-6 bottom-6 w-1 rounded-full bg-[#914D4D]" />
+            <div className="absolute left-0 top-6 bottom-6 w-1.5 rounded-r-full bg-[#914D4D]" />
 
             <div className="pl-4 space-y-4 text-gray-700">
-              <p className="font-semibold text-[#304156]">
+              <p className="font-extrabold text-[#304156] text-lg">
                 GIF is a selective and limited-capacity program.
               </p>
-              <p className="text-sm leading-relaxed">
-                Participation in preparation programs does <b>not guarantee selection</b>.
-                Every decision is based on readiness, commitment, clarity of purpose,
-                and orientation toward long-term impact.
+              <p className="text-sm leading-relaxed font-medium">
+                Even for the Self-Funded pathway, every participant is expected to show readiness, commitment, clarity of purpose, and orientation toward long-term impact.
               </p>
-              <p className="text-sm leading-relaxed">
-                This program is designed for participants who are willing to prepare
-                seriously — not just apply casually.
+              <p className="text-sm leading-relaxed font-medium">
+                This program is designed for future leaders who are willing to execute projects seriously — not just for a casual trip.
               </p>
               {/* SOCIAL */}
-              <div className="pt-4 border-t border-[#914D4D]/20 text-sm">
+              <div className="pt-5 border-t border-[#914D4D]/20 text-sm font-medium mt-4">
                 Follow official updates on Instagram{" "}
-                <span className="font-semibold text-[#914D4D]">@iels_co</span>{" "}
+                <a href="https://instagram.com/iels_co" target="_blank" rel="noopener noreferrer" className="font-bold text-[#914D4D] hover:underline">@iels_co</a>{" "}
                 or revisit this page regularly.
               </div>
             </div>
           </div>
         </div>
       </section>
-
       <Footer />
     </main>
   );

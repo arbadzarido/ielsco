@@ -48,7 +48,7 @@ export default function ProjectRealizationPage() {
         </div>
       </div>
 
-      {/* ================= MAIN CONTENT ================= */}
+    {/* ================= MAIN CONTENT ================= */}
       <div className="max-w-5xl mx-auto px-6 -mt-20 relative z-20 pb-24 space-y-8">
 
         {/* --- SECTION 1: CORE PRINCIPLES (The "How It Works") --- */}
@@ -76,7 +76,7 @@ export default function ProjectRealizationPage() {
               <Calendar className="w-8 h-8 text-[#2F4055] mb-4" />
               <h3 className="font-bold text-lg mb-2 text-[#304156]">2-3 Weeks Intensive</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
-                While the monitoring lasts 6 months, teams are required to conduct a <strong>2-3 weeks intensive offline volunteership</strong> in the target area to kickstart the project.
+                While the monitoring lasts 4 months, teams are required to conduct a <strong>2-3 weeks intensive offline volunteership</strong> in the target area to kickstart the project.
               </p>
             </div>
           </div>
@@ -95,10 +95,10 @@ export default function ProjectRealizationPage() {
           </div>
         </div>
 
-        {/* --- SECTION 2: THE 6-MONTH TIMELINE --- */}
+        {/* --- SECTION 2: THE 4-MONTH TIMELINE --- */}
         <div className="bg-[#FFFFFF] rounded-3xl p-8 md:p-10 border border-gray-100 shadow-lg">
           <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 text-[#304156]">
-            <Calendar className="w-6 h-6 text-[#914D4D]" /> 6-Month Realization Timeline
+            <Calendar className="w-6 h-6 text-[#914D4D]" /> 4-Month Realization Timeline
           </h2>
 
           <div className="relative border-l-2 border-gray-200 ml-4 md:ml-6 space-y-10 py-4">
@@ -106,7 +106,7 @@ export default function ProjectRealizationPage() {
             {/* Step 1 */}
             <div className="relative pl-8 md:pl-12">
               <div className="absolute -left-[11px] top-1 w-5 h-5 bg-[#304156] rounded-full border-4 border-[#FFFFFF] shadow-sm" />
-              <div className="bg-gray-50 inline-block px-3 py-1 rounded-md text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide border border-gray-200">June 2026</div>
+              <div className="bg-gray-50 inline-block px-3 py-1 rounded-md text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide border border-gray-200">July 2026</div>
               <h3 className="text-xl font-bold text-[#304156] mb-2">Phase 1: Ground Preparation & Recruitment</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
                 Post-Singapore mapping. Teams finalize their target area, secure permits, contact local partners, and if necessary, recruit additional volunteers from the IELS member pool to prepare for offline execution.
@@ -116,7 +116,7 @@ export default function ProjectRealizationPage() {
             {/* Step 2 (Highlight) */}
             <div className="relative pl-8 md:pl-12">
               <div className="absolute -left-[11px] top-1 w-5 h-5 bg-[#914D4D] rounded-full border-4 border-[#FFFFFF] shadow-sm ring-4 ring-[#914D4D]/20" />
-              <div className="bg-[#914D4D]/10 inline-block px-3 py-1 rounded-md text-xs font-bold text-[#914D4D] mb-2 uppercase tracking-wide border border-[#914D4D]/20">July - August 2026</div>
+              <div className="bg-[#914D4D]/10 inline-block px-3 py-1 rounded-md text-xs font-bold text-[#914D4D] mb-2 uppercase tracking-wide border border-[#914D4D]/20">August - September 2026</div>
               <h3 className="text-xl font-bold text-[#304156] mb-2">Phase 2: Intensive Offline Execution</h3>
               <p className="text-sm text-gray-600 leading-relaxed mb-3">
                 The core action phase. Teams must be physically present in the target area for a mandatory <strong>2-3 weeks intensive volunteership</strong>. During this time, you will:
@@ -131,7 +131,7 @@ export default function ProjectRealizationPage() {
             {/* Step 3 */}
             <div className="relative pl-8 md:pl-12">
               <div className="absolute -left-[11px] top-1 w-5 h-5 bg-[#304156] rounded-full border-4 border-[#FFFFFF] shadow-sm" />
-              <div className="bg-gray-50 inline-block px-3 py-1 rounded-md text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide border border-gray-200">September - October 2026</div>
+              <div className="bg-gray-50 inline-block px-3 py-1 rounded-md text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide border border-gray-200">October 2026</div>
               <h3 className="text-xl font-bold text-[#304156] mb-2">Phase 3: Remote Maintenance & Monitoring</h3>
               <p className="text-sm text-gray-600 leading-relaxed">
                 You can return to your respective universities/internships. The project shifts to a remote monitoring phase. You will maintain contact with local PICs, evaluate the sustained impact, and begin drafting your research data.
@@ -206,8 +206,8 @@ export default function ProjectRealizationPage() {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
                {/* USING GRADIENT LINEAR #2F4055 #914D4D */}
                <Button asChild className="w-full sm:w-auto bg-gradient-to-r from-[#2F4055] to-[#914D4D] hover:opacity-90 text-[#FFFFFF] font-bold py-4 px-8 rounded-2xl text-md shadow-lg border-none transition-all">
-                 <Link href="/events/gif/research">
-                   Next: Read Academic Research Guidelines
+                 <Link href="/events/gif">
+                   Back to GIF Main Page
                  </Link>
                </Button>
             </div>
