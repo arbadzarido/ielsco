@@ -133,7 +133,7 @@ type GIFRegistration = {
 // --- DATE CONSTANTS ---
 const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00"); // Phase 1 closes
 const SCREENING_END_DATE      = new Date("2026-04-03T23:59:59"); // Phase 1 announcement
-const PHASE2_DEADLINE         = new Date("2026-04-25T23:59:59"); // Phase 2 submission closes
+const PHASE2_DEADLINE         = new Date("2026-04-20T23:59:59"); // Phase 2 submission closes
 const NOW = new Date();
 
 const IS_SCREENING_PHASE   = NOW >= REGISTRATION_CLOSE_DATE && NOW <= SCREENING_END_DATE;
@@ -402,7 +402,7 @@ function Phase2Card({
         <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
           <AlertCircle className="w-4 h-4 text-[#914D4D]/60 mt-0.5 shrink-0" />
           <p className="text-xs text-[#914D4D]/60 leading-relaxed">
-            The Phase 2 submission deadline (April 25, 2026) has passed. Submissions are no longer accepted for this batch.
+            The Phase 2 submission deadline (April 20, 2026) has passed. Submissions are no longer accepted for this batch.
           </p>
         </div>
         <div className="mt-auto pt-4">
@@ -486,7 +486,7 @@ function Phase2Card({
           <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-xl p-3 mb-4 flex items-center gap-3">
             <Clock className="w-4 h-4 text-[#2F4055] shrink-0" />
             <p className="text-xs text-[#2F4055]/80">
-              <span className="font-bold">Deadline: April 25, 2026</span> (23:59 WIB)
+              <span className="font-bold">Deadline: April 20, 2026</span> (23:59 WIB)
             </p>
           </div>
         )}
@@ -721,7 +721,7 @@ export default function GIFDashboardPage() {
     >
       <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 md:px-8 pt-8 font-geologica">
 
-        {/* === HERO SECTION === */}
+      {/* === HERO SECTION === */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl font-geologica">
           <div className="absolute bg-[url('/images/contents/stories/member-stories/banner/singapore-banner.png')] bg-cover bg-center inset-0 opacity-10 mix-blend-overlay">
             <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-60"></div>
@@ -779,13 +779,24 @@ export default function GIFDashboardPage() {
                         </div>
                         <span className="text-sm font-bold text-right">NUS, Singapore</span>
                       </div>
-                      <div className="flex items-center justify-between text-white border-b border-white/10 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
-                          <span className="text-sm font-medium">Date</span>
+                      
+                      {/* ADJUSTED DATE SECTION */}
+                      <div className="text-white border-b border-white/10 pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                           <div className="flex items-center gap-3">
+                             <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
+                             <span className="text-sm font-medium">Date</span>
+                           </div>
+                           <div className="text-right">
+                             <div className="text-xs text-white/50 line-through">May 5 - 12, 2026</div>
+                             <div className="text-sm font-bold text-[#FFD1D1]">July 7 - 13, 2026</div>
+                           </div>
                         </div>
-                        <span className="text-sm font-bold text-right">5 - 12 May 2026</span>
+                        <Link href="/events/gif/timeline-adjustment" className="flex items-center justify-center gap-1.5 text-[10px] text-white/70 hover:text-white bg-black/20 py-1.5 rounded-lg border border-white/5 transition-colors">
+                          <Info className="w-3 h-3" /> Read timeline adjustment clarification
+                        </Link>
                       </div>
+
                       <div className="flex items-center justify-between text-white">
                         <div className="flex items-center gap-3">
                           <div className="bg-[#304156] p-2 rounded-lg"><Users className="w-4 h-4 text-white" /></div>
@@ -798,15 +809,16 @@ export default function GIFDashboardPage() {
                 </div>
               </div>
             </div>
+            
             <div className="mt-10 flex flex-col md:flex-row gap-4 items-center">
               <div className="w-full md:flex-1 bg-[#304156]/40 rounded-2xl px-5 py-3 flex items-center gap-4 border border-white/10 backdrop-blur-sm">
                 <div className="bg-[#914D4D] p-2.5 rounded-xl shadow-lg animate-pulse flex-shrink-0">
                   <Clock className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="text-[#FFD1D1] text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5">Administration Phase Deadline</div>
+                  <div className="text-[#FFD1D1] text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5">Self-Funded Early Bird Deadline</div>
                   <div className="text-white font-black text-base md:text-xl leading-none">
-                    March 23, 2026
+                    April 20, 2026
                     <span className="text-xs md:text-sm font-normal opacity-80 ml-1.5 align-middle">(23:59 WIB)</span>
                   </div>
                 </div>

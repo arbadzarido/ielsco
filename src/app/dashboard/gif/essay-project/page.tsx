@@ -82,7 +82,7 @@ export default function EssayProjectPage() {
   };
 
   // DEADLINE LOGIC: April 11, 2026
-  const DEADLINE = new Date("2026-04-25T23:59:59");
+  const DEADLINE = new Date("2026-04-20T23:59:59");
   const now = new Date();
   const isPastDeadline = now > DEADLINE;
 
@@ -567,7 +567,7 @@ setUserProfile({
           )}
         </div>
 
-        {/* PROJECT PROPOSAL GUIDE SECTION */}
+       {/* === PROJECT PROPOSAL GUIDE SECTION === */}
         <div className="bg-white rounded-2xl border border-[#914D4D]/20 overflow-hidden shadow-sm">
           <button
             onClick={() => setProjectGuideOpen(!projectGuideOpen)}
@@ -579,7 +579,7 @@ setUserProfile({
               </div>
               <div className="text-left">
                 <h2 className="text-xl font-bold text-[#304156]">Project Proposal Framework</h2>
-                <p className="text-sm text-gray-500">Step-by-step guide for your SDG project</p>
+                <p className="text-sm text-gray-500">Step-by-step Design Thinking guide for your individual SDG project</p>
               </div>
             </div>
             {projectGuideOpen ? <ChevronUp className="w-5 h-5 text-[#914D4D]" /> : <ChevronDown className="w-5 h-5 text-[#914D4D]" />}
@@ -608,7 +608,7 @@ setUserProfile({
                       <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
                       <div>
                         <span className="font-semibold text-[#914D4D]">Length:</span>
-                        <span className="text-[#304156]"> Maximum 15 slides</span>
+                        <span className="text-[#304156]"> Maximum 10 slides</span>
                       </div>
                     </div>
                   </div>
@@ -617,14 +617,14 @@ setUserProfile({
                       <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
                       <div>
                         <span className="font-semibold text-[#914D4D]">Submission:</span>
-                        <span className="text-[#304156]"> Google Drive link (view access)</span>
+                        <span className="text-[#304156]"> Canva Link (Review) or Google Drive (Final PDF)</span>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4 text-[#304156] mt-0.5 flex-shrink-0" />
                       <div>
                         <span className="font-semibold text-[#914D4D]">Focus:</span>
-                        <span className="text-[#304156]"> Must align with SDGs</span>
+                        <span className="text-[#304156]"> Must align with SDG 4 (Quality Education)</span>
                       </div>
                     </div>
                   </div>
@@ -635,23 +635,25 @@ setUserProfile({
               <div>
                 <h3 className="font-bold text-[#304156] mb-4 flex items-center gap-2">
                   <Target className="w-5 h-5 text-[#914D4D]" />
-                  Recommended Slide Structure
+                  Recommended Slide Structure (Design Thinking)
                 </h3>
                 
                 <div className="space-y-3">
                   {[
-                    { num: "1", title: "Cover Slide", content: "Project title, your name, date. Make it visually compelling!" },
-                    { num: "2-3", title: "Problem Statement", content: "What social/environmental problem are you addressing? Use data and real-world examples. Connect to specific SDG(s)." },
-                    { num: "4-5", title: "Target Audience & Impact", content: "Who will benefit from your project? How many people? What specific change do you aim to create?" },
-                    { num: "6-8", title: "Solution/Innovation", content: "Your proposed solution. What makes it innovative? How does it work? Include visuals, diagrams, or prototypes if possible." },
-                    { num: "9-10", title: "Implementation Plan", content: "Timeline, key activities, resources needed. Be realistic but ambitious." },
-                    { num: "11-12", title: "Budget & Sustainability", content: "Estimated costs breakdown. How will the project sustain itself? Revenue model or funding strategy." },
-                    { num: "13-14", title: "Team & Metrics", content: "Your team's strengths and how you will measure success (KPIs)." },
-                    { num: "15", title: "Call to Action", content: "What support do you need? How can GIF help you scale your impact?" }
+                    { num: "1", title: "Cover Slide", content: "Project title, your full name, origin/university. Make it visually compelling!" },
+                    { num: "2", title: "Empathize: The Core Issue", content: "What specific SDG 4 problem in Indonesia are you addressing? Use a brief story, observation, or persona to show empathy." },
+                    { num: "3", title: "Define: Data & Scope", content: "Back up your observation with hard data. Narrow down the problem to a specific target audience or region." },
+                    { num: "4", title: "Ideate: The Big Concept", content: "Introduce your proposed solution. What is the core idea? Be clear and concise." },
+                    { num: "5", title: "Ideate: Innovation Factor", content: "Why is your solution different or better than existing ones? Highlight the unique value proposition." },
+                    { num: "6", title: "Prototype: Visualizing the Solution", content: "Show, don't just tell. Include a flowchart, wireframe, or diagram of how your project will work in reality." },
+                    { num: "7", title: "Prototype: Key Activities", content: "What are the 3-4 main steps required to launch this project offline/online?" },
+                    { num: "8", title: "Test/Impact: Measuring Success", content: "If executed, what are your KPIs? How will you know if the project actually improved the beneficiaries' lives?" },
+                    { num: "9", title: "Sustainability Vision", content: "How will this project survive long-term without relying heavily on continuous funding?" },
+                    { num: "10", title: "Call to Action / Closing", content: "Why are you the right person to lead this idea? Close with a strong statement on how GIF will help you execute it." }
                   ].map((slide, idx) => (
                     <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:border-[#914D4D] transition">
                       <div className="flex items-start gap-3">
-                        <div className="bg-[#304156] text-white px-3 py-1 rounded-lg font-bold text-sm flex-shrink-0">
+                        <div className="bg-[#304156] text-white px-3 py-1 rounded-lg font-bold text-sm flex-shrink-0 w-20 text-center">
                           Slide {slide.num}
                         </div>
                         <div className="flex-1">
@@ -748,7 +750,7 @@ setUserProfile({
                    <div className="mb-4 text-center">
                       <div className="inline-flex items-center gap-2 bg-[#304156]/10 px-4 py-2 rounded-lg text-[#304156] text-sm font-semibold">
                           <CheckCircle className="w-4 h-4" />
-                          <span>Currently Submitted. You can update this until March 23.</span>
+                          <span>Currently Submitted. You can update this until April 20.</span>
                       </div>
                    </div>
                 )}
