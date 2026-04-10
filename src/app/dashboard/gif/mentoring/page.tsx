@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // <-- Tambahin AnimatePresence
 import {
   CheckCircle,
   ArrowLeft,
@@ -12,6 +12,8 @@ import {
   Users,
   Calendar,
   Download,
+  AlertCircle,
+  X,          
   ExternalLink,
   Loader2,
   PlayCircle,
@@ -65,6 +67,28 @@ export default function MentoringDashboard() {
   const [projectLink, setProjectLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [projectGuideOpen, setProjectGuideOpen] = useState(false);
+  // --- MODAL STATE ---
+  type ModalConfig = {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "warning" | "info";
+  };
+
+  const [modal, setModal] = useState<ModalConfig>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+  });
+
+  const showModal = (title: string, message: string, type: "success" | "error" | "warning" | "info") => {
+    setModal({ isOpen: true, title, message, type });
+  };
+
+  const closeModal = () => {
+    setModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // --- REAL CURRICULUM DATA (Base) ---
   const rawSessions = [
@@ -221,7 +245,7 @@ export default function MentoringDashboard() {
 
 const handleProjectSubmit = async () => {
     if (!projectLink.trim()) {
-      alert("Please enter your project link");
+      showModal("Link Required", "Please enter your project link.", "warning");
       return;
     }
 
@@ -236,13 +260,13 @@ const handleProjectSubmit = async () => {
         .eq('id', userData?.id);
 
       if (!error) {
-        alert("Project submitted successfully! You can update this link anytime before the final deadline.");
+        showModal("Submission Successful!", "Project submitted successfully! You can update this link anytime before the final deadline.", "success");
         setUserData((prev: any) => ({ ...prev, project_drive_link: projectLink }));
       } else {
-        alert("Error submitting. Please try again.");
+        showModal("Submission Failed", "Error submitting. Please try again.", "error");
       }
     } catch (err) {
-      alert("Error submitting. Please try again.");
+      showModal("Submission Failed", "An unexpected error occurred. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -306,6 +330,54 @@ const handleProjectSubmit = async () => {
       userAvatar={userProfile?.avatar_url}
     >
       <div className="max-w-6xl mx-auto pb-20 space-y-8 px-4 md:px-8 pt-6 font-geologica">
+        {/* IELS CUSTOM MODAL POP-UP */}
+        <AnimatePresence>
+          {modal.isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#304156]/40 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-[#304156]/10"
+              >
+                <div className="p-6">
+                  <div className="flex justify-end">
+                    <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="text-center px-4 pb-4">
+                    <div className={cn(
+                      "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner",
+                      modal.type === 'success' ? "bg-green-100" : 
+                      modal.type === 'error' ? "bg-[#914D4D]/10" : "bg-yellow-100"
+                    )}>
+                      {modal.type === 'success' && <CheckCircle className="w-8 h-8 text-green-600" />}
+                      {modal.type === 'error' && <AlertCircle className="w-8 h-8 text-[#914D4D]" />}
+                      {modal.type === 'warning' && <Info className="w-8 h-8 text-yellow-600" />}
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-[#304156] mb-2">{modal.title}</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-8">{modal.message}</p>
+                    
+                    <Button 
+                      onClick={closeModal} 
+                      className={cn(
+                        "w-full py-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all",
+                        modal.type === 'success' ? "bg-[#304156] hover:bg-[#2F4055] text-white" : 
+                        "bg-[#914D4D] hover:bg-[#7a3e3e] text-white"
+                      )}
+                    >
+                      Understood
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
         
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -719,7 +791,7 @@ const handleProjectSubmit = async () => {
             
           </div>
         </div>
-        
+
         {/* Community & Support */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm hover:shadow-md transition-shadow">
