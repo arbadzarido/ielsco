@@ -41,7 +41,7 @@ const timeline = [
     {
       phase: "Phase 3",
       title: "Video Pitch Submission",
-      date: "14 – 21 May 2026",
+      date: "28 – 14 May 2026",
       desc: "The final gate. Pitch your project to our panel by submitting a comprehensive and compelling video presentation."
     },
     {
@@ -53,7 +53,7 @@ const timeline = [
     {
       phase: "Milestone",
       title: "Final Selection Announcement",
-      date: "27 May 2026",
+      date: "18 May 2026",
       desc: "The ultimate reveal of the Global Impact Fellowship delegates across all funding tracks."
     },
     {
@@ -163,7 +163,7 @@ export default function SGITPage() {
             {/* CALL TO ACTIONS */}
             <div className="flex flex-col sm:flex-row gap-3 mt-6 relative z-10">
               <a 
-                href="https://forms.gle/YOUR_FORM_LINK" 
+                href="https://forms.gle/Xe6JTRNL9MFQ1uVw8" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex-1 bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center transition-all shadow-lg text-sm"
@@ -172,7 +172,7 @@ export default function SGITPage() {
                 <ExternalLink className="w-4 h-4 ml-2" />
               </a>
               <a 
-                href="https://drive.google.com/YOUR_BOOKLET_LINK" 
+                href="https://drive.google.com/file/d/1PA6ubLekEa-SZMjQt8UWYlepYywzBTvE/view?usp=drivesdk" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center transition-all shadow-sm text-sm"
@@ -280,7 +280,7 @@ export default function SGITPage() {
               
               <div className="mt-auto">
                 <Button 
-                  onClick={() => window.open("https://drive.google.com/", "_blank")}
+                  onClick={() => window.open("https://drive.google.com/file/d/1PA6ubLekEa-SZMjQt8UWYlepYywzBTvE/view?usp=drivesdk", "_blank")}
                   className="w-full bg-white text-[#304156] border-2 border-[#304156]/20 hover:bg-[#304156]/5 hover:border-[#304156]/40 py-3 rounded-xl font-bold shadow-sm transition-all"
                 >
                   See Guidebook
@@ -608,7 +608,7 @@ export default function SGITPage() {
               {/* CTA BUTTONS */}
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <a 
-                  href="https://forms.gle/YOUR_FORM_LINK" 
+                  href="https://forms.gle/x1KqxuhZVMsp5yQ36" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-white text-[#914D4D] font-bold px-6 py-3.5 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl text-center flex items-center justify-center"
@@ -617,7 +617,7 @@ export default function SGITPage() {
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </a>
                 <a 
-                  href="https://drive.google.com/YOUR_BOOKLET_LINK" 
+                  href="https://drive.google.com/file/d/1PA6ubLekEa-SZMjQt8UWYlepYywzBTvE/view?usp=drivesdk" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="bg-transparent border border-white/30 text-white font-bold px-6 py-3.5 rounded-xl hover:bg-white/10 transition-all duration-300 text-center flex items-center justify-center"
@@ -634,7 +634,7 @@ export default function SGITPage() {
                 </div>
                 <div>
                   <p className="font-bold text-white mb-0.5">Questions about registration?</p>
-                  <p>Contact Dhila: <a href="https://wa.me/6285770024261" target="_blank" rel="noopener noreferrer" className="text-[#ffcccc] hover:underline font-bold tracking-wide">+62 857-7002-4261</a></p>
+                  <p>Contact Dhila: <a href="https://api.whatsapp.com/send/?phone=6285770024261&text=Hi+Dhila%2C+I+would+like+to+know+more+about+Self-Funded+GIF+in+Singapore+Batch+1&type=phone_number&app_absent=0" target="_blank" rel="noopener noreferrer" className="text-[#ffcccc] hover:underline font-bold tracking-wide">+62 857-7002-4261</a></p>
                 </div>
               </div>
 
