@@ -230,7 +230,7 @@ export default function SGITPage() {
               </div>
             </div>
 
-            {/* PARTIALLY FUNDED CARD */}
+           {/* PARTIALLY FUNDED CARD */}
             <div className="relative bg-white rounded-3xl p-8 border border-gray-200 shadow-lg hover:border-[#304156]/30 transform hover:-translate-y-2 transition-all duration-300 flex flex-col h-full">
               <div className="absolute top-0 right-0 bg-[#304156] text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl rounded-tr-2xl uppercase tracking-wider">
                 Next Top 10
@@ -246,7 +246,12 @@ export default function SGITPage() {
               </div>
 
               <div className="flex-1 flex flex-col justify-center mb-8">
-                <div className="text-3xl md:text-4xl font-black text-[#304156]">IDR 8.99M</div>
+                {/* ADJUSTED PRICE FORMAT */}
+                <div className="flex items-baseline gap-1 text-[#304156]">
+                  <span className="text-base md:text-lg font-bold opacity-80">IDR</span>
+                  <span className="text-3xl md:text-4xl font-black">8,999</span>
+                  <span className="text-xl md:text-2xl font-bold opacity-50">,000</span>
+                </div>
                 <div className="text-sm font-bold text-[#304156]/50 mt-2">Scholarship Subsidy</div>
               </div>
               
@@ -271,11 +276,18 @@ export default function SGITPage() {
               </div>
 
               <div className="flex-1 flex flex-col justify-center mb-8">
-                <div className="flex items-end gap-2">
-                  <div className="text-3xl md:text-4xl font-black text-[#304156]">12.9M</div>
-                  <div className="text-base text-gray-400 font-bold line-through mb-1">15.9M</div>
+                {/* ADJUSTED PRICE FORMAT WITH STRIKETHROUGH */}
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <div className="flex items-baseline gap-1 text-[#304156]">
+                    <span className="text-base md:text-lg font-bold opacity-80">IDR</span>
+                    <span className="text-3xl md:text-4xl font-black">12,900</span>
+                    <span className="text-xl md:text-2xl font-bold opacity-50">,000</span>
+                  </div>
+                  <div className="text-sm md:text-base text-gray-400 font-bold line-through">
+                    15,900,000
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-[#914D4D] mt-2">Early Bird Price (IDR)</div>
+                <div className="text-sm font-bold text-[#914D4D] mt-2">Early Bird Price</div>
               </div>
               
               <div className="mt-auto">
