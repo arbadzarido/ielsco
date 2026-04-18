@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { 
   Instagram, 
+  PlayCircle,
   Linkedin, 
   ExternalLink, 
   Target, 
@@ -40,7 +41,7 @@ export default function About() {
     {
       name: "Khairi Pandya",
       role: "Advisor & Mentor",
-      image: "/images/people/directors/pandya.png",
+      image: "/images/people/directors/pandya1.png",
       instagram: "https://www.instagram.com/khairi.pandya/",
       linkedin: "https://www.linkedin.com/in/khairi-pandya/",
       point1: "Currently serving as Sr. OD Specialist at STAR Capital, focusing on Organizational Development and Structure.",
@@ -683,6 +684,51 @@ export default function About() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+      {/* =========================================
+          7️⃣ YOUTUBE CTA SECTION
+      ========================================= */}
+      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18">
+        <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
+          
+          <div className="mb-10 space-y-4">
+            <span className="text-[#E56668] font-bold tracking-widest uppercase text-sm">
+              Discover Our Story
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#2F4157] tracking-tight">
+              Watch The IELS Profile
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Get an exclusive look inside our personalized learning journey. Support our mission by dropping a like, leaving a comment, and subscribing to our channel!
+            </p>
+          </div>
+
+          {/* YouTube Video Embed (Aspect Video agar responsive & ada thumbnail otomatis) */}
+          <div className="w-full relative rounded-[32px] overflow-hidden shadow-2xl border-4 border-white bg-black aspect-video group">
+            <iframe 
+              className="w-full h-full absolute top-0 left-0"
+              src="https://www.youtube.com/embed/litePG83xtw?rel=0&modestbranding=1" 
+              title="IELS Company Profile | Your Personalized English Learning Journey" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            ></iframe>
+          </div>
+
+          {/* CTA Button ke YouTube App/Web */}
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            <a 
+              href="https://youtu.be/litePG83xtw?si=bydrWEtId8t7Xw_v" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-[#E56668] text-white px-8 py-3.5 rounded-full font-bold hover:bg-[#CC0000] transition-all shadow-md hover:shadow-xl hover:-translate-y-1"
+            >
+              <PlayCircle size={20} /> Subscribe on YouTube
+            </a>
+          </div>
+
         </div>
       </section>
             <Footer />
