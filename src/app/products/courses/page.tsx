@@ -4,7 +4,7 @@
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 // Import MENTORS dari file data lu juga harus ada
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,14 +16,51 @@ import {
   CoursePackage, CourseTrack, Mentor, PRICE_PER_SESSION
 } from "@/data/courses";
 import {
-  ChevronDown, Filter, Search, Sliders, MessageCircle,
+  ChevronDown, CheckCircle, Filter, Calendar, Search, Sliders, MessageCircle,
   ExternalLink, Check, Zap, Star, Award, Users, ArrowRight
 } from "lucide-react";
 
 function formatIDR(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
 }
+const DEADLINE = new Date("2026-05-11T23:59:59+07:00"); // Maksimal 11 Mei 2026
 
+function CountdownTimer() {
+  const [timeLeft, setTimeLeft] = useState<number>(
+    DEADLINE.getTime() - new Date().getTime()
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(DEADLINE.getTime() - new Date().getTime());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (timeLeft <= 0) {
+    return <div className="text-[#E56668] font-bold py-2 bg-[#E56668]/10 rounded-lg text-center">Registration Closed</div>;
+  }
+
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+  const seconds = Math.floor((timeLeft / 1000) % 60);
+
+  return (
+    <div className="flex gap-2 sm:gap-3 justify-center sm:justify-start">
+      {[["Days", days], ["Hours", hours], ["Min", minutes], ["Sec", seconds]].map(
+        ([label, value]) => (
+          <div key={label} className="bg-black/20 rounded-lg px-3 sm:px-4 py-2 border border-white/5 flex-1 max-w-[80px] text-center backdrop-blur-sm">
+            <div className="text-xl sm:text-2xl font-black text-white">{value}</div>
+            <p className="text-[10px] sm:text-xs uppercase tracking-wide text-white/60 font-bold mt-0.5">
+              {label}
+            </p>
+          </div>
+        )
+      )}
+    </div>
+  );
+}
 export default function CoursesPage() {
   const [selectedTrack, setSelectedTrack] = useState<CourseTrack | null>(null);
   const [filterMentor, setFilterMentor] = useState<string>("all");
@@ -192,7 +229,115 @@ export default function CoursesPage() {
           </div>
         </div>
       </section>
+{/* =========================================
+          7️⃣ FEATURED PROGRAM: 100 LIVE SESSIONS
+      ========================================= */}
+      <section className="max-w-6xl mx-auto px-6 pb-20 mt-10">
+        
+          <div className="grid md:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            {/* POSTER 3:4 (Left) */}
+            <div className="md:col-span-5 relative group">
+              <div className="aspect-[3/4] rounded-3xl overflow-hidden bg-gray-100 border-4 border-gray-50 relative shadow-lg">
+                <Image 
+                  src="/images/contents/events/courses.png" // Ganti path gambarnya ke poster lo
+                  alt="100 Live Sessions Poster" 
+                  fill 
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-[#304156]/10 group-hover:bg-transparent transition-colors"></div>
+                
+                {/* Floating Badge on Image */}
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-[#E56668] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <Zap className="w-3.5 h-3.5" /> Special Batch
+                </div>
+              </div>
+            </div>
 
+            {/* DETAILS (Right) */}
+            <div className="md:col-span-7 flex flex-col justify-center">
+              
+              {/* Header Title */}
+              <h3 className="text-3xl lg:text-4xl font-extrabold text-[#304156] mb-4 leading-tight">
+                100 Live Sessions: <br />
+                The Ultimate English Mastery
+              </h3>
+              
+              <p className="text-gray-600 mb-6 text-sm lg:text-base leading-relaxed text-justify sm:text-left">
+                Achieve your specific goals—whether it's conquering the IELTS, Grammatical Writing, or preparing for a Global Career. In collaboration with IELS Principals, this exclusive program provides direct mentorship and customized strategies for real results.
+              </p>
+
+              {/* Highlight Features */}
+              <div className="mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
+                    <p className="text-sm font-semibold text-[#304156]">96 Semi-Private Sessions</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
+                    <p className="text-sm font-semibold text-[#304156]">4 Intensive 1-on-1s</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
+                    <p className="text-sm font-semibold text-[#304156]">1 Year Free Lounge Premium</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
+                    <p className="text-sm font-semibold text-[#304156]">Direct Principal Mentorship</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* PRICING & COUNTDOWN BOX (Dark UI) */}
+              <div className="bg-[#304156] rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+                {/* Background glow effect */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-[#E56668]/20 blur-3xl rounded-full pointer-events-none"></div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10 mb-6">
+                  <div>
+                    <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-1">Special Investment</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-bold text-[#E56668]">IDR</span>
+                      <span className="text-4xl lg:text-5xl font-black text-white">360<span className="text-2xl text-white/50">k</span></span>
+                    </div>
+                  </div>
+                  <div className="bg-[#E56668]/10 border border-[#E56668]/30 px-4 py-2 rounded-xl text-center sm:text-right w-full sm:w-auto">
+                    <p className="text-sm font-bold text-[#E56668] flex items-center justify-center sm:justify-end gap-1.5">
+                      <Users className="w-4 h-4" /> Strictly 50 Slots Only
+                    </p>
+                    <p className="text-[10px] text-white/60 uppercase tracking-widest mt-0.5">Almost Sold Out</p>
+                  </div>
+                </div>
+
+                {/* Countdown */}
+                <div className="mb-8 relative z-10">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/50 mb-3 font-bold text-center sm:text-left">
+                    Registration Closes In:
+                  </p>
+                  <CountdownTimer />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 relative z-10">
+                  <Button asChild className="w-full sm:w-2/3 bg-[#E56668] hover:bg-[#c94f51] text-white py-2.5 rounded-2xl font-black text-base shadow-[0_8px_20px_rgba(229,102,104,0.3)] transition-all hover:-translate-y-1">
+                    <Link href={GOOGLE_FORM_URL} target="_blank">
+                      Register Now! <ArrowRight className="w-5 h-5 ml-2" />
+                    </Link>
+                  </Button>
+                  <Button asChild className="w-full sm:w-1/3 bg-white/10 hover:bg-white/20 border border-white/20 text-white py-2.5 rounded-2xl font-bold transition-all">
+                    <Link href={WHATSAPP_URL} target="_blank">
+                      <MessageCircle className="w-5 h-5 mr-2" /> Ask Us
+                    </Link>
+                  </Button>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+       
+      </section>
 {/* ─── COURSE PACKAGES ─── */}
       <section id="courses-section" className="max-w-6xl mx-auto px-6 pb-20">
         <div className="text-center mb-10">
