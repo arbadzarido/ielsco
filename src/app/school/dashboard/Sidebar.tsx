@@ -2,7 +2,10 @@
 
 // =============================================================================
 // components/schools/layout/Sidebar.tsx
-// Desktop: sticky left sidebar | Mobile: hidden (bottom nav handles navigation)
+// Desktop sidebar — subdomain aware
+//
+// Href pakai /dashboard (tanpa /school) supaya bekerja di subdomain.
+// Active detection pakai normalizedPath yang strip /school prefix.
 // =============================================================================
 
 import Link from "next/link";
@@ -26,33 +29,39 @@ const NAV_GROUPS = [
   {
     label: "Overview",
     items: [
-      { label: "Dashboard", href: "/school/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
     label: "Management",
     items: [
-      { label: "Classes",  href: "/school/dashboard/class",    icon: GraduationCap },
-      { label: "Students", href: "/school/dashboard/students", icon: Users },
+      { label: "Classes",  href: "/dashboard/class",    icon: GraduationCap },
+      { label: "Students", href: "/dashboard/students", icon: Users         },
     ],
   },
   {
     label: "Analytics",
     items: [
-      { label: "Insights", href: "/school/insights", icon: BarChart3 },
-      { label: "Reports",  href: "/school/reports",  icon: FileText  },
+      { label: "Insights", href: "/insights", icon: BarChart3 },
+      { label: "Reports",  href: "/reports",  icon: FileText  },
     ],
   },
   {
     label: "System",
     items: [
-      { label: "Settings", href: "/school/settings", icon: Settings },
+      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ];
 
 export default function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname();
+
+  // Normalise path: strip /school prefix supaya active check bekerja
+  // di kedua kondisi (ielsco.com/school/dashboard & school.ielsco.com/dashboard)
+  const normalizedPath = pathname.startsWith("/school")
+    ? pathname.replace("/school", "")
+    : pathname;
 
   const initials = profile.full_name
     .split(" ")
@@ -62,7 +71,7 @@ export default function Sidebar({ profile }: SidebarProps) {
     .toUpperCase();
 
   return (
-    // ── Desktop only: hidden on mobile ──────────────────────────────────────
+    // Desktop only — hidden on mobile (bottom nav handles mobile)
     <aside className="hidden lg:flex w-[220px] flex-shrink-0 bg-[#1A2534] flex-col h-screen sticky top-0 z-30">
       {/* Brand */}
       <div className="px-5 py-5 border-b border-white/[0.06]">
@@ -89,8 +98,8 @@ export default function Sidebar({ profile }: SidebarProps) {
             <ul className="space-y-0.5">
               {group.items.map(({ label, href, icon: Icon }) => {
                 const active =
-                  pathname === href ||
-                  (href !== "/school/dashboard" && pathname.startsWith(href));
+                  normalizedPath === href ||
+                  (href !== "/dashboard" && normalizedPath.startsWith(href));
 
                 return (
                   <li key={href}>
