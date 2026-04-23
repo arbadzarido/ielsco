@@ -145,6 +145,7 @@ export default function Header() {
 
   // ─── Hidden paths (sama kayak sebelumnya) ─────────────────────────────────
   const hiddenPaths = [
+    "/school",
     "/dashboard",
     "/events/gif",
     "/privacy-policy",

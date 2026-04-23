@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import NotificationDropdown from "@/components/dashboard/NotificationDropdown";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
@@ -206,8 +205,7 @@ export default function DashboardHeader({
 
             {/* Right: Notif + Profile */}
             <div className="flex items-center gap-4 lg:gap-6 z-40">
-              <NotificationDropdown />
-
+             
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
