@@ -5,7 +5,6 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
-// Import MENTORS dari file data lu juga harus ada
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import CurriculumModal from "@/components/courses/CurriculumModal";
@@ -17,7 +16,7 @@ import {
 } from "@/data/courses";
 import {
   ChevronDown, CheckCircle, Filter, Calendar, Search, Sliders, MessageCircle,
-  ExternalLink, Check, Zap, Star, Award, Users, ArrowRight
+  ExternalLink, Check, Zap, Star, Award, Users, ArrowRight, Video, Gift
 } from "lucide-react";
 
 function formatIDR(n: number) {
@@ -61,6 +60,7 @@ function CountdownTimer() {
     </div>
   );
 }
+
 export default function CoursesPage() {
   const [selectedTrack, setSelectedTrack] = useState<CourseTrack | null>(null);
   const [filterMentor, setFilterMentor] = useState<string>("all");
@@ -68,6 +68,7 @@ export default function CoursesPage() {
   const [filterTrack, setFilterTrack] = useState<string>("all");
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customSessions, setCustomSessions] = useState(10);
+  
   // --- Carousel State & Logic buat Mentors ---
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -98,7 +99,6 @@ export default function CoursesPage() {
 
   const handleSelectTrack = (track: CourseTrack) => {
     setFilterTrack(track);
-    // scroll to courses
     document.getElementById("courses-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -106,7 +106,7 @@ export default function CoursesPage() {
     <main className="min-h-screen bg-[#F7F8FA] text-[#294154] font-geologica">
       <Header />
 
-     {/* ─── HERO ─── */}
+      {/* ─── HERO ─── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#2F4157] via-[#243344] to-[#1e2a38] text-white">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #E56668 0%, transparent 50%), radial-gradient(circle at 80% 20%, #4A90E2 0%, transparent 40%)" }} />
@@ -115,52 +115,50 @@ export default function CoursesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider">
-                🎓 IELS Personalized Courses
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider shadow-sm">
+                🎓 ONLINE ENGLISH MASTERY COURSE
               </div>
               <h1 className="text-4xl lg:text-5xl font-black leading-tight">
-                Learn English with<br />
-                <span className="text-[#E56668]">3 Expert Mentors</span><br />
-                Built for Your Goals
+                100 Live Sessions.<br />
+                <span className="text-[#E56668]">100 Hours of Tutoring.</span><br />
+                100 Days to Transformation.
               </h1>
               <p className="text-white/80 text-lg leading-relaxed max-w-lg">
-                Grammar, Speaking, Writing, Test Prep, Remote Careers — every course is led by a dedicated IELS Principal, personalized to your level, and designed for real outcomes.
+                The ultimate learning ecosystem. Combine the intense focus of Private 1-on-1s with the dynamic environment of Semi-Private classes. Batch 1 Starts May 18, 2026.
               </p>
               <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2 text-sm text-white/70">
-                  <Check size={16} className="text-emerald-400" /> 1-on-1 mentorship
+                <div className="flex items-center gap-2 text-sm text-white/70 font-semibold">
+                  <Check size={16} className="text-emerald-400" /> 4 Private 1-on-1 Sessions
                 </div>
-                <div className="flex items-center gap-2 text-sm text-white/70">
-                  <Check size={16} className="text-emerald-400" /> Certificate included
+                <div className="flex items-center gap-2 text-sm text-white/70 font-semibold">
+                  <Check size={16} className="text-emerald-400" /> 96 Semi-Private Sessions
                 </div>
-                <div className="flex items-center gap-2 text-sm text-white/70">
-                  <Check size={16} className="text-emerald-400" /> IELS Lounge Exclusive Lifetime
+                <div className="flex items-center gap-2 text-sm text-white/70 font-semibold">
+                  <Check size={16} className="text-emerald-400" /> Special Price IDR 360K
                 </div>
               </div>
               <div className="flex gap-3 flex-wrap">
                 <Link href={GOOGLE_FORM_URL} target="_blank"
-                  className="px-6 py-3 bg-[#E56668] hover:bg-[#C04C4E] text-white font-bold rounded-xl transition-all shadow-lg flex items-center gap-2">
-                  Register Now <ExternalLink size={16} />
+                  className="px-6 py-3 bg-[#E56668] hover:bg-[#C04C4E] text-white font-bold rounded-xl transition-all shadow-[0_4px_14px_rgba(229,102,104,0.4)] flex items-center gap-2 hover:-translate-y-0.5">
+                  Secure Your Spot <ExternalLink size={16} />
                 </Link>
                 <Link href={WHATSAPP_URL} target="_blank"
                   className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-all flex items-center gap-2">
                   <MessageCircle size={16} /> Chat on WhatsApp
                 </Link>
               </div>
-              <p className="text-xs text-white/50">{formatIDR(PRICE_PER_SESSION)}/session · Placement Test included · Flexible scheduling</p>
+              <p className="text-xs text-white/50 font-bold tracking-wide">ONLY 30 SEATS AVAILABLE · REGISTRATION CLOSES MAY 11</p>
             </div>
 
-            {/* 3 MENTOR AVATARS (DIPERBESAR & DISESUAIKAN) */}
+            {/* 3 MENTOR AVATARS */}
             <div className="hidden lg:flex items-center justify-center gap-4 relative">
               {MENTORS.map((mentor, i) => (
                 <div key={mentor.id}
                   className="relative transition-transform duration-500 hover:z-30"
                   style={{ 
-                    // Scale tengah lebih gede dikit, dan posisi diatur biar overlapping cantik
                     transform: i === 1 ? "scale(1.15) translateY(-16px)" : "scale(0.95)", 
                     zIndex: i === 1 ? 2 : 1 
                   }}>
-                  {/* Container digedein dari w-36 h-44 jadi w-48 h-60 */}
                   <div className="w-48 h-60 rounded-[24px] overflow-hidden border border-white/20 shadow-2xl relative group">
                     <Image 
                       src={mentor.image} 
@@ -170,7 +168,6 @@ export default function CoursesPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1e2a38]/90 via-[#1e2a38]/20 to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4">
-                      {/* Teks digedein dikit biar kebaca enak di box yang baru */}
                       <p className="text-white font-black text-lg leading-tight mb-0.5">{mentor.name.split(" ")[0]}</p>
                       <p className="text-white/70 text-xs font-medium tracking-wide">{mentor.tagline}</p>
                     </div>
@@ -182,8 +179,201 @@ export default function CoursesPage() {
         </div>
       </section>
 
-{/* ─── MEET THE MENTORS ─── */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
+     {/* =========================================
+          FEATURED PROGRAM: 100 LIVE SESSIONS
+      ========================================= */}
+      <section className="max-w-6xl mx-auto px-6 pb-20 mt-16">
+        
+        {/* 1. HEADER (Top Center) */}
+        <div className="text-center max-w-4xl mx-auto mb-12">
+          <h3 className="text-3xl lg:text-[40px] font-extrabold text-[#304156] mb-3 leading-tight">
+            Online English Mastery Course
+          </h3>
+          <p className="text-[#E56668] text-lg mb-6 font-bold tracking-wide">
+            Total: 100 Live Sessions (Private + Semi-Private)
+          </p>
+          <p className="text-gray-600 text-sm lg:text-base leading-relaxed">
+            <strong>Why is this program different?</strong> Intensive consistency (4 days a week, 1 hour a day) to build a habit, intimate learning via semi-private classes, direct mentorship for your specific weaknesses, and lifelong community access.
+            <br className="hidden sm:block" />
+            <strong>What you'll master:</strong> The English Foundation, Conversational Fluency, Professional & Academic English, and Goal-Oriented Practice (IELTS/TOEFL & Remote Career Readiness).
+          </p>
+        </div>
+
+        {/* 2. CONTENT GRID (Left Poster, Right Benefits) */}
+        <div className="grid md:grid-cols-12 gap-10 lg:gap-14 items-start mb-12">
+          
+          {/* POSTER 3:4 (Left) */}
+          <div className="md:col-span-5 relative group sticky top-28">
+            <div className="aspect-[3/4] rounded-[2rem] overflow-hidden bg-gray-100 border-[6px] border-white relative shadow-2xl">
+              <Image 
+                src="/images/contents/events/courses.png" // Ganti path gambarnya ke poster lo
+                alt="Online English Mastery Course Poster" 
+                fill 
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#2F4157]/40 to-transparent group-hover:opacity-0 transition-opacity duration-500"></div>
+              
+              <div className="absolute top-5 left-5 bg-white/95 backdrop-blur-sm text-[#E56668] px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                <Calendar className="w-4 h-4" /> Batch 1: May 18
+              </div>
+            </div>
+          </div>
+
+          {/* DETAILS (Right) */}
+          <div className="md:col-span-7 flex flex-col justify-center">
+            
+            {/* CLASS TYPES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+              {/* Private Box */}
+              <div className="bg-[#E56668]/5 border border-[#E56668]/20 rounded-3xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Video size={64} className="text-[#E56668]" />
+                </div>
+                <h4 className="text-[#E56668] font-black text-xl mb-4 relative z-10">4 Private <br/> 1-on-1 Sessions</h4>
+                <ul className="space-y-3 relative z-10">
+                  {[
+                    "Flexible schedule (by request)",
+                    "Customized to your learning pace",
+                    "1 session/week (Mon–Fri)",
+                    "60 minutes/session",
+                    "Completed in 1 month"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
+                      <CheckCircle size={18} className="text-[#E56668] shrink-0 mt-0.5" />
+                      <span className="leading-snug">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Semi-Private Box */}
+              <div className="bg-[#2F4157]/5 border border-[#2F4157]/10 rounded-3xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                  <Users size={64} className="text-[#2F4157]" />
+                </div>
+                <h4 className="text-[#2F4157] font-black text-xl mb-4 relative z-10">96 Semi-Private <br/> Sessions</h4>
+                <ul className="space-y-3 relative z-10">
+                  {[
+                    "Fixed schedule: Monday & Thursday (20:00–21:00)",
+                    "Max. 15 students per class",
+                    "60 minutes/session",
+                    "Valid for 1 year"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
+                      <CheckCircle size={18} className="text-[#2F4157] shrink-0 mt-0.5" />
+                      <span className="leading-snug">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* WHAT YOU'LL GET & BONUS */}
+            <div className="bg-white border border-gray-100 shadow-sm rounded-3xl p-6 lg:p-8">
+              <h4 className="font-black text-[#304156] text-lg mb-5 flex items-center gap-2">
+                <Award className="text-[#E56668]" /> What You'll Get
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 mb-8">
+                {[
+                  "Recording of every private session",
+                  "Full access to IELS Lounge Premium",
+                  "Personalized English learning dashboard",
+                  "Fun & structured learning modules",
+                  "Customized study plan & materials",
+                  "Supportive learning community",
+                  "Tutor consultation sessions",
+                  "Speak English confidently & fluently"
+                ].map((benefit, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check size={16} className="text-emerald-500 shrink-0 mt-0.5 font-bold" />
+                    <span>{benefit}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100">
+                <h4 className="font-black text-amber-900 text-sm mb-3 flex items-center gap-2 uppercase tracking-widest">
+                  <Gift size={16} className="text-amber-600" /> Bonus Included
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    "Live speaking practice",
+                    "Tenses handbook",
+                    "Assignment & feedback sessions"
+                  ].map((bonus, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm text-amber-800 font-medium">
+                      <Star size={14} className="text-amber-500 shrink-0 fill-amber-500" />
+                      {bonus}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {/* 3. CTA & PRICING (Format 100% Mengikuti Custom Package) */}
+          <div className="bg-gradient-to-br from-[#2F4157] to-[#1e2a38] rounded-[32px] p-8 lg:p-12 text-white overflow-hidden relative mt-12 shadow-2xl">
+            <div className="absolute inset-0 opacity-10"
+              style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #E56668 0%, transparent 50%)" }} />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+              
+              {/* KIRI: Info Harga & Countdown (flex-1) */}
+              <div className="flex-1 w-full text-center lg:text-left">
+                <div className="inline-block px-3 py-1 bg-[#E56668] border border-[#E56668]/50 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-sm">
+                  ⭐ Special price for Batch 1
+                </div>
+                
+                <div className="flex items-baseline justify-center lg:justify-start gap-2 mb-3">
+                  <span className="text-xl font-bold text-white/70">Only</span>
+                  <span className="text-5xl lg:text-6xl font-black text-white leading-none tracking-tight">IDR 360K</span>
+                </div>
+                
+                <p className="text-sm font-bold text-white/80 flex items-center justify-center lg:justify-start gap-2 mb-8">
+                  <Users className="w-5 h-5 text-[#E56668]" /> Strictly 30 Seats Available
+                </p>
+
+                <div className="pt-6 border-t border-white/10">
+                  <p className="text-xs uppercase tracking-widest text-white/50 mb-4 font-bold">
+                    Registration Closes: May 11, 2026
+                  </p>
+                  {/* Timer di kiri bareng harga biar rapi dan lega */}
+                  <div className="max-w-[340px] mx-auto lg:mx-0">
+                    <CountdownTimer />
+                  </div>
+                </div>
+              </div>
+
+              {/* KANAN: Box Action (w-80 persis kayak Custom Package) */}
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 w-full lg:w-80 shrink-0 shadow-lg">
+                <p className="font-black text-white mb-2 text-center lg:text-left text-lg">Secure Your Spot</p>
+                <p className="text-xs text-white/60 mb-6 text-center lg:text-left leading-relaxed">
+                  Join the Online English Mastery Course before the 30 seats are gone.
+                </p>
+                
+                <div className="flex flex-col gap-3">
+                  <Link 
+                    href={GOOGLE_FORM_URL} 
+                    target="_blank"
+                    className="w-full py-3.5 bg-[#E56668] hover:bg-[#c94f51] text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_rgba(229,102,104,0.4)] whitespace-nowrap"
+                  >
+                    Register Now <ArrowRight className="w-4 h-4 shrink-0" />
+                  </Link>
+                  <Link 
+                    href={WHATSAPP_URL} 
+                    target="_blank"
+                    className="w-full py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all whitespace-nowrap"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" /> Ask Us
+                  </Link>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          </section>      {/* ─── MEET THE MENTORS ─── */}
+      <section className="max-w-6xl mx-auto px-6 pb-16">
         <div className="text-center mb-10">
           <span className="inline-block px-4 py-1.5 bg-[#2F4157]/10 text-[#2F4157] rounded-full text-xs font-black uppercase tracking-widest mb-3">
             The Principals
@@ -194,7 +384,6 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        {/* --- CAROUSEL WRAPPER --- */}
         <div className="relative">
           <div
             ref={scrollRef}
@@ -204,7 +393,6 @@ export default function CoursesPage() {
             {MENTORS.map((mentor) => (
               <div 
                 key={mentor.id} 
-                // w-[85vw] bikin card-nya lebar tapi nyisain sedikit view ke card selanjutnya (biar user tau bisa diswipe)
                 className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center md:snap-align-none flex justify-center"
               >
                 <div className="w-full">
@@ -214,7 +402,6 @@ export default function CoursesPage() {
             ))}
           </div>
 
-  {/* --- DOT INDICATORS (Mobile Only) --- */}
           <div className="flex justify-center gap-2 mt-4 md:hidden">
             {MENTORS.map((_, i) => (
               <button
@@ -229,116 +416,8 @@ export default function CoursesPage() {
           </div>
         </div>
       </section>
-{/* =========================================
-          7️⃣ FEATURED PROGRAM: 100 LIVE SESSIONS
-      ========================================= */}
-      <section className="max-w-6xl mx-auto px-6 pb-20 mt-10">
-        
-          <div className="grid md:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
-            {/* POSTER 3:4 (Left) */}
-            <div className="md:col-span-5 relative group">
-              <div className="aspect-[3/4] rounded-3xl overflow-hidden bg-gray-100 border-4 border-gray-50 relative shadow-lg">
-                <Image 
-                  src="/images/contents/events/courses.png" // Ganti path gambarnya ke poster lo
-                  alt="100 Live Sessions Poster" 
-                  fill 
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-[#304156]/10 group-hover:bg-transparent transition-colors"></div>
-                
-                {/* Floating Badge on Image */}
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-[#E56668] px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <Zap className="w-3.5 h-3.5" /> Special Batch
-                </div>
-              </div>
-            </div>
 
-            {/* DETAILS (Right) */}
-            <div className="md:col-span-7 flex flex-col justify-center">
-              
-              {/* Header Title */}
-              <h3 className="text-3xl lg:text-4xl font-extrabold text-[#304156] mb-4 leading-tight">
-                100 Live Sessions: <br />
-                The Ultimate English Mastery
-              </h3>
-              
-              <p className="text-gray-600 mb-6 text-sm lg:text-base leading-relaxed text-justify sm:text-left">
-                Achieve your specific goals—whether it's conquering the IELTS, Grammatical Writing, or preparing for a Global Career. In collaboration with IELS Principals, this exclusive program provides direct mentorship and customized strategies for real results.
-              </p>
-
-              {/* Highlight Features */}
-              <div className="mb-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
-                    <p className="text-sm font-semibold text-[#304156]">96 Semi-Private Sessions</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
-                    <p className="text-sm font-semibold text-[#304156]">4 Intensive 1-on-1s</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
-                    <p className="text-sm font-semibold text-[#304156]">1 Year Free Lounge Premium</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-[#E56668] shrink-0" />
-                    <p className="text-sm font-semibold text-[#304156]">Direct Principal Mentorship</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* PRICING & COUNTDOWN BOX (Dark UI) */}
-              <div className="bg-[#304156] rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-                {/* Background glow effect */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-[#E56668]/20 blur-3xl rounded-full pointer-events-none"></div>
-
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10 mb-6">
-                  <div>
-                    <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-1">Special Investment</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xl font-bold text-[#E56668]">IDR</span>
-                      <span className="text-4xl lg:text-5xl font-black text-white">360<span className="text-2xl text-white/50">k</span></span>
-                    </div>
-                  </div>
-                  <div className="bg-[#E56668]/10 border border-[#E56668]/30 px-4 py-2 rounded-xl text-center sm:text-right w-full sm:w-auto">
-                    <p className="text-sm font-bold text-[#E56668] flex items-center justify-center sm:justify-end gap-1.5">
-                      <Users className="w-4 h-4" /> Strictly 50 Slots Only
-                    </p>
-                    <p className="text-[10px] text-white/60 uppercase tracking-widest mt-0.5">Almost Sold Out</p>
-                  </div>
-                </div>
-
-                {/* Countdown */}
-                <div className="mb-8 relative z-10">
-                  <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/50 mb-3 font-bold text-center sm:text-left">
-                    Registration Closes In:
-                  </p>
-                  <CountdownTimer />
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 relative z-10">
-                  <Button asChild className="w-full sm:w-2/3 bg-[#E56668] hover:bg-[#c94f51] text-white py-2.5 rounded-2xl font-black text-base shadow-[0_8px_20px_rgba(229,102,104,0.3)] transition-all hover:-translate-y-1">
-                    <Link href={GOOGLE_FORM_URL} target="_blank">
-                      Register Now! <ArrowRight className="w-5 h-5 ml-2" />
-                    </Link>
-                  </Button>
-                  <Button asChild className="w-full sm:w-1/3 bg-white/10 hover:bg-white/20 border border-white/20 text-white py-2.5 rounded-2xl font-bold transition-all">
-                    <Link href={WHATSAPP_URL} target="_blank">
-                      <MessageCircle className="w-5 h-5 mr-2" /> Ask Us
-                    </Link>
-                  </Button>
-                </div>
-
-              </div>
-
-            </div>
-          </div>
-       
-      </section>
-{/* ─── COURSE PACKAGES ─── */}
+      {/* ─── COURSE PACKAGES ─── */}
       <section id="courses-section" className="max-w-6xl mx-auto px-6 pb-20">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-black text-[#2F4157]">Signature Programs</h2>
@@ -347,14 +426,12 @@ export default function CoursesPage() {
           </p>
         </div>
 
-        {/* ── Filters (Disederhanakan & Clean) ── */}
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-10 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest pl-2">
               <Filter size={14} /> Filter
             </div>
             
-            {/* Mentor filter */}
             <select 
               value={filterMentor} 
               onChange={e => setFilterMentor(e.target.value)}
@@ -364,7 +441,6 @@ export default function CoursesPage() {
               {MENTORS.map(m => <option key={m.id} value={m.id}>{m.name.split(" ")[0]}</option>)}
             </select>
 
-            {/* Track filter */}
             <select 
               value={filterTrack} 
               onChange={e => setFilterTrack(e.target.value)}
@@ -387,7 +463,6 @@ export default function CoursesPage() {
           )}
         </div>
 
-     {/* ── Grid of Tracks ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {Object.keys(TRACK_META)
             .filter(trackId => filterTrack === "all" || trackId === filterTrack)
@@ -406,12 +481,13 @@ export default function CoursesPage() {
                   mentor={mentor} 
                   intensive={intensive} 
                   extensive={extensive} 
-                  onViewCurriculum={setSelectedTrack} // <-- Tembak langsung ke state trackId
+                  onViewCurriculum={setSelectedTrack}
                 />
               );
           })}
         </div>
       </section>
+
       {/* ─── CUSTOM PACKAGE ─── */}
       <section className="max-w-6xl mx-auto px-6 pb-16">
         <div className="bg-gradient-to-br from-[#2F4157] to-[#1e2a38] rounded-[32px] p-8 lg:p-12 text-white overflow-hidden relative">
@@ -522,14 +598,14 @@ export default function CoursesPage() {
       {/* ─── FINAL CTA ─── */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="bg-[#2F4157] rounded-[32px] p-10 text-center text-white">
-          <h2 className="text-4xl font-black mb-3">Ready to Start?</h2>
-          <p className="text-white/70 max-w-xl mx-auto text-sm mb-8">
-            Register now or chat with us first. Either way, your IELS journey starts today.
+          <h2 className="text-4xl font-black mb-3">Transformation Doesn't Happen By Chance.</h2>
+          <p className="text-white/70 max-w-xl mx-auto text-base mb-8">
+            It happens by choice. Secure your spot in the Online English Mastery Course now before the 30 seats are gone. Classes start May 18, 2026.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href={GOOGLE_FORM_URL} target="_blank"
               className="px-8 py-4 bg-[#E56668] hover:bg-[#C04C4E] text-white font-black rounded-xl transition-all shadow-lg flex items-center gap-2">
-              Register Now <ArrowRight size={18} />
+              Secure Your Spot <ArrowRight size={18} />
             </Link>
             <Link href={WHATSAPP_URL} target="_blank"
               className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-all flex items-center gap-2">
