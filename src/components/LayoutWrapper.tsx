@@ -9,6 +9,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   // 1. Definisikan list path yang harus bener-bener bersih (Tanpa Padding Atas)
   const noPaddingPaths = [
     "/school/dashboard",
+    "/quiz",
     "/school/sign-in",
     "/dashboard",
     "/privacy-policy",
