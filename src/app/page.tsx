@@ -91,7 +91,7 @@ export default function Home() {
 
               <div className="bg-white p-6 sm:p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-center sm:text-left">
                 <p className="text-4xl sm:text-5xl font-black text-[#E56668] mb-2 tracking-tighter">
-                  <CountUp end={6800} duration={2.5} separator="," enableScrollSpy />+
+                  <CountUp end={8700} duration={2.5} separator="," enableScrollSpy />+
                 </p>
                 <p className="text-base sm:text-lg font-bold text-[#2F4157]">Active Members</p>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">Growing daily</p>
