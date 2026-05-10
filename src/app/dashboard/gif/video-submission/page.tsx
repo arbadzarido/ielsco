@@ -334,23 +334,7 @@ export default function VideoSubmissionPage() {
           </div>
         </div>
 
-        {/* Auto-Complete Notice */}
-        {isAutoComplete && (
-          <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="bg-green-100 p-3 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-green-900 text-lg mb-2">Requirements Automatically Met</h3>
-                <p className="text-green-800 text-sm leading-relaxed">
-                  As a mentoring participant, your video presentation is evaluated directly through your final pitch during the mentoring sessions. You don't need to submit anything here.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
+      
         {/* COMPREHENSIVE VIDEO GUIDELINES SECTION */}
         <div className="bg-white rounded-2xl border border-[#914D4D]/20 overflow-hidden shadow-sm">
           <button
