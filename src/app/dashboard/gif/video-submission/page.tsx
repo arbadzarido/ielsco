@@ -83,7 +83,7 @@ export default function VideoSubmissionPage() {
   };
 
   // DEADLINE LOGIC: May 3, 2026
-  const DEADLINE = new Date("2026-05-31T23:59:59");
+  const DEADLINE = new Date("2026-05-29T23:59:59");
   const now = new Date();
   const isPastDeadline = now > DEADLINE;
 
@@ -466,7 +466,7 @@ export default function VideoSubmissionPage() {
                 
                 <div className="flex flex-col gap-2 text-sm font-bold text-[#914D4D]">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> DEADLINE: 31 May 2026 (23:59 WIB)
+                    <Calendar className="w-4 h-4" /> DEADLINE: 29 May 2026 (23:59 WIB)
                   </div>
                 </div>
               </div>

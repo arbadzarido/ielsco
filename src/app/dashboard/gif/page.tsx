@@ -126,7 +126,7 @@ type GIFRegistration = {
 const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00");
 const SCREENING_END_DATE      = new Date("2026-04-03T23:59:59");
 const PHASE2_DEADLINE         = new Date("2026-04-20T23:59:59");
-const PHASE3_DEADLINE         = new Date("2026-05-31T23:59:59"); // Updated to May 31
+const PHASE3_DEADLINE         = new Date("2026-05-29T23:59:59"); // Updated to May 31
 const NOW = new Date();
 
 const IS_SCREENING_PHASE   = NOW >= REGISTRATION_CLOSE_DATE && NOW <= SCREENING_END_DATE;
@@ -564,7 +564,7 @@ function Phase3Card({ state }: { state: Phase3CardState }) {
             <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
               <AlertCircle className="w-4 h-4 text-[#914D4D]/60 mt-0.5 shrink-0" />
               <p className="text-xs text-[#914D4D]/60 leading-relaxed">
-                The Phase 3 submission deadline (May 31, 2026) has passed. No video was recorded in time — submissions are no longer accepted for this batch.
+                The Phase 3 submission deadline (May 29, 2026) has passed. No video was recorded in time — submissions are no longer accepted for this batch.
               </p>
             </div>
             <Button disabled className="w-full md:w-auto py-3 px-8 rounded-xl font-bold bg-[#914D4D]/10 text-[#914D4D]/30 cursor-not-allowed border border-[#914D4D]/10">
@@ -609,7 +609,7 @@ function Phase3Card({ state }: { state: Phase3CardState }) {
           {!isSubmitted && (
             <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-xl px-4 py-2.5 flex items-center gap-2 shrink-0">
               <Clock className="w-4 h-4 text-[#2F4055] shrink-0" />
-              <p className="text-xs text-[#2F4055]/80 font-medium"><span className="font-bold">Deadline: May 31, 2026</span> (23:59 WIB)</p>
+              <p className="text-xs text-[#2F4055]/80 font-medium"><span className="font-bold">Deadline: May 29, 2026</span> (23:59 WIB)</p>
             </div>
           )}
         </div>
@@ -1095,7 +1095,7 @@ export default function GIFDashboardPage() {
                     <CheckCircle className="w-3.5 h-3.5" /> Auto-Complete
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-[#304156] mb-3">Administration Data</h3>
+                <h3 className="text-xl font-bold text-[#304156] mb-3">Phase 1 — Administration Data</h3>
                 <p className="text-sm text-gray-600 mb-6 leading-relaxed">Complete your biodata, academic background, and social engagement verification through our Google Form.</p>
                 <div className="bg-[#304156]/5 rounded-xl p-4 mb-6 border border-[#304156]/10">
                   <div className="text-xs font-bold text-[#304156] mb-2 uppercase tracking-wide">What to Prepare:</div>
@@ -1127,7 +1127,7 @@ export default function GIFDashboardPage() {
                     <span className="bg-[#304156]/10 text-[#304156] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">Required</span>
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-[#304156] mb-3">Administration Data</h3>
+                <h3 className="text-xl font-bold text-[#304156] mb-3">Phase 1 — Administration Data</h3>
                 <p className="text-sm text-gray-600 mb-6 leading-relaxed">Complete your biodata, academic background, and social engagement verification through our Google Form.</p>
                 <div className="bg-[#304156]/5 rounded-xl p-4 mb-6 border border-[#304156]/10">
                   <div className="text-xs font-bold text-[#304156] mb-2 uppercase tracking-wide">What to Prepare:</div>
@@ -1164,7 +1164,7 @@ export default function GIFDashboardPage() {
                     <CheckCircle className="w-3.5 h-3.5" /> Auto-Complete
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-[#2F4157] mb-3">Essay &amp; Project Proposal</h3>
+                <h3 className="text-xl font-bold text-[#2F4157] mb-3">Phase 2 — Essay &amp; Project Proposal</h3>
                 <p className="text-sm text-gray-600 mb-6 leading-relaxed">Submit your motivation essay and SDG-focused project proposal. We'll guide you through every step!</p>
                 <div className="bg-[#914D4D]/5 rounded-xl p-4 mb-6 border border-[#914D4D]/10">
                   <div className="text-xs font-bold text-[#914D4D] mb-2 uppercase tracking-wide">What You'll Get:</div>

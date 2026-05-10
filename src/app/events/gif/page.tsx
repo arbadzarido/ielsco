@@ -41,25 +41,25 @@ const timeline = [
     {
       phase: "Phase 3",
       title: "Video Pitch Submission",
-      date: "28 – 14 May 2026",
+      date: "10 – 29 May 2026",
       desc: "The final gate. Pitch your project to our panel by submitting a comprehensive and compelling video presentation."
     },
     {
       phase: "Self-Funded",
       title: "Registration Closes",
-      date: "20 May 2026",
+      date: "29 May 2026",
       desc: "Final deadline for general delegates to secure their spot through the self-funded pathway."
     },
     {
       phase: "Milestone",
       title: "Final Selection Announcement",
-      date: "18 May 2026",
+      date: "1 June 2026",
       desc: "The ultimate reveal of the Global Impact Fellowship delegates across all funding tracks."
     },
     {
       phase: "Preparation",
       title: "Onboarding & Project Prep",
-      date: "6 June – Late June 2026",
+      date: "13 June – Late June 2026",
       desc: "Official onboarding on June 6, followed by team bonding, project preparation, and pre-departure socialization."
     },
     {
