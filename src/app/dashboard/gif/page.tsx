@@ -2,70 +2,57 @@
 
 /**
  * ============================================================
- * GIF SINGAPORE 2026 — APPLICATION DASHBOARD
+ * GIF SINGAPORE 2026 — APPLICATION DASHBOARD (v5)
  * ============================================================
  *
- * SUPABASE INTEGRATION GUIDE
- * --------------------------
- * Run the SQL below in Supabase SQL Editor to add the required
- * columns to gif_registrations:
- *
- * -- 1. Mark that admin has verified/confirmed this user's Phase 1 submission
- * --    Admin sets this to TRUE via SQL after matching the Google Form email.
- * ALTER TABLE gif_registrations
- *   ADD COLUMN IF NOT EXISTS phase1_verified BOOLEAN NOT NULL DEFAULT FALSE;
- *
- * -- 2. Phase 2 submission result — null until admin shortlists
- * --    Values: null | 'passed' | 'failed'
- * --    (screening_status column already exists from previous iteration)
- *
- * -- 3. (Optional but recommended) index for fast lookup by email
- * CREATE INDEX IF NOT EXISTS idx_gif_reg_email ON gif_registrations(email);
- *
- *
- * HOW ADMIN MARKS PHASE 1 AS VERIFIED (manual SQL workflow):
- * -----------------------------------------------------------
- * After downloading the Google Form responses, run:
- *
- *   UPDATE gif_registrations
- *   SET phase1_verified = TRUE
- *   WHERE email = 'applicant@email.com';
- *
- * Bulk update from a list:
- *
- *   UPDATE gif_registrations
- *   SET phase1_verified = TRUE
- *   WHERE email IN (
- *     'user1@email.com',
- *     'user2@email.com',
- *     'user3@email.com'
- *   );
- *
- *
- * HOW ADMIN MARKS SCREENING RESULT (Phase 2 passed/failed):
- * ----------------------------------------------------------
- *   UPDATE gif_registrations
- *   SET screening_status = 'passed'   -- or 'failed'
- *   WHERE email = 'applicant@email.com';
- *
+ * LAYOUT:
+ *   Row 1 → 3-column grid: Phase 1 | Phase 2 | IELS Lounge
+ *   Row 2 → Full-width Phase 3 card (always shown, state varies)
  *
  * PHASE LOGIC SUMMARY
  * -------------------
- * Phase 1 card:
- *   - Before Mar 24       → normal form card (original)
- *   - Mar 24–Apr 3        → "submitted_screening" (verified=true) OR "closed_not_submitted" (verified=false)
- *   - After Apr 3         → "passed" (screening_status='passed') OR "failed"
- *   - Mentoring           → auto-complete (no changes)
  *
- * Phase 2 card:
- *   - phase1_verified = false         → LOCKED (not verified / never submitted)
- *   - phase1_verified = true
- *       + before Apr 11 deadline      → UNLOCKED (can view guideline & submit)
- *       + after Apr 11 + not submitted → LOCKED (deadline passed)
- *       + submitted                   → show submission state
- *   - screening_status = 'passed'
- *       (post-announcement)           → show PASSED state
- *   - Mentoring                       → auto-complete (no changes)
+ * Phase 1 (Administration Data):
+ *   normal                → registration window open (before Mar 24)
+ *   submitted_screening   → Mar 24–Apr 3, phase1_verified = true
+ *   closed_not_submitted  → Mar 24–Apr 3, phase1_verified = false
+ *   passed                → after Apr 3, phase1_verified = true
+ *   failed                → after Apr 3, phase1_verified = false
+ *   mentoring             → auto-complete
+ *
+ * Phase 2 (Essay & Project):
+ *   not_verified    → phase1_verified = false → hard locked
+ *   unlocked        → phase1_verified = true, before Apr 20 deadline
+ *   submitted       → phase2_status = 'submitted'
+ *   deadline_passed → phase1_verified = true, after Apr 20, not submitted
+ *   passed          → screening_status = 'passed' (post Phase 2 announcement)
+ *   mentoring       → auto-complete
+ *
+ * Phase 3 (Video Presentation):
+ *   not_eligible    → phase3_verified = false AND NOT mentoring → "Nice Try" locked
+ *   unlocked        → phase3_verified = true OR mentoring, before May 31 deadline
+ *   submitted       → phase3_status = 'submitted'
+ *   deadline_passed → eligible, after May 31, not submitted
+ *   fellow_selected → phase3_result = 'passed'
+ *   not_selected    → phase3_result = 'failed'
+ *
+ *   KEY CHANGE: Mentoring participants are NOT auto-passed on Phase 3.
+ *   They access the same video submission page as regular eligible users.
+ *   phase3_verified is automatically TRUE for mentoring participants
+ *   (set via SQL when marking mentoring status).
+ *
+ * SUPABASE COLUMNS REQUIRED:
+ *   phase1_verified    BOOLEAN DEFAULT FALSE
+ *   screening_status   TEXT ('passed'|'failed'|null)
+ *   phase3_verified    BOOLEAN DEFAULT FALSE
+ *   phase3_status      TEXT ('open'|'submitted') DEFAULT 'open'
+ *   phase3_video_link  TEXT DEFAULT NULL
+ *   phase3_submitted_at TIMESTAMPTZ DEFAULT NULL
+ *   phase3_result      TEXT ('passed'|'failed'|null) DEFAULT NULL
+ *
+ * ADMIN NOTE — Phase 3 for mentoring participants:
+ *   When setting is_mentoring_participant = TRUE, also set phase3_verified = TRUE.
+ *   UPDATE gif_registrations SET phase3_verified = TRUE WHERE is_mentoring_participant = TRUE;
  * ============================================================
  */
 
@@ -86,9 +73,7 @@ import {
   Award,
   ChevronRight,
   Sparkles,
-  Globe,
   Users,
-  TrendingUp,
   Calendar,
   MapPin,
   Clock,
@@ -102,6 +87,9 @@ import {
   PartyPopper,
   Mail,
   Info,
+  Video,
+  Trophy,
+  Star,
 } from "lucide-react";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -119,27 +107,32 @@ type UserProfile = {
 type GIFRegistration = {
   id: string;
   phase1_status: "open" | "submitted";
-  /** TRUE = admin has confirmed this email in the Google Form responses */
   phase1_verified: boolean;
   phase2_status: "open" | "submitted";
   is_lounge_member: boolean;
   project_drive_link: string;
   essay_motivation: string;
   is_mentoring_participant: boolean;
-  /** null = not yet determined | 'passed' | 'failed' */
   screening_status: "passed" | "failed" | null;
+  // Phase 3
+  phase3_verified: boolean;
+  phase3_status: "open" | "submitted";
+  phase3_video_link: string | null;
+  phase3_submitted_at: string | null;
+  phase3_result: "passed" | "failed" | null;
 };
 
 // --- DATE CONSTANTS ---
-const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00"); // Phase 1 closes
-const SCREENING_END_DATE      = new Date("2026-04-03T23:59:59"); // Phase 1 announcement
-const PHASE2_DEADLINE         = new Date("2026-04-20T23:59:59"); // Phase 2 submission closes
+const REGISTRATION_CLOSE_DATE = new Date("2026-03-24T00:00:00");
+const SCREENING_END_DATE      = new Date("2026-04-03T23:59:59");
+const PHASE2_DEADLINE         = new Date("2026-04-20T23:59:59");
+const PHASE3_DEADLINE         = new Date("2026-05-31T23:59:59"); // Updated to May 31
 const NOW = new Date();
 
 const IS_SCREENING_PHASE   = NOW >= REGISTRATION_CLOSE_DATE && NOW <= SCREENING_END_DATE;
 const IS_POST_ANNOUNCEMENT = NOW > SCREENING_END_DATE;
-const IS_PHASE2_OPEN       = NOW <= PHASE2_DEADLINE;
 const IS_PHASE2_CLOSED     = NOW > PHASE2_DEADLINE;
+const IS_PHASE3_CLOSED     = NOW > PHASE3_DEADLINE;
 
 function buildMayarUrl(baseUrl: string, email?: string | null): string {
   if (!email) return baseUrl;
@@ -148,30 +141,21 @@ function buildMayarUrl(baseUrl: string, email?: string | null): string {
 }
 
 // ============================================================
-// SUB-COMPONENTS — Phase 1 card variants (palette: #2F4055 #914D4D #304156)
+// PHASE 1 CARD VARIANTS
 // ============================================================
 
-/** Screening phase — user's Phase 1 has been VERIFIED by admin */
 function Phase1SubmittedCard() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="bg-white rounded-3xl border border-[#304156]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      className="bg-white rounded-3xl border border-[#304156]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]" />
       <div className="flex justify-between items-start mb-6">
-        <div className="bg-[#304156] p-4 rounded-2xl shadow-lg">
-          <CheckCircle className="w-7 h-7 text-white" />
-        </div>
+        <div className="bg-[#304156] p-4 rounded-2xl shadow-lg"><CheckCircle className="w-7 h-7 text-white" /></div>
         <span className="bg-[#304156]/10 text-[#304156] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-[#304156]/20">
           <CheckCircle className="w-3.5 h-3.5" /> Submitted
         </span>
       </div>
-
       <h3 className="text-xl font-bold text-[#304156] mb-2">Administration Data</h3>
-
       <div className="bg-[#304156]/5 border border-[#304156]/15 rounded-2xl p-4 mb-4">
         <div className="flex items-center gap-3 mb-2">
           <PartyPopper className="w-5 h-5 text-[#304156] shrink-0" />
@@ -181,17 +165,13 @@ function Phase1SubmittedCard() {
           Your administration data has been received. Our team is now reviewing all applications.
         </p>
       </div>
-
       <div className="bg-[#914D4D]/5 border border-[#914D4D]/15 rounded-2xl p-4 mb-4 flex items-start gap-3">
         <Mail className="w-4 h-4 text-[#914D4D] mt-0.5 shrink-0" />
         <div>
           <p className="text-xs font-bold text-[#914D4D] mb-1">Announcement: April 3, 2026</p>
-          <p className="text-xs text-[#914D4D]/70 leading-relaxed">
-            Results will be sent to your registered email address. Keep an eye on your inbox!
-          </p>
+          <p className="text-xs text-[#914D4D]/70 leading-relaxed">Results will be sent to your registered email. Keep an eye on your inbox!</p>
         </div>
       </div>
-
       <div className="bg-[#2F4055]/5 border border-[#2F4055]/15 rounded-2xl p-4 flex items-start gap-3">
         <Info className="w-4 h-4 text-[#2F4055] mt-0.5 shrink-0" />
         <p className="text-xs text-[#2F4055]/80 leading-relaxed">
@@ -202,77 +182,55 @@ function Phase1SubmittedCard() {
   );
 }
 
-/** Screening phase — user's Phase 1 is NOT verified (never submitted the form) */
 function Phase1ClosedCard() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-80"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-80">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]/30" />
       <div className="flex justify-between items-start mb-6">
-        <div className="bg-[#304156]/20 p-4 rounded-2xl">
-          <User className="w-7 h-7 text-[#304156]/40" />
-        </div>
+        <div className="bg-[#304156]/20 p-4 rounded-2xl"><User className="w-7 h-7 text-[#304156]/40" /></div>
         <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-[#914D4D]/20">
           <XCircle className="w-3.5 h-3.5" /> Registration Closed
         </span>
       </div>
-
       <h3 className="text-xl font-bold text-[#304156]/50 mb-2">Administration Data</h3>
-
       <div className="bg-[#914D4D]/5 border border-[#914D4D]/15 rounded-2xl p-4 mb-4 flex items-start gap-3">
         <Lock className="w-4 h-4 text-[#914D4D] mt-0.5 shrink-0" />
         <div>
           <p className="text-xs font-bold text-[#914D4D] mb-1">Registration is Closed</p>
           <p className="text-xs text-[#914D4D]/70 leading-relaxed">
-            The administration registration window has ended on March 23, 2026. Unfortunately, you can no longer submit your application for this batch.
+            The administration registration window ended on March 23, 2026. You can no longer submit your application for this batch.
           </p>
         </div>
       </div>
-
       <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-2xl p-4 flex items-start gap-3">
         <Mail className="w-4 h-4 text-[#2F4055] mt-0.5 shrink-0" />
         <p className="text-xs text-[#2F4055]/70 leading-relaxed">
-          Stay tuned for the next GIF batch announcement. You can still access{" "}
-          <strong className="text-[#2F4055]">IELS Lounge</strong> to build your skills in the meantime.
+          Stay tuned for the next GIF batch. You can still access <strong className="text-[#2F4055]">IELS Lounge</strong> to build your skills in the meantime.
         </p>
       </div>
     </motion.div>
   );
 }
 
-/** Post-announcement — user PASSED Phase 1 screening */
 function Phase1PassedCard() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="bg-white rounded-3xl border border-[#304156]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      className="bg-white rounded-3xl border border-[#304156]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]" />
       <div className="flex justify-between items-start mb-6">
-        <div className="bg-[#304156] p-4 rounded-2xl shadow-lg">
-          <CheckCircle className="w-7 h-7 text-white" />
-        </div>
+        <div className="bg-[#304156] p-4 rounded-2xl shadow-lg"><CheckCircle className="w-7 h-7 text-white" /></div>
         <span className="bg-[#304156]/10 text-[#304156] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-[#304156]/20">
           <CheckCircle className="w-3.5 h-3.5" /> Phase 1 Passed
         </span>
       </div>
-
       <h3 className="text-xl font-bold text-[#304156] mb-2">Administration Data</h3>
-
       <div className="bg-[#304156]/5 border border-[#304156]/15 rounded-2xl p-5 flex items-start gap-4">
         <PartyPopper className="w-6 h-6 text-[#914D4D] shrink-0 mt-0.5" />
         <div>
-          <p className="font-bold text-[#304156] text-sm mb-1">
-            Congratulations — you passed Phase 1! 🎉
-          </p>
+          <p className="font-bold text-[#304156] text-sm mb-1">Congratulations — you passed Phase 1! 🎉</p>
           <p className="text-xs text-[#304156]/70 leading-relaxed">
-            Your application has been shortlisted by our delegate team. Complete your Essay &amp; Project Proposal to continue your GIF journey.
+            Your application has been shortlisted. Complete your Essay &amp; Project Proposal to continue your GIF journey.
           </p>
         </div>
       </div>
@@ -280,39 +238,28 @@ function Phase1PassedCard() {
   );
 }
 
-/** Post-announcement — user was NOT selected in Phase 1 */
 function Phase1FailedCard() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-80"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+      className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-80">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]/30" />
       <div className="flex justify-between items-start mb-6">
-        <div className="bg-[#304156]/20 p-4 rounded-2xl">
-          <User className="w-7 h-7 text-[#304156]/40" />
-        </div>
+        <div className="bg-[#304156]/20 p-4 rounded-2xl"><User className="w-7 h-7 text-[#304156]/40" /></div>
         <span className="bg-[#304156]/10 text-[#304156]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
           <XCircle className="w-3.5 h-3.5" /> Not Selected
         </span>
       </div>
-
       <h3 className="text-xl font-bold text-[#304156]/50 mb-2">Administration Data</h3>
-
       <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-2xl p-4 mb-4 flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-[#2F4055]/60 mt-0.5 shrink-0" />
         <p className="text-xs text-[#2F4055]/60 leading-relaxed">
-          Thank you for applying to GIF Batch 1. After careful review, our team was unable to advance your application to Phase 2 at this time. We hope to see you in the next batch!
+          Thank you for applying to GIF Batch 1. After careful review, our team was unable to advance your application at this time. We hope to see you in the next batch!
         </p>
       </div>
-
       <div className="bg-[#914D4D]/5 border border-[#914D4D]/10 rounded-2xl p-4 flex items-start gap-3">
         <BookOpen className="w-4 h-4 text-[#914D4D] mt-0.5 shrink-0" />
         <p className="text-xs text-[#914D4D]/80 leading-relaxed">
-          Keep growing — access{" "}
-          <strong className="text-[#914D4D]">IELS Lounge</strong> to continue building your English skills and stay ready for future opportunities.
+          Keep growing — access <strong className="text-[#914D4D]">IELS Lounge</strong> to build your English skills and stay ready for future opportunities.
         </p>
       </div>
     </motion.div>
@@ -320,52 +267,30 @@ function Phase1FailedCard() {
 }
 
 // ============================================================
-// Phase 2 card variants
+// PHASE 2 CARD
 // ============================================================
 
-type Phase2CardState =
-  | "not_verified"      // phase1_verified = false → hard locked
-  | "unlocked"          // phase1_verified = true + deadline not passed → accessible
-  | "deadline_passed"   // phase1_verified = true + deadline passed + not submitted
-  | "submitted"         // phase2_status = "submitted"
-  | "passed";           // screening_status = "passed" (post-announcement)
+type Phase2CardState = "not_verified" | "unlocked" | "deadline_passed" | "submitted" | "passed";
 
-function Phase2Card({
-  state,
-  phase2Status,
-}: {
-  state: Phase2CardState;
-  phase2Status: "open" | "submitted";
-}) {
-  // ── HARD LOCKED: not verified ──
+function Phase2Card({ state, phase2Status }: { state: Phase2CardState; phase2Status: "open" | "submitted" }) {
   if (state === "not_verified") {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-50"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-50">
         <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]/20" />
         <div className="flex justify-between items-start mb-6">
-          <div className="bg-[#914D4D]/10 p-4 rounded-2xl">
-            <Lock className="w-7 h-7 text-[#914D4D]/40" />
-          </div>
+          <div className="bg-[#914D4D]/10 p-4 rounded-2xl"><Lock className="w-7 h-7 text-[#914D4D]/40" /></div>
           <span className="bg-[#914D4D]/10 text-[#914D4D]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
             <Lock className="w-3.5 h-3.5" /> Locked
           </span>
         </div>
         <h3 className="text-xl font-bold text-[#2F4157]/40 mb-3">Essay &amp; Project Proposal</h3>
-        <p className="text-sm text-[#2F4157]/30 mb-6 leading-relaxed">
-          Submit your motivation essay and SDG-focused project proposal.
-        </p>
+        <p className="text-sm text-[#2F4157]/30 mb-6 leading-relaxed">Submit your motivation essay and SDG-focused project proposal.</p>
         <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
           <Lock className="w-4 h-4 text-[#914D4D]/50 mt-0.5 shrink-0" />
           <div>
             <p className="text-xs font-bold text-[#914D4D]/60 mb-1">Phase 1 Required</p>
-            <p className="text-xs text-[#914D4D]/50 leading-relaxed">
-              You need to complete Phase 1 Administration first to access this section.
-            </p>
+            <p className="text-xs text-[#914D4D]/50 leading-relaxed">You need to complete Phase 1 Administration first to access this section.</p>
           </div>
         </div>
         <div className="mt-auto pt-4">
@@ -377,33 +302,22 @@ function Phase2Card({
     );
   }
 
-  // ── DEADLINE PASSED: verified but didn't submit in time ──
   if (state === "deadline_passed") {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-60"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full shadow-sm relative overflow-hidden opacity-60">
         <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]/30" />
         <div className="flex justify-between items-start mb-6">
-          <div className="bg-[#914D4D]/10 p-4 rounded-2xl">
-            <Clock className="w-7 h-7 text-[#914D4D]/50" />
-          </div>
+          <div className="bg-[#914D4D]/10 p-4 rounded-2xl"><Clock className="w-7 h-7 text-[#914D4D]/50" /></div>
           <span className="bg-[#914D4D]/10 text-[#914D4D]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
             <XCircle className="w-3.5 h-3.5" /> Deadline Passed
           </span>
         </div>
         <h3 className="text-xl font-bold text-[#2F4157]/50 mb-3">Essay &amp; Project Proposal</h3>
-        <p className="text-sm text-[#2F4157]/40 mb-6 leading-relaxed">
-          Submit your motivation essay and SDG-focused project proposal.
-        </p>
+        <p className="text-sm text-[#2F4157]/40 mb-6 leading-relaxed">Submit your motivation essay and SDG-focused project proposal.</p>
         <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
           <AlertCircle className="w-4 h-4 text-[#914D4D]/60 mt-0.5 shrink-0" />
-          <p className="text-xs text-[#914D4D]/60 leading-relaxed">
-            The Phase 2 submission deadline (April 20, 2026) has passed. Submissions are no longer accepted for this batch.
-          </p>
+          <p className="text-xs text-[#914D4D]/60 leading-relaxed">The Phase 2 submission deadline (April 20, 2026) has passed. Submissions are no longer accepted for this batch.</p>
         </div>
         <div className="mt-auto pt-4">
           <Button disabled className="w-full py-3 rounded-xl font-bold bg-[#914D4D]/10 text-[#914D4D]/30 cursor-not-allowed border border-[#914D4D]/10">
@@ -414,20 +328,13 @@ function Phase2Card({
     );
   }
 
-  // ── PASSED: post-announcement screening passed ──
   if (state === "passed") {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white rounded-3xl border border-[#914D4D]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/20 p-6 flex flex-col h-full shadow-sm relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]" />
         <div className="flex justify-between items-start mb-6">
-          <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg">
-            <CheckCircle className="w-7 h-7 text-white" />
-          </div>
+          <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg"><CheckCircle className="w-7 h-7 text-white" /></div>
           <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-[#914D4D]/20">
             <CheckCircle className="w-3.5 h-3.5" /> Phase 2 Passed
           </span>
@@ -436,61 +343,38 @@ function Phase2Card({
         <div className="bg-[#914D4D]/5 border border-[#914D4D]/15 rounded-2xl p-5 flex items-start gap-4">
           <PartyPopper className="w-6 h-6 text-[#914D4D] shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-[#914D4D] text-sm mb-1">
-              You've been selected as a GIF Fellow! 🎉
-            </p>
-            <p className="text-xs text-[#914D4D]/70 leading-relaxed">
-              Your Essay &amp; Project Proposal has been reviewed and accepted. Our team will reach out with the next steps for your fellowship journey.
-            </p>
+            <p className="font-bold text-[#914D4D] text-sm mb-1">Your essay &amp; project has been accepted! 🎉</p>
+            <p className="text-xs text-[#914D4D]/70 leading-relaxed">Proceed to Phase 3 — Video Presentation — to complete your GIF application.</p>
           </div>
         </div>
       </motion.div>
     );
   }
 
-  // ── UNLOCKED or SUBMITTED: phase1 verified, deadline still open ──
-  // (both states use the same full card, just button/badge differs)
   const isSubmitted = state === "submitted" || phase2Status === "submitted";
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+      className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]" />
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-6">
-          <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg">
-            <FileText className="w-7 h-7 text-white" />
-          </div>
+          <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg"><FileText className="w-7 h-7 text-white" /></div>
           {isSubmitted ? (
             <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100">
               <CheckCircle className="w-3.5 h-3.5" /> Submitted
             </span>
           ) : (
-            <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
-              Required
-            </span>
+            <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">Required</span>
           )}
         </div>
-
         <h3 className="text-xl font-bold text-[#2F4157] mb-3">Essay &amp; Project Proposal</h3>
-        <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-          Submit your motivation essay and SDG-focused project proposal. We'll guide you through every step!
-        </p>
-
-        {/* Phase 2 deadline reminder */}
+        <p className="text-sm text-gray-600 mb-6 leading-relaxed">Submit your motivation essay and SDG-focused project proposal. We'll guide you through every step!</p>
         {!isSubmitted && (
           <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-xl p-3 mb-4 flex items-center gap-3">
             <Clock className="w-4 h-4 text-[#2F4055] shrink-0" />
-            <p className="text-xs text-[#2F4055]/80">
-              <span className="font-bold">Deadline: April 20, 2026</span> (23:59 WIB)
-            </p>
+            <p className="text-xs text-[#2F4055]/80"><span className="font-bold">Deadline: April 20, 2026</span> (23:59 WIB)</p>
           </div>
         )}
-
         <div className="bg-[#914D4D]/5 rounded-xl p-4 mb-6 border border-[#914D4D]/10">
           <div className="text-xs font-bold text-[#914D4D] mb-2 uppercase tracking-wide">What You'll Get:</div>
           <ul className="space-y-2 text-xs text-[#914D4D]">
@@ -499,7 +383,6 @@ function Phase2Card({
             <li className="flex items-start gap-2"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>SDG impact framework</span></li>
           </ul>
         </div>
-
         <div className="mt-auto">
           <Link href="/dashboard/gif/essay-project" className="block">
             <Button className="w-full py-3 rounded-xl font-bold bg-[#914D4D] hover:bg-[#7a3e3e] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
@@ -516,17 +399,305 @@ function Phase2Card({
 }
 
 // ============================================================
-// Mentoring closed banner
+// PHASE 3 CARD — Full-width row below the 3-col grid
+// Mentoring participants are NOT auto-passed; they access normally.
+// ============================================================
+
+type Phase3CardState =
+  | "not_eligible"     // phase3_verified = false AND not mentoring → "Nice Try"
+  | "unlocked"         // eligible + before deadline
+  | "submitted"        // phase3_status = 'submitted'
+  | "deadline_passed"  // eligible + after deadline, not submitted
+  | "fellow_selected"  // phase3_result = 'passed'
+  | "not_selected";    // phase3_result = 'failed'
+
+function Phase3Card({ state }: { state: Phase3CardState }) {
+
+  // ── NOT ELIGIBLE ──
+  if (state === "not_eligible") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+        className="bg-white rounded-3xl border border-[#304156]/10 p-6 md:p-8 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2F4055]/30 to-[#914D4D]/30" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          {/* Left icon */}
+          <div className="bg-[#2F4055]/10 p-5 rounded-2xl shrink-0">
+            <Video className="w-8 h-8 text-[#2F4055]/40" />
+          </div>
+
+          {/* Center content */}
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-xl font-bold text-[#304156]/50">Phase 3 — Video Presentation</h3>
+              <span className="bg-[#304156]/10 text-[#304156]/50 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5" /> Not Eligible
+              </span>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-2xl p-4 flex items-start gap-3">
+                <Star className="w-5 h-5 text-[#2F4055]/50 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-[#2F4055]/70 mb-1">Nice Try, Keep Going! 💪</p>
+                  <p className="text-xs text-[#2F4055]/60 leading-relaxed">
+                    You didn't advance to Phase 3 this time — but your GIF journey doesn't have to end here. Consider joining as a self-funded participant and still experience Singapore with us!
+                  </p>
+                </div>
+              </div>
+              <div className="bg-[#914D4D]/5 border border-[#914D4D]/10 rounded-2xl p-4 flex items-start gap-3">
+                <Rocket className="w-4 h-4 text-[#914D4D] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-[#914D4D] mb-1">Still want to go to Singapore?</p>
+                  <p className="text-xs text-[#914D4D]/70 leading-relaxed mb-3">
+                    Join as a self-funded delegate! Same program, same events, same NUS visit — just with your own travel arrangement.
+                  </p>
+                  <Link href="https://ielsco.com/events/gif" target="_blank">
+                    <button className="flex items-center gap-1.5 text-[11px] font-bold text-[#914D4D] underline underline-offset-2 hover:text-[#7a3e3e] transition-colors">
+                      Learn more about Self-Funded <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── FELLOW SELECTED ──
+  if (state === "fellow_selected") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/20 p-6 md:p-8 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2F4055] to-[#914D4D]" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="bg-gradient-to-br from-[#2F4055] to-[#914D4D] p-5 rounded-2xl shadow-lg shrink-0">
+            <Trophy className="w-8 h-8 text-white" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 flex-wrap mb-4">
+              <h3 className="text-xl font-bold text-[#2F4157]">Phase 3 — Video Presentation</h3>
+              <span className="bg-[#914D4D]/10 text-[#914D4D] text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 border border-[#914D4D]/20">
+                <Crown className="w-3.5 h-3.5" /> GIF Fellow Selected
+              </span>
+            </div>
+            <div className="bg-gradient-to-br from-[#2F4055]/5 to-[#914D4D]/5 border border-[#914D4D]/15 rounded-2xl p-5 flex items-start gap-4">
+              <PartyPopper className="w-6 h-6 text-[#914D4D] shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-[#914D4D] text-sm mb-1">Welcome to the GIF Family! 🎉🇸🇬</p>
+                <p className="text-xs text-[#304156]/70 leading-relaxed">
+                  You've been officially selected as a GIF Singapore 2026 Fellow! Our team will contact you with onboarding details, payment information, and next steps for the trip.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── NOT SELECTED ──
+  if (state === "not_selected") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+        className="bg-white rounded-3xl border border-[#304156]/10 p-6 md:p-8 shadow-sm relative overflow-hidden opacity-80">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]/30" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="bg-[#304156]/20 p-5 rounded-2xl shrink-0">
+            <Video className="w-8 h-8 text-[#304156]/40" />
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-xl font-bold text-[#304156]/50">Phase 3 — Video Presentation</h3>
+              <span className="bg-[#304156]/10 text-[#304156]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+                <XCircle className="w-3.5 h-3.5" /> Not Selected
+              </span>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-2xl p-4 flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-[#2F4055]/60 mt-0.5 shrink-0" />
+                <p className="text-xs text-[#2F4055]/60 leading-relaxed">
+                  Thank you for your video presentation. After final deliberation, our team was unable to select your application for this batch. You showed incredible potential — keep going!
+                </p>
+              </div>
+              <div className="bg-[#914D4D]/5 border border-[#914D4D]/10 rounded-2xl p-4 flex items-start gap-3">
+                <Rocket className="w-4 h-4 text-[#914D4D] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-[#914D4D] mb-1">Still want to experience Singapore?</p>
+                  <p className="text-xs text-[#914D4D]/70 leading-relaxed mb-2">Join as a self-funded delegate at the same program!</p>
+                  <Link href="https://ielsco.com/events/gif" target="_blank">
+                    <button className="flex items-center gap-1.5 text-[11px] font-bold text-[#914D4D] underline underline-offset-2 hover:text-[#7a3e3e] transition-colors">
+                      Self-Funded Info <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── DEADLINE PASSED ──
+  if (state === "deadline_passed") {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+        className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 md:p-8 shadow-sm relative overflow-hidden opacity-60">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]/30" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="bg-[#914D4D]/10 p-5 rounded-2xl shrink-0">
+            <Clock className="w-8 h-8 text-[#914D4D]/50" />
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-xl font-bold text-[#2F4157]/50">Phase 3 — Video Presentation</h3>
+              <span className="bg-[#914D4D]/10 text-[#914D4D]/60 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+                <XCircle className="w-3.5 h-3.5" /> Deadline Passed
+              </span>
+            </div>
+            <div className="bg-[#914D4D]/5 rounded-xl p-4 border border-[#914D4D]/10 flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-[#914D4D]/60 mt-0.5 shrink-0" />
+              <p className="text-xs text-[#914D4D]/60 leading-relaxed">
+                The Phase 3 submission deadline (May 31, 2026) has passed. No video was recorded in time — submissions are no longer accepted for this batch.
+              </p>
+            </div>
+            <Button disabled className="w-full md:w-auto py-3 px-8 rounded-xl font-bold bg-[#914D4D]/10 text-[#914D4D]/30 cursor-not-allowed border border-[#914D4D]/10">
+              <Lock className="w-4 h-4 mr-2" /> Submission Closed
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── UNLOCKED or SUBMITTED — full wide card ──
+  const isSubmitted = state === "submitted";
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+      className="bg-white rounded-3xl border border-[#2F4055]/20 shadow-sm relative overflow-hidden hover:shadow-xl hover:border-[#2F4055]/40 transition-all duration-300">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2F4055] to-[#914D4D]" />
+
+      <div className="p-6 md:p-8">
+        {/* Header row */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-br from-[#2F4055] to-[#914D4D] p-4 rounded-2xl shadow-lg shrink-0">
+              <Video className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3 flex-wrap mb-1">
+                <h3 className="text-xl font-bold text-[#2F4157]">Phase 3 — Video Presentation</h3>
+                {isSubmitted ? (
+                  <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100">
+                    <CheckCircle className="w-3.5 h-3.5" /> Submitted
+                  </span>
+                ) : (
+                  <span className="bg-[#2F4055]/10 text-[#2F4055] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">Required</span>
+                )}
+              </div>
+              <p className="text-sm text-gray-500">Record and submit your project pitch video — the final step to become a GIF Fellow!</p>
+            </div>
+          </div>
+
+          {/* Deadline chip */}
+          {!isSubmitted && (
+            <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-xl px-4 py-2.5 flex items-center gap-2 shrink-0">
+              <Clock className="w-4 h-4 text-[#2F4055] shrink-0" />
+              <p className="text-xs text-[#2F4055]/80 font-medium"><span className="font-bold">Deadline: May 31, 2026</span> (23:59 WIB)</p>
+            </div>
+          )}
+        </div>
+
+        {/* Content grid */}
+        <div className="grid md:grid-cols-3 gap-6">
+
+          {/* Requirements */}
+          <div className="bg-gradient-to-br from-[#2F4055]/5 to-[#914D4D]/5 rounded-2xl p-5 border border-[#2F4055]/10">
+            <div className="text-xs font-bold text-[#2F4055] mb-3 uppercase tracking-wide">Recording Requirements</div>
+            <ul className="space-y-2.5 text-xs text-[#304156]/80">
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span><strong>Duration:</strong> Maximum 5 minutes — concise and impactful</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span><strong>Platform:</strong> Recorded via Zoom Meeting only</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span><strong>Layout:</strong> Slide screen + speaker face visible simultaneously</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Sparkles className="w-3 h-3mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span><strong>Quality:</strong> Clear audio &amp; readable screen — no editing required</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* What to present */}
+          <div className="bg-[#914D4D]/5 rounded-2xl p-5 border border-[#914D4D]/10">
+            <div className="text-xs font-bold text-[#914D4D] mb-3 uppercase tracking-wide">What to Present</div>
+            <ul className="space-y-2.5 text-xs text-[#304156]/80">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span>Your SDG-focused project proposal deck (max 10 slides)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span>Personal motivation &amp; vision for global impact</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span>Why YOU are the right person to lead this idea</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-[#914D4D]" />
+                <span>How GIF Singapore will help you execute your vision</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Submission CTA */}
+          <div className="flex flex-col justify-between gap-4">
+            <div className="bg-[#304156]/5 border border-[#304156]/10 rounded-2xl p-4 flex items-start gap-3">
+              <Info className="w-4 h-4 text-[#304156] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-[#304156] mb-1">Submission Method</p>
+                <p className="text-xs text-[#304156]/70 leading-relaxed">
+                  Upload your recorded video to Google Drive, set sharing to <strong>"Anyone with the link can view"</strong>, then paste the link on the submission page.
+                </p>
+              </div>
+            </div>
+
+            <Link href="/dashboard/gif/video-submission" className="block">
+              <Button className="w-full py-3.5 rounded-xl font-bold bg-gradient-to-r from-[#2F4055] to-[#914D4D] hover:to-[#2F4055] text-white shadow-md hover:shadow-xl transition-all group">
+                <span className="flex items-center justify-center">
+                  {isSubmitted ? "View / Update Submission" : "Submit Your Video"}
+                  <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================================
+// MENTORING CLOSED BANNER
 // ============================================================
 
 function MentoringClosedBanner() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl mt-12 font-geologica opacity-60"
-    >
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+      className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl mt-12 font-geologica opacity-60">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-20" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#304156] rounded-full blur-[120px] opacity-30" />
@@ -538,9 +709,7 @@ function MentoringClosedBanner() {
             <span className="text-white/60 font-bold text-xs uppercase tracking-wide">Registration Closed</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-white/60 leading-tight">Project Prep Mentoring</h2>
-          <p className="text-lg text-white/40 font-light">
-            The mentoring program registration has closed. Stay tuned for the next GIF batch to join early.
-          </p>
+          <p className="text-lg text-white/40 font-light">The mentoring program registration has closed. Stay tuned for the next GIF batch to join early.</p>
         </div>
         <Button disabled className="w-full md:w-auto py-3 px-10 rounded-2xl bg-white/10 text-white/30 font-black text-base cursor-not-allowed">
           Registration Closed
@@ -595,7 +764,6 @@ export default function GIFDashboardPage() {
         setUserProfile(profile);
 
         if (!gifRegRes.data) {
-          // Only auto-create row during open registration window
           if (NOW < REGISTRATION_CLOSE_DATE) {
             const { data: newData, error: insertError } = await supabase
               .from("gif_registrations")
@@ -610,13 +778,17 @@ export default function GIFDashboardPage() {
                 is_lounge_member: false,
                 is_mentoring_participant: false,
                 screening_status: null,
+                phase3_verified: false,
+                phase3_status: "open",
+                phase3_video_link: null,
+                phase3_submitted_at: null,
+                phase3_result: null,
               }])
               .select()
               .single();
-            if (insertError) console.error("GAGAL INSERT GIF REG:", insertError.message);
+            if (insertError) console.error("INSERT ERROR:", insertError.message);
             else setRegData(newData);
           }
-          // After close date: no row = never registered, show locked states
         } else {
           setRegData(gifRegRes.data);
         }
@@ -632,8 +804,6 @@ export default function GIFDashboardPage() {
 
   const handlePhase1Click = async () => {
     window.open("https://forms.gle/EYGdX54TtvQvaaM89", "_blank");
-    // Note: phase1_verified is set by admin via SQL, NOT by the frontend click.
-    // The frontend click only records that the user visited the form link.
     if (regData?.phase1_status !== "submitted") {
       setRegData(prev => prev ? { ...prev, phase1_status: "submitted" } : null);
       await supabase.from("gif_registrations").update({
@@ -649,18 +819,23 @@ export default function GIFDashboardPage() {
     </div>
   );
 
-  // ============================================================
-  // DERIVED STATE
-  // ============================================================
+  // ── DERIVED STATE ──
+  const isMentoring      = regData?.is_mentoring_participant === true;
+  const allRequirementsMet = isMentoring; // only used for Phase 1 & 2 auto-complete
+  const isVerified       = regData?.phase1_verified === true;
 
-  const isMentoring       = regData?.is_mentoring_participant === true;
-  const allRequirementsMet = isMentoring;
-  const isVerified        = regData?.phase1_verified === true;
+  // Phase 3 eligibility:
+  // - Regular users: phase3_verified = true (set by admin after phase2 review)
+  // - Mentoring users: also use phase3_verified (admin sets TRUE alongside is_mentoring_participant)
+  // Neither group is auto-passed; both access the same submission flow.
+  const isPhase3Eligible = regData?.phase3_verified === true;
 
-  const completedStepsCount = allRequirementsMet ? 3 : [
-    isVerified,                                   // Phase 1 = verified by admin
-    regData?.phase2_status === "submitted",
-    regData?.is_lounge_member === true,
+  // Progress steps (always 4 total)
+  const completedStepsCount = [
+    allRequirementsMet || isVerified,
+    allRequirementsMet || regData?.phase2_status === "submitted",
+    !!(allRequirementsMet || regData?.is_lounge_member || userProfile?.tier === "insider" || userProfile?.tier === "visionary"),
+    regData?.phase3_status === "submitted",
   ].filter(Boolean).length;
 
   const isLoungeDone =
@@ -674,54 +849,56 @@ export default function GIFDashboardPage() {
     Math.ceil((new Date("2026-03-23T23:59:59").getTime() - Date.now()) / (1000 * 60 * 60 * 24))
   );
 
-  // ── Phase 1 card variant ──
+  // Phase 1 variant
   type Phase1Variant = "normal" | "submitted_screening" | "closed_not_submitted" | "passed" | "failed";
   let phase1Variant: Phase1Variant = "normal";
   if (!isMentoring) {
     if (IS_SCREENING_PHASE) {
-      // During screening: verified = submitted, not verified = closed
       phase1Variant = isVerified ? "submitted_screening" : "closed_not_submitted";
     } else if (IS_POST_ANNOUNCEMENT) {
-      // PERBAIKAN: Lolos Phase 1 ditandai dengan isVerified (phase1_verified === true)
-      // screening_status HANYA dipakai untuk hasil akhir (Phase 2)
       phase1Variant = isVerified ? "passed" : "failed";
     }
-    // Before REGISTRATION_CLOSE_DATE → stays "normal" (original card)
   }
 
-  // ── Phase 2 card state ──
+  // Phase 2 state
   let phase2State: Phase2CardState = "not_verified";
   if (!isMentoring) {
     if (!isVerified) {
-      // Not verified by admin → hard locked regardless of date
       phase2State = "not_verified";
     } else if (regData?.screening_status === "passed" && IS_POST_ANNOUNCEMENT) {
-      // Post-announcement passed state (Hasil akhir Phase 2)
       phase2State = "passed";
     } else if (regData?.phase2_status === "submitted") {
-      // Already submitted
       phase2State = "submitted";
     } else if (IS_PHASE2_CLOSED) {
-      // Verified but deadline passed without submitting
       phase2State = "deadline_passed";
     } else {
-      // Verified + deadline still open → fully unlocked
       phase2State = "unlocked";
     }
   }
 
+  // Phase 3 state — applies to BOTH regular and mentoring users
+  let phase3State: Phase3CardState = "not_eligible";
+  if (!isPhase3Eligible) {
+    phase3State = "not_eligible";
+  } else if (regData?.phase3_result === "passed") {
+    phase3State = "fellow_selected";
+  } else if (regData?.phase3_result === "failed") {
+    phase3State = "not_selected";
+  } else if (regData?.phase3_status === "submitted") {
+    phase3State = "submitted";
+  } else if (IS_PHASE3_CLOSED) {
+    phase3State = "deadline_passed";
+  } else {
+    phase3State = "unlocked";
+  }
 
   const showMentoringClosed = !isMentoring && (IS_SCREENING_PHASE || IS_POST_ANNOUNCEMENT);
 
   return (
-    <DashboardLayout
-      userTier={userProfile?.tier}
-      userName={userProfile?.full_name}
-      userAvatar={userProfile?.avatar_url}
-    >
+    <DashboardLayout userTier={userProfile?.tier} userName={userProfile?.full_name} userAvatar={userProfile?.avatar_url}>
       <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 md:px-8 pt-8 font-geologica">
 
-      {/* === HERO SECTION === */}
+        {/* === HERO === */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl font-geologica">
           <div className="absolute bg-[url('/images/contents/stories/member-stories/banner/singapore-banner.png')] bg-cover bg-center inset-0 opacity-10 mix-blend-overlay">
             <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-60"></div>
@@ -743,20 +920,34 @@ export default function GIFDashboardPage() {
                     Welcome to your <span className="font-bold text-[#FFD1D1]">GIF in Singapore 2026</span> application hub. Prepare yourself for a transformative journey at NUS.
                   </p>
                 </div>
-                {allRequirementsMet && (
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="inline-flex items-center gap-2 bg-[#914D4D] border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
+
+                {/* Mentoring badge */}
+                {isMentoring && (
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    className="inline-flex items-center gap-2 bg-[#914D4D] border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
                     <Crown className="w-4 h-4 fill-white" />
                     Mentoring Fast Track Active
                     <Sparkles className="w-4 h-4 text-yellow-300" />
                   </motion.div>
                 )}
+
+                {/* Phase 3 unlocked badge (non-mentoring) */}
+                {isPhase3Eligible && !isMentoring && (
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
+                    <Trophy className="w-4 h-4 text-yellow-300" />
+                    Phase 3 Unlocked — Final Stage!
+                    <Sparkles className="w-4 h-4 text-yellow-300" />
+                  </motion.div>
+                )}
+
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
                   <div className="text-center">
                     <div className="text-3xl font-black text-white">{daysLeft}</div>
                     <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Days Left</div>
                   </div>
                   <div className="text-center border-l border-r border-white/10">
-                    <div className="text-3xl font-black text-[#FFD1D1]">{completedStepsCount}/3</div>
+                    <div className="text-3xl font-black text-[#FFD1D1]">{completedStepsCount}/4</div>
                     <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Steps Done</div>
                   </div>
                   <div className="text-center">
@@ -765,6 +956,7 @@ export default function GIFDashboardPage() {
                   </div>
                 </div>
               </div>
+
               <div className="flex justify-center items-center h-full">
                 <div className="relative w-full max-w-sm">
                   <div className="absolute inset-0 bg-gradient-to-br from-[#914D4D] to-[#304156] rounded-3xl blur-xl opacity-60"></div>
@@ -779,24 +971,22 @@ export default function GIFDashboardPage() {
                         </div>
                         <span className="text-sm font-bold text-right">NUS, Singapore</span>
                       </div>
-                      
-                      {/* ADJUSTED DATE SECTION */}
                       <div className="text-white border-b border-white/10 pb-3">
                         <div className="flex items-center justify-between mb-2">
-                           <div className="flex items-center gap-3">
-                             <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
-                             <span className="text-sm font-medium">Date</span>
-                           </div>
-                           <div className="text-right">
-                             <div className="text-xs text-white/50 line-through">May 5 - 12, 2026</div>
-                             <div className="text-sm font-bold text-[#FFD1D1]">July 7 - 13, 2026</div>
-                           </div>
+                          <div className="flex items-center gap-3">
+                            <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
+                            <span className="text-sm font-medium">Date</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-white/50 line-through">May 5 - 12, 2026</div>
+                            <div className="text-sm font-bold text-[#FFD1D1]">July 7 - 13, 2026</div>
+                          </div>
                         </div>
-                        <Link href="/events/gif/timeline-adjustment" className="flex items-center justify-center gap-1.5 text-[10px] text-white/70 hover:text-white bg-black/20 py-1.5 rounded-lg border border-white/5 transition-colors">
+                        <Link href="/events/gif/timeline-adjustment"
+                          className="flex items-center justify-center gap-1.5 text-[10px] text-white/70 hover:text-white bg-black/20 py-1.5 rounded-lg border border-white/5 transition-colors">
                           <Info className="w-3 h-3" /> Read timeline adjustment clarification
                         </Link>
                       </div>
-
                       <div className="flex items-center justify-between text-white">
                         <div className="flex items-center gap-3">
                           <div className="bg-[#304156] p-2 rounded-lg"><Users className="w-4 h-4 text-white" /></div>
@@ -809,7 +999,7 @@ export default function GIFDashboardPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-10 flex flex-col md:flex-row gap-4 items-center">
               <div className="w-full md:flex-1 bg-[#304156]/40 rounded-2xl px-5 py-3 flex items-center gap-4 border border-white/10 backdrop-blur-sm">
                 <div className="bg-[#914D4D] p-2.5 rounded-xl shadow-lg animate-pulse flex-shrink-0">
@@ -834,12 +1024,8 @@ export default function GIFDashboardPage() {
         </div>
 
         {/* === WHATSAPP COMMUNITY BANNER === */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="bg-white border border-[#914D4D]/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mt-8 relative overflow-hidden group hover:border-[#914D4D]/40 transition-colors"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          className="bg-white border border-[#914D4D]/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mt-8 relative overflow-hidden group hover:border-[#914D4D]/40 transition-colors">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#914D4D]/5 to-transparent rounded-full blur-2xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
           <div className="flex items-center gap-5 relative z-10">
             <div className="bg-gradient-to-br from-[#2F4055] to-[#914D4D] p-3.5 rounded-2xl shadow-lg shadow-[#914D4D]/20 flex-shrink-0">
@@ -865,38 +1051,42 @@ export default function GIFDashboardPage() {
           </Link>
         </motion.div>
 
-        {/* === PROGRESS TRACKER === */}
+        {/* === PROGRESS TRACKER — always 4 steps === */}
         <div className="bg-white rounded-2xl border border-[#304156]/10 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-[#304156]">Your Application Progress</h2>
-            <span className="text-sm text-gray-500">{completedStepsCount} of 3 steps completed</span>
+            <span className="text-sm text-gray-500">{completedStepsCount} of 4 steps completed</span>
           </div>
           <div className="relative">
             <div className="absolute top-5 left-8 right-8 h-1 bg-gray-100"></div>
-            <div className="absolute top-5 left-8 h-1 bg-[#914D4D] transition-all duration-500" style={{ width: `calc(${(completedStepsCount / 3) * 100}% - 4rem)` }}></div>
+            <div className="absolute top-5 left-8 h-1 bg-[#914D4D] transition-all duration-500"
+              style={{ width: `calc(${(completedStepsCount / 4) * 100}% - 4rem)` }}></div>
             <div className="relative flex justify-between items-start">
               {[
-                { label: "Administration Data", done: allRequirementsMet || isVerified },
-                { label: "Essay & Project",     done: allRequirementsMet || regData?.phase2_status === "submitted" },
-                { label: "IELS Lounge",         done: !!isLoungeDone },
+                { label: "Administration", done: allRequirementsMet || isVerified },
+                { label: "Essay & Project", done: allRequirementsMet || regData?.phase2_status === "submitted" },
+                { label: "IELS Lounge",     done: !!isLoungeDone },
+                { label: "Video Presentation", done: regData?.phase3_status === "submitted" },
               ].map((step, i) => (
-                <div key={i} className="flex flex-col items-center text-center w-24">
-                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-lg mb-2 transition-all", step.done ? "bg-[#914D4D]" : "bg-gray-200")}>
+                <div key={i} className="flex flex-col items-center text-center w-20">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-lg mb-2 transition-all",
+                    step.done ? "bg-[#914D4D]" : "bg-gray-200")}>
                     {step.done ? <CheckCircle className="w-5 h-5 text-white" /> : <span className="text-white font-bold text-sm">{i + 1}</span>}
                   </div>
-                  <span className="text-xs font-medium text-[#304156]">{step.label}</span>
+                  <span className="text-[10px] font-medium text-[#304156] leading-tight">{step.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* === MAIN CARDS GRID === */}
+        {/* === ROW 1: 3-COLUMN GRID — Phase 1 | Phase 2 | IELS Lounge === */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-          {/* ── PHASE 1 CARD ── */}
+          {/* ── PHASE 1 ── */}
           {isMentoring ? (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#304156]/30 transition-all duration-300 relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#304156]/30 transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]"></div>
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6">
@@ -915,7 +1105,7 @@ export default function GIFDashboardPage() {
                     <li className="flex items-start gap-2"><CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>Social media proof</span></li>
                   </ul>
                 </div>
-                <div className="mt-auto space-y-3">
+                <div className="mt-auto">
                   <Button disabled className="w-full py-3 rounded-xl font-bold bg-green-50 text-green-700 border-2 border-green-200 cursor-not-allowed">
                     <CheckCircle className="w-4 h-4 mr-2" /> Completed via Mentoring
                   </Button>
@@ -923,14 +1113,16 @@ export default function GIFDashboardPage() {
               </div>
             </motion.div>
           ) : phase1Variant === "normal" ? (
-            // Original card — registration window still open
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#304156]/30 transition-all duration-300 relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="bg-white rounded-3xl border border-[#304156]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#304156]/30 transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#304156]"></div>
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6">
                   <div className="bg-[#304156] p-4 rounded-2xl shadow-lg"><User className="w-7 h-7 text-white" /></div>
                   {isVerified ? (
-                    <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100"><CheckCircle className="w-3.5 h-3.5" /> Submitted</span>
+                    <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100">
+                      <CheckCircle className="w-3.5 h-3.5" /> Submitted
+                    </span>
                   ) : (
                     <span className="bg-[#304156]/10 text-[#304156] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">Required</span>
                   )}
@@ -945,7 +1137,7 @@ export default function GIFDashboardPage() {
                     <li className="flex items-start gap-2"><CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0" /><span>Social media proof</span></li>
                   </ul>
                 </div>
-                <div className="mt-auto space-y-3">
+                <div className="mt-auto">
                   <Button onClick={handlePhase1Click} className="w-full py-3 rounded-xl font-bold bg-[#304156] hover:bg-[#2F4055] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
                     <span className="relative z-10 flex items-center justify-center">
                       {isVerified ? "View Form Response" : "Fill Administration Form"}
@@ -955,25 +1147,22 @@ export default function GIFDashboardPage() {
                 </div>
               </div>
             </motion.div>
-          ) : phase1Variant === "submitted_screening" ? (
-            <Phase1SubmittedCard />
-          ) : phase1Variant === "closed_not_submitted" ? (
-            <Phase1ClosedCard />
-          ) : phase1Variant === "passed" ? (
-            <Phase1PassedCard />
-          ) : (
-            <Phase1FailedCard />
-          )}
+          ) : phase1Variant === "submitted_screening" ? <Phase1SubmittedCard />
+            : phase1Variant === "closed_not_submitted" ? <Phase1ClosedCard />
+            : phase1Variant === "passed" ? <Phase1PassedCard />
+            : <Phase1FailedCard />}
 
-          {/* ── PHASE 2 CARD ── */}
+          {/* ── PHASE 2 ── */}
           {isMentoring ? (
-            // Mentoring auto-complete — original, unchanged
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="bg-white rounded-3xl border border-[#914D4D]/10 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#914D4D]/30 transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 left-0 right-0 h-1 bg-[#914D4D]"></div>
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6">
                   <div className="bg-[#914D4D] p-4 rounded-2xl shadow-lg"><FileText className="w-7 h-7 text-white" /></div>
-                  <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100"><CheckCircle className="w-3.5 h-3.5" /> Auto-Complete</span>
+                  <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border border-green-100">
+                    <CheckCircle className="w-3.5 h-3.5" /> Auto-Complete
+                  </span>
                 </div>
                 <h3 className="text-xl font-bold text-[#2F4157] mb-3">Essay &amp; Project Proposal</h3>
                 <p className="text-sm text-gray-600 mb-6 leading-relaxed">Submit your motivation essay and SDG-focused project proposal. We'll guide you through every step!</p>
@@ -993,14 +1182,12 @@ export default function GIFDashboardPage() {
               </div>
             </motion.div>
           ) : (
-            <Phase2Card
-              state={phase2State}
-              phase2Status={regData?.phase2_status ?? "open"}
-            />
+            <Phase2Card state={phase2State} phase2Status={regData?.phase2_status ?? "open"} />
           )}
 
-          {/* ── IELS LOUNGE CARD (unchanged) ── */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white rounded-3xl border border-[#2F4055]/20 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#2F4055]/40 transition-all duration-300 relative overflow-hidden group">
+          {/* ── IELS LOUNGE ── */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="bg-white rounded-3xl border border-[#2F4055]/20 p-6 flex flex-col h-full hover:shadow-xl hover:border-[#2F4055]/40 transition-all duration-300 relative overflow-hidden group">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2F4055] to-[#914D4D]"></div>
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-6">
@@ -1045,12 +1232,13 @@ export default function GIFDashboardPage() {
                 {isLoungeDone ? (
                   <Link href="/dashboard/community" className="block">
                     <Button className="w-full py-3 rounded-xl font-bold bg-[#304156] hover:bg-[#2F4055] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
-                      <span className="relative z-10 flex items-center justify-center">Access IELS Lounge<ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
+                      <span className="relative z-10 flex items-center justify-center">Access IELS Lounge <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
                     </Button>
                   </Link>
                 ) : (
-                  <Button onClick={() => window.open(buildMayarUrl("https://ielsco.myr.id/m/insider-iels-lounge-premium/", userProfile?.email), "_blank")} className="w-full py-3 rounded-xl font-bold bg-gradient-to-br from-[#2F4055] to-[#914D4D] hover:to-gradient-to-br text-white shadow-md hover:shadow-xl transition-all group">
-                    <span className="flex items-center justify-center">Enroll Now (Rp 50k)<ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
+                  <Button onClick={() => window.open(buildMayarUrl("https://ielsco.myr.id/m/insider-iels-lounge-premium/", userProfile?.email), "_blank")}
+                    className="w-full py-3 rounded-xl font-bold bg-gradient-to-br from-[#2F4055] to-[#914D4D] text-white shadow-md hover:shadow-xl transition-all group">
+                    <span className="flex items-center justify-center">Enroll Now (Rp 50k) <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
                   </Button>
                 )}
               </div>
@@ -1058,9 +1246,13 @@ export default function GIFDashboardPage() {
           </motion.div>
         </div>
 
+        {/* === ROW 2: PHASE 3 FULL WIDTH === */}
+        <Phase3Card state={phase3State} />
+
         {/* === MENTORING SECTION === */}
-        {allRequirementsMet ? (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#243345] to-[#1A2635] rounded-3xl shadow-2xl mt-12 font-geologica border border-[#304156]/20">
+        {isMentoring ? (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#243345] to-[#1A2635] rounded-3xl shadow-2xl mt-12 font-geologica border border-[#304156]/20">
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-20"></div>
             </div>
@@ -1089,7 +1281,8 @@ export default function GIFDashboardPage() {
         ) : showMentoringClosed ? (
           <MentoringClosedBanner />
         ) : (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl mt-12 font-geologica">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl mt-12 font-geologica">
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-20"></div>
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#304156] rounded-full blur-[120px] opacity-30"></div>
@@ -1141,7 +1334,8 @@ export default function GIFDashboardPage() {
                       </ul>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/10">
-                      <Button onClick={() => window.open("https://forms.gle/D4DMBFshr1JeydZC9", "_blank")} className="flex-1 py-3 rounded-xl font-bold bg-white text-[#304156] hover:bg-gray-100 shadow-xl hover:shadow-white/20 transition-all text-base">
+                      <Button onClick={() => window.open("https://forms.gle/D4DMBFshr1JeydZC9", "_blank")}
+                        className="flex-1 py-3 rounded-xl font-bold bg-white text-[#304156] hover:bg-gray-100 shadow-xl transition-all text-base">
                         Apply Now <ExternalLink className="w-4 h-4 ml-2 text-[#914D4D]" />
                       </Button>
                       <Link href="/events/gif/mentoring" className="flex-1">
