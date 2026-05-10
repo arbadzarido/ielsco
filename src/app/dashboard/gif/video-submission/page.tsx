@@ -13,7 +13,6 @@ import {
   Upload,
   Info,
   AlertCircle,
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -82,7 +81,7 @@ export default function VideoSubmissionPage() {
     setModal((prev) => ({ ...prev, isOpen: false }));
   };
 
-  // DEADLINE LOGIC: May 3, 2026
+  // DEADLINE LOGIC: May 29, 2026
   const DEADLINE = new Date("2026-05-29T23:59:59");
   const now = new Date();
   const isPastDeadline = now > DEADLINE;
@@ -146,7 +145,7 @@ export default function VideoSubmissionPage() {
 
   const handleSubmit = async () => {
     if (isPastDeadline) {
-      showModal("Deadline Passed", "The submission deadline (May 3rd) has passed. Updates are no longer accepted.", "warning");
+      showModal("Deadline Passed", "The submission deadline (May 29th) has passed. Updates are no longer accepted.", "warning");
       return;
     }
 
@@ -229,7 +228,6 @@ export default function VideoSubmissionPage() {
   }
 
   const isSubmitted = regData?.phase3_status === 'submitted';
-  const isAutoComplete = regData?.is_mentoring_participant;
 
   return (
     <DashboardLayout 
@@ -310,11 +308,7 @@ export default function VideoSubmissionPage() {
               <div className="bg-white/10 p-3 rounded-2xl shadow-lg border border-white/20 backdrop-blur-sm">
                 <Video className="w-8 h-8 text-white" />
               </div>
-              {isAutoComplete ? (
-                <span className="bg-white/20 text-white px-4 py-1.5 rounded-full text-sm font-bold border border-white/10 shadow-sm backdrop-blur-md tracking-wider">
-                  AUTO-COMPLETED VIA MENTORING
-                </span>
-              ) : isSubmitted ? (
+              {isSubmitted ? (
                 <span className="bg-white/20 text-white px-4 py-1.5 rounded-full text-sm font-bold border border-white/10 shadow-sm backdrop-blur-md tracking-wider flex items-center gap-2">
                   <CheckCircle className="w-4 h-4" /> SUBMITTED
                 </span>
@@ -334,7 +328,6 @@ export default function VideoSubmissionPage() {
           </div>
         </div>
 
-      
         {/* COMPREHENSIVE VIDEO GUIDELINES SECTION */}
         <div className="bg-white rounded-2xl border border-[#914D4D]/20 overflow-hidden shadow-sm">
           <button
@@ -417,136 +410,134 @@ export default function VideoSubmissionPage() {
         </div>
 
         {/* Video Submission Section */}
-        {!isAutoComplete && (
-          <div className="bg-white border border-[#914D4D]/20 rounded-3xl p-8 md:p-10 relative overflow-hidden shadow-xl">
-            {/* Subtle Background Accent */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#914D4D]/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="bg-white border border-[#914D4D]/20 rounded-3xl p-8 md:p-10 relative overflow-hidden shadow-xl">
+          {/* Subtle Background Accent */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#914D4D]/5 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="relative z-10 flex flex-col lg:flex-row gap-10">
             
-            <div className="relative z-10 flex flex-col lg:flex-row gap-10">
+            <div className="flex-1 space-y-6">
+              <div className="inline-flex items-center gap-2 bg-[#914D4D]/10 text-[#914D4D] px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase border border-[#914D4D]/20">
+                <Video className="w-3.5 h-3.5" /> Video Pitch Submission
+              </div>
               
-              <div className="flex-1 space-y-6">
-                <div className="inline-flex items-center gap-2 bg-[#914D4D]/10 text-[#914D4D] px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase border border-[#914D4D]/20">
-                  <Video className="w-3.5 h-3.5" /> Video Pitch Submission
-                </div>
-                
-                <div>
-                  <h2 className="text-3xl font-black text-[#304156] mb-2">Submit Your Pitch Link</h2>
-                  <p className="text-[#304156]/70 text-base leading-relaxed">
-                    Provide the Google Drive link to your recorded presentation pitch here.
-                  </p>
-                </div>
+              <div>
+                <h2 className="text-3xl font-black text-[#304156] mb-2">Submit Your Pitch Link</h2>
+                <p className="text-[#304156]/70 text-base leading-relaxed">
+                  Provide the Google Drive link to your recorded presentation pitch here.
+                </p>
+              </div>
 
-                <div className="bg-[#304156]/5 rounded-2xl p-5 border border-[#304156]/10">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-[#914D4D] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-[#304156] mb-1 text-sm uppercase tracking-wide">CRITICAL REQUIREMENT:</h3>
-                      <p className="text-sm text-[#304156]/80 leading-relaxed">
-                        Ensure your Google Drive link access is set to <strong>'Anyone with the link can view'</strong>. If our judges request access, your submission will automatically fail.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col gap-2 text-sm font-bold text-[#914D4D]">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> DEADLINE: 29 May 2026 (23:59 WIB)
+              <div className="bg-[#304156]/5 rounded-2xl p-5 border border-[#304156]/10">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-[#914D4D] mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-[#304156] mb-1 text-sm uppercase tracking-wide">CRITICAL REQUIREMENT:</h3>
+                    <p className="text-sm text-[#304156]/80 leading-relaxed">
+                      Ensure your Google Drive link access is set to <strong>'Anyone with the link can view'</strong>. If our judges request access, your submission will automatically fail.
+                    </p>
                   </div>
                 </div>
               </div>
+              
+              <div className="flex flex-col gap-2 text-sm font-bold text-[#914D4D]">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" /> DEADLINE: 29 May 2026 (23:59 WIB)
+                </div>
+              </div>
+            </div>
 
-              <div className="w-full lg:w-[400px] flex flex-col justify-center">
-                {isSubmitted ? (
-                  <div className="bg-[#304156]/5 border border-[#304156]/10 rounded-2xl p-6 shadow-sm">
-                    <div className="text-center mb-4">
-                      <CheckCircle className="w-12 h-12 mx-auto mb-3 text-[#304156]" />
-                      <h3 className="font-black text-xl text-[#304156]">Link Saved!</h3>
-                      <p className="text-xs text-[#304156]/70 mt-1">You can update your link until the deadline.</p>
-                    </div>
-                    
-                    <label className="block text-sm font-bold text-[#304156] mb-2">Update URL <span className="text-[#914D4D]">*</span></label>
-                    <input
-                      type="url"
-                      disabled={isPastDeadline}
-                      value={videoLink}
-                      onChange={(e) => setVideoLink(e.target.value)}
-                      placeholder="https://drive.google.com/file/d/..."
-                      className="w-full px-4 py-3.5 rounded-xl bg-white border border-gray-200 text-[#304156] focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed mb-4 text-sm"
-                    />
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => window.open(regData.phase3_video_link, "_blank")}
-                        className="w-1/3 bg-white text-[#304156] border border-[#304156]/20 hover:bg-[#304156]/5 py-3 rounded-xl font-bold shadow-sm"
-                        title="View current link"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={submitting || isPastDeadline || videoLink === regData.phase3_video_link}
-                        className={cn(
-                          "w-2/3 py-3 rounded-xl font-bold text-base shadow-md transition-all",
-                          isPastDeadline 
-                            ? "bg-gray-400 text-white cursor-not-allowed" 
-                            : "bg-[#914D4D] text-white hover:bg-[#7a3e3e]"
-                        )}
-                      >
-                        {submitting ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : isPastDeadline ? (
-                          "Locked"
-                        ) : (
-                          "Update Link"
-                        )}
-                      </Button>
-                    </div>
+            <div className="w-full lg:w-[400px] flex flex-col justify-center">
+              {isSubmitted ? (
+                <div className="bg-[#304156]/5 border border-[#304156]/10 rounded-2xl p-6 shadow-sm">
+                  <div className="text-center mb-4">
+                    <CheckCircle className="w-12 h-12 mx-auto mb-3 text-[#304156]" />
+                    <h3 className="font-black text-xl text-[#304156]">Link Saved!</h3>
+                    <p className="text-xs text-[#304156]/70 mt-1">You can update your link until the deadline.</p>
                   </div>
-                ) : (
-                  <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm">
-                    <label className="block text-sm font-bold text-[#304156] mb-2">Video Drive URL <span className="text-[#914D4D]">*</span></label>
-                    <input
-                      type="url"
-                      disabled={isPastDeadline}
-                      value={videoLink}
-                      onChange={(e) => setVideoLink(e.target.value)}
-                      placeholder="https://drive.google.com/file/d/..."
-                      className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-[#304156] focus:bg-white focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed mb-4 text-sm"
-                    />
+                  
+                  <label className="block text-sm font-bold text-[#304156] mb-2">Update URL <span className="text-[#914D4D]">*</span></label>
+                  <input
+                    type="url"
+                    disabled={isPastDeadline}
+                    value={videoLink}
+                    onChange={(e) => setVideoLink(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/..."
+                    className="w-full px-4 py-3.5 rounded-xl bg-white border border-gray-200 text-[#304156] focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed mb-4 text-sm"
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.open(regData.phase3_video_link, "_blank")}
+                      className="w-1/3 bg-white text-[#304156] border border-[#304156]/20 hover:bg-[#304156]/5 py-3 rounded-xl font-bold shadow-sm"
+                      title="View current link"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
                     <Button
                       onClick={handleSubmit}
-                      disabled={submitting || isPastDeadline || !videoLink.trim()}
+                      disabled={submitting || isPastDeadline || videoLink === regData.phase3_video_link}
                       className={cn(
-                        "w-full py-3 rounded-xl font-bold text-base shadow-md transition-all",
+                        "w-2/3 py-3 rounded-xl font-bold text-base shadow-md transition-all",
                         isPastDeadline 
                           ? "bg-gray-400 text-white cursor-not-allowed" 
                           : "bg-[#914D4D] text-white hover:bg-[#7a3e3e]"
                       )}
                     >
                       {submitting ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Submitting...
-                        </>
+                        <Loader2 className="w-5 h-5 animate-spin" />
                       ) : isPastDeadline ? (
-                        <>
-                          <Lock className="w-5 h-5 mr-2" /> Deadline Passed
-                        </>
+                        "Locked"
                       ) : (
-                        <>
-                          <Upload className="w-5 h-5 mr-2" /> Submit Link
-                        </>
+                        "Update Link"
                       )}
                     </Button>
-                    <p className="text-xs text-center text-gray-500 mt-3 font-medium">
-                      Ensure link access is set to public.
-                    </p>
                   </div>
-                )}
-              </div>
-              
+                </div>
+              ) : (
+                <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-sm">
+                  <label className="block text-sm font-bold text-[#304156] mb-2">Video Drive URL <span className="text-[#914D4D]">*</span></label>
+                  <input
+                    type="url"
+                    disabled={isPastDeadline}
+                    value={videoLink}
+                    onChange={(e) => setVideoLink(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/..."
+                    className="w-full px-4 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-[#304156] focus:bg-white focus:border-[#914D4D] focus:ring-1 focus:ring-[#914D4D] outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed mb-4 text-sm"
+                  />
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={submitting || isPastDeadline || !videoLink.trim()}
+                    className={cn(
+                      "w-full py-3 rounded-xl font-bold text-base shadow-md transition-all",
+                      isPastDeadline 
+                        ? "bg-gray-400 text-white cursor-not-allowed" 
+                        : "bg-[#914D4D] text-white hover:bg-[#7a3e3e]"
+                    )}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Submitting...
+                      </>
+                    ) : isPastDeadline ? (
+                      <>
+                        <Lock className="w-5 h-5 mr-2" /> Deadline Passed
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 mr-2" /> Submit Link
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-center text-gray-500 mt-3 font-medium">
+                    Ensure link access is set to public.
+                  </p>
+                </div>
+              )}
             </div>
+            
           </div>
-        )}
+        </div>
 
         {/* Community & Support */}
         <div className="grid md:grid-cols-2 gap-6">
