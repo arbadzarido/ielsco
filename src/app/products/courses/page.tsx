@@ -372,15 +372,16 @@ export default function CoursesPage() {
               
             </div>
           </div>
-          </section>      {/* ─── MEET THE MENTORS ─── */}
+          </section>      
+          {/* ─── MEET THE MENTORS ─── */}
       <section className="max-w-6xl mx-auto px-6 pb-16">
         <div className="text-center mb-10">
           <span className="inline-block px-4 py-1.5 bg-[#2F4157]/10 text-[#2F4157] rounded-full text-xs font-black uppercase tracking-widest mb-3">
-            The Principals
+            The Founders
           </span>
           <h2 className="text-3xl font-black text-[#2F4157]">Meet Your Mentors</h2>
           <p className="text-gray-500 mt-2 max-w-xl mx-auto text-sm">
-            Three IELS Principals, three specializations. Click a course track to filter programs.
+            Click a course track to filter programs.
           </p>
         </div>
 
@@ -388,12 +389,12 @@ export default function CoursesPage() {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-6 -mx-6 px-6 md:mx-0 md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="flex md:grid md:grid-cols-2 max-w-4xl mx-auto gap-4 md:gap-8 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-6 -mx-6 px-6 md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             {MENTORS.map((mentor) => (
               <div 
                 key={mentor.id} 
-                className="w-[85vw] sm:w-[400px] md:w-auto shrink-0 snap-center md:snap-align-none flex justify-center"
+                className="w-[85vw] sm:w-[400px] md:w-full shrink-0 snap-center md:snap-align-none flex justify-center"
               >
                 <div className="w-full">
                   <MentorCard mentor={mentor} onSelectTrack={handleSelectTrack} />

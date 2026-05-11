@@ -21,44 +21,47 @@ import {
 import Link from "next/link";
 
 export default function About() {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
- // 1. TAMBAHKAN STATE INI DI BAGIAN ATAS COMPONENT (Jika belum ada)
-  const [activeTeamTab, setActiveTeamTab] = useState<"directors" | "leaders">("directors");
-  const [activeDirectorDetail, setActiveDirectorDetail] = useState<number | null>(null);
 
-  // 2. TIMPA ARRAY PRINCIPALS LAMA DENGAN YANG INI (Sudah ada Type-nya biar ga Error TS)
-  type Principal = {
+
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Ubah state ini jadi nyimpen string (nama) biar gampang pas array-nya dipisah
+  const [activeDetail, setActiveDetail] = useState<string | null>(null);
+
+  type LeadershipMember = {
     name: string;
     role: string;
     image: string;
     instagram: string;
     linkedin: string;
-    point1: string; // Poin 1 (bisa kamu isi Background/Bio)
-    point2: string; // Poin 2 (bisa kamu isi Experience/Achievement)
+    point1: string;
+    point2: string;
   };
 
-  const principals: Principal[] = [
+  const boardOfAdvisors: LeadershipMember[] = [
     {
-      name: "Khairi Pandya",
-      role: "Advisor & Mentor",
+      name: "Alfiandi Imam Mawardi",
+      role: "President Commissioner",
+      image: "/images/people/directors/alfiandi.png",
+      instagram: "#",
+      linkedin: "#",
+      point1: "Currently serving as the Founder and Commissioner of LANDASI, focusing on startup incubation, bootstrap investment, and fostering digital business ecosystems.",
+      point2: "Brings over 8 years of experience at UPN 'Veteran' Jawa Timur's Innovation & Entrepreneur Center, alongside his past executive role as Founder & CEO of Tapfast Indonesia.",
+    },
+    {
+      name: "Khairi Pandya Adhikara",
+      role: "Strategic Advisor",
       image: "/images/people/directors/pandya1.png",
       instagram: "https://www.instagram.com/khairi.pandya/",
       linkedin: "https://www.linkedin.com/in/khairi-pandya/",
       point1: "Currently serving as Sr. OD Specialist at STAR Capital, focusing on Organizational Development and Structure.",
       point2: "Former Manager of Organization & Workforce Transformation at Deloitte, managing stakeholder relations and human capital initiatives for over 2 years.",
     },
-    {
-      name: "Arbadza Rido",
-      role: "Principal of Operations & Business",
-      image: "/images/people/directors/arba.png",
-      instagram: "https://instagram.com/arbadzarido",
-      linkedin: "https://linkedin.com/in/arbadzarido",
-      point1: "Professional EFL & ESL Teacher with over 3 years of experience teaching across various countries in Southeast Asia.",
-      point2: "Former Project Manager at Pertamina Training & Consulting and Tech in Asia, leading cross-functional teams in high-impact corporate projects.",
-    },
+  ];
+
+  const boardOfDirectors: LeadershipMember[] = [
     {
       name: "Fadhila Qurotul Aini",
-      role: "Principal of Growth & Finance",
+      role: "Co-Founder, CEO",
       image: "/images/people/directors/dhila2.png",
       instagram: "https://www.instagram.com/fadhilaqa._/",
       linkedin: "https://linkedin.com/in/fadhilaqa/",
@@ -66,57 +69,15 @@ export default function About() {
       point2: "Former Marketing and Operations Intern at IFAAS (International Fellowship In Advanced Aesthetic Science), managing remote global projects for 7 months.",
     },
     {
-      name: "Syifa Hana Nabila",
-      role: "Principal of Talent",
-      image: "/images/people/directors/hana2.png",
-      instagram: "https://www.instagram.com/ssyifahana/",
-      linkedin: "https://www.linkedin.com/in/syifahana/",
-      point1: "Alumna of the University of Malaya (UM) short course program, focusing on global leadership and organizational behavior in a multicultural environment.",
-      point2: "Former Organization and Human Resources Intern at RSUPN Dr. Cipto Mangunkusumo for 3 months.",
+      name: "Arbadza Rido",
+      role: "Co-Founder, COO",
+      image: "/images/people/directors/arba.png",
+      instagram: "https://instagram.com/arbadzarido",
+      linkedin: "https://linkedin.com/in/arbadzarido",
+      point1: "Professional EFL & ESL Teacher with over 3 years of experience teaching across various countries in Southeast Asia.",
+      point2: "Former Project Manager at Pertamina Training & Consulting and Tech in Asia, leading cross-functional teams in high-impact corporate projects.",
     },
   ];
-
-  // 3. DATA LEADERS (Bisa diisi nama aslinya nanti)
-// 3. DATA LEADERS (Grouped by Division)
-  const leadersGroups = [
-    {
-      category: "Operations",
-      members: [
-        { role: "Project Manager", name: "Nafil Rizqi Taniza", image: "/images/people/leaders/nafil.png", instagram: "#", linkedin: "#" },
-        { role: "Product Manager", name: "Aldina Wisik Riani", image: "/images/people/leaders/aldina.png", instagram: "#", linkedin: "#" },
-        { role: "Community Manager", name: "Nia Kristin Sianturi", image: "/images/people/leaders/nia.png", instagram: "#", linkedin: "#" },
-        { role: "Vice Community Manager", name: "Ridho Septian", image: "/images/people/leaders/ridho.png", instagram: "#", linkedin: "#" }
-      ]
-    },
-    {
-      category: "Growth",
-      members: [
-        { role: "Strategic Marketing Manager", name: "Shallom Febe Marissa", image: "/images/people/leaders/shallom.png", instagram: "#", linkedin: "#" },
-        { role: "Content Marketing Manager", name: "Dzarratul Subagja", image: "/images/people/leaders/dzarratul.png", instagram: "#", linkedin: "#" },
-        { role: "Creative Manager", name: "Putri Maharani", image: "/images/people/leaders/putri1.png", instagram: "#", linkedin: "#" },
-        { role: "Vice Creative Manager", name: "Zainufri Aziz", image: "/images/people/leaders/zainufri.png", instagram: "#", linkedin: "#" }
-      ]
-    },
-    {
-      category: "Finance & Business",
-      members: [
-        { role: "Finance Manager", name: "Shalwa Allisya Keysha", image: "/images/people/leaders/shalwa.png", instagram: "#", linkedin: "#" },
-        { role: "Business Manager", name: "Jihan Thufailah Putri", image: "/images/people/leaders/jihan.png", instagram: "#", linkedin: "#" }
-      ]
-    },
-    {
-      category: "Talent",
-      members: [
-        { role: "Talent Management Manager", name: "Annisa Azalia Maulana", image: "/images/people/leaders/annisa.png", instagram: "#", linkedin: "#" },
-        { role: "Talent Development Manager", name: "Amidah Tsaliswati", image: "/images/people/leaders/amidah.png", instagram: "#", linkedin: "#" },
-        { role: "Vice Talent Manager", name: "Marsha Pramata", image: "/images/people/leaders/marsha.png", instagram: "#", linkedin: "#" }
-      ]
-    }
-  ];
-
-  // =================================================================================
-  // SILAKAN COPY SECTION DI BAWAH INI UNTUK MENGGANTIKAN SECTION THE TEAM KAMU
-  // =================================================================================
 
   const teamImages = [
     "/images/contents/careers/iels_team_0.png",
@@ -125,8 +86,6 @@ export default function About() {
     "/images/contents/careers/iels_team_3.png",
   ];
 
-
-  // Auto-carousel effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % teamImages.length);
@@ -138,11 +97,8 @@ export default function About() {
     <div className="min-h-screen bg-white font-sans selection:bg-[#E56668] selection:text-white">
       <Header />
       
-    {/* =========================================
-          1️⃣ HERO SECTION (WITH CAROUSEL) - SHORTER HEIGHT
-      ========================================= */}
+      {/* HERO SECTION */}
       <div className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
-        {/* Animated Background */}
         {teamImages.map((image, index) => (
           <div
             key={index}
@@ -161,7 +117,6 @@ export default function About() {
           </div>
         ))}
 
-        {/* Carousel indicators */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-10">
           {teamImages.map((_, index) => (
             <button
@@ -177,12 +132,11 @@ export default function About() {
           ))}
         </div>
         
-        {/* Content */}
         <div className="relative z-10 text-center px-6 sm:px-8 space-y-6 max-w-4xl mx-auto mt-16">
           <div className="animate-fadeIn">
             <Image
               src="/images/logos/iels_white.png"
-              width={120} // Ukuran logo sedikit diperkecil
+              width={120}
               height={120}
               alt="IELS Logo"
               className="mx-auto mb-6 drop-shadow-2xl"
@@ -211,13 +165,10 @@ export default function About() {
         </div>
       </div>
 
-      {/* =========================================
-          2️⃣ THE MANIFESTO (THE PROBLEM) - SPLIT LAYOUT
-      ========================================= */}
+      {/* THE MANIFESTO */}
       <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 bg-white">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
-          {/* Left Content: The Narrative */}
           <div className="space-y-8">
             <div className="inline-block bg-[#2F4157]/5 text-[#2F4157] px-5 py-2 rounded-full font-bold text-sm tracking-widest uppercase">
               The Reality Check
@@ -231,7 +182,6 @@ export default function About() {
                 Many students dream of studying abroad, building global careers, or winning international competitions. Yet, they are held back not by a lack of intelligence, but by a lack of access, structure, and the right environment.
               </p>
               
-              {/* Highlight Block */}
               <div className="border-l-4 border-[#E56668] pl-6 py-2 my-6 bg-[#F7F8FA] p-4 rounded-r-2xl">
                 <p className="font-semibold text-[#2F4157] text-lg">
                   For too long, English has been taught just as a school subject to pass exams.
@@ -243,10 +193,8 @@ export default function About() {
             </div>
           </div>
 
-          {/* Right Content: Visual Attachment */}
           <div className="relative w-full h-[400px] sm:h-[450px] rounded-[32px] overflow-hidden shadow-2xl group">
             <div className="absolute inset-0 bg-[#2F4157]/20 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-            {/* Gunakan gambar general yang kamu punya yang vibes-nya "belajar/global" */}
             <Image 
               src="/images/contents/general/landing_page_1.png" 
               alt="Indonesian students looking forward" 
@@ -254,7 +202,6 @@ export default function About() {
               className="object-cover transition-transform duration-700 group-hover:scale-105" 
             />
             
-            {/* Floating Quote Card */}
             <div className="absolute bottom-6 left-6 right-6 z-20 bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
               <p className="text-[#2F4157] font-bold text-lg leading-snug">
                 "We don't just teach you how to pass a test. We prepare you for the world."
@@ -265,10 +212,8 @@ export default function About() {
         </div>
       </section>
 
-      {/* =========================================
-          3️⃣ THE LAUNCHPAD (WHAT WE DO)
-      ========================================= */}
-      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18">
+      {/* THE LAUNCHPAD */}
+      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 bg-[#F7F8FA]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 lg:mb-20">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#2F4157]">
@@ -281,7 +226,7 @@ export default function About() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            {/* Pillar 1 */}
+            
             <div className="bg-white p-8 rounded-[32px] shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group">
               <div className="w-14 h-14 bg-[#2F4157]/5 group-hover:bg-[#E56668] rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300">
                 <Target className="text-[#2F4157] group-hover:text-white transition-colors" size={28} />
@@ -292,7 +237,6 @@ export default function About() {
               </p>
             </div>
 
-            {/* Pillar 2 */}
             <div className="bg-white p-8 rounded-[32px] shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group">
               <div className="w-14 h-14 bg-[#2F4157]/5 group-hover:bg-[#E56668] rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300">
                 <Users className="text-[#2F4157] group-hover:text-white transition-colors" size={28} />
@@ -303,7 +247,6 @@ export default function About() {
               </p>
             </div>
 
-            {/* Pillar 3 */}
             <div className="bg-white p-8 rounded-[32px] shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group">
               <div className="w-14 h-14 bg-[#2F4157]/5 group-hover:bg-[#E56668] rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300">
                 <Globe className="text-[#2F4157] group-hover:text-white transition-colors" size={28} />
@@ -314,7 +257,6 @@ export default function About() {
               </p>
             </div>
 
-            {/* Pillar 4 */}
             <div className="bg-white p-8 rounded-[32px] shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group">
               <div className="w-14 h-14 bg-[#2F4157]/5 group-hover:bg-[#E56668] rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300">
                 <Zap className="text-[#2F4157] group-hover:text-white transition-colors" size={28} />
@@ -326,11 +268,10 @@ export default function About() {
             </div>
           </div>
         </div>
-      </section>{/* =========================================
-          4️⃣ OUR VALUES (THE DNA OF IELS) - BIG CARDS
-      ========================================= */}
+      </section>
+
+      {/* OUR VALUES */}
       <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 bg-[#1A2534] text-white relative overflow-hidden">
-        {/* Subtle Background Glow */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E56668]/20 blur-[150px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#2F4157] blur-[100px] rounded-full pointer-events-none"></div>
 
@@ -348,7 +289,7 @@ export default function About() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Value 01 */}
+            
             <div className="relative group bg-white/5 border border-white/10 p-10 lg:p-12 rounded-[40px] hover:bg-white/10 hover:border-white/20 transition-all duration-500 overflow-hidden">
               <div className="absolute -right-6 -top-6 text-[140px] font-black text-white/5 group-hover:text-white/10 transition-colors duration-500 leading-none pointer-events-none">
                 01
@@ -364,7 +305,6 @@ export default function About() {
               </div>
             </div>
 
-            {/* Value 02 */}
             <div className="relative group bg-white/5 border border-white/10 p-10 lg:p-12 rounded-[40px] hover:bg-white/10 hover:border-white/20 transition-all duration-500 overflow-hidden">
               <div className="absolute -right-6 -top-6 text-[140px] font-black text-white/5 group-hover:text-white/10 transition-colors duration-500 leading-none pointer-events-none">
                 02
@@ -380,7 +320,6 @@ export default function About() {
               </div>
             </div>
 
-            {/* Value 03 */}
             <div className="relative group bg-white/5 border border-white/10 p-10 lg:p-12 rounded-[40px] hover:bg-white/10 hover:border-white/20 transition-all duration-500 overflow-hidden">
               <div className="absolute -right-6 -top-6 text-[140px] font-black text-white/5 group-hover:text-white/10 transition-colors duration-500 leading-none pointer-events-none">
                 03
@@ -399,13 +338,10 @@ export default function About() {
         </div>
       </section>
 
-      {/* =========================================
-          5️⃣ VISION & IMPACT (MODERN BENTO GRID)
-      ========================================= */}
+      {/* VISION & IMPACT */}
       <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 bg-white relative">
         <div className="max-w-7xl mx-auto">
           
-          {/* Section Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
             <div className="max-w-2xl space-y-4">
               <span className="text-[#E56668] font-bold tracking-widest uppercase text-sm">
@@ -427,10 +363,8 @@ export default function About() {
             </div>
           </div>
 
-          {/* Bento Grid layout */}
           <div className="grid md:grid-cols-3 gap-6">
             
-            {/* Giant Stat Box */}
             <div className="md:col-span-2 bg-[#F7F8FA] rounded-[40px] p-10 lg:p-14 border border-gray-100 relative overflow-hidden group hover:border-[#E56668]/30 transition-colors duration-500">
               <div className="relative z-10">
                 <p className="text-[64px] lg:text-[96px] font-black text-[#2F4157] leading-none mb-4 tracking-tighter">
@@ -446,7 +380,6 @@ export default function About() {
               </div>
             </div>
 
-            {/* Accent Stat Box */}
             <div className="bg-gradient-to-b from-[#E56668] to-[#c94f51] rounded-[40px] p-10 lg:p-12 text-white relative overflow-hidden shadow-2xl shadow-[#E56668]/20 group hover:-translate-y-2 transition-transform duration-500">
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div>
@@ -466,9 +399,7 @@ export default function About() {
               </div>
             </div>
 
-            {/* Full Width Bottom Stat Box */}
             <div className="md:col-span-3 bg-[#2F4157] rounded-[40px] p-10 lg:p-14 text-white flex flex-col md:flex-row items-center justify-between gap-10 overflow-hidden relative group">
-              {/* Center Glow */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#E56668]/20 blur-[100px] rounded-full pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
               
               <div className="relative z-10 max-w-2xl text-center md:text-left">
@@ -491,205 +422,180 @@ export default function About() {
           </div>
         </div>
       </section>
-{/* =========================================
-          6️⃣ THE TEAM (DIRECTORS & LEADERS)
-      ========================================= */}
-      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 overflow-hidden">
+
+  {/* LEADERSHIP TEAM */}
+      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 bg-[#F7F8FA]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center space-y-4 mb-12">
+          <div className="text-center space-y-4 mb-14">
             <span className="text-[#E56668] font-bold tracking-widest uppercase text-sm">
-              The People Behind IELS
+              Leadership
             </span>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#2F4157] tracking-tight">
               Meet The Builders
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              A dedicated team of educators, strategists, and creators committed to connecting Indonesian students with the world.
+              A dedicated team of leaders committed to connecting Indonesian students with the world.
             </p>
           </div>
 
-          {/* Toggle Buttons */}
-          <div className="flex justify-center gap-4 mb-10">
-            <button
-              onClick={() => {
-                setActiveTeamTab("directors");
-                setActiveDirectorDetail(null);
-              }}
-              className={`px-8 py-3.5 rounded-full font-bold transition-all duration-300 ${
-                activeTeamTab === "directors"
-                  ? "bg-[#2F4157] text-white shadow-xl scale-105"
-                  : "bg-white text-gray-500 hover:bg-gray-100 hover:text-[#2F4157] shadow-sm border border-gray-200"
-              }`}
-            >
-              Directors
-            </button>
-            <button
-              onClick={() => {
-                setActiveTeamTab("leaders");
-                setActiveDirectorDetail(null);
-              }}
-              className={`px-8 py-3.5 rounded-full font-bold transition-all duration-300 ${
-                activeTeamTab === "leaders"
-                  ? "bg-[#2F4157] text-white shadow-xl scale-105"
-                  : "bg-white text-gray-500 hover:bg-gray-100 hover:text-[#2F4157] shadow-sm border border-gray-200"
-              }`}
-            >
-              Leaders
-            </button>
-          </div>
+          <div className="space-y-16">
+            {/* BOARD OF ADVISORS */}
+            <div>
+              <h3 className="text-2xl font-extrabold text-[#1A2534] mb-6 pl-4 border-l-4 border-[#E56668] max-w-4xl mx-auto">
+                Board of Advisors
+              </h3>
+              
+              {/* Container: Horizontal Scroll di Mobile, Grid 2 Kolom di Desktop */}
+              <div className="flex overflow-x-auto gap-6 pb-6 pt-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-2 md:overflow-x-visible md:pb-0 md:pt-0 max-w-4xl mx-auto">
+                {boardOfAdvisors.map((p, index) => {
+                  const isShowingDetails = activeDetail === p.name;
 
-          {/* DIRECTORS TAB */}
-          {activeTeamTab === "directors" && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 animate-fadeIn">
-              {principals.map((p, index) => {
-                const isShowingDetails = activeDirectorDetail === index;
-
-                return (
-                  <div 
-                    key={index} 
-                    className="relative w-full h-[460px] bg-white rounded-[40px] shadow-sm hover:shadow-xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300"
-                  >
-                    <div className="p-8 flex flex-col h-full relative">
-                      
-                    {/* --- FRONT VIEW (PROFILE) --- */}
-                      {!isShowingDetails ? (
-                        <div className="flex flex-col items-center justify-center text-center h-full animate-fadeIn">
-                          
-                          <div className="relative mb-5">
-                            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100 relative z-10 group-hover:scale-105 transition-transform duration-300">
-                              <Image
-                                src={p.image}
-                                alt={p.name}
-                                fill
-                                className="object-cover"
-                              />
+                  return (
+                    <div 
+                      key={index} 
+                      className="min-w-[85vw] sm:min-w-[340px] md:min-w-0 snap-center relative w-full h-full bg-white rounded-3xl shadow-sm hover:shadow-xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300"
+                    >
+                      <div className="p-6 sm:p-8 flex flex-col h-full relative">
+                        {!isShowingDetails ? (
+                          <div className="flex flex-col items-center justify-center text-center h-full animate-fadeIn">
+                            {/* FOTO DIBIKIN KOTAK TUMPUL & MENTOK BINGKAI */}
+                            <div className="relative mb-6 w-full">
+                              <div className="w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-50 shadow-md bg-gray-100 relative z-10 hover:scale-[1.02] transition-transform duration-300">
+                                <Image src={p.image} alt={p.name} fill className="object-cover" />
+                              </div>
+                            </div>
+                            <h4 className="font-extrabold text-xl text-[#2F4157] mb-1 leading-tight">{p.name}</h4>
+                            <p className="text-sm text-[#E56668] mb-5 font-bold uppercase tracking-wider">{p.role}</p>
+                            
+                            <div className="flex gap-4 mb-5">
+                              <a href={p.instagram} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#E56668] transition-all duration-300">
+                                <Instagram size={18} />
+                              </a>
+                              <a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#0A66C2] transition-all duration-300">
+                                <Linkedin size={18} />
+                              </a>
+                            </div>
+                            
+                            <button 
+                              onClick={() => setActiveDetail(p.name)}
+                              className="w-full mt-auto py-3 rounded-xl bg-[#2F4157]/5 text-[#2F4157] font-bold text-sm hover:bg-[#2F4157] hover:text-white transition-colors duration-300"
+                            >
+                              View Profile
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col h-full animate-fadeIn text-left min-h-[400px]">
+                            <button 
+                              onClick={() => setActiveDetail(null)}
+                              className="text-[#E56668] font-bold text-sm mb-6 flex items-center hover:underline w-fit"
+                            >
+                              ← Back
+                            </button>
+                            <div className="overflow-y-auto pr-2 pb-4 scrollbar-hide">
+                              <h4 className="font-extrabold text-lg text-[#2F4157] mb-1">{p.name}</h4>
+                              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-5 border-b border-gray-100 pb-3">{p.role}</p>
+                              
+                              <h5 className="font-bold text-sm text-[#2F4157] mb-2 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#E56668]"></div>
+                                Background
+                              </h5>
+                              <p className="text-sm text-gray-600 leading-relaxed mb-5">{p.point1}</p>
+                              
+                              <h5 className="font-bold text-sm text-[#2F4157] mb-2 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#E56668]"></div>
+                                Experience
+                              </h5>
+                              <p className="text-sm text-gray-600 leading-relaxed mb-5">{p.point2}</p>
                             </div>
                           </div>
-                          
-                          <h4 className="font-extrabold text-xl text-[#2F4157] mb-1 leading-tight">
-                            {p.name}
-                          </h4>
-                          
-                          <p className="text-sm text-[#E56668] mb-5 font-bold uppercase tracking-wider">
-                            {p.role}
-                          </p>
-                          
-                          {/* Sosmed - langsung di bawah role tanpa mt-auto */}
-                          <div className="flex gap-4 mb-5">
-                            <a href={p.instagram} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#E56668] transition-all duration-300">
-                              <Instagram size={18} />
-                            </a>
-                            <a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#0A66C2] transition-all duration-300">
-                              <Linkedin size={18} />
-                            </a>
-                          </div>
-                          
-                          {/* Tombol - langsung nempel di bawah sosmed */}
-                          <button 
-                            onClick={() => setActiveDirectorDetail(index)}
-                            className="w-full py-3 rounded-2xl bg-[#2F4157]/5 text-[#2F4157] font-bold text-sm hover:bg-[#2F4157] hover:text-white transition-colors duration-300"
-                          >
-                            View Profile
-                          </button>
-                          
-                        </div>
-                      ) : (
-                        /* --- BACK VIEW (DETAILS) --- */
-                        <div className="flex flex-col h-full animate-fadeIn text-left">
-                          <button 
-                            onClick={() => setActiveDirectorDetail(null)}
-                            className="text-[#E56668] font-bold text-sm mb-6 flex items-center hover:underline w-fit"
-                          >
-                            ← Back
-                          </button>
-                          
-                          <div className="overflow-y-auto pr-2 pb-4 scrollbar-hide">
-                            <h4 className="font-extrabold text-lg text-[#2F4157] mb-1">{p.name}</h4>
-                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-5 border-b border-gray-100 pb-3">{p.role}</p>
-                            
-                            <h5 className="font-bold text-sm text-[#2F4157] mb-2 flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#E56668]"></div>
-                              Background
-                            </h5>
-                            <p className="text-sm text-gray-600 leading-relaxed mb-5">
-                              {p.point1}
-                            </p>
-                            
-                            <h5 className="font-bold text-sm text-[#2F4157] mb-2 flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-[#E56668]"></div>
-                              Experience
-                            </h5>
-                            <p className="text-sm text-gray-600 leading-relaxed mb-5">
-                              {p.point2}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* LEADERS TAB */}
-          {activeTeamTab === "leaders" && (
-            <div className="animate-fadeIn space-y-12">
-              {leadersGroups.map((group, groupIndex) => (
-                <div key={groupIndex} className="w-full">
-                  
-                  {/* Category Title */}
-                  <h3 className="text-2xl font-extrabold text-[#1A2534] mb-6 pl-2 border-l-4 border-[#E56668]">
-                    {group.category}
-                  </h3>
-                  
-                  {/* Cards Container: Flex Horizontal Swipe on Mobile, Grid on Desktop */}
-                  <div className="flex overflow-x-auto gap-5 pb-6 pt-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-x-visible md:pb-0 md:pt-0">
-                    {group.members.map((leader, index) => (
-                      <div 
-                        key={index} 
-                        className="min-w-[280px] sm:min-w-[300px] md:min-w-0 snap-center bg-white p-6 rounded-[40px] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center justify-center group h-full relative"
-                      >
-                        <div className="relative mb-4 mt-2">
-                          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100 relative z-10 group-hover:scale-105 transition-transform duration-300">
-                            <Image
-                              src={leader.image}
-                              alt={leader.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        </div>
-                        
-                        <h4 className="font-extrabold text-[#2F4157] text-lg mb-1 leading-tight">
-                          {leader.name}
-                        </h4>
-                        <p className="text-xs text-[#E56668] font-bold uppercase tracking-wider mb-2 px-2 h-8 flex items-center justify-center">
-                          {leader.role}
-                        </p>
-                        
-                        <div className="flex gap-3 mt-4 mb-2">
-                          <a href={leader.instagram} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#E56668] transition-all duration-300">
-                            <Instagram size={18} />
-                          </a>
-                          <a href={leader.linkedin} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#0A66C2] transition-all duration-300">
-                            <Linkedin size={18} />
-                          </a>
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                  
-                </div>
-              ))}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
+
+            {/* BOARD OF DIRECTORS */}
+            <div>
+              <h3 className="text-2xl font-extrabold text-[#1A2534] mb-6 pl-4 border-l-4 border-[#E56668] max-w-4xl mx-auto">
+                Board of Directors
+              </h3>
+              
+              <div className="flex overflow-x-auto gap-6 pb-6 pt-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-2 md:overflow-x-visible md:pb-0 md:pt-0 max-w-4xl mx-auto">
+                {boardOfDirectors.map((p, index) => {
+                  const isShowingDetails = activeDetail === p.name;
+
+                  return (
+                    <div 
+                      key={index} 
+                      className="min-w-[85vw] sm:min-w-[340px] md:min-w-0 snap-center relative w-full h-full bg-white rounded-3xl shadow-sm hover:shadow-xl border border-gray-100 overflow-hidden flex flex-col transition-all duration-300"
+                    >
+                      <div className="p-6 sm:p-8 flex flex-col h-full relative">
+                        {!isShowingDetails ? (
+                          <div className="flex flex-col items-center justify-center text-center h-full animate-fadeIn">
+                            {/* FOTO DIBIKIN KOTAK TUMPUL & MENTOK BINGKAI */}
+                            <div className="relative mb-6 w-full">
+                              <div className="w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-50 shadow-md bg-gray-100 relative z-10 hover:scale-[1.02] transition-transform duration-300">
+                                <Image src={p.image} alt={p.name} fill className="object-cover" />
+                              </div>
+                            </div>
+                            <h4 className="font-extrabold text-xl text-[#2F4157] mb-1 leading-tight">{p.name}</h4>
+                            <p className="text-sm text-[#E56668] mb-5 font-bold uppercase tracking-wider">{p.role}</p>
+                            
+                            <div className="flex gap-4 mb-5">
+                              <a href={p.instagram} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#E56668] transition-all duration-300">
+                                <Instagram size={18} />
+                              </a>
+                              <a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="p-3 rounded-2xl bg-[#F7F8FA] text-gray-500 hover:text-white hover:bg-[#0A66C2] transition-all duration-300">
+                                <Linkedin size={18} />
+                              </a>
+                            </div>
+                            
+                            <button 
+                              onClick={() => setActiveDetail(p.name)}
+                              className="w-full mt-auto py-3 rounded-xl bg-[#2F4157]/5 text-[#2F4157] font-bold text-sm hover:bg-[#2F4157] hover:text-white transition-colors duration-300"
+                            >
+                              View Profile
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col h-full animate-fadeIn text-left min-h-[400px]">
+                            <button 
+                              onClick={() => setActiveDetail(null)}
+                              className="text-[#E56668] font-bold text-sm mb-6 flex items-center hover:underline w-fit"
+                            >
+                              ← Back
+                            </button>
+                            <div className="overflow-y-auto pr-2 pb-4 scrollbar-hide">
+                              <h4 className="font-extrabold text-lg text-[#2F4157] mb-1">{p.name}</h4>
+                              <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-5 border-b border-gray-100 pb-3">{p.role}</p>
+                              
+                              <h5 className="font-bold text-sm text-[#2F4157] mb-2 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#E56668]"></div>
+                                Background
+                              </h5>
+                              <p className="text-sm text-gray-600 leading-relaxed mb-5">{p.point1}</p>
+                              
+                              <h5 className="font-bold text-sm text-[#2F4157] mb-2 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#E56668]"></div>
+                                Experience
+                              </h5>
+                              <p className="text-sm text-gray-600 leading-relaxed mb-5">{p.point2}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-      {/* =========================================
-          7️⃣ YOUTUBE CTA SECTION
-      ========================================= */}
-      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18">
+      {/* YOUTUBE CTA */}
+      <section className="px-6 sm:px-12 lg:px-[100px] py-13 lg:py-18 bg-white">
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
           
           <div className="mb-10 space-y-4">
@@ -704,7 +610,6 @@ export default function About() {
             </p>
           </div>
 
-          {/* YouTube Video Embed (Aspect Video agar responsive & ada thumbnail otomatis) */}
           <div className="w-full relative rounded-[32px] overflow-hidden shadow-2xl border-4 border-white bg-black aspect-video group">
             <iframe 
               className="w-full h-full absolute top-0 left-0"
@@ -717,7 +622,6 @@ export default function About() {
             ></iframe>
           </div>
 
-          {/* CTA Button ke YouTube App/Web */}
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <a 
               href="https://youtu.be/litePG83xtw?si=bydrWEtId8t7Xw_v" 
@@ -731,7 +635,8 @@ export default function About() {
 
         </div>
       </section>
-            <Footer />
+
+      <Footer />
 
       <style jsx global>{`
         @keyframes fadeIn {

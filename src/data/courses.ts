@@ -77,22 +77,6 @@ export const MENTORS: Mentor[] = [
     tracks: ["speaking", "work-abroad"],
     tagline: "Speaking & Professional English",
   },
-  {
-    id: "hana",
-    name: "Syifa Hana Nabila",
-    role: "Principal of Talent",
-    image: "/images/people/directors/hana2.png",
-    instagram: "https://www.instagram.com/ssyifahana/",
-    linkedin: "https://www.linkedin.com/in/syifahana/",
-    highlights: [
-      { emoji: "🎓", text: "Alumna, University of Malaya short course — Global Leadership" },
-      { emoji: "🏥", text: "HR & Org Development Intern, RSUPN Dr. Cipto Mangunkusumo" },
-      { emoji: "✍️", text: "Academic & scholarship writing mentor, 2+ years" },
-      { emoji: "📝", text: "IELTS Band 7.5 · Published academic essay contributor" },
-    ],
-    tracks: ["writing", "scholarship-essay"],
-    tagline: "Writing & Scholarship Essays",
-  },
 ];
 
 // ─── PRICING ─────────────────────────────────────────────────────────────────
