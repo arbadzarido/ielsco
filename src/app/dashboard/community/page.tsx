@@ -142,20 +142,34 @@ function CommunityContent() {
     avatar: user.user_metadata?.avatar_url || ""
   });
 
-  if (dbMembership) {
-    const endDate = new Date(dbMembership.end_date);
-    const today = new Date();
-    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+ if (dbMembership) {
+        // --- 🌟 SPECIAL CASE: VISIONARY (LIFETIME) ---
+        if (uiTier === "visionary") {
+          setMembership({
+            tier: "visionary",
+            status: "active",
+            startDate: dbMembership.start_date || new Date().toISOString(),
+            endDate: "Lifetime",
+            daysRemaining: 9999, // Dummy value gede biar gak trigger expired
+            autoRenew: false,
+          });
+        } 
+        // --- ⚡ NORMAL CASE: INSIDER (Butuh kalkulasi end_date) ---
+        else if (dbMembership.end_date) {
+          const endDate = new Date(dbMembership.end_date);
+          const today = new Date();
+          const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    setMembership({
-      tier: uiTier,
-      status: dbMembership.status,
-      startDate: dbMembership.start_date,
-      endDate: dbMembership.end_date,
-      daysRemaining: daysRemaining,
-      autoRenew: dbMembership.auto_renew || false,
-    });
-  }
+          setMembership({
+            tier: uiTier,
+            status: dbMembership.status,
+            startDate: dbMembership.start_date,
+            endDate: dbMembership.end_date,
+            daysRemaining: daysRemaining,
+            autoRenew: dbMembership.auto_renew || false,
+          });
+        }
+      }
 
   setLoading(false);
 };
@@ -423,7 +437,7 @@ function CommunityContent() {
       <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-24 -mt-24" />
       
       <div className="relative z-10 grid lg:grid-cols-3 gap-6 items-center">
-        {/* Status Info */}
+      {/* Status Info */}
         <div className="lg:col-span-2">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
@@ -438,9 +452,11 @@ function CommunityContent() {
                 {userData.tier} Membership {membership.status === "active" && membership.daysRemaining > 7 ? "Active" : "Expiring Soon"}
               </h3>
               <p className="text-white/70 text-sm">
-                {membership.daysRemaining > 7
-                  ? `Valid until ${new Date(membership.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                  : `Only ${membership.daysRemaining} days remaining`
+                {membership.tier === "visionary" 
+                  ? "Lifetime Access Granted" 
+                  : membership.daysRemaining > 7
+                    ? `Valid until ${new Date(membership.endDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    : `Only ${membership.daysRemaining} days remaining`
                 }
               </p>
             </div>
@@ -449,15 +465,14 @@ function CommunityContent() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
               <p className="text-white/60 text-xs uppercase tracking-wider font-bold mb-1">Days Remaining</p>
-              <p className="text-3xl font-bold">{membership.daysRemaining}</p>
+              <p className="text-3xl font-bold">{membership.tier === "visionary" ? "∞" : membership.daysRemaining}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
               <p className="text-white/60 text-xs uppercase tracking-wider font-bold mb-1">Auto-Renew</p>
-              <p className="text-3xl font-bold">{membership.autoRenew ? "ON" : "OFF"}</p>
+              <p className="text-3xl font-bold">{membership.tier === "visionary" ? "N/A" : (membership.autoRenew ? "ON" : "OFF")}</p>
             </div>
           </div>
         </div>
-
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
           {membership.daysRemaining <= 7 && (

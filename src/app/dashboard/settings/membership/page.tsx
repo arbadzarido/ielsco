@@ -83,26 +83,51 @@ export default function SubscriptionSettings() {
         uiTier: uiTier
       });
       
-      // 5. Build Subscription Logic Data
-      if (dbMembership && dbMembership.start_date && dbMembership.end_date) {
-        const start = new Date(dbMembership.start_date);
-        const end = new Date(dbMembership.end_date);
-        const today = new Date();
-        
-        const diffTime = end.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+     // 5. Build Subscription Logic Data
+      if (dbMembership) {
+        // --- 🌟 SPECIAL CASE: VISIONARY (LIFETIME) ---
+        if (uiTier === "visionary") {
+          setSub({
+            tier: "visionary",
+            status: "active",
+            startDate: dbMembership.start_date || new Date().toISOString(),
+            endDate: "Lifetime", // Tanda kalau ini lifetime
+            daysRemaining: 9999, // Dummy value gede biar aman
+            totalDays: 9999
+          });
+        } 
+        // --- ⚡ NORMAL CASE: INSIDER (Butuh start & end date) ---
+        else if (dbMembership.start_date && dbMembership.end_date) {
+          const start = new Date(dbMembership.start_date);
+          const end = new Date(dbMembership.end_date);
+          const today = new Date();
+          
+          const diffTime = end.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
-        setSub({
-          tier: uiTier,
-          status: diffDays <= 0 ? "expired" : dbMembership.status,
-          startDate: dbMembership.start_date,
-          endDate: dbMembership.end_date,
-          daysRemaining: Math.max(diffDays, 0),
-          totalDays: totalDays || 365
-        });
+          setSub({
+            tier: uiTier,
+            status: diffDays <= 0 ? "expired" : dbMembership.status,
+            startDate: dbMembership.start_date,
+            endDate: dbMembership.end_date,
+            daysRemaining: Math.max(diffDays, 0),
+            totalDays: totalDays || 365
+          });
+        } 
+        // --- FALLBACK: Punya membership tapi datanya nanggung ---
+        else {
+          setSub({
+            tier: uiTier,
+            status: "active",
+            startDate: null,
+            endDate: null,
+            daysRemaining: 0,
+            totalDays: 1
+          });
+        }
       } else {
-        // Fallback Explorer
+        // --- 🌍 FALLBACK MURNI: EXPLORER (Belum ada data sama sekali) ---
         setSub({
           tier: "explorer",
           status: "active",
@@ -112,6 +137,7 @@ export default function SubscriptionSettings() {
           totalDays: 1
         });
       }
+      
       setLoading(false);
     };
     fetchSubData();

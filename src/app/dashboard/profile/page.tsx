@@ -6,7 +6,8 @@ import { createBrowserClient } from "@supabase/ssr";
 import {
   User, Mail, Building2, Calendar, Target, Edit2, Save,
   Crown, Loader2, Camera, MapPin, Phone, Linkedin, Instagram,
-  Briefcase, GraduationCap, Sparkles, HelpCircle, AlertCircle
+  Briefcase, GraduationCap, Sparkles, HelpCircle, AlertCircle,
+  X, CheckCircle2, Info
 } from "lucide-react";
 import Image from "next/image";
 
@@ -74,75 +75,59 @@ export default function ProfilePage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key"
   );
 
-// --- STATE DECLARATIONS (Bersihin yang duplikat) ---
+  // --- STATE DECLARATIONS ---
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Custom Pop-up State
+  const [popup, setPopup] = useState<{ show: boolean, title: string, message: string, type: 'success' | 'error' | 'info' | 'easter' }>({
+    show: false, title: "", message: "", type: "info"
+  });
+
   // Easter Egg
   const [clickCount, setClickCount] = useState(0);
   const [easterEggActive, setEasterEggActive] = useState(false);
 
-  // User State (Cukup satu aja, gak perlu ada userData lagi)
+  // User State
   const [user, setUser] = useState<UserData>({
-    id: "",
-    name: "",
-    email: "",
-    tier: "explorer",
-    avatar: "",
-    user_id_code: "IELS-NEW"
+    id: "", name: "", email: "", tier: "explorer", avatar: "", user_id_code: "IELS-NEW"
   });
 
   // Form State
   const [formData, setFormData] = useState<FormData>({
-    gender: "",
-    birth_date: "",
-    phone: "",
-    domicile: "",
-    occupation: "Student",
-    institution_name: "",
-    institution_role: "",
-    instagram: "",
-    linkedin: "",
-    english_level: "",
-    goals: ""
+    gender: "", birth_date: "", phone: "", domicile: "", occupation: "Student",
+    institution_name: "", institution_role: "", instagram: "", linkedin: "",
+    english_level: "", goals: ""
   });
 
   // --- SINKRONISASI TIER & DATA ---
   useEffect(() => {
     const fetchUser = async () => {
-      // 1. Ambil Auth User (Gue alias jadi authUser biar gak rancu sama state 'user')
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
         setLoading(false);
         return;
       }
 
-      // 2. Ambil data Membership (Source of Truth Tier)
       const { data: dbMembership } = await supabase
         .from("memberships")
         .select("tier")
         .eq("user_id", authUser.id)
         .maybeSingle();
 
-      // 3. Ambil data Profile Lengkap dari tabel users
       const { data: dbUser } = await supabase
         .from("users")
-        .select("*") // Tarik semua buat ngisi form
+        .select("*") 
         .eq("id", authUser.id)
         .maybeSingle();
 
-      // 4. Mapping Tier
       const dbTier = dbMembership?.tier;
       let uiTier: TierType = "explorer";
 
-      if (dbTier === "pro") {
-        uiTier = "insider";
-      } else if (dbTier === "premium" || dbTier === "visionary") {
-        uiTier = "visionary";
-      }
+      if (dbTier === "pro") uiTier = "insider";
+      else if (dbTier === "premium" || dbTier === "visionary") uiTier = "visionary";
 
-      // 5. Update State 'user' (Untuk UI Dashboard & Header)
       setUser({
         id: authUser.id,
         name: dbUser?.full_name || authUser.user_metadata?.full_name || "Student",
@@ -152,7 +137,6 @@ export default function ProfilePage() {
         user_id_code: dbUser?.user_id_code || "IELS-MEMBER"
       });
 
-      // 6. Update State 'formData' (Untuk form input)
       setFormData({
         gender: dbUser?.gender || "",
         birth_date: dbUser?.birth_date || "",
@@ -172,7 +156,16 @@ export default function ProfilePage() {
 
     fetchUser();
   }, [supabase]);
+
   // --- HANDLERS ---
+  const showPopup = (title: string, message: string, type: 'success' | 'error' | 'info' | 'easter') => {
+    setPopup({ show: true, title, message, type });
+    // Otomatis tutup setelah 4 detik kecuali error
+    if (type !== 'error') {
+      setTimeout(() => setPopup(prev => ({ ...prev, show: false })), 4000);
+    }
+  };
+
   const handleAvatarClick = () => {
     if (isEditing && fileInputRef.current) {
       fileInputRef.current.click();
@@ -182,7 +175,11 @@ export default function ProfilePage() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      alert("Avatar upload logic needs Supabase Storage configured. (File selected: " + file.name + ")");
+      showPopup(
+        "Upload Feature Locked", 
+        "Avatar upload logic needs Supabase Storage configured. We'll build this soon!", 
+        "info"
+      );
     }
   };
 
@@ -190,7 +187,11 @@ export default function ProfilePage() {
     setClickCount(prev => prev + 1);
     if (clickCount + 1 === 5) {
       setEasterEggActive(true);
-      alert("🎉 EASTER EGG FOUND: You are now officially a 'Grandmaster of English' (Just kidding, keep studying!)");
+      showPopup(
+        "🎉 EASTER EGG FOUND!", 
+        "You are now officially a 'Grandmaster of English' (Just kidding, keep studying!)", 
+        "easter"
+      );
     }
   };
 
@@ -211,7 +212,7 @@ export default function ProfilePage() {
         linkedin: sanitize(formData.linkedin),
         english_level: sanitize(formData.english_level),
         goals: sanitize(formData.goals),
-        full_name: user.name, // Update name if editable
+        full_name: user.name,
         updated_at: new Date().toISOString(),
       };
 
@@ -221,10 +222,12 @@ export default function ProfilePage() {
         .eq('id', user.id);
 
       if (error) throw error;
+      
       setIsEditing(false);
+      showPopup("Profile Updated", "Your profile changes have been successfully saved.", "success");
     } catch (err) {
       console.error("Failed to update profile:", err);
-      alert("Failed to save profile. Please try again.");
+      showPopup("Save Failed", "Failed to save profile changes. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -244,8 +247,44 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout userTier={user.tier === 'visionary' ? 'visionary' : user.tier === 'insider' ? 'insider' : 'explorer'} userName={user.name} userAvatar={user.avatar}>
-      <div className="min-h-screen bg-[#F7F8FA] pb-12">
+      <div className="min-h-screen bg-[#F7F8FA] pb-12 relative">
         
+        {/* --- CUSTOM IELS POP-UP MODAL --- */}
+        {popup.show && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#2F4157]/40 backdrop-blur-sm transition-all duration-300 animate-in fade-in zoom-in-95">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative border border-gray-100">
+              <button 
+                onClick={() => setPopup(prev => ({ ...prev, show: false }))}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="flex flex-col items-center text-center mt-2">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                  popup.type === 'success' ? 'bg-green-100 text-green-600' :
+                  popup.type === 'error' ? 'bg-red-100 text-red-600' :
+                  popup.type === 'easter' ? 'bg-yellow-100 text-yellow-600' :
+                  'bg-blue-100 text-blue-600'
+                }`}>
+                  {popup.type === 'success' ? <CheckCircle2 size={32} /> :
+                   popup.type === 'error' ? <AlertCircle size={32} /> :
+                   popup.type === 'easter' ? <Crown size={32} /> :
+                   <Info size={32} />}
+                </div>
+                <h3 className="text-xl font-black text-[#2F4157] mb-2">{popup.title}</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-6">{popup.message}</p>
+                <button 
+                  onClick={() => setPopup(prev => ({ ...prev, show: false }))}
+                  className="w-full py-3 bg-[#2F4157] text-white rounded-xl font-bold hover:bg-[#435770] transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* --- HEADER BANNER --- */}
         <div className="h-48 bg-gradient-to-r from-[#2F4157] via-[#435770] to-[#2F4157] relative">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
@@ -677,7 +716,6 @@ export default function ProfilePage() {
 }
 
 // --- HELPER COMPONENT ---
-// Utility for cleaner helper component logic with Tailwind
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(' ');
 }
