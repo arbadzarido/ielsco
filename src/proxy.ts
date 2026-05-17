@@ -166,6 +166,9 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Daftar route yang butuh auth (proteksi utama)
+  const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/school/dashboard');
+
   // Auth routes yang diizinkan tanpa login
   const isMainAuthRoute =
     pathname.startsWith('/sign-in') ||
@@ -179,13 +182,27 @@ export async function proxy(request: NextRequest) {
   // Alur forgot password — boleh diakses tanpa auth
   const isForgotPasswordFlow = pathname.startsWith('/sign-in/forgot');
 
-  // User sudah login tapi buka halaman auth main
+  // =========================================================================
+  // KONDISI 1: User BELUM LOGIN tapi maksa masuk ke halaman terproteksi
+  // (Ini yang nyelesaiin masalah bocor & flash 2 detik)
+  // =========================================================================
+  if (!user && isProtectedRoute) {
+    // Arahkan instan ke /sign-in sebelum halaman sempat di-render
+    const signInUrl = new URL(isSchoolSubdomain ? '/sign-in' : '/sign-in', request.url);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // =========================================================================
+  // KONDISI 2: User SUDAH LOGIN tapi buka halaman auth main (mencegah user login 2x)
+  // =========================================================================
   if (user && isMainAuthRoute && !pathname.startsWith('/school')) {
     if (isForgotPasswordFlow) return response;
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // User sudah login tapi buka halaman sign-in school
+  // =========================================================================
+  // KONDISI 3: User SUDAH LOGIN tapi buka halaman sign-in school
+  // =========================================================================
   if (user && isSchoolAuthRoute && isSchoolSubdomain) {
     if (isForgotPasswordFlow) return response;
     // Redirect ke dashboard (subdomain-aware)
