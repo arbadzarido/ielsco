@@ -174,7 +174,13 @@ export default function Header() {
         { name: "IELS Courses",      path: "/products/courses",   icon: GraduationCap },
         { name: "IELS English Test", path: "/test",               icon: FileCheck },
         { name: "IELS Events",       path: "/events",             icon: Calendar },
-        { name: "IELS for Schools",  path: "/products/schools",   icon: School },
+        { 
+  name: "IELS for Schools",  
+  path: typeof window !== "undefined" && window.location.hostname.includes("localhost")
+    ? "http://localhost:3000/school" // Sesuaikan dengan port/path local portal sekolah lu
+    : "https://school.ielsco.com",   
+  icon: School 
+},
         { name: "E-books & Recordings", path: "/products/resources", icon: Library },
       ],
     },

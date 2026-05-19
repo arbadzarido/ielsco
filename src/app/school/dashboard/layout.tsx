@@ -8,7 +8,6 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import Sidebar    from "@/app/school/dashboard/Sidebar";
 import Header     from "@/app/school/dashboard/Header";
-import BottomNav  from "@/app/school/dashboard/BottomNav";
 
 async function getUser() {
   const supabase = await createSupabaseServerClient();
@@ -61,8 +60,6 @@ export default async function SchoolLayout({
         </main>
       </div>
 
-      {/* ── Mobile bottom nav (hidden on desktop) ── */}
-      <BottomNav />
     </div>
   );
 }

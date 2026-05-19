@@ -240,9 +240,7 @@ export default function DashboardHeader({
                       <Link href="/dashboard/settings" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#2F4157] rounded-xl transition-colors">
                         <Settings size={18} className="text-gray-400" /> Settings
                       </Link>
-                      <Link href="/dashboard/shop/orders" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#2F4157] rounded-xl transition-colors">
-                        <CreditCard size={18} className="text-gray-400" /> My Orders
-                      </Link>
+                    
                       <div className="h-px bg-gray-100 my-1 mx-3" />
                       <Link href="/dashboard/help" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#2F4157] rounded-xl transition-colors">
                         <HelpCircle size={18} className="text-gray-400" /> Help Center

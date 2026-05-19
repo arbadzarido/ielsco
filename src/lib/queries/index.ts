@@ -20,7 +20,6 @@ import type {
   GoalCategory,
 } from "@/lib/types";
 
-
 // Tipe eksplisit buat ngasih tau TypeScript bentuk data dari Supabase
 type SnapshotType = {
   student_id: string;
@@ -96,14 +95,14 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
   if (!teacher) return null;
 
-  // School info
+  // Primary School info (buat badge di UI)
   const { data: school } = await supabase
     .from("b2b_schools")
     .select("*")
     .eq("id", teacher.school_id)
     .single();
 
-  // Classes assigned to this teacher (via junction table, RLS-isolated)
+  // Classes assigned to this teacher (lintas sekolah)
   const { data: teacherClasses } = await supabase
     .from("b2b_teacher_classes")
     .select("class_id")
@@ -124,16 +123,89 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   };
 
   if (classIds.length > 0) {
-    // ── 1. Class summaries (from materialized view) ──────────────────────────
+// ── 1. Bypass SQL View: Tarik langsung data kelas mentah ─────────────────
+    // Tambahkan school_id, grade, major di select
     const { data: classData } = await supabase
-      .from("b2b_class_summary")
-      .select("*")
+      .from("b2b_classes")
+      .select("id, name, enrollment_year, school_id, grade, major") 
+      .in("id", classIds);
+
+    // ── 2. Tarik semua data murid di kelas-kelas tersebut ────────────────────
+    const { data: studentData } = await supabase
+      .from("users")
+      .select("id, class_id, subscription_role")
       .in("class_id", classIds)
-      .order("enrollment_year", { ascending: false });
+      .eq("role", "STUDENT")
+      .eq("is_active", true);
 
-    classes       = (classData as ClassSummary[]) ?? [];
-    totalStudents = classes.reduce((s, c) => s + c.total_students, 0);
+    const students = studentData ?? [];
+    totalStudents = students.length;
 
+    // ── 3. Tarik snapshot nilai untuk perhitungan ────────────────────────────
+    const studentIds = students.map((s) => s.id);
+    let typedSnapshots: SnapshotType[] = [];
+    
+    if (studentIds.length > 0) {
+      const { data: snapshots } = await supabase
+        .from("b2b_progress_snapshots")
+        .select("student_id, speaking_score, writing_score, reading_score, listening_score, vocabulary_score, snapshot_date")
+        .in("student_id", studentIds)
+        .order("snapshot_date", { ascending: false });
+        
+      typedSnapshots = (snapshots as SnapshotType[]) ?? [];
+    }
+
+    // Deduplicate: ambil snapshot paling baru per murid
+    const latestByStudent = new Map<string, SnapshotType>();
+    for (const snap of typedSnapshots) {
+      if (!latestByStudent.has(snap.student_id)) {
+        latestByStudent.set(snap.student_id, snap);
+      }
+    }
+
+  // ── 4. Rakit Class Summary secara manual pakai TypeScript ────────────────
+    classes = (classData ?? []).map((cls) => {
+      const classStudents = students.filter(s => s.class_id === cls.id);
+      
+      let totalGrs = 0;
+      let grsCount = 0;
+
+      classStudents.forEach(stu => {
+        const snap = latestByStudent.get(stu.id);
+        if (snap) {
+          // Hitung rata-rata skor per murid untuk dapet GRS
+          let sum = 0; let count = 0;
+          if (snap.speaking_score != null) { sum += snap.speaking_score; count++; }
+          if (snap.writing_score != null) { sum += snap.writing_score; count++; }
+          if (snap.reading_score != null) { sum += snap.reading_score; count++; }
+          if (snap.listening_score != null) { sum += snap.listening_score; count++; }
+          if (snap.vocabulary_score != null) { sum += snap.vocabulary_score; count++; }
+          
+          if (count > 0) {
+            totalGrs += (sum / count);
+            grsCount++;
+          }
+        }
+      });
+
+      return {
+        class_id: cls.id,
+        school_id: cls.school_id, // <-- Tambahan
+        class_name: cls.name,
+        grade: cls.grade,         // <-- Tambahan
+        major: cls.major,         // <-- Tambahan
+        enrollment_year: cls.enrollment_year,
+        total_students: classStudents.length,
+        avg_readiness_score: grsCount > 0 ? Math.round(totalGrs / grsCount) : null,
+        visionary_count: classStudents.filter(s => s.subscription_role === 'VISIONARY').length,
+        insider_count: classStudents.filter(s => s.subscription_role === 'INSIDER').length,
+        explorer_count: classStudents.filter(s => s.subscription_role === 'EXPLORER').length,
+      };
+    });
+    // Urutkan kelas dari tahun terbaru
+    classes.sort((a, b) => b.enrollment_year - a.enrollment_year);
+
+    // Hitung rata-rata GRS global
     const validScores = classes
       .map((c) => c.avg_readiness_score)
       .filter((s): s is number => s !== null);
@@ -143,30 +215,8 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
         : 0;
 
-    // ── 2. Per-skill breakdown from b2b_progress_snapshots ──────────────────
-    const { data: snapshots } = await supabase
-      .from("b2b_progress_snapshots")
-      .select(
-        "student_id, speaking_score, writing_score, reading_score, listening_score, vocabulary_score, snapshot_date"
-      )
-      .in("class_id", classIds)
-      .order("snapshot_date", { ascending: false });
-
-    // Deduplicate: keep only the latest snapshot per student
-    // DI SINI KITA PAKAI SnapshotType BIAR TS NGGAK MENGANGGAPNYA 'never'
-    const latestByStudent = new Map<string, SnapshotType>();
-    
-    // Casting 'snapshots' ke 'SnapshotType[]'
-    const typedSnapshots = (snapshots as SnapshotType[]) ?? [];
-    
-    for (const snap of typedSnapshots) {
-      if (!latestByStudent.has(snap.student_id)) {
-        latestByStudent.set(snap.student_id, snap);
-      }
-    }
+    // ── 5. Collect score arrays per skill untuk Radar Chart ──────────────────
     const latest = Array.from(latestByStudent.values());
-
-    // Collect score arrays per skill
     const writing:    number[] = [];
     const speaking:   number[] = [];
     const reading:    number[] = [];
@@ -181,7 +231,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       if (snap.listening_score  != null) listening.push(snap.listening_score);
       if (snap.vocabulary_score != null) vocabulary.push(snap.vocabulary_score);
 
-      // Grammar proxy: avg of writing + reading (replace when grammar_score exists)
+      // Grammar proxy: avg of writing + reading
       if (snap.writing_score != null && snap.reading_score != null) {
         grammar.push(Math.round((snap.writing_score + snap.reading_score) / 2));
       }

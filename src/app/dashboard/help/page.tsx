@@ -1,32 +1,22 @@
 "use client";
+
+// =============================================================================
+// app/dashboard/help/page.tsx
+// Refactored Premium Help Center for Users/Students Dashboard Layout
+// Fixed layout compression using a relaxed 12-column grid and edge-to-edge hero lines
+// =============================================================================
+
+import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { useEffect } from "react";
-// ... import lain biarkan saja
-import { useState } from "react";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Search, 
-  MessageCircle, 
-  Mail, 
-  Book, 
-  FileText, 
-  Video, 
-  ChevronDown, 
-  ExternalLink,
-  LifeBuoy,
-  ShieldCheck,
-  Zap,
-  Bug,
-  Target,
-  GraduationCap,
-  Library,
-  Download,
-  Users
+  Search, Mail, ChevronDown, Bug, Target, GraduationCap, 
+  Library, Download, Users, FileText, CheckCircle2, ShieldCheck, LifeBuoy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
-// --- CATEGORIZED FAQ DATA ---
+// --- CATEGORIZED STUDENT FAQ DATA ---
 const faqCategories = [
   {
     id: "goals",
@@ -86,243 +76,247 @@ const faqCategories = [
   }
 ];
 
-  export default function HelpCenterPage() {
-  // --- TAMBAHAN KODE MULAI DARI SINI ---
-    const supabase = createBrowserClient(
+export default function StudentHelpCenterPage() {
+  const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
- // --- GANTI STATE AWAL ---
-const [userData, setUserData] = useState({
-  name: "Learner",
-  tier: "explorer" as "explorer" | "insider" | "visionary",
-  avatar: ""
-});
 
-useEffect(() => {
-  const getUserData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  const [userData, setUserData] = useState({
+    name: "Learner",
+    tier: "explorer" as "explorer" | "insider" | "visionary",
+    avatar: ""
+  });
 
-    // 1. Ambil data Membership langsung (Source of Truth)
-    const { data: dbMembership } = await supabase
-      .from("memberships")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    // 2. Ambil data User (Nama & Profile)
-    const { data: dbUser } = await supabase
-      .from("users")
-      .select("full_name, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    // 3. Mapping Tier (Standard IELS)
-    const dbTier = dbMembership?.tier;
-    let uiTier: "explorer" | "insider" | "visionary" = "explorer";
-
-    if (dbTier === "pro") {
-      uiTier = "insider";
-    } else if (dbTier === "premium" || dbTier === "visionary") {
-      uiTier = "visionary";
-    }
-
-    setUserData({
-      name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
-      tier: uiTier,
-      avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || ""
-    });
-  };
-  
-  getUserData();
-}, [supabase]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("goals");
   const [openFaq, setOpenFaq] = useState<string | null>(null);
 
-  // Filter Logic: If searching, search ALL questions. If not, show active category.
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: dbMembership } = await supabase
+        .from("memberships")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const { data: dbUser } = await supabase
+        .from("users")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const dbTier = dbMembership?.tier;
+      let uiTier: "explorer" | "insider" | "visionary" = "explorer";
+
+      if (dbTier === "pro") {
+        uiTier = "insider";
+      } else if (dbTier === "premium" || dbTier === "visionary") {
+        uiTier = "visionary";
+      }
+
+      setUserData({
+        name: dbUser?.full_name || user.user_metadata?.full_name || "Learner",
+        tier: uiTier,
+        avatar: dbUser?.avatar_url || user.user_metadata?.avatar_url || ""
+      });
+    };
+    
+    getUserData();
+  }, [supabase]);
+
   const displayFaqs = searchQuery 
     ? faqCategories.flatMap(cat => cat.questions.map(q => ({ ...q, category: cat.title })))
         .filter(q => q.q.toLowerCase().includes(searchQuery.toLowerCase()) || q.a.toLowerCase().includes(searchQuery.toLowerCase()))
     : faqCategories.find(cat => cat.id === activeCategory)?.questions || [];
 
   return (
-    // GANTI BAGIAN INI:
-// --- GANTI BAGIAN RETURN INI ---
-<DashboardLayout 
-  userName={userData.name} 
-  userTier={userData.tier} 
-  userAvatar={userData.avatar}
->
-      <div className="min-h-screen bg-[#FDFDFD] pb-20">
+    <DashboardLayout 
+      userName={userData.name} 
+      userTier={userData.tier} 
+      userAvatar={userData.avatar}
+    >
+      <div className="min-h-screen bg-[#FDFDFD] pb-20 relative -mt-6">
         
-        {/* === HERO SECTION === */}
-        <div className="bg-[#304156] text-white py-16 px-4 lg:px-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        {/* === HERO BANNER SECTION (Full Bleed to prevent container breaking) === */}
+        <div className="bg-[#2F4157] text-white py-16 px-4 lg:px-12 relative overflow-hidden rounded-b-[32px] -mx-6 lg:-mx-12">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+          <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[#E56668]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           
           <div className="max-w-4xl mx-auto text-center relative z-10">
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
+              className="space-y-5"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#E56668] rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E56668]/10 text-[#E56668] border border-[#E56668]/20 rounded-full text-[10px] font-black uppercase tracking-[0.18em]">
+                <LifeBuoy size={12} /> Student Help Center
               </div>
-              <h1 className="text-4xl md:text-5xl font-black font-geologica tracking-tighter">
-                How can we support your journey?
+              <h1 className="text-3xl md:text-4xl font-black font-geologica tracking-tight max-w-2xl mx-auto">
+                How can we support your learning journey?
               </h1>
-              <div className="relative max-w-2xl mx-auto">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#577E90]" size={20} />
+              <div className="relative max-w-2xl mx-auto pt-2">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type="text"
-                  placeholder="Search keywords (e.g. 'certificate', 'speaking', 'reset')..."
+                  placeholder="Search space guidelines (e.g., 'certificate', 'speaking', 'retake')..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 bg-white border-none rounded-2xl text-[#304156] text-sm focus:ring-4 focus:ring-[#CB2129]/20 transition-all shadow-2xl shadow-black/20 font-medium placeholder:text-[#CDC6BC]"
+                  className="w-full pl-11 pr-6 py-3.5 bg-white border-none rounded-2xl text-[#2F4157] text-[13px] focus:ring-4 focus:ring-[#E56668]/20 transition-all shadow-xl font-medium placeholder:text-slate-400 focus:outline-none"
                 />
               </div>
             </motion.div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 lg:px-12 -mt-8 relative z-20">
-          
-          <div className="flex flex-col lg:flex-row gap-8">
+        {/* === MAIN UN-CRAMPED GRID SYSTEM === */}
+        <div className="max-w-7xl mx-auto px-2 lg:px-4 mt-10 relative z-20">
+          <div className="grid lg:grid-cols-12 gap-8 items-start">
             
-            {/* === LEFT SIDEBAR: CATEGORIES === */}
-            <aside className="lg:w-64 flex-shrink-0 space-y-2 hidden lg:block">
-              <p className="text-xs font-black text-[#577E90] uppercase tracking-widest px-4 mb-2">Categories</p>
+            {/* === LEFT SIDEBAR: CATEGORIES (2 Columns) === */}
+            <aside className="lg:col-span-2 space-y-1 hidden lg:block">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-3">Categories</p>
               {faqCategories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => { setActiveCategory(cat.id); setSearchQuery(""); }}
+                  onClick={() => { setActiveCategory(cat.id); setSearchQuery(""); setOpenFaq(null); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300",
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-200 text-left",
                     activeCategory === cat.id && !searchQuery
-                      ? "bg-[#577E90]  text-white shadow-lg translate-x-1" 
-                      : "text-[#577E90] hover:bg-[#F6F3EF]"
+                      ? "bg-[#2F4157] text-white shadow-md translate-x-1" 
+                      : "text-[#577E90] hover:bg-[#F6F3EF] hover:text-[#2F4157]"
                   )}
                 >
-                  <span className={cn(activeCategory === cat.id && !searchQuery ? "text-[#CB2129]" : "opacity-50")}>{cat.icon}</span>
+                  <span className={cn(activeCategory === cat.id && !searchQuery ? "text-[#E56668]" : "text-slate-400")}>
+                    {cat.icon}
+                  </span>
                   {cat.title}
                 </button>
               ))}
             </aside>
 
-            {/* === MAIN CONTENT: ACCORDION === */}
-            <div className="flex-1 space-y-8">
+            {/* === MIDDLE CONTENT: FAQS (7 Columns - Giving Maximum Space) === */}
+            <div className="lg:col-span-7 space-y-6">
               
-              {/* Mobile Category Select */}
-              <div className="lg:hidden overflow-x-auto flex gap-2 pb-2 no-scrollbar">
+              {/* Mobile Carousel Filter Tabs */}
+              <div className="lg:hidden flex gap-2 pb-1 overflow-x-auto no-scrollbar">
                 {faqCategories.map((cat) => (
-                   <button
+                  <button
                     key={cat.id}
-                    onClick={() => { setActiveCategory(cat.id); setSearchQuery(""); }}
+                    onClick={() => { setActiveCategory(cat.id); setSearchQuery(""); setOpenFaq(null); }}
                     className={cn(
                       "flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-all",
                       activeCategory === cat.id && !searchQuery
-                        ? "bg-[#E56668] text-white border-[#E56668]"
-                        : "bg-white text-[#577E90] border-[#CDC6BC]"
+                        ? "bg-[#2F4157] text-white border-[#2F4157]"
+                        : "bg-white text-slate-500 border-gray-200"
                     )}
-                   >
-                     {cat.title}
-                   </button>
+                  >
+                    {cat.title}
+                  </button>
                 ))}
               </div>
 
-              <div className="bg-white rounded-[32px] border border-[#CDC6BC]/40 shadow-sm p-6 lg:p-10 min-h-[500px]">
-                <div className="flex items-center gap-4 mb-8">
-                  <h2 className="text-2xl font-black text-[#304156]">
-                    {searchQuery ? `Search Results for "${searchQuery}"` : faqCategories.find(c => c.id === activeCategory)?.title}
-                  </h2>
-                </div>
+              {/* FAQ Accordion Base Card */}
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-6 md:p-8 min-h-[420px]">
+                <h2 className="text-lg font-black text-[#2F4157] mb-6 tracking-tight">
+                  {searchQuery ? `Search Results for "${searchQuery}"` : faqCategories.find(c => c.id === activeCategory)?.title}
+                </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-1">
                   {displayFaqs.length > 0 ? displayFaqs.map((faq, idx) => (
                     <div 
                       key={idx}
-                      className="border-b border-[#F6F3EF] last:border-0 pb-4 last:pb-0"
+                      className="border-b border-gray-50 last:border-0 pb-3.5 last:pb-0 pt-1"
                     >
                       <button 
                         onClick={() => setOpenFaq(openFaq === String(idx) ? null : String(idx))}
-                        className="w-full py-3 flex items-start justify-between text-left group"
+                        className="w-full py-2.5 flex items-start justify-between text-left group focus:outline-none"
                       >
-                        <h4 className="font-bold text-[#304156] text-base group-hover:text-[#CB2129] transition-colors pr-8">
+                        <h4 className="font-bold text-[#2F4157] text-[14px] group-hover:text-[#E56668] transition-colors pr-6 leading-snug">
                           {faq.q}
                         </h4>
                         <ChevronDown 
-                          size={20} 
-                          className={cn("text-[#CDC6BC] flex-shrink-0 transition-transform duration-300 mt-1", openFaq === String(idx) && "rotate-180 text-[#CB2129]")} 
+                          size={16} 
+                          className={cn(
+                            "text-slate-400 flex-shrink-0 transition-transform duration-300 mt-0.5 group-hover:text-[#2F4157]", 
+                            openFaq === String(idx) && "rotate-180 text-[#E56668] group-hover:text-[#E56668]"
+                          )} 
                         />
                       </button>
-                      <AnimatePresence>
+                      <AnimatePresence initial={false}>
                         {openFaq === String(idx) && (
                           <motion.div 
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="text-sm text-[#577E90] leading-relaxed font-medium"
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
                           >
-                            {faq.a}
+                            <p className="text-[13px] text-slate-500 leading-relaxed font-medium pt-1 pb-2 pl-0.5">
+                              {faq.a}
+                            </p>
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </div>
                   )) : (
-                    <div className="text-center py-20">
-                      <div className="w-16 h-16 bg-[#F6F3EF] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Search className="text-[#CDC6BC]" size={24} />
+                    <div className="text-center py-16">
+                      <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Search className="text-slate-400" size={20} />
                       </div>
-                      <p className="text-[#304156] font-bold">No answers found.</p>
-                      <p className="text-xs text-[#577E90]">Try adjusting your search terms.</p>
+                      <p className="text-[#2F4157] font-bold text-sm">No answers found.</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Try adjusting your search filters.</p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* === RIGHT: CONTACT SIDEBAR === */}
-            <aside className="lg:w-80 space-y-6">
-              <div className="bg-[#E56668] p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden group">
-                <Bug className="absolute -top-4 -right-4 text-white/10 w-24 h-24 rotate-12" />
+            {/* === RIGHT SIDEBAR: HOTLINES (3 Columns) === */}
+            <aside className="lg:col-span-3 space-y-4">
+              <div className="bg-[#E56668] p-6 rounded-[24px] text-white relative overflow-hidden group shadow-md">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full blur-xl -mr-4 -mt-4"></div>
+                <Bug className="absolute -bottom-3 -right-3 text-white/5 w-20 h-20 rotate-12" />
                 
                 <div className="relative z-10">
-                  <h3 className="text-xl font-bold mb-2 italic">Found a bug?</h3>
-                  <p className="text-white/80 text-xs mb-6 leading-relaxed">
-                    Something not working right? Let our engineering team know directly.
+                  <h3 className="text-md font-bold mb-1.5 tracking-tight italic">Found a bug?</h3>
+                  <p className="text-white/80 text-[11px] mb-5 leading-relaxed font-medium">
+                    Something not working right inside your study station? Let our team handle it right away.
                   </p>
 
-                  <div className="space-y-3">
-                    <a href="mailto:support@ielsco.com" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all cursor-pointer">
-                      <Mail size={16} />
-                      <div>
-                        <p className="text-xs font-bold">General Support</p>
-                        <p className="text-[10px] opacity-70">support@ielsco.com</p>
+                  <div className="space-y-2">
+                    <a href="mailto:support@ielsco.com" className="flex items-center gap-3 p-2.5 bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-white/5">
+                      <Mail size={14} />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-white leading-none">General Support</p>
+                        <p className="text-[9px] text-white/70 font-medium truncate mt-1">support@ielsco.com</p>
                       </div>
                     </a>
-                    <a href="mailto:arbadza@ielsco.com" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all cursor-pointer">
-                      <ShieldCheck size={16} />
-                      <div>
-                        <p className="text-xs font-bold">Direct to Founder</p>
-                        <p className="text-[10px] opacity-70">arbadza@ielsco.com</p>
+                    <a href="mailto:arbadza@ielsco.com" className="flex items-center gap-3 p-2.5 bg-white/10 rounded-xl hover:bg-white/20 transition-all border border-white/5">
+                      <ShieldCheck size={14} />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-white leading-none">Direct to Founder</p>
+                        <p className="text-[9px] text-white/70 font-medium truncate mt-1">arbadza@ielsco.com</p>
                       </div>
                     </a>
                   </div>
                 </div>
               </div>
 
-              {/* Status Indicator */}
-              <div className="bg-white border border-[#CDC6BC]/40 p-6 rounded-[24px]">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="relative">
-                    <div className="w-3 h-3 bg-green-500 rounded-full" />
-                    <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black uppercase text-[#304156]">System Operational</h4>
-                    <p className="text-[10px] text-[#577E90]">Last checked: 1 min ago</p>
-                  </div>
+              {/* Operational Heartbeat Status */}
+              <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3">
+                <div className="relative flex-shrink-0">
+                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
+                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-[10px] font-black uppercase text-[#2F4157] tracking-wider flex items-center gap-1">
+                    <CheckCircle2 size={11} className="text-emerald-500" /> Space Operational
+                  </h4>
+                  <p className="text-[9px] text-slate-400 font-medium mt-0.5">All core dashboard components are live and running smooth.</p>
                 </div>
               </div>
             </aside>

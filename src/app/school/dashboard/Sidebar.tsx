@@ -2,10 +2,7 @@
 
 // =============================================================================
 // components/schools/layout/Sidebar.tsx
-// Desktop sidebar — subdomain aware
-//
-// Href pakai /dashboard (tanpa /school) supaya bekerja di subdomain.
-// Active detection pakai normalizedPath yang strip /school prefix.
+// Desktop sidebar — subdomain aware with white rounded-full menu highlights
 // =============================================================================
 
 import Link from "next/link";
@@ -16,8 +13,8 @@ import {
   GraduationCap,
   BarChart3,
   FileText,
-  Settings,
   ChevronRight,
+  BookOpen,
 } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 
@@ -25,6 +22,7 @@ interface SidebarProps {
   profile: UserProfile;
 }
 
+// Semua base URL diset mulai dari /dashboard
 const NAV_GROUPS = [
   {
     label: "Overview",
@@ -37,19 +35,14 @@ const NAV_GROUPS = [
     items: [
       { label: "Classes",  href: "/dashboard/class",    icon: GraduationCap },
       { label: "Students", href: "/dashboard/students", icon: Users         },
+      { label: "Mentor",   href: "/dashboard/mentor",   icon: BookOpen      },
     ],
   },
   {
     label: "Analytics",
     items: [
-      { label: "Insights", href: "/insights", icon: BarChart3 },
-      { label: "Reports",  href: "/reports",  icon: FileText  },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { label: "Settings", href: "/settings", icon: Settings },
+      { label: "Insights", href: "/dashboard/insights", icon: BarChart3 },
+      { label: "Reports",  href: "/dashboard/reports",  icon: FileText  },
     ],
   },
 ];
@@ -57,31 +50,28 @@ const NAV_GROUPS = [
 export default function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname();
 
-  // Normalise path: strip /school prefix supaya active check bekerja
-  // di kedua kondisi (ielsco.com/school/dashboard & school.ielsco.com/dashboard)
-  const normalizedPath = pathname.startsWith("/school")
-    ? pathname.replace("/school", "")
-    : pathname;
-
-  const initials = profile.full_name
-    .split(" ")
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+  // Deteksi environment: Localhost vs Production (Subdomain)
+  const isLocal = pathname.startsWith("/school");
+  const prefix = isLocal ? "/school" : "";
+  
+  // Normalise path buat ngecek menu mana yang active
+  const normalizedPath = isLocal ? pathname.replace("/school", "") : pathname;
 
   return (
-    // Desktop only — hidden on mobile (bottom nav handles mobile)
-    <aside className="hidden lg:flex w-[220px] flex-shrink-0 bg-[#1A2534] flex-col h-screen sticky top-0 z-30">
-      {/* Brand */}
-      <div className="px-5 py-5 border-b border-white/[0.06]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#E56668] flex items-center justify-center shadow-lg flex-shrink-0">
-            <span className="text-white font-black text-[13px]">I</span>
-          </div>
-          <div>
-            <p className="text-white font-black text-[15px] leading-none tracking-tight">IELS</p>
-            <p className="text-white/35 text-[9px] font-semibold uppercase tracking-[0.15em] mt-0.5">
+    <aside className="hidden lg:flex w-[260px] flex-shrink-0 bg-[#1A2534] flex-col h-screen sticky top-0 z-30">
+      {/* Brand - Updated to match IELS Dashboard Logo style */}
+      <div className="pl-8 pr-6 py-6 border-b border-white/[0.06]">
+        <div className="flex items-center gap-3">
+          <img 
+            src="https://ielsco.com/images/logos/iels_white.png" 
+            alt="IELS Logo" 
+            className="h-7 w-auto"
+          />
+          <div className="flex flex-col justify-center mt-2">
+            <p className="text-white font-bold text-[16px] leading-none tracking-tight">
+              Dashboard
+            </p>
+            <p className="text-white/50 text-[9px] font-bold uppercase tracking-[0.15em] mt-1">
               School Portal
             </p>
           </div>
@@ -89,7 +79,7 @@ export default function Sidebar({ profile }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
+      <nav className="flex-1 px-5 py-4 overflow-y-auto space-y-5">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
             <p className="text-white/30 text-[9px] font-bold uppercase tracking-[0.18em] px-2 mb-1.5">
@@ -97,6 +87,10 @@ export default function Sidebar({ profile }: SidebarProps) {
             </p>
             <ul className="space-y-0.5">
               {group.items.map(({ label, href, icon: Icon }) => {
+                // Generate href dinamis tergantung localhost/production
+                const finalHref = `${prefix}${href}`;
+
+                // Cek active state
                 const active =
                   normalizedPath === href ||
                   (href !== "/dashboard" && normalizedPath.startsWith(href));
@@ -104,11 +98,11 @@ export default function Sidebar({ profile }: SidebarProps) {
                 return (
                   <li key={href}>
                     <Link
-                      href={href}
-                      className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                      href={finalHref}
+                      className={`group flex items-center gap-4 px-5 py-2.5 transition-all duration-150 text-[13px] ${
                         active
-                          ? "bg-white/[0.10] text-white"
-                          : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
+                          ? "bg-white text-[#1A2534] font-bold rounded-full shadow-md"
+                          : "text-white/50 hover:text-white/80 hover:bg-white/[0.05] font-medium rounded-lg"
                       }`}
                     >
                       <Icon
@@ -121,7 +115,7 @@ export default function Sidebar({ profile }: SidebarProps) {
                       />
                       {label}
                       {active && (
-                        <ChevronRight size={12} className="ml-auto text-white/30" />
+                        <ChevronRight size={12} className="ml-auto text-[#1A2534]/30" />
                       )}
                     </Link>
                   </li>
@@ -131,23 +125,6 @@ export default function Sidebar({ profile }: SidebarProps) {
           </div>
         ))}
       </nav>
-
-      {/* User card */}
-      <div className="px-4 py-4 border-t border-white/[0.06]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#E56668]/20 border border-[#E56668]/30 flex items-center justify-center text-[#E56668] text-[11px] font-black flex-shrink-0">
-            {initials}
-          </div>
-          <div className="min-w-0">
-            <p className="text-white text-[12px] font-semibold truncate leading-none">
-              {profile.full_name}
-            </p>
-            <p className="text-white/35 text-[10px] uppercase tracking-widest mt-0.5">
-              {profile.role.replace("_", " ")}
-            </p>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }
