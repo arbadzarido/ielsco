@@ -67,7 +67,18 @@ export default function Header() {
   const [openDropdown,     setOpenDropdown]     = useState<string | null>(null);
   const [isProfileOpen,    setIsProfileOpen]    = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+// ─── RUNTIME DOMAIN DETECTION (Anti-Cache Fix) ───────────────────────────
+  const [isInsideSchoolSubdomain, setIsInsideSchoolSubdomain] = useState(false);
+  const [mainDomainBase, setMainDomainBase] = useState("https://ielsco.com");
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const isSchool = hostname.includes("school.");
+      setIsInsideSchoolSubdomain(isSchool);
+      setMainDomainBase(hostname.includes("localhost") ? "http://localhost:3000" : "https://ielsco.com");
+    }
+  }, [pathname]);
   // ── Supabase auth listener ─────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
@@ -164,14 +175,9 @@ export default function Header() {
   // Deteksi host untuk memaksa redirect antar subdomain/main domain
   const isBrowser = typeof window !== "undefined";
   const currentHostname = isBrowser ? window.location.hostname : "";
-  const isInsideSchoolSubdomain = currentHostname.includes("school.");
-  
-  // Base URL untuk melempar user kembali ke website utama
-  const mainDomainBase = isBrowser && currentHostname.includes("localhost")
-    ? "http://localhost:3000" // Port web utama lu saat lokal dev
-    : "https://ielsco.com";
+ 
 
-  // ─── Nav items (Domain-Aware Configuration) ───────────────────────────────
+  // ─── NAV ITEMS (DOMAIN-AWARE CONFIGURATION) ───────────────────────────────
   const navItems = [
     { 
       name: "Home",    
@@ -193,38 +199,18 @@ export default function Header() {
       path: isInsideSchoolSubdomain ? `${mainDomainBase}/products` : "/products",
       icon: Grid,
       children: [
-        { 
-          name: "IELS Lounge",        
-          path: isInsideSchoolSubdomain ? `${mainDomainBase}/iels-lounge` : "/iels-lounge", 
-          icon: Coffee 
-        },
-        { 
-          name: "IELS Courses",       
-          path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/courses` : "/products/courses", 
-          icon: GraduationCap 
-        },
-        { 
-          name: "IELS English Test",  
-          path: isInsideSchoolSubdomain ? `${mainDomainBase}/test` : "/test", 
-          icon: FileCheck 
-        },
-        { 
-          name: "IELS Events",        
-          path: isInsideSchoolSubdomain ? `${mainDomainBase}/events` : "/events", 
-          icon: Calendar 
-        },
+        { name: "IELS Lounge",         path: isInsideSchoolSubdomain ? `${mainDomainBase}/iels-lounge` : "/iels-lounge", icon: Coffee },
+        { name: "IELS Courses",        path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/courses` : "/products/courses", icon: GraduationCap },
+        { name: "IELS English Test",   path: isInsideSchoolSubdomain ? `${mainDomainBase}/test` : "/test", icon: FileCheck },
+        { name: "IELS Events",         path: isInsideSchoolSubdomain ? `${mainDomainBase}/events` : "/events", icon: Calendar },
         { 
           name: "IELS for Schools",  
-          path: isBrowser && currentHostname.includes("localhost")
-            ? "http://localhost:3000/school" // Tetap di portal sekolah lokal lu
+          path: typeof window !== "undefined" && window.location.hostname.includes("localhost")
+            ? "http://localhost:3000/school"
             : "https://school.ielsco.com",   
           icon: School 
         },
-        { 
-          name: "E-books & Recordings", 
-          path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/resources` : "/products/resources", 
-          icon: Library 
-        },
+        { name: "E-books & Recordings", path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/resources` : "/products/resources", icon: Library },
       ],
     },
   ];
@@ -416,12 +402,16 @@ export default function Header() {
         {navItems.map((item) => {
           const Icon = item.icon;
 
-          // Dropdown (Products)
-          if ("children" in item && item.children) {
-            const isOpen   = openDropdown === item.name;
-            const isActive = pathname?.startsWith(item.path) ||
-                             pathname?.startsWith("/test") ||
-                             pathname?.startsWith("/iels-lounge");
+        // Cari baris ini di dalam map item desktop:
+if ("children" in item && item.children) {
+  const isOpen   = openDropdown === item.name;
+
+  // GANTI baris isActive asli lu dengan baris di bawah ini:
+  const isActive = pathname?.startsWith("/products") || 
+                   pathname?.startsWith("/test") || 
+                   pathname?.startsWith("/iels-lounge") || 
+                   pathname?.startsWith("/events") ||
+                   isInsideSchoolSubdomain; // Otomatis highlight jika di portal sekolah
 
             return (
               <div
@@ -543,10 +533,16 @@ export default function Header() {
           {navItems.map((item) => {
             const Icon = item.icon;
 
-            // Dropdown (Mobile)
-            if ("children" in item && item.children) {
-              const isOpen   = openDropdown === item.name;
-              const isActive = pathname?.startsWith("/products");
+           // Cari baris ini di dalam map item mobile drawer:
+if ("children" in item && item.children) {
+  const isOpen   = openDropdown === item.name;
+
+  // GANTI baris isActive asli lu dengan baris di bawah ini:
+  const isActive = pathname?.startsWith("/products") || 
+                   pathname?.startsWith("/test") || 
+                   pathname?.startsWith("/iels-lounge") || 
+                   pathname?.startsWith("/events") ||
+                   isInsideSchoolSubdomain;
 
               return (
                 <div key={item.name} className="overflow-hidden">
