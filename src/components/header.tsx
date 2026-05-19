@@ -160,28 +160,71 @@ export default function Header() {
   ];
   if (hiddenPaths.some((p) => pathname?.startsWith(p))) return null;
 
-  // ─── Nav items ─────────────────────────────────────────────────────────────
+  // ─── Dynamic Base URL Detection ──────────────────────────────────────────
+  // Deteksi host untuk memaksa redirect antar subdomain/main domain
+  const isBrowser = typeof window !== "undefined";
+  const currentHostname = isBrowser ? window.location.hostname : "";
+  const isInsideSchoolSubdomain = currentHostname.includes("school.");
+  
+  // Base URL untuk melempar user kembali ke website utama
+  const mainDomainBase = isBrowser && currentHostname.includes("localhost")
+    ? "http://localhost:3000" // Port web utama lu saat lokal dev
+    : "https://ielsco.com";
+
+  // ─── Nav items (Domain-Aware Configuration) ───────────────────────────────
   const navItems = [
-    { name: "Home",    path: "/",        icon: Home },
-    { name: "About",   path: "/about",   icon: Info },
-    { name: "Stories", path: "/stories", icon: BookOpen },
+    { 
+      name: "Home",    
+      path: isInsideSchoolSubdomain ? `${mainDomainBase}/` : "/", 
+      icon: Home 
+    },
+    { 
+      name: "About",   
+      path: isInsideSchoolSubdomain ? `${mainDomainBase}/about` : "/about", 
+      icon: Info 
+    },
+    { 
+      name: "Stories", 
+      path: isInsideSchoolSubdomain ? `${mainDomainBase}/stories` : "/stories", 
+      icon: BookOpen 
+    },
     {
       name: "Products",
-      path: "/products",
+      path: isInsideSchoolSubdomain ? `${mainDomainBase}/products` : "/products",
       icon: Grid,
       children: [
-        { name: "IELS Lounge",       path: "/iels-lounge",        icon: Coffee },
-        { name: "IELS Courses",      path: "/products/courses",   icon: GraduationCap },
-        { name: "IELS English Test", path: "/test",               icon: FileCheck },
-        { name: "IELS Events",       path: "/events",             icon: Calendar },
         { 
-  name: "IELS for Schools",  
-  path: typeof window !== "undefined" && window.location.hostname.includes("localhost")
-    ? "http://localhost:3000/school" // Sesuaikan dengan port/path local portal sekolah lu
-    : "https://school.ielsco.com",   
-  icon: School 
-},
-        { name: "E-books & Recordings", path: "/products/resources", icon: Library },
+          name: "IELS Lounge",        
+          path: isInsideSchoolSubdomain ? `${mainDomainBase}/iels-lounge` : "/iels-lounge", 
+          icon: Coffee 
+        },
+        { 
+          name: "IELS Courses",       
+          path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/courses` : "/products/courses", 
+          icon: GraduationCap 
+        },
+        { 
+          name: "IELS English Test",  
+          path: isInsideSchoolSubdomain ? `${mainDomainBase}/test` : "/test", 
+          icon: FileCheck 
+        },
+        { 
+          name: "IELS Events",        
+          path: isInsideSchoolSubdomain ? `${mainDomainBase}/events` : "/events", 
+          icon: Calendar 
+        },
+        { 
+          name: "IELS for Schools",  
+          path: isBrowser && currentHostname.includes("localhost")
+            ? "http://localhost:3000/school" // Tetap di portal sekolah lokal lu
+            : "https://school.ielsco.com",   
+          icon: School 
+        },
+        { 
+          name: "E-books & Recordings", 
+          path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/resources` : "/products/resources", 
+          icon: Library 
+        },
       ],
     },
   ];
