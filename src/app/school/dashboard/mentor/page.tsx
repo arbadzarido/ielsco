@@ -2,9 +2,9 @@
 
 // =============================================================================
 // app/school/dashboard/mentor/page.tsx
-// Arba's private course management dashboard
+// Private course management dashboard
 // Features: overview all students → expand per student → manage sessions
-//           (topic, links, score, feedback, contract approval)
+//           (topic, links, score, feedback, contract approval, direct scheduling, custom delete modal)
 // =============================================================================
 
 import { useState, useEffect, useCallback } from "react";
@@ -16,7 +16,7 @@ import {
   AlertTriangle, ChevronDown, ChevronUp, Star, PenTool,
   ClipboardCheck, Download, ExternalLink, X, Check,
   Plus, Save, RefreshCw, MessageCircle, ScrollText,
-  FileText, Lock, ArrowRight, Loader2, BookOpen,
+  FileText, Lock, ArrowRight, Loader2, BookOpen, Trash2
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -51,37 +51,39 @@ interface StudentEnrollment {
   class_name: string;
   enrolled_at: string;
   sessions_total: number;
-  sessions_completed: number;
+  sessions_completed: number; 
   sessions_booked_pending: number;
   sessions_not_booked: number;
   post_work_pending: number;
   latest_score: number | null;
   next_session_number: number | null;
   next_session_date: string | null;
-  // loaded on expand
   sessions?: CourseSession[];
 }
 
-interface SaveState {
-  [sessionId: string]: "idle" | "saving" | "saved" | "error";
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const MENTOR_WA = "https://wa.me/6288297253491";
 
 function fmtDate(iso: string | null) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
+
 function fmtDateTime(iso: string | null) {
   if (!iso) return "—";
   const d = new Date(iso);
   return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} WIB`;
 }
+
 function daysUntil(iso: string | null) {
   if (!iso) return null;
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
+}
+
+function toLocalDatetimeInput(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
 }
 
 // ── Score ring ────────────────────────────────────────────────────────────────
@@ -107,13 +109,17 @@ function ScoreRing({ pct, size = 48 }: { pct: number; size?: number }) {
 function SessionEditorRow({
   session,
   onSave,
+  onDelete,
 }: {
   session: CourseSession;
   onSave: (id: string, patch: Partial<CourseSession>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [topic,       setTopic]       = useState(session.topic ?? "");
   const [preTestUrl,  setPreTestUrl]  = useState(session.pre_test_url ?? "");
@@ -121,6 +127,7 @@ function SessionEditorRow({
   const [taskUrl,     setTaskUrl]     = useState(session.task_url ?? "");
   const [score,       setScore]       = useState<string>(session.mentor_score !== null ? String(session.mentor_score) : "");
   const [feedback,    setFeedback]    = useState(session.mentor_feedback ?? "");
+  const [bookedDate,  setBookedDate]  = useState(toLocalDatetimeInput(session.student_booked_date));
 
   const isDone     = session.mentor_score !== null;
   const isBooked   = !!session.student_booked_date;
@@ -129,17 +136,24 @@ function SessionEditorRow({
   const handleSave = async () => {
     setSaving(true);
     const patch: Partial<CourseSession> = {
-      topic:          topic || null,
-      pre_test_url:   preTestUrl  || null,
-      post_test_url:  postTestUrl || null,
-      task_url:       taskUrl     || null,
-      mentor_score:   score !== "" ? Number(score) : null,
+      topic:           topic || "",
+      pre_test_url:    preTestUrl  || null,
+      post_test_url:   postTestUrl || null,
+      task_url:        taskUrl     || null,
+      mentor_score:    score !== "" ? Number(score) : null,
       mentor_feedback: feedback || null,
+      student_booked_date: bookedDate ? new Date(bookedDate).toISOString() : null,
     };
     await onSave(session.id, patch);
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setShowDeleteModal(false);
+    await onDelete(session.id);
   };
 
   const statusTag = isDone
@@ -149,120 +163,158 @@ function SessionEditorRow({
     : { label: "Awaiting Booking", bg: "bg-slate-100 text-slate-600 border-slate-200" };
 
   return (
-    <div className={`rounded-[16px] border overflow-hidden transition-all ${isDone ? "border-emerald-200 bg-emerald-50/30" : isBooked ? "border-blue-200 bg-blue-50/20" : "border-gray-200 bg-white"}`}>
-      {/* Header row */}
-      <button
-        onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-black/[0.02] transition-colors"
-      >
-        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0 ${isDone ? "bg-emerald-500 text-white" : isBooked ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}>
-          {isDone ? <Check size={13} /> : session.session_number}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-bold text-[#1A2534] truncate">
-            Session {session.session_number}{session.topic ? ` · ${session.topic}` : ""}
-          </p>
-          {isBooked && (
-            <p className="text-[10px] text-slate-400">{fmtDateTime(session.student_booked_date)}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {session.mentor_score !== null && (
-            <span className="text-[12px] font-black text-[#1A2534] bg-white border border-gray-200 px-2 py-0.5 rounded-lg">
-              {session.mentor_score}/100
-            </span>
-          )}
-          <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border hidden sm:inline-flex ${statusTag.bg}`}>
-            {statusTag.label}
-          </span>
-          {expanded ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
-        </div>
-      </button>
-
-      {/* Expanded editor */}
-      {expanded && (
-        <div className="border-t border-gray-100 px-4 py-4 space-y-4 bg-white">
-          {/* Post-work status */}
-          <div className="flex gap-3 flex-wrap">
-            {[
-              { label: "Journal",  done: session.journal_submitted  },
-              { label: "Feedback", done: session.feedback_submitted },
-            ].map(({ label, done }) => (
-              <span key={label} className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${done ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                {done ? <Check size={10} /> : <Clock size={10} />} Student {label}
-              </span>
-            ))}
+    <>
+      <div className={`rounded-[16px] border overflow-hidden transition-all ${isDone ? "border-emerald-200 bg-emerald-50/30" : isBooked ? "border-blue-200 bg-blue-50/20" : "border-gray-200 bg-white"}`}>
+        <button
+          onClick={() => setExpanded((p) => !p)}
+          className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-black/[0.02] transition-colors"
+        >
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black flex-shrink-0 ${isDone ? "bg-emerald-500 text-white" : "bg-blue-500 text-white"}`}>
+            {isDone ? <Check size={13} /> : session.session_number}
           </div>
-
-          {/* Fields grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Topic</label>
-              <input value={topic} onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. Speaking: Fluency & Pronunciation"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Pre-Test URL</label>
-              <input value={preTestUrl} onChange={(e) => setPreTestUrl(e.target.value)}
-                placeholder="https://forms.gle/..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Materials / Drive URL</label>
-              <input value={taskUrl} onChange={(e) => setTaskUrl(e.target.value)}
-                placeholder="https://drive.google.com/..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Post-Test URL</label>
-              <input value={postTestUrl} onChange={(e) => setPostTestUrl(e.target.value)}
-                placeholder="https://forms.gle/..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
-            </div>
-          </div>
-
-          {/* Score + Feedback */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Score (0–100)</label>
-              <input
-                type="number" min="0" max="100"
-                value={score} onChange={(e) => setScore(e.target.value)}
-                placeholder="e.g. 82"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Mentor Feedback</label>
-              <textarea
-                value={feedback} onChange={(e) => setFeedback(e.target.value)}
-                rows={3}
-                placeholder="Write your personalized feedback for this student..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30 resize-none" />
-            </div>
-          </div>
-
-          {/* Save */}
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] text-slate-400">
-              Changes auto-push to student's dashboard instantly.
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-[#1A2534] truncate">
+              Session {session.session_number}{session.topic ? ` · ${session.topic}` : ""}
             </p>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-black transition-all ${
-                saved
-                  ? "bg-emerald-500 text-white"
-                  : "bg-[#1A2534] hover:bg-[#2F4157] text-white"
-              } disabled:opacity-50`}
-            >
-              {saving ? <Loader2 size={13} className="animate-spin" /> : saved ? <Check size={13} /> : <Save size={13} />}
-              {saving ? "Saving…" : saved ? "Saved!" : "Save Changes"}
-            </button>
+            {isBooked && (
+              <p className="text-[10px] text-slate-400">{fmtDateTime(session.student_booked_date)}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {session.mentor_score !== null && (
+              <span className="text-[12px] font-black text-[#1A2534] bg-white border border-gray-200 px-2 py-0.5 rounded-lg">
+                {session.mentor_score}/100
+              </span>
+            )}
+            <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border hidden sm:inline-flex ${statusTag.bg}`}>
+              {statusTag.label}
+            </span>
+            {expanded ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="border-t border-gray-100 px-4 py-4 space-y-4 bg-white cursor-default">
+            <div className="flex gap-2 flex-wrap items-center justify-between border-b border-gray-50 pb-3">
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { label: "Journal",  done: session.journal_submitted  },
+                  { label: "Feedback", done: session.feedback_submitted },
+                ].map(({ label, done }) => (
+                  <span key={label} className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${done ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                    {done ? <Check size={10} /> : <Clock size={10} />} Student {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Topic</label>
+                <input value={topic} onChange={(e) => setTopic(e.target.value)}
+                  placeholder="e.g. Speaking: Fluency & Pronunciation"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Schedule (Date & Time)</label>
+                <input 
+                  type="datetime-local" 
+                  value={bookedDate} 
+                  onChange={(e) => setBookedDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Materials / Drive URL</label>
+                <input value={taskUrl} onChange={(e) => setTaskUrl(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Pre-Test URL</label>
+                <input value={preTestUrl} onChange={(e) => setPreTestUrl(e.target.value)}
+                  placeholder="https://forms.gle/..."
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Score (0–100)</label>
+                <input
+                  type="number" min="0" max="100"
+                  value={score} onChange={(e) => setScore(e.target.value)}
+                  placeholder="e.g. 82"
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Mentor Feedback</label>
+                <textarea
+                  value={feedback} onChange={(e) => setFeedback(e.target.value)}
+                  rows={3}
+                  placeholder="Write your personalized feedback for this student..."
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] text-[#1A2534] placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1A2534]/10 focus:border-[#1A2534]/30 resize-none" />
+              </div>
+            </div>
+
+            {/* Save & Custom Delete Actions */}
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                disabled={deleting || saving}
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[12px] font-bold text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
+              >
+                {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                <span className="hidden sm:inline">Delete Session</span>
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || deleting}
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-black transition-all ${
+                  saved
+                    ? "bg-emerald-500 text-white"
+                    : "bg-[#1A2534] hover:bg-[#2F4157] text-white"
+                } disabled:opacity-50`}
+              >
+                {saving ? <Loader2 size={13} className="animate-spin" /> : saved ? <Check size={13} /> : <Save size={13} />}
+                {saving ? "Saving…" : saved ? "Saved!" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Custom IELS Style Delete Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-[#1A2534]/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[24px] p-6 max-w-sm w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-[#E56668] mb-4 mx-auto">
+              <AlertTriangle size={24} />
+            </div>
+            <h3 className="text-[18px] font-black text-center text-[#1A2534] mb-2">Delete Session?</h3>
+            <p className="text-[13px] text-slate-500 text-center mb-6">
+              Are you sure you want to delete <strong>Session {session.session_number}</strong>? This action cannot be undone and will permanently remove this data.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-bold text-white bg-[#E56668] hover:bg-red-600 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -282,12 +334,17 @@ function StudentCard({
   const [approving, setApproving] = useState(false);
   const [adding,    setAdding]    = useState(false);
 
+  // Progress calculates strictly based on mentor_score existing
+  const realtimeCompleted = sessions.length > 0 
+    ? sessions.filter(s => s.mentor_score !== null).length 
+    : student.sessions_completed;
+
   const progressPct = student.total_sessions > 0
-    ? Math.round((student.sessions_completed / student.total_sessions) * 100)
+    ? Math.round((realtimeCompleted / student.total_sessions) * 100)
     : 0;
 
   const loadSessions = useCallback(async () => {
-    if (sessions.length > 0) return; // already loaded
+    if (sessions.length > 0) return; 
     setLoading(true);
     const { data } = await supabase
       .from("course_sessions")
@@ -305,7 +362,17 @@ function StudentCard({
 
   const handleSaveSession = async (id: string, patch: Partial<CourseSession>) => {
     await supabase.from("course_sessions").update(patch).eq("id", id);
-    // Refresh sessions list
+    const { data } = await supabase
+      .from("course_sessions")
+      .select("*")
+      .eq("enrollment_id", student.enrollment_id)
+      .order("session_number", { ascending: true });
+    setSessions((data as CourseSession[]) ?? []);
+    onRefresh(); 
+  };
+
+  const handleDeleteSession = async (id: string) => {
+    await supabase.from("course_sessions").delete().eq("id", id);
     const { data } = await supabase
       .from("course_sessions")
       .select("*")
@@ -336,19 +403,27 @@ function StudentCard({
   const handleAddSession = async () => {
     setAdding(true);
     const nextNum = (sessions.length ?? 0) + 1;
-    await supabase.from("course_sessions").insert({
+    
+    const { error } = await supabase.from("course_sessions").insert({
       enrollment_id: student.enrollment_id,
       session_number: nextNum,
-      topic: null,
+      topic: "", 
       journal_submitted: false,
       feedback_submitted: false,
     });
-    const { data } = await supabase
-      .from("course_sessions")
-      .select("*")
-      .eq("enrollment_id", student.enrollment_id)
-      .order("session_number", { ascending: true });
-    setSessions((data as CourseSession[]) ?? []);
+
+    if (error) {
+      console.error("Failed to add session:", error.message);
+      alert("Failed to add session: " + error.message);
+    } else {
+      const { data } = await supabase
+        .from("course_sessions")
+        .select("*")
+        .eq("enrollment_id", student.enrollment_id)
+        .order("session_number", { ascending: true });
+      setSessions((data as CourseSession[]) ?? []);
+    }
+    
     setAdding(false);
   };
 
@@ -356,18 +431,13 @@ function StudentCard({
 
   return (
     <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
-      {/* Top status bar */}
       <div className={`h-1 ${student.enrollment_status === "completed" ? "bg-emerald-400" : student.sessions_booked_pending > 0 ? "bg-blue-400" : "bg-[#1A2534]"}`} />
 
-      {/* Header */}
       <button onClick={handleExpand} className="w-full text-left px-5 py-4 hover:bg-[#F7F8FA] transition-colors">
         <div className="flex items-center gap-3">
-          {/* Avatar */}
           <div className="w-10 h-10 rounded-full bg-[#1A2534] flex-shrink-0 flex items-center justify-center text-white text-[12px] font-black">
             {initials}
           </div>
-
-          {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-[14px] font-black text-[#1A2534] truncate">{student.student_name}</p>
@@ -384,24 +454,20 @@ function StudentCard({
             </div>
             <p className="text-[11px] text-slate-400 truncate">{student.student_email} · {student.class_name}</p>
           </div>
-
-          {/* Progress */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="hidden sm:block text-right">
               <p className="text-[10px] text-slate-400 uppercase tracking-widest">Progress</p>
-              <p className="text-[13px] font-black text-[#1A2534]">{student.sessions_completed}/{student.total_sessions}</p>
+              <p className="text-[13px] font-black text-[#1A2534]">{realtimeCompleted}/{student.total_sessions}</p>
             </div>
             <ScoreRing pct={progressPct} size={40} />
             {expanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div className="h-full bg-[#1A2534] rounded-full transition-all" style={{ width: `${progressPct}%` }} />
         </div>
 
-        {/* Quick stats */}
         <div className="mt-2.5 flex gap-4 flex-wrap">
           {[
             { label: "Booked", value: student.sessions_booked_pending, color: "text-blue-600"  },
@@ -417,11 +483,8 @@ function StudentCard({
         </div>
       </button>
 
-      {/* Expanded detail */}
       {expanded && (
         <div className="border-t border-gray-100 px-5 py-5 space-y-5">
-
-          {/* Contract management */}
           <div className={`rounded-xl p-4 border ${student.contract_signed ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-2.5">
@@ -453,7 +516,6 @@ function StudentCard({
             </div>
           </div>
 
-          {/* Next scheduled session alert */}
           {student.next_session_date && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3">
               <Calendar size={14} className="text-blue-600 flex-shrink-0" />
@@ -468,7 +530,6 @@ function StudentCard({
             </div>
           )}
 
-          {/* Sessions */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -503,16 +564,20 @@ function StudentCard({
             ) : (
               <div className="space-y-2">
                 {sessions.map((session) => (
-                  <SessionEditorRow key={session.id} session={session} onSave={handleSaveSession} />
+                  <SessionEditorRow 
+                    key={session.id} 
+                    session={session} 
+                    onSave={handleSaveSession} 
+                    onDelete={handleDeleteSession} 
+                  />
                 ))}
               </div>
             )}
           </div>
 
-          {/* Bottom actions */}
           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-50">
             <Link
-              href={`https://wa.me/message`}
+              href={`https://wa.me/6288297253491`}
               target="_blank"
               className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-600 hover:text-[#1A2534] bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-xl transition-colors"
             >
@@ -548,6 +613,7 @@ export default function MentorDashboardPage() {
   const [loading,     setLoading]     = useState(true);
   const [filter,      setFilter]      = useState<"all" | "active" | "completed" | "pending_contract">("all");
   const [classFilter, setClassFilter] = useState<string>("all");
+  const [sessionFilter, setSessionFilter] = useState<number | "all">("all");
   const [refreshing,  setRefreshing]  = useState(false);
 
   const fetchStudents = useCallback(async () => {
@@ -571,8 +637,8 @@ export default function MentorDashboardPage() {
     await fetchStudents();
   };
 
-  // Derived
   const allClasses = Array.from(new Set(students.map((s) => s.class_name))).filter(Boolean);
+  const allSessionCounts = Array.from(new Set(students.map((s) => s.total_sessions))).sort((a, b) => a - b);
 
   const filtered = students.filter((s) => {
     const matchStatus =
@@ -580,8 +646,11 @@ export default function MentorDashboardPage() {
       : filter === "active" ? s.enrollment_status === "active"
       : filter === "completed" ? s.enrollment_status === "completed"
       : !s.contract_signed;
+    
     const matchClass = classFilter === "all" || s.class_name === classFilter;
-    return matchStatus && matchClass;
+    const matchSessionCount = sessionFilter === "all" || s.total_sessions === sessionFilter;
+    
+    return matchStatus && matchClass && matchSessionCount;
   });
 
   const active    = students.filter((s) => s.enrollment_status === "active").length;
@@ -600,8 +669,7 @@ export default function MentorDashboardPage() {
 
   return (
     <div className="space-y-6" style={{ fontFamily: "'Geologica', sans-serif" }}>
-
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -627,7 +695,7 @@ export default function MentorDashboardPage() {
         </button>
       </div>
 
-      {/* ── KPI row ── */}
+      {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Active Students",  value: active,   color: "text-[#1A2534]", bg: "bg-[#1A2534]", accent: true },
@@ -642,9 +710,8 @@ export default function MentorDashboardPage() {
         ))}
       </div>
 
-      {/* ── Filters ── */}
+      {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        {/* Status filter */}
         {(["all","active","completed","pending_contract"] as const).map((f) => (
           <button
             key={f}
@@ -659,20 +726,34 @@ export default function MentorDashboardPage() {
           </button>
         ))}
 
-        {/* Class filter */}
-        {allClasses.length > 1 && (
-          <select
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-            className="text-[11px] font-bold border border-gray-200 rounded-full px-3.5 py-2 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer ml-auto"
-          >
-            <option value="all">All Programs</option>
-            {allClasses.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        )}
+        <div className="flex items-center gap-2 ml-auto">
+          {allClasses.length > 1 && (
+            <select
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+              className="text-[11px] font-bold border border-gray-200 rounded-full px-3.5 py-2 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer"
+            >
+              <option value="all">All Programs</option>
+              {allClasses.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+
+          {allSessionCounts.length > 1 && (
+            <select
+              value={sessionFilter}
+              onChange={(e) => setSessionFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+              className="text-[11px] font-bold border border-gray-200 rounded-full px-3.5 py-2 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer"
+            >
+              <option value="all">All Packages</option>
+              {allSessionCounts.map((count) => (
+                <option key={count} value={count}>{count} Sessions</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
-      {/* ── Student list ── */}
+      {/* Student list */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-[20px] border border-gray-100 p-12 text-center">
           <p className="text-slate-400 text-[14px]">No students match this filter.</p>
