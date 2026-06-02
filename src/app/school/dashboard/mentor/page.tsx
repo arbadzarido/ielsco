@@ -4,7 +4,7 @@
 // app/school/dashboard/mentor/page.tsx
 // Private course management dashboard
 // Features: overview all students → expand per student → manage sessions
-//           (topic, links, score, feedback, contract approval, direct scheduling, custom delete modal)
+//           (topic, links, score, feedback, direct scheduling, custom delete modal, search, sort A-Z)
 // =============================================================================
 
 import { useState, useEffect, useCallback } from "react";
@@ -16,7 +16,7 @@ import {
   AlertTriangle, ChevronDown, ChevronUp, Star, PenTool,
   ClipboardCheck, Download, ExternalLink, X, Check,
   Plus, Save, RefreshCw, MessageCircle, ScrollText,
-  FileText, Lock, ArrowRight, Loader2, BookOpen, Trash2
+  FileText, Lock, ArrowRight, Loader2, BookOpen, Trash2, Search
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -485,36 +485,39 @@ function StudentCard({
 
       {expanded && (
         <div className="border-t border-gray-100 px-5 py-5 space-y-5">
-          <div className={`rounded-xl p-4 border ${student.contract_signed ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <ScrollText size={15} className={student.contract_signed ? "text-emerald-600 mt-0.5" : "text-amber-600 mt-0.5"} />
-                <div>
-                  <p className={`text-[12px] font-black ${student.contract_signed ? "text-emerald-700" : "text-amber-700"}`}>
-                    Learning Contract
-                  </p>
-                  {student.contract_url ? (
-                    <Link href={student.contract_url} target="_blank"
-                      className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
-                      <ExternalLink size={10} /> View signed document
-                    </Link>
-                  ) : (
-                    <p className="text-[11px] text-amber-600/70 mt-0.5">Student has not submitted contract yet</p>
-                  )}
-                </div>
-              </div>
-              {!student.contract_signed && student.contract_url && (
-                <button
-                  onClick={handleApproveContract}
-                  disabled={approving}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[11px] font-black transition-all disabled:opacity-50"
-                >
-                  {approving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                  Approve
-                </button>
-              )}
-            </div>
-          </div>
+        {/* GANTI BLOK INI */}
+<div className={`rounded-xl p-4 border ${student.contract_signed ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+  <div className="flex items-start justify-between gap-3">
+    <div className="flex items-start gap-2.5">
+      <ScrollText size={15} className={student.contract_signed ? "text-emerald-600 mt-0.5" : "text-amber-600 mt-0.5"} />
+      <div>
+        <p className={`text-[12px] font-black ${student.contract_signed ? "text-emerald-700" : "text-amber-700"}`}>
+          Learning Contract
+        </p>
+        {student.contract_url ? (
+          <Link href={student.contract_url} target="_blank"
+            className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
+            <ExternalLink size={10} /> {student.contract_signed ? "View Signed Document" : "Review Submitted Contract"}
+          </Link>
+        ) : (
+          <p className="text-[11px] text-amber-600/70 mt-0.5">Student has not submitted contract yet</p>
+        )}
+      </div>
+    </div>
+    
+    {/* Tombol Approve sekarang muncul selagi ada URL-nya, meskipun belum signed */}
+    {!student.contract_signed && student.contract_url && (
+      <button
+        onClick={handleApproveContract}
+        disabled={approving}
+        className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[11px] font-black transition-all disabled:opacity-50"
+      >
+        {approving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+        Approve
+      </button>
+    )}
+  </div>
+</div>
 
           {student.next_session_date && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3">
@@ -613,7 +616,8 @@ export default function MentorDashboardPage() {
   const [loading,     setLoading]     = useState(true);
   const [filter,      setFilter]      = useState<"all" | "active" | "completed" | "pending_contract">("all");
   const [classFilter, setClassFilter] = useState<string>("all");
-  const [sessionFilter, setSessionFilter] = useState<number | "all">("all");
+  const [sortOrder,   setSortOrder]   = useState<"newest" | "asc" | "desc">("newest"); // Baru: State untuk urutan A-Z
+  const [searchQuery, setSearchQuery] = useState("");
   const [refreshing,  setRefreshing]  = useState(false);
 
   const fetchStudents = useCallback(async () => {
@@ -638,20 +642,34 @@ export default function MentorDashboardPage() {
   };
 
   const allClasses = Array.from(new Set(students.map((s) => s.class_name))).filter(Boolean);
-  const allSessionCounts = Array.from(new Set(students.map((s) => s.total_sessions))).sort((a, b) => a - b);
 
-  const filtered = students.filter((s) => {
-    const matchStatus =
-      filter === "all" ? true
-      : filter === "active" ? s.enrollment_status === "active"
-      : filter === "completed" ? s.enrollment_status === "completed"
-      : !s.contract_signed;
-    
-    const matchClass = classFilter === "all" || s.class_name === classFilter;
-    const matchSessionCount = sessionFilter === "all" || s.total_sessions === sessionFilter;
-    
-    return matchStatus && matchClass && matchSessionCount;
-  });
+  // Filter dan Sort
+  const filteredAndSorted = students
+    .filter((s) => {
+      const matchStatus =
+        filter === "all" ? true
+        : filter === "active" ? s.enrollment_status === "active"
+        : filter === "completed" ? s.enrollment_status === "completed"
+        : !s.contract_signed;
+      
+      const matchClass = classFilter === "all" || s.class_name === classFilter;
+      
+      const searchLower = searchQuery.toLowerCase();
+      const matchSearch = s.student_name.toLowerCase().includes(searchLower) || 
+                          s.student_email.toLowerCase().includes(searchLower);
+      
+      return matchStatus && matchClass && matchSearch;
+    })
+    .sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.student_name.localeCompare(b.student_name);
+      }
+      if (sortOrder === "desc") {
+        return b.student_name.localeCompare(a.student_name);
+      }
+      // default: newest
+      return new Date(b.enrolled_at).getTime() - new Date(a.enrolled_at).getTime();
+    });
 
   const active    = students.filter((s) => s.enrollment_status === "active").length;
   const pending   = students.filter((s) => !s.contract_signed).length;
@@ -691,7 +709,7 @@ export default function MentorDashboardPage() {
           className="inline-flex items-center gap-2 bg-white border border-gray-200 text-[#1A2534] font-bold text-[12px] px-3.5 py-2.5 rounded-xl hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
         >
           <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
@@ -710,57 +728,74 @@ export default function MentorDashboardPage() {
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        {(["all","active","completed","pending_contract"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`text-[11px] font-bold px-3.5 py-2 rounded-full border transition-all capitalize ${
-              filter === f
-                ? "bg-[#1A2534] text-white border-[#1A2534]"
-                : "bg-white text-slate-500 border-gray-200 hover:border-[#1A2534]/30"
-            }`}
-          >
-            {f === "pending_contract" ? "Contract Pending" : f === "all" ? `All (${students.length})` : f}
-          </button>
-        ))}
+ {/* Filters, Sort & Search */}
+<div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
+  
+  {/* Status Filters (Pills) */}
+  <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+    {(["all","active","completed","pending_contract"] as const).map((f) => (
+      <button
+        key={f}
+        onClick={() => setFilter(f)}
+        className={`text-[11px] font-bold px-4 h-9 rounded-full border transition-all capitalize flex items-center ${
+          filter === f
+            ? "bg-[#1A2534] text-white border-[#1A2534]"
+            : "bg-white text-slate-500 border-gray-200 hover:border-[#1A2534]/30"
+        }`}
+      >
+        {f === "pending_contract" ? "Contract Pending" : f === "all" ? `All (${students.length})` : f}
+      </button>
+    ))}
+  </div>
 
-        <div className="flex items-center gap-2 ml-auto">
-          {allClasses.length > 1 && (
-            <select
-              value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
-              className="text-[11px] font-bold border border-gray-200 rounded-full px-3.5 py-2 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer"
-            >
-              <option value="all">All Programs</option>
-              {allClasses.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          )}
+  {/* Right side controls (Search & Selects) */}
+  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+    
+{/* Search Bar - Flex container biar ikon & input otomatis sejajar tengah */}
+<div className="flex items-center w-full sm:w-64 h-9 pl-3 pr-4 border border-gray-200 rounded-full bg-white focus-within:ring-2 focus-within:ring-[#1A2534]/10 focus-within:border-[#1A2534]/30 transition-all">
+  <Search className="text-slate-400 flex-shrink-0 mr-2" size={14} />
+  <input
+    type="text"
+    placeholder="Search name or email..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full h-full bg-transparent text-[11px] font-bold text-[#1A2534] focus:outline-none placeholder:font-normal placeholder:text-slate-400"
+  />
+</div>
 
-          {allSessionCounts.length > 1 && (
-            <select
-              value={sessionFilter}
-              onChange={(e) => setSessionFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-              className="text-[11px] font-bold border border-gray-200 rounded-full px-3.5 py-2 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer"
-            >
-              <option value="all">All Packages</option>
-              {allSessionCounts.map((count) => (
-                <option key={count} value={count}>{count} Sessions</option>
-              ))}
-            </select>
-          )}
-        </div>
-      </div>
+    {/* Program Filter - Konsisten h-9, text-[11px], font-bold */}
+    {allClasses.length > 1 && (
+      <select
+        value={classFilter}
+        onChange={(e) => setClassFilter(e.target.value)}
+        className="h-9 text-[11px] font-bold border border-gray-200 rounded-full px-4 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer w-full sm:w-auto transition-all"
+      >
+        <option value="all">All Programs</option>
+        {allClasses.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
+    )}
+
+    {/* Sort Dropdown - Konsisten h-9, text-[11px], font-bold */}
+    <select
+      value={sortOrder}
+      onChange={(e) => setSortOrder(e.target.value as any)}
+      className="h-9 text-[11px] font-bold border border-gray-200 rounded-full px-4 bg-white text-slate-500 focus:outline-none hover:border-[#1A2534]/30 cursor-pointer w-full sm:w-auto transition-all"
+    >
+      <option value="newest">Newest Enrolled</option>
+      <option value="asc">Name (A-Z)</option>
+      <option value="desc">Name (Z-A)</option>
+    </select>
+  </div>
+</div>
 
       {/* Student list */}
-      {filtered.length === 0 ? (
+      {filteredAndSorted.length === 0 ? (
         <div className="bg-white rounded-[20px] border border-gray-100 p-12 text-center">
-          <p className="text-slate-400 text-[14px]">No students match this filter.</p>
+          <p className="text-slate-400 text-[14px]">No students match your search.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((student) => (
+          {filteredAndSorted.map((student) => (
             <StudentCard
               key={student.enrollment_id}
               student={student}
