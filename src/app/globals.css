@@ -93,6 +93,14 @@ html { scroll-behavior: smooth; }
   --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
+/* Tambahkan di globals.css */
+.white-element {
+  color: #ffffff !important;
+  background-color: #ffffff !important;
+  z-index: 100 !important;
+  position: relative;
+}
+
 .dark {
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);

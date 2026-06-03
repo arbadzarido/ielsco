@@ -161,6 +161,8 @@ export default function Header() {
     "/school/sign-in",
     "/dashboard",
     "/events/gif",
+    "/cafe",
+    "/planner",
     "/privacy-policy",
     "/terms-of-service",
     "/welcome/start",
