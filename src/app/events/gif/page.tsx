@@ -302,7 +302,13 @@ export default function SGITPage() {
             </div>
             
           </div>
-
+{/* === DISCLAIMER NOTE KOUTA === */}
+            <div className="max-w-5xl mx-auto mb-16 px-5 py-4 bg-[#304156]/5 border border-[#304156]/10 rounded-xl flex items-start gap-3 shadow-sm">
+              <Info className="w-5 h-5 text-[#304156]/70 mt-0.5 shrink-0" />
+              <p className="text-sm text-[#304156]/80 leading-relaxed font-medium">
+                <strong>*Disclaimer regarding quotas:</strong> The 10 Fully Funded and 10 Partially Funded quotas are subject to change. IELS strictly selects delegates based on actual potential and merit rather than merely fulfilling the quota capacity. All selection decisions made by the committee are final and cannot be contested.
+              </p>
+            </div>
           {/* === ALL-IN BENEFITS SECTION === */}
           <div className="max-w-5xl mx-auto bg-white rounded-3xl p-8 md:p-12 border border-[#304156]/10 shadow-xl relative overflow-hidden">
             {/* Subtle background decoration */}
