@@ -17,14 +17,14 @@ const geologica = Geologica({
 
 export const metadata: Metadata = {
   title: "IELS | English Community",
-  description: "Empowering youths for global success through a supportive community and mentorship. Join our Community",
+  description: "IELS (PT English Space Berkah Indonesia) is an inclusive English community empowering youths for global success through supportive mentorship. Join us today.",
   icons: {
     icon: [
-      { url: "/favicon.ico" },  // ← tambah ini sebagai fallback utama
+      { url: "/favicon.ico" },
       { url: "/images/logos/iels_blue.png", media: "(prefers-color-scheme: light)" },
       { url: "/images/logos/iels_white.png", media: "(prefers-color-scheme: dark)" },
     ],
-    shortcut: "/favicon.ico",   // ← tambah ini
+    shortcut: "/favicon.ico",
     apple: "/images/logos/iels_blue.png",
   },
 };
@@ -42,6 +42,27 @@ export default function RootLayout({
       <body
         className={`${geologica.variable} ${inter.variable} antialiased bg-[#2F4157] font-inter`}
       >
+        {/* --- SEO SCHEMA MARKUP START --- */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "PT English Space Berkah Indonesia",
+              "alternateName": "IELS",
+              "url": "https://ielsco.com",
+              "logo": "https://ielsco.com/images/logos/iels_blue.png",
+              "sameAs": [
+                "https://www.instagram.com/iels_co",
+                "https://www.linkedin.com/company/iels-co",
+                "https://x.com/ielsforall"
+              ]
+            })
+          }}
+        />
+        {/* --- SEO SCHEMA MARKUP END --- */}
+
         {/* Gunakan Wrapper untuk mengatur logika Header & Padding */}
         <LayoutWrapper>
           {children}

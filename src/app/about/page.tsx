@@ -148,8 +148,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             We Build <span className="text-[#E56668]">Global Readiness.</span>
           </h1>
           
-          <p className="text-base sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed animate-fadeIn font-light" style={{ animationDelay: "400ms" }}>
-            IELS is an inclusive, goal-driven community designed to help ambitious Indonesian students unlock scholarships, remote work, and international opportunities.
+         <p className="text-base sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed animate-fadeIn font-light" style={{ animationDelay: "400ms" }}>
+            IELS, legally incorporated as PT English Space Berkah Indonesia, is an inclusive, goal-driven community designed to help ambitious Indonesian students unlock scholarships, remote work, and international opportunities.
           </p>
 
           <div className="pt-6 animate-fadeIn flex flex-col sm:flex-row justify-center gap-4" style={{ animationDelay: "600ms" }}>
@@ -182,12 +182,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 Many students dream of studying abroad, building global careers, or winning international competitions. Yet, they are held back not by a lack of intelligence, but by a lack of access, structure, and the right environment.
               </p>
               
-              <div className="border-l-4 border-[#E56668] pl-6 py-2 my-6 bg-[#F7F8FA] p-4 rounded-r-2xl">
+           <div className="border-l-4 border-[#E56668] pl-6 py-2 my-6 bg-[#F7F8FA] p-4 rounded-r-2xl">
                 <p className="font-semibold text-[#2F4157] text-lg">
                   For too long, English has been taught just as a school subject to pass exams.
                 </p>
                 <p className="text-xl sm:text-2xl font-extrabold text-[#E56668] mt-3">
-                  At IELS, we believe English is not a subject. It is access.
+                  At IELS (PT English Space Berkah Indonesia), we believe English is not a subject. It is access.
                 </p>
               </div>
             </div>

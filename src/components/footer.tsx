@@ -7,29 +7,35 @@ export default function Footer() {
     <footer className="bg-[#2f4157] w-full py-12 px-6 lg:px-[100px] border-t border-[#ffffff20] text-white">
       <div className="flex flex-col lg:flex-row justify-between gap-12">
         
-        {/* Left: Logo & Socials */}
-        <div className="flex flex-col lg:w-[25%] items-center lg:items-start gap-4">
-          <Image
-            src="/images/logos/iels_white.png"
-            alt="IELS Logo - White"
-            width={70}
-            height={70}
-          />
-          <p className="text-sm text-white/80 max-w-[220px] text-center lg:text-left">
-            Unlock Global Opportunities with Structured English Community.
-          </p>
-          <div className="flex gap-4 mt-3">
-            <Link href="https://x.com/ielsforall" target="_blank" className="hover:opacity-70 transition">
-              <X style={{ fontSize: 24, color: "white" }} />
-            </Link>
-            <Link href="https://www.instagram.com/iels_co" target="_blank" className="hover:opacity-70 transition">
-              <Instagram style={{ fontSize: 24, color: "white" }} />
-            </Link>
-            <Link href="https://www.linkedin.com/company/iels-co" target="_blank" className="hover:opacity-70 transition">
-              <LinkedIn style={{ fontSize: 24, color: "white" }} />
-            </Link>
-          </div>
-        </div>
+       {/* Left: Logo & Socials */}
+<div className="flex flex-col lg:w-[25%] items-center lg:items-start gap-4">
+  <Image
+    src="/images/logos/iels_white.png"
+    alt="IELS Logo - White"
+    width={70}
+    height={70}
+  />
+  <div className="text-center lg:text-left">
+    <p className="text-sm text-white/80 max-w-[250px]">
+      Unlock Global Opportunities with Structured English Community.
+    </p>
+    {/* Tambahan Nama PT buat SEO */}
+    <p className="text-xs text-white/50 max-w-[250px] mt-1 font-medium">
+      PT English Space Berkah Indonesia
+    </p>
+  </div>
+  <div className="flex gap-4 mt-2">
+    <Link href="https://x.com/ielsforall" target="_blank" className="hover:opacity-70 transition">
+      <X style={{ fontSize: 24, color: "white" }} />
+    </Link>
+    <Link href="https://www.instagram.com/iels_co" target="_blank" className="hover:opacity-70 transition">
+      <Instagram style={{ fontSize: 24, color: "white" }} />
+    </Link>
+    <Link href="https://www.linkedin.com/company/iels-co" target="_blank" className="hover:opacity-70 transition">
+      <LinkedIn style={{ fontSize: 24, color: "white" }} />
+    </Link>
+  </div>
+</div>
 
         {/* About Section */}
         <div className="flex flex-col lg:w-[18%] gap-4">
@@ -134,7 +140,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="text-center text-white/60 text-sm mt-12 border-t border-[#ffffff20] pt-6">
-        © {new Date().getFullYear()} IELS. All rights reserved.
+        © {new Date().getFullYear()} PT English Space Berkah Indonesia. All rights reserved.
       </div>
     </footer>
   );
