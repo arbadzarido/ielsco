@@ -166,6 +166,7 @@ export const WORLD_OF_ARBA = [
   "Your unique background is your superpower, bukan kelemahan. Show them what makes you, YOU! 🎨",
   "You've proven you can do this. Hari ini cuma ajang buat show off seberapa kerennya kamu. Proud of you! 🥰",
   "You are smarter and more capable than you think. Jangan lupa senyum manisnya dipake ya hari ini! 😊",
+  "Ingat ya, interview itu cuma ngobrol dua arah kok, bukan interogasi. Just be your authentic self and enjoy the conversation! ☕",
 ];
 
 export const ARBA_LETTER = `Ginnieee,

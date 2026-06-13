@@ -12,7 +12,7 @@ const CATEGORIES = {
   creative: "Creative Questions",
   portfolio: "Portfolio Questions",
   behavioral: "Behavioral Questions",
-  lawson: "Lawson-Specific Questions",
+  lawson: "Specific Questions",
 };
 
 export default function MockInterviewSection({ setCompleted }: SectionProps) {
@@ -53,7 +53,7 @@ export default function MockInterviewSection({ setCompleted }: SectionProps) {
           Mock Interview
         </h1>
         <p className="text-lg" style={{ color: colors.textLight }}>
-          50 potential interview questions with suggested answers
+          19 potential interview questions with suggested answers
         </p>
       </motion.div>
 

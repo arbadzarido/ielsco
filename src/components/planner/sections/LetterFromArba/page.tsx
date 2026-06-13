@@ -221,8 +221,8 @@ export default function LetterFromArba({ setCompleted }: SectionProps) {
             >
               <div className="flex gap-2 justify-center mb-6">
                 {/* Menampilkan dua foto dengan object-cover biar proporsional */}
-                <Image src="/images/ginnie2.jpeg" alt="Ginnie" width={100} height={100} className="rounded-2xl object-cover" />
-                <Image src="/images/ginnie3.jpeg" alt="Ginnie" width={100} height={100} className="rounded-2xl object-cover" />
+                <Image src="/images/people/ginnie/ginnie4.jpeg" alt="Ginnie" width={100} height={100} className="rounded-2xl object-cover" />
+                <Image src="/images/people/ginnie/ginnie5.jpeg" alt="Ginnie" width={100} height={100} className="rounded-2xl object-cover" />
               </div>
               
               <h2 className="text-3xl font-black mb-4" style={{ color: colors.textDark }}>
