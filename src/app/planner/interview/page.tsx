@@ -195,18 +195,19 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="flex pt-24 min-h-screen relative">
-        {/* Sidebar Navigation */}
+{/* Sidebar Navigation */}
         <aside
-          className={`fixed top-0 left-0 h-screen pt-[104px] w-64 md:w-72 flex flex-col z-30 border-r transition-transform duration-300 ease-in-out shadow-2xl md:shadow-xl ${
+          // HAPUS h-screen, TAMBAHKAN bottom-0
+          className={`fixed top-0 bottom-0 left-0 pt-[104px] w-64 md:w-72 flex flex-col z-30 border-r transition-transform duration-300 ease-in-out shadow-2xl md:shadow-xl ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
           style={{
             borderColor: colors.primaryLight,
             backgroundColor: colors.white,
           }}
-        >
-          {/* Custom style untuk hide scrollbar pada list menu */}
+        >{/* Custom style untuk scrollbar: Hide di mobile, Show di desktop */}
           <style jsx>{`
+            /* Default (Mobile): Sembunyikan scrollbar */
             .scrollable-nav::-webkit-scrollbar {
               display: none;
             }
@@ -214,8 +215,30 @@ export default function Home() {
               -ms-overflow-style: none;
               scrollbar-width: none;
             }
-          `}</style>
 
+            /* Desktop (md = 768px ke atas): Tampilkan scrollbar dengan style estetik */
+            @media (min-width: 768px) {
+              .scrollable-nav::-webkit-scrollbar {
+                display: block;
+                width: 6px; /* Lebar scrollbar */
+              }
+              .scrollable-nav::-webkit-scrollbar-track {
+                background: transparent; /* Background track transparan */
+              }
+              .scrollable-nav::-webkit-scrollbar-thumb {
+                background-color: #d1d5db; /* Warna abu-abu soft kayak di gambar */
+                border-radius: 10px; /* Bikin ujungnya membulat */
+              }
+              .scrollable-nav::-webkit-scrollbar-thumb:hover {
+                background-color: #9ca3af; /* Warna sedikit lebih gelap pas di-hover */
+              }
+              .scrollable-nav {
+                -ms-overflow-style: auto; /* Untuk IE/Edge */
+                scrollbar-width: thin; /* Untuk Firefox */
+                scrollbar-color: #d1d5db transparent; /* Warna thumb & track untuk Firefox */
+              }
+            }
+          `}</style>
           {/* Nav List - Area ini yang bisa discroll (overflow-y-auto) */}
           <div className="scrollable-nav p-6 space-y-3 flex-1 overflow-y-auto pb-6">
             {SECTIONS.map((section, idx) => {
@@ -266,7 +289,7 @@ export default function Home() {
           </div>
           
           {/* Footer Sidebar - Stay at bottom (shrink-0) */}
-          <div className="md:hidden p-6 border-t shrink-0" style={{ borderColor: colors.primaryLight, backgroundColor: colors.white }}>
+          <div className="md:hidden p-6 pb-20 border-t shrink-0" style={{ borderColor: colors.primaryLight, backgroundColor: colors.white }}>
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => { setShowResetModal(true); setSidebarOpen(false); }}
@@ -278,7 +301,6 @@ export default function Home() {
             </div>
           </div>
         </aside>
-
         {/* Main Content Area */}
         <main className="flex-1 w-full overflow-hidden">
           <motion.div
