@@ -269,13 +269,6 @@ export default function Home() {
           <div className="md:hidden p-6 border-t shrink-0" style={{ borderColor: colors.primaryLight, backgroundColor: colors.white }}>
             <div className="flex flex-col gap-3">
               <button
-                onClick={handlePrint}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold border-2"
-                style={{ borderColor: colors.primaryLight, color: colors.textDark }}
-              >
-                <Download size={18} /> Download
-              </button>
-              <button
                 onClick={() => { setShowResetModal(true); setSidebarOpen(false); }}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold border-2"
                 style={{ borderColor: colors.primaryLight, color: colors.textDark }}
