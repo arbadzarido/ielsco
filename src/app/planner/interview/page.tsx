@@ -39,14 +39,14 @@ export default function NotFound() {
               Error 404
             </h1>
             <h2 className="text-xl md:text-2xl font-bold text-[#E56668]">
-              Looks like we dozed off...
+              Looks like this page is gone...
             </h2>
           </div>
           
           {/* Main Body Text */}
           <div className="text-[#64748B] text-base md:text-[17px] leading-relaxed space-y-4">
             <p>
-              The learning module you're searching for is currently unavailable or resting in our archives. Head back to the{' '}
+              Arbadza just pulled this page. Head back to the{' '}
               <Link href="/" className="font-bold text-[#2F4157] hover:text-[#E56668] transition-colors underline decoration-2 underline-offset-4 decoration-[#E56668]/30 hover:decoration-[#E56668]">
                 Homepage
               </Link>
@@ -74,14 +74,14 @@ export default function NotFound() {
           {/* ── TINY TEXT (DEVELOPER NOTE) ── */}
           <div className="pt-4 border-t border-gray-100">
             <p className="text-xs text-slate-400 font-medium tracking-wide leading-relaxed">
-              (Psst... Double-check the URL. If you think this is a mistake, drop us a line at{' '}
+              (Psst... If you need more info or think this is a mistake, just reach out to{' '}
               <a 
-                href="mailto:support@ielsco.com" 
+                href="mailto:arbadza@ielsco.com" 
                 className="font-bold text-[#2F4157] hover:text-[#E56668] transition-colors underline decoration-1 underline-offset-2 decoration-gray-300 hover:decoration-[#E56668]"
               >
-                support@ielsco.com
+                arbadza@ielsco.com
               </a> 
-              {' '}or maybe this section is still underdeveloped! 🛠️)
+              {' '}🛠️)
             </p>
           </div>
 
