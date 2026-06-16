@@ -892,137 +892,235 @@ export default function GIFDashboardPage() {
     phase3State = "unlocked";
   }
 
-  const showMentoringClosed = !isMentoring && (IS_SCREENING_PHASE || IS_POST_ANNOUNCEMENT);
-
+const showMentoringClosed = !isMentoring && (IS_SCREENING_PHASE || IS_POST_ANNOUNCEMENT);
+  
+  // Deteksi apakah user sudah submit phase 3
+  const isPhase3Submitted = regData?.phase3_status === "submitted";
   return (
-    <DashboardLayout userTier={userProfile?.tier} userName={userProfile?.full_name} userAvatar={userProfile?.avatar_url}>
+<DashboardLayout userTier={userProfile?.tier} userName={userProfile?.full_name} userAvatar={userProfile?.avatar_url}>
       <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 md:px-8 pt-8 font-geologica">
-
-        {/* === HERO === */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl font-geologica">
-          <div className="absolute bg-[url('/images/contents/stories/member-stories/banner/singapore-banner.png')] bg-cover bg-center inset-0 opacity-10 mix-blend-overlay">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-60"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#304156] rounded-full blur-[120px] opacity-80"></div>
-          </div>
-          <div className="relative z-10 p-8 md:p-12">
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <Image src="/images/logos/events/gif.png" alt="Global Impact Fellowship" width={140} height={50} priority className="h-10 w-auto drop-shadow-lg brightness-0 invert opacity-100" />
-                  <div className="h-8 w-px bg-white/30"></div>
-                  <div className="bg-white/10 px-3 py-1 rounded-full border border-white/20 text-xs font-bold text-white tracking-widest">BATCH 1</div>
-                </div>
-                <div className="space-y-3">
-                  <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
-                    Hello, {getFirstName(userProfile?.full_name || "Learner")}! 👋
-                  </h1>
-                  <p className="text-white/90 text-lg leading-relaxed font-light">
-                    Welcome to your <span className="font-bold text-[#FFD1D1]">GIF in Singapore 2026</span> application hub. Prepare yourself for a transformative journey at NUS.
-                  </p>
-                </div>
-
-                {/* Mentoring badge */}
-                {isMentoring && (
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                    className="inline-flex items-center gap-2 bg-[#914D4D] border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
-                    <Crown className="w-4 h-4 fill-white" />
-                    Mentoring Fast Track Active
-                    <Sparkles className="w-4 h-4 text-yellow-300" />
-                  </motion.div>
-                )}
-
-                {/* Phase 3 unlocked badge (non-mentoring) */}
-                {isPhase3Eligible && !isMentoring && (
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                    className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
-                    <Trophy className="w-4 h-4 text-yellow-300" />
-                    Phase 3 Unlocked — Final Stage!
-                    <Sparkles className="w-4 h-4 text-yellow-300" />
-                  </motion.div>
-                )}
-
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
-                  <div className="text-center">
-                    <div className="text-3xl font-black text-white">{daysLeft}</div>
-                    <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Days Left</div>
+{/* === CONDITIONAL HERO SECTION === */}
+        {isPhase3Submitted ? (
+          /* ── ANNOUNCEMENT DAY HERO (Tetap pakai style asli) ── */
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl font-geologica">
+            <div className="absolute bg-[url('/images/contents/stories/member-stories/banner/singapore-banner.png')] bg-cover bg-center inset-0 opacity-10 mix-blend-overlay">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-60"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#304156] rounded-full blur-[120px] opacity-80"></div>
+            </div>
+            
+            <div className="relative z-10 p-8 md:p-12">
+              <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Image src="/images/logos/events/gif.png" alt="Global Impact Fellowship" width={140} height={50} priority className="h-10 w-auto drop-shadow-lg brightness-0 invert opacity-100" />
+                    <div className="h-8 w-px bg-white/30 hidden md:block"></div>
+                    <div className="bg-white/10 px-3 py-1 rounded-full border border-white/20 text-xs font-bold text-white tracking-widest">BATCH 1</div>
+                    <div className="bg-[#FFD1D1]/20 px-3 py-1 rounded-full border border-[#FFD1D1]/30 text-xs font-bold text-[#FFD1D1] tracking-widest flex items-center gap-1.5 animate-pulse">
+                      <Sparkles className="w-3 h-3" /> ANNOUNCEMENT
+                    </div>
                   </div>
-                  <div className="text-center border-l border-r border-white/10">
-                    <div className="text-3xl font-black text-[#FFD1D1]">{completedStepsCount}/4</div>
-                    <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Steps Done</div>
+                  
+                  <div className="space-y-3">
+                    <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                      The wait is over,<br className="hidden md:block"/> {getFirstName(userProfile?.full_name || "Learner")}! 🎉
+                    </h1>
+                    <p className="text-white/90 text-lg leading-relaxed font-light">
+                      The Evaluation Committee has finalized the results. Your comprehensive <strong>Phase 3 Evaluation Report</strong> is now available.
+                    </p>
                   </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-black text-white">20</div>
-                    <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Fellows</div>
+
+                  {/* Mentoring badge */}
+                  {isMentoring && (
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-2 bg-[#914D4D] border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
+                      <Crown className="w-4 h-4 fill-white" />
+                      Mentoring Fast Track Active
+                      <Sparkles className="w-4 h-4 text-yellow-300" />
+                    </motion.div>
+                  )}
+
+                  {/* CTA Report Button */}
+                  <div className="pt-4">
+                    <Link href="/dashboard/gif/report">
+                      <Button className="w-full md:w-auto py-3 px-8 rounded-2xl bg-white hover:bg-gray-100 text-[#304156] font-black text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center gap-3 group border border-white/50">
+                        <FileText className="w-6 h-6 text-[#914D4D]" />
+                        See Your Evaluation Report
+                        <ChevronRight className="w-6 h-6 text-[#914D4D] group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex justify-center items-center h-full">
-                <div className="relative w-full max-w-sm">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#914D4D] to-[#304156] rounded-3xl blur-xl opacity-60"></div>
-                  <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl flex flex-col items-center text-center space-y-6">
-                    <Image src="/images/logos/events/gifsgp.png" alt="GIF Singapore Logo" width={180} height={60} priority className="h-34 w-auto drop-shadow-2xl object-contain" />
-                    <div className="w-16 h-1 bg-[#914D4D] rounded-full"></div>
-                    <div className="space-y-4 w-full">
-                      <div className="flex items-center justify-between text-white border-b border-white/10 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-[#304156] p-2 rounded-lg"><MapPin className="w-4 h-4 text-white" /></div>
-                          <span className="text-sm font-medium">Location</span>
-                        </div>
-                        <span className="text-sm font-bold text-right">NUS, Singapore</span>
-                      </div>
-                      <div className="text-white border-b border-white/10 pb-3">
-                        <div className="flex items-center justify-between mb-2">
+                <div className="flex justify-center items-center h-full">
+                  <div className="relative w-full max-w-sm">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#914D4D] to-[#304156] rounded-3xl blur-xl opacity-60"></div>
+                    <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl flex flex-col items-center text-center space-y-6">
+                      <Image src="/images/logos/events/gifsgp.png" alt="GIF Singapore Logo" width={180} height={60} priority className="h-34 w-auto drop-shadow-2xl object-contain" />
+                      <div className="w-16 h-1 bg-[#914D4D] rounded-full"></div>
+                      <div className="space-y-4 w-full">
+                        <div className="flex items-center justify-between text-white border-b border-white/10 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
-                            <span className="text-sm font-medium">Date</span>
+                            <div className="bg-[#304156] p-2 rounded-lg"><MapPin className="w-4 h-4 text-white" /></div>
+                            <span className="text-sm font-medium">Location</span>
                           </div>
-                          <div className="text-right">
-                            <div className="text-xs text-white/50 line-through">May 5 - 12, 2026</div>
-                            <div className="text-sm font-bold text-[#FFD1D1]">July 7 - 13, 2026</div>
+                          <span className="text-sm font-bold text-right">NUS, Singapore</span>
+                        </div>
+                        <div className="text-white border-b border-white/10 pb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Date</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-white/50 line-through">May 5 - 12, 2026</div>
+                              <div className="text-sm font-bold text-[#FFD1D1]">July 7 - 13, 2026</div>
+                            </div>
                           </div>
+                          <Link href="/events/gif/timeline-adjustment"
+                            className="flex items-center justify-center gap-1.5 text-[10px] text-white/70 hover:text-white bg-black/20 py-1.5 rounded-lg border border-white/5 transition-colors">
+                            <Info className="w-3 h-3" /> Read timeline adjustment clarification
+                          </Link>
                         </div>
-                        <Link href="/events/gif/timeline-adjustment"
-                          className="flex items-center justify-center gap-1.5 text-[10px] text-white/70 hover:text-white bg-black/20 py-1.5 rounded-lg border border-white/5 transition-colors">
-                          <Info className="w-3 h-3" /> Read timeline adjustment clarification
-                        </Link>
-                      </div>
-                      <div className="flex items-center justify-between text-white">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-[#304156] p-2 rounded-lg"><Users className="w-4 h-4 text-white" /></div>
-                          <span className="text-sm font-medium">Quota</span>
+                        <div className="flex items-center justify-between text-white">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-[#304156] p-2 rounded-lg"><Users className="w-4 h-4 text-white" /></div>
+                            <span className="text-sm font-medium">Quota</span>
+                          </div>
+                          <span className="text-sm font-bold text-right">20 Fellows</span>
                         </div>
-                        <span className="text-sm font-bold text-right">20 Fellows</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+        /* ── STANDARD HERO (Normal Flow) ── */
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#2F4055] via-[#914D4D] to-[#304156] rounded-3xl shadow-2xl font-geologica">
+            <div className="absolute bg-[url('/images/contents/stories/member-stories/banner/singapore-banner.png')] bg-cover bg-center inset-0 opacity-10 mix-blend-overlay">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-60"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#304156] rounded-full blur-[120px] opacity-80"></div>
+            </div>
+            <div className="relative z-10 p-8 md:p-12">
+              <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <Image src="/images/logos/events/gif.png" alt="Global Impact Fellowship" width={140} height={50} priority className="h-10 w-auto drop-shadow-lg brightness-0 invert opacity-100" />
+                    <div className="h-8 w-px bg-white/30"></div>
+                    <div className="bg-white/10 px-3 py-1 rounded-full border border-white/20 text-xs font-bold text-white tracking-widest">BATCH 1</div>
+                  </div>
+                  <div className="space-y-3">
+                    <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                      Hello, {getFirstName(userProfile?.full_name || "Learner")}! 👋
+                    </h1>
+                    <p className="text-white/90 text-lg leading-relaxed font-light">
+                      Welcome to your <span className="font-bold text-[#FFD1D1]">GIF in Singapore 2026</span> application hub. Prepare yourself for a transformative journey at NUS.
+                    </p>
+                  </div>
 
-            <div className="mt-10 flex flex-col md:flex-row gap-4 items-center">
-              <div className="w-full md:flex-1 bg-[#304156]/40 rounded-2xl px-5 py-3 flex items-center gap-4 border border-white/10 backdrop-blur-sm">
-                <div className="bg-[#914D4D] p-2.5 rounded-xl shadow-lg animate-pulse flex-shrink-0">
-                  <Clock className="w-6 h-6 text-white" />
+                  {/* Mentoring badge */}
+                  {isMentoring && (
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-2 bg-[#914D4D] border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
+                      <Crown className="w-4 h-4 fill-white" />
+                      Mentoring Fast Track Active
+                      <Sparkles className="w-4 h-4 text-yellow-300" />
+                    </motion.div>
+                  )}
+
+                  {/* Phase 3 unlocked badge (non-mentoring) */}
+                  {isPhase3Eligible && !isMentoring && (
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg">
+                      <Trophy className="w-4 h-4 text-yellow-300" />
+                      Phase 3 Unlocked — Final Stage!
+                      <Sparkles className="w-4 h-4 text-yellow-300" />
+                    </motion.div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
+                    <div className="text-center">
+                      <div className="text-3xl font-black text-white">{daysLeft}</div>
+                      <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Days Left</div>
+                    </div>
+                    <div className="text-center border-l border-r border-white/10">
+                      <div className="text-3xl font-black text-[#FFD1D1]">{completedStepsCount}/4</div>
+                      <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Steps Done</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-black text-white">20</div>
+                      <div className="text-[10px] md:text-xs text-white/70 uppercase tracking-widest font-semibold mt-1">Fellows</div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-[#FFD1D1] text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5">Self-Funded Early Bird Deadline</div>
-                  <div className="text-white font-black text-base md:text-xl leading-none">
-                    April 20, 2026
-                    <span className="text-xs md:text-sm font-normal opacity-80 ml-1.5 align-middle">(23:59 WIB)</span>
+
+                <div className="flex justify-center items-center h-full">
+                  <div className="relative w-full max-w-sm">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#914D4D] to-[#304156] rounded-3xl blur-xl opacity-60"></div>
+                    <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl flex flex-col items-center text-center space-y-6">
+                      <Image src="/images/logos/events/gifsgp.png" alt="GIF Singapore Logo" width={180} height={60} priority className="h-34 w-auto drop-shadow-2xl object-contain" />
+                      <div className="w-16 h-1 bg-[#914D4D] rounded-full"></div>
+                      <div className="space-y-4 w-full">
+                        <div className="flex items-center justify-between text-white border-b border-white/10 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-[#304156] p-2 rounded-lg"><MapPin className="w-4 h-4 text-white" /></div>
+                            <span className="text-sm font-medium">Location</span>
+                          </div>
+                          <span className="text-sm font-bold text-right">NUS, Singapore</span>
+                        </div>
+                        <div className="text-white border-b border-white/10 pb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-[#304156] p-2 rounded-lg"><Calendar className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Date</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-white/50 line-through">May 5 - 12, 2026</div>
+                              <div className="text-sm font-bold text-[#FFD1D1]">July 7 - 13, 2026</div>
+                            </div>
+                          </div>
+                          <Link href="/events/gif/timeline-adjustment"
+                            className="flex items-center justify-center gap-1.5 text-[10px] text-white/70 hover:text-white bg-black/20 py-1.5 rounded-lg border border-white/5 transition-colors">
+                            <Info className="w-3 h-3" /> Read timeline adjustment clarification
+                          </Link>
+                        </div>
+                        <div className="flex items-center justify-between text-white">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-[#304156] p-2 rounded-lg"><Users className="w-4 h-4 text-white" /></div>
+                            <span className="text-sm font-medium">Quota</span>
+                          </div>
+                          <span className="text-sm font-bold text-right">20 Fellows</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-              <Link href="https://ielsco.com/events/gif" target="_blank" className="w-full md:w-auto">
-                <Button className="w-full md:w-auto py-3 px-8 rounded-2xl bg-white hover:bg-gray-100 text-[#304156] font-bold text-base shadow-xl hover:shadow-2xl transition-all group flex items-center justify-center">
-                  Program Details
-                  <ExternalLink className="w-5 h-5 ml-2 text-[#914D4D] group-hover:scale-110 transition-transform" />
-                </Button>
-              </Link>
+
+              <div className="mt-10 flex flex-col md:flex-row gap-4 items-center">
+                <div className="w-full md:flex-1 bg-[#304156]/40 rounded-2xl px-5 py-3 flex items-center gap-4 border border-white/10 backdrop-blur-sm">
+                  <div className="bg-[#914D4D] p-2.5 rounded-xl shadow-lg animate-pulse flex-shrink-0">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-[#FFD1D1] text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5">Self-Funded Early Bird Deadline</div>
+                    <div className="text-white font-black text-base md:text-xl leading-none">
+                      April 20, 2026
+                      <span className="text-xs md:text-sm font-normal opacity-80 ml-1.5 align-middle">(23:59 WIB)</span>
+                    </div>
+                  </div>
+                </div>
+                <Link href="https://ielsco.com/events/gif" target="_blank" className="w-full md:w-auto">
+                  <Button className="w-full md:w-auto py-3 px-8 rounded-2xl bg-white hover:bg-gray-100 text-[#304156] font-bold text-base shadow-xl hover:shadow-2xl transition-all group flex items-center justify-center">
+                    Program Details
+                    {/* <ExternalLink className="w-5 h-5 ml-2 text-[#914D4D] group-hover:scale-110 transition-transform" /> */}
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-
+        )}
         {/* === WHATSAPP COMMUNITY BANNER === */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
           className="bg-white border border-[#914D4D]/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm mt-8 relative overflow-hidden group hover:border-[#914D4D]/40 transition-colors">
