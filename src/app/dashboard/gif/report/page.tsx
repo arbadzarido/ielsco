@@ -567,11 +567,6 @@ function WaitlistActionCard({
             </button>
           </div>
         </div>
-        <Link href="https://chat.whatsapp.com/HeyNfvIcIuC8Kb8VfKV0rs?s=cl&p=i&ilr=2&amv=0" target="_blank" className="w-full sm:w-auto">
-          <Button className="w-full py-2.5 px-6 rounded-xl font-bold bg-[#25D366] hover:bg-[#1DA851] text-white shadow-sm flex items-center justify-center gap-2">
-            <MessageSquare className="w-4 h-4" /> Join WA Group
-          </Button>
-        </Link>
       </motion.div>
     );
   }
