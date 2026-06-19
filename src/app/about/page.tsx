@@ -135,7 +135,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <div className="relative z-10 text-center px-6 sm:px-8 space-y-6 max-w-4xl mx-auto mt-16">
           <div className="animate-fadeIn">
             <Image
-              src="/images/logos/iels_white.png"
+              src="/images/logos/iels_white1.png"
               width={120}
               height={120}
               alt="IELS Logo"

@@ -213,7 +213,7 @@ function Batch2Report({ onBack }: { onBack: () => void }) {
 
           <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6">
             <Image
-              src="/images/logos/iels_white.png"
+              src="/images/logos/iels_white1.png"
               width={100}
               height={100}
               alt="IELS Logo"

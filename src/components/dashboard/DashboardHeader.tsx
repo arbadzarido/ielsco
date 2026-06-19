@@ -128,7 +128,7 @@ export default function DashboardHeader({
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center gap-3 lg:gap-5 z-40">
               <Link href="/dashboard" className="flex items-center font-geologica gap-3 lg:gap-[15px]">
-                <Image src="/images/logos/iels_white.png" alt="IELS" width={50} height={50} className="lg:w-[50px]" />
+                <Image src="/images/logos/iels_white1.png" alt="IELS" width={50} height={50} className="lg:w-[50px]" />
                 <div className="hidden lg:flex flex-col text-white">
                   <span className="font-bold text-lg leading-none tracking-tight">Dashboard</span>
                   <span className="text-[10px] text-white/60 tracking-wider uppercase mt-0.5">Learning Space</span>

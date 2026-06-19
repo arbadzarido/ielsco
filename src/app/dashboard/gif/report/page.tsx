@@ -1173,7 +1173,7 @@ const handleResetStatus = async () => {
         {/* Kiri: Dua Logo */}
         <div className="relative z-10 flex items-center gap-5 bg-white/10 p-3.5 rounded-2xl backdrop-blur-md border border-white/10">
           <img 
-            src="/images/logos/iels_white.png" 
+            src="/images/logos/iels_white1.png" 
             alt="IELS" 
             className="h-10 w-auto object-contain" 
           />

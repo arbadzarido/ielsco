@@ -1206,7 +1206,7 @@ export default function OnboardingPage() {
 {/* Identity Logo (Top Left) */}
     <div className="fixed top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 bg-white/50 backdrop-blur-md border border-white/20 rounded-full z-50 shadow-sm">
       <Image 
-        src="/images/logos/iels_blue.png" 
+        src="/images/logos/iels_blue1.png" 
         alt="IELS Logo" 
         width={60} 
         height={20} 

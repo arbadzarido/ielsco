@@ -160,7 +160,7 @@ export default function QuizPage() {
                   <div className="flex flex-col md:flex-row items-center gap-8 mb-10 text-center md:text-left">
                     <div className="flex-shrink-0 animate-bounce-slow bg-white/10 p-4 rounded-full border border-white/20">
                       <img
-                        src="/images/logos/iels_white.png"
+                        src="/images/logos/iels_white1.png"
                         alt="Quiz Mascot"
                         className="w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-xl"
                       />

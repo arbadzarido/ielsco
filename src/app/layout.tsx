@@ -21,11 +21,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico" },
-      { url: "/images/logos/iels_blue.png", media: "(prefers-color-scheme: light)" },
-      { url: "/images/logos/iels_white.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/images/logos/iels_blue1.png", media: "(prefers-color-scheme: light)" },
+      { url: "/images/logos/iels_white1.png", media: "(prefers-color-scheme: dark)" },
     ],
     shortcut: "/favicon.ico",
-    apple: "/images/logos/iels_blue.png",
+    apple: "/images/logos/iels_blue1.png",
   },
 };
 
@@ -52,7 +52,7 @@ export default function RootLayout({
               "name": "PT English Space Berkah Indonesia",
               "alternateName": "IELS",
               "url": "https://ielsco.com",
-              "logo": "https://ielsco.com/images/logos/iels_blue.png",
+              "logo": "https://ielsco.com/images/logos/iels_blue1.png",
               "sameAs": [
                 "https://www.instagram.com/iels_co",
                 "https://www.linkedin.com/company/iels-co",

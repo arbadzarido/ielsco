@@ -387,16 +387,12 @@ export default function Header() {
         onClick={closeMobileMenu}
       >
         <Image
-          src="/images/logos/iels_white.png"
-          width={60}
-          height={60}
-          className="lg:w-[75px]"
+          src="/images/logos/iels_horizontal_white.png"
+          width={100}
+          height={100}
+          className="lg:w-[195px]"
           alt="IELS Logo White"
         />
-        <div className="flex flex-col text-white text-[14px] lg:text-[16px]">
-          <p>Inclusive English</p>
-          <p className="-mt-1">Learning Space</p>
-        </div>
       </Link>
 
       {/* ── DESKTOP NAV ── */}

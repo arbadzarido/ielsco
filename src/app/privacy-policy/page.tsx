@@ -16,7 +16,7 @@ export default function ComprehensivePrivacyPolicyPage() {
           {/* Logo IELS */}
           <div className="mb-8">
             <img 
-              src="/images/logos/iels_blue.png" /* Ganti nama file ini dengan logo IELS kamu yang berwarna gelap */
+              src="/images/logos/iels_blue1.png" /* Ganti nama file ini dengan logo IELS kamu yang berwarna gelap */
               alt="IELS Community Logo" 
               className="h-12 w-auto object-contain" /* h-12 membuat tingginya pas dan rapi */
             />

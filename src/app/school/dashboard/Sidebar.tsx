@@ -63,7 +63,7 @@ export default function Sidebar({ profile }: SidebarProps) {
       <div className="pl-8 pr-6 py-6 border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
           <img 
-            src="https://ielsco.com/images/logos/iels_white.png" 
+            src="https://ielsco.com/images/logos/iels_white1.png" 
             alt="IELS Logo" 
             className="h-7 w-auto"
           />

@@ -10,7 +10,7 @@ export default function Footer() {
        {/* Left: Logo & Socials */}
 <div className="flex flex-col lg:w-[25%] items-center lg:items-start gap-4">
   <Image
-    src="/images/logos/iels_white.png"
+    src="/images/logos/iels_white1.png"
     alt="IELS Logo - White"
     width={70}
     height={70}

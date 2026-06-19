@@ -52,7 +52,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ persona, onRestart }, re
             {/* Logo IELS di pojok kanan atas karakter */}
             <div className="absolute top-6 right-6 p-2 bg-white/10 backdrop-blur-sm rounded-xl">
                 <img
-                    src="/images/logos/iels_blue.png"
+                    src="/images/logos/iels_blue1.png"
                     alt="IELS Logo"
                     className="w-16 h-12 object-contain"
                 />

@@ -25,7 +25,7 @@ export default function IelsExperienceSection({ setCompleted }: SectionProps) {
       >
         <div className="mb-6 relative w-24 h-24">
           <Image
-            src="/images/logos/iels_blue.png"
+            src="/images/logos/iels_blue1.png"
             alt="IELS Logo"
             fill
             className="object-contain"

@@ -7,8 +7,92 @@ import CountUp from "react-countup";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import GIFPopup from "@/components/GIFPopup";
+import { useState, useEffect, useRef } from "react";
 import { ArrowRight, GraduationCap, Briefcase, TrendingUp, Star, CheckCircle, Users } from "lucide-react";
 
+// =========================================
+// MASCOT COMPONENT (3D Parallax + Stop-Motion)
+// =========================================
+function MascotHero() {
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const frames = [
+    "/images/contents/mascot/hi.svg",
+    "/images/contents/mascot/hi2.svg",
+    "/images/contents/mascot/elco.svg",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentFrame((prev) => (prev + 1) % frames.length);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [frames.length]);
+
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - left - width / 2) / 15;
+    const y = -(e.clientY - top - height / 2) / 15;
+    setTilt({ x, y });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+  };
+
+  return (
+    <div className="order-1 lg:order-none flex justify-center items-center w-full lg:w-1/2 z-10 animate-fadeIn" style={{ perspective: "1000px" }}>
+      <div
+        ref={containerRef}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onMouseDown={() => setIsClicked(true)}
+        onMouseUp={() => setIsClicked(false)}
+        className="relative w-[280px] sm:w-[400px] lg:w-[600px] aspect-square cursor-grab active:cursor-grabbing"
+        style={{
+          transform: `rotateX(${tilt.y}deg) rotateY(${tilt.x}deg) scale3d(${isClicked ? 0.9 : 1}, ${isClicked ? 0.9 : 1}, 1)`,
+          transition: isHovered && !isClicked ? "transform 0.1s ease-out" : "transform 0.4s cubic-bezier(0.25, 1.5, 0.5, 1)",
+          transformStyle: "preserve-3d",
+        }}
+      >
+        {frames.map((src, index) => (
+          <Image
+            key={src}
+            src={src}
+            alt={`IELS Mascot Pose ${index + 1}`}
+            fill
+            priority
+            sizes="(max-width: 640px) 280px, (max-width: 1024px) 400px, 600px"
+            className={`object-contain mx-auto drop-shadow-2xl transition-opacity duration-0 ${
+              index === currentFrame ? "opacity-100" : "opacity-0"
+            }`}
+            style={{
+              filter: `drop-shadow(${tilt.x * -1}px ${tilt.y}px 20px rgba(0,0,0,0.2))`,
+            }}
+          />
+        ))}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-300 mix-blend-overlay"
+          style={{
+            background: `radial-gradient(circle at ${50 + tilt.x * 2}% ${50 - tilt.y * 2}%, rgba(255,255,255,0.4) 0%, transparent 60%)`,
+            opacity: isHovered ? 1 : 0,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// =========================================
+// MAIN PAGE
+// =========================================
 export default function Home() {
   const studyPartners = [
     { name: "Deakin University", logo: "/images/logos/uni/deakin.png" },
@@ -29,31 +113,16 @@ export default function Home() {
       <Header />
       <main className="flex flex-col w-full">
 
-        {/* =========================================
-            1️⃣ HERO SECTION
-        ========================================= */}
+        {/* 1️⃣ HERO SECTION */}
         <section className="relative px-6 sm:px-12 lg:px-[100px] flex flex-col lg:flex-row items-center justify-center w-full gap-8 lg:gap-16 pt-28 sm:pt-32 lg:pt-36 pb-20 lg:pb-28 bg-white overflow-hidden">
 
-          {/* Subtle Decorative Elements */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#E56668] rounded-full blur-[100px]"></div>
             <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#1A2534] rounded-full blur-[120px]"></div>
           </div>
 
-          {/* Mascot */}
-          {/* ✅ PERF FIX #1: priority=true pada gambar hero (LCP element) → browser fetch ASAP */}
-          {/* ✅ PERF FIX #2: sizes hint biar browser download ukuran yang tepat sesuai viewport */}
-          <div className="order-1 lg:order-none flex justify-center items-center w-full lg:w-1/2 z-10 animate-fadeIn">
-            <Image
-              src="/images/contents/general/Hi!.svg"
-              alt="IELS Mascot"
-              width={700}
-              height={700}
-              priority
-              sizes="(max-width: 640px) 280px, (max-width: 1024px) 400px, 600px"
-              className="w-[280px] sm:w-[400px] lg:w-[600px] h-auto object-contain mx-auto drop-shadow-2xl hover:scale-105 transition-transform duration-700"
-            />
-          </div>
+          {/* ✅ MASCOT — Replaced video with interactive 3D stop-motion component */}
+          <MascotHero />
 
           {/* Text Section */}
           <div className="order-2 lg:order-none flex flex-col justify-center items-center lg:items-start text-center lg:text-left w-full lg:w-1/2 space-y-6 z-10">
@@ -82,9 +151,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            2️⃣ STATS SECTION
-        ========================================= */}
+        {/* 2️⃣ STATS SECTION */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-10 border-y border-gray-100">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -124,9 +191,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            3️⃣ PATHS SECTION (STUDY VS WORK)
-        ========================================= */}
+        {/* 3️⃣ PATHS SECTION */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-10 lg:py-12 bg-white">
           <div className="max-w-7xl mx-auto">
 
@@ -174,7 +239,6 @@ export default function Home() {
                     <div className="grid grid-cols-4 gap-3">
                       {studyPartners.map((partner, index) => (
                         <div key={index} className="bg-white backdrop-blur-md rounded-xl h-14 flex items-center justify-center p-2 overflow-hidden">
-                          {/* ✅ PERF FIX #3: loading="lazy" untuk logo partner (below fold, tidak urgent) */}
                           <Image
                             src={partner.logo}
                             alt={partner.name}
@@ -221,7 +285,6 @@ export default function Home() {
                     <div className="grid grid-cols-4 gap-3">
                       {workPartners.map((partner, index) => (
                         <div key={index} className="bg-white backdrop-blur-md rounded-xl h-14 flex items-center justify-center p-2 overflow-hidden">
-                          {/* ✅ PERF FIX #4: loading="lazy" untuk logo partner work */}
                           <Image
                             src={partner.logo}
                             alt={partner.name}
@@ -240,16 +303,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            4️⃣ MEMBER STORIES
-        ========================================= */}
+        {/* 4️⃣ MEMBER STORIES */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-10 lg:py-12 bg-[#1A2534] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E56668]/20 blur-[150px] rounded-full pointer-events-none"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-[#ffffff]/5 blur-[120px] rounded-full pointer-events-none"></div>
 
           <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">
 
-            {/* Narrative - Left Side */}
             <div className="w-full lg:w-1/2 space-y-8 text-center lg:text-left order-1 lg:order-none">
               <div className="inline-block border border-[#E56668]/30 bg-[#E56668]/10 text-[#E56668] px-5 py-2 rounded-full font-bold text-sm tracking-widest uppercase">
                 Social Proof
@@ -272,17 +332,13 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Visual Cards - Right Side */}
             <div className="w-full lg:w-1/2 order-2 lg:order-none">
 
-              {/* --- DESKTOP VIEW --- */}
+              {/* Desktop View */}
               <div className="hidden lg:block relative w-full h-[550px]">
-
-                {/* Card 1: Jo */}
                 <div className="absolute top-8 right-8 w-[320px] bg-white rounded-[32px] p-6 shadow-2xl transform rotate-3 hover:rotate-0 hover:scale-105 hover:z-40 transition-all duration-500 z-20 cursor-default border border-gray-100">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-sm relative">
-                      {/* ✅ PERF FIX #5: loading="lazy" untuk profile photos (below fold) */}
                       <Image src="/images/contents/stories/member-stories/profile/jo.png" alt="George Abraham" fill loading="lazy" className="object-cover" />
                     </div>
                     <div>
@@ -295,7 +351,6 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Card 2: Dzakwaan */}
                 <div className="absolute bottom-12 left-0 w-[340px] bg-white rounded-[32px] p-6 shadow-2xl transform -rotate-3 hover:rotate-0 hover:scale-105 hover:z-40 transition-all duration-500 z-30 cursor-default border border-gray-100">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-14 h-14 bg-[#1A2534] rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-sm relative">
@@ -311,7 +366,6 @@ export default function Home() {
                   </p>
                 </div>
 
-                {/* Stats Badge */}
                 <div className="absolute top-[45%] left-[10%] w-[260px] bg-gradient-to-br from-[#E56668] to-[#c94f51] rounded-[32px] p-6 shadow-2xl transform -translate-y-1/2 rotate-[-6deg] hover:rotate-0 hover:scale-105 transition-all duration-500 z-10 text-white cursor-default">
                   <div className="flex items-center gap-1.5 mb-3">
                     {[...Array(5)].map((_, i) => <Star key={i} fill="currentColor" className="text-yellow-300 w-5 h-5" />)}
@@ -321,7 +375,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* --- MOBILE VIEW --- */}
+              {/* Mobile View */}
               <div className="flex flex-col gap-6 lg:hidden mt-8">
                 <div className="bg-gradient-to-br from-[#E56668] to-[#c94f51] rounded-[24px] p-6 text-white text-center shadow-lg mx-auto w-full max-w-sm">
                   <div className="flex justify-center items-center gap-1.5 mb-2">
@@ -365,9 +419,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            5️⃣ HOW IT WORKS
-        ========================================= */}
+        {/* 5️⃣ HOW IT WORKS */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-12">
           <div className="max-w-7xl mx-auto">
             <div className="text-center space-y-4 mb-16">
@@ -399,9 +451,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            6️⃣ IELS LOUNGE CTA
-        ========================================= */}
+        {/* 6️⃣ IELS LOUNGE CTA */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-12 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="bg-gradient-to-br from-[#1A2534] to-[#2F4157] rounded-[48px] p-10 lg:p-16 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative shadow-2xl">
@@ -427,7 +477,6 @@ export default function Home() {
               </div>
 
               <div className="relative z-10 flex-shrink-0 group">
-                {/* ✅ PERF FIX #6: loading="lazy" + sizes untuk gambar section bawah */}
                 <Image
                   src="/images/contents/general/landing_page_3.png"
                   alt="IELS Lounge"
@@ -444,9 +493,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            7️⃣ PRODUCTS QUICK LINKS
-        ========================================= */}
+        {/* 7️⃣ PRODUCTS QUICK LINKS */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-12">
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-3 gap-8">
@@ -493,9 +540,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================
-            8️⃣ FINAL CTA
-        ========================================= */}
+        {/* 8️⃣ FINAL CTA */}
         <section className="w-full bg-white text-center pt-16 pb-36 px-6 sm:px-12 lg:px-[100px] overflow-hidden relative">
           <div className="max-w-4xl mx-auto flex flex-col items-center justify-center gap-8 relative z-10">
             <div className="space-y-6">
