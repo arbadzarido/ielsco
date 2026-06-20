@@ -149,7 +149,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           </h1>
           
          <p className="text-base sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed animate-fadeIn font-light" style={{ animationDelay: "400ms" }}>
-            IELS, legally incorporated as PT English Space Berkah Indonesia, is an inclusive, goal-driven community designed to help ambitious Indonesian students unlock scholarships, remote work, and international opportunities.
+            IELS, legally incorporated as PT English Space Berkah Indonesia, is an inclusive, goal-driven community designed to help ambitious Southeast Asian youth unlock scholarships, remote work, and international opportunities.
           </p>
 
           <div className="pt-6 animate-fadeIn flex flex-col sm:flex-row justify-center gap-4" style={{ animationDelay: "600ms" }}>
@@ -174,7 +174,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               The Reality Check
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#2F4157] leading-tight">
-              Indonesia has millions of brilliant minds. <br />
+              Southeast Asia has millions of brilliant minds. <br />
               <span className="text-[#E56668]">But talent alone cannot cross borders.</span>
             </h2>
             <div className="space-y-6 text-lg text-gray-600 leading-relaxed text-justify sm:text-left">
@@ -197,7 +197,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <div className="absolute inset-0 bg-[#2F4157]/20 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
             <Image 
               src="/images/contents/general/landing_page_1.png" 
-              alt="Indonesian students looking forward" 
+              alt="Students looking forward" 
               fill 
               className="object-cover transition-transform duration-700 group-hover:scale-105" 
             />
@@ -372,7 +372,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 </p>
                 <p className="text-2xl font-extrabold text-[#2F4157] mb-2">Active IELScouts</p>
                 <p className="text-gray-500 max-w-sm text-lg">
-                  A rapidly growing community of ambitious students from across Indonesia, practicing and growing together daily.
+                  A rapidly growing community of ambitious students from across Indonesia & Southeast Asia, practicing and growing together daily.
                 </p>
               </div>
               <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
@@ -434,7 +434,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
               Meet The Builders
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              A dedicated team of leaders committed to connecting Indonesian students with the world.
+              A dedicated team of leaders committed to connecting Southeast Asian youth with the world.
             </p>
           </div>
 

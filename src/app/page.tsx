@@ -132,7 +132,7 @@ export default function Home() {
             </div>
 
             <p className="text-base sm:text-lg lg:text-xl text-[#2F4157]/80 max-w-xl leading-relaxed animate-fadeIn" style={{ animationDelay: "200ms" }}>
-              Join 6,800+ ambitious Indonesian students building English skills, gaining global exposure,
+              Join 8,700+ ambitious Southeast Asian youth building English skills, gaining global exposure,
               and unlocking scholarships, remote careers, and international programs.
             </p>
 
@@ -319,7 +319,7 @@ export default function Home() {
                 <span className="text-[#E56668]">You're next.</span>
               </h2>
               <p className="text-white/70 text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
-                From academic exchanges at Tohoku University to international programs in the Philippines. Our members are actively proving that with the right ecosystem, Indonesian talent is absolutely unstoppable.
+                From academic exchanges at Tohoku University to international programs in the Philippines. Our members are actively proving that with the right ecosystem, Southeast Asian talent is absolutely unstoppable.
               </p>
 
               <div className="pt-4">
@@ -548,7 +548,7 @@ export default function Home() {
                 Ready to Go <span className="text-[#E56668]">Global?</span>
               </h2>
               <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                Join thousands of ambitious Indonesian students building their path to scholarships,
+                Join thousands of ambitious Southeast Asian youth building their path to scholarships,
                 remote careers, and international opportunities today.
               </p>
             </div>

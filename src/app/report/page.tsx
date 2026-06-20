@@ -80,7 +80,7 @@ export default function Reports() {
 
             <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               Explore our detailed impact reports showcasing how IELS is transforming English learning 
-              and creating real global opportunities for Indonesian students.
+              and creating real global opportunities for Southeast Asian youth.
             </p>
           </div>
         </div>

@@ -66,7 +66,7 @@ function SGITHighlightCard() {
 </div>
 
           <p className="text-gray-600 leading-relaxed max-w-md">
-            A selective international exposure program connecting Indonesian students
+            A selective international exposure program connecting Southeast Asian youth
             to global academic and career ecosystems — and translating that exposure
             into <b>real local impact</b>.
           </p>

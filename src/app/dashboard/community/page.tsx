@@ -179,7 +179,7 @@ function CommunityContent() {
   // Count-up animation
   useEffect(() => {
     if (loading) return;
-    const targets = { members: 6800, stories: 810, careers: 135, abroad: 35 };
+    const targets = { members: 8700, stories: 810, careers: 135, abroad: 35 };
     const duration = 2000;
     const steps = 60;
     const stepTime = duration / steps;

@@ -26,7 +26,7 @@ export default function PartnersPage() {
       <p className="text-lg text-gray-700 max-w-2xl leading-relaxed">
         IELS collaborates with schools, universities, companies, and communities
         to deliver <b>outcome-driven English learning</b> and
-        <b> real global opportunities</b> across Indonesia.
+        <b> real global opportunities</b> across Indonesia and Southeast Asia.
       </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -188,7 +188,7 @@ export default function PartnersPage() {
 
         <p className="text-4xl font-extrabold text-[#E56668]">
           <CountUp
-            end={6800}
+            end={8700}
             duration={1.8}
             separator=","
             enableScrollSpy
@@ -280,7 +280,7 @@ export default function PartnersPage() {
 
     <p className="text-lg text-gray-700 mb-12 max-w-3xl mx-auto">
       Because we don&apos;t just teach English — we build futures.  
-      Together with our partners, we&apos;re unlocking access, opportunities, and impact across Indonesia.
+      Together with our partners, we&apos;re unlocking access, opportunities, and impact across Indonesia and Southeast Asia.
     </p>
 
     {/* Benefit Cards */}
@@ -289,7 +289,7 @@ export default function PartnersPage() {
         {
           emoji: "🇮🇩",
           title: "Nationwide Reach",
-          desc: "Connect with 2,800+ learners and schools across Indonesia through IELS programs and activations.",
+          desc: "Connect with 2,800+ learners and schools across Indonesia and Southeast Asia through IELS programs and activations.",
         },
         {
           emoji: "🚀",
