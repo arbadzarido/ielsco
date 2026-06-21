@@ -296,7 +296,7 @@ export default function GIFHeader() {
     <div className="fixed top-0 left-0 right-0 w-full bg-[#2F4157] flex items-center justify-between py-6 lg:py-10 px-4 sm:px-8 lg:px-[100px] z-[100] shadow-md">
       {/* Logo */}
       <Link href="/" className="flex items-center font-geologica gap-3 lg:gap-[19px]" onClick={closeMobileMenu}>
-        <Image src="/images/logos/iels_white1.png" width={60} height={60} className="lg:w-[75px]" alt="IELS Logo White" />
+        <Image src="/images/logos/iels_white1.png" width={45} height={45} className="lg:w-[55px]" alt="IELS Logo White" />
         <Image src="/images/logos/events/gif.png" width={60} height={60} className="w-[120px] brightness-0 invert opacity-100" alt="GIF Logo" />
       </Link>
 
