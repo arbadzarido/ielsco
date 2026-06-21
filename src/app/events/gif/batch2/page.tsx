@@ -20,16 +20,16 @@ import { Button } from "@/components/ui/button";
 
 const links = {
   register: "https://forms.gle/nR1P3GVrp4czmA4U8",
-  indo: "https://drive.google.com/file/d/11oxdfOEubZjOd4p4WW96szJb8MawNpB8/view?usp=sharing",
-  sea: "https://drive.google.com/file/d/1E0xPvI7UEpFXJolRfTVkdFQmh_bU_VOS/view?usp=sharing"
+  indo: "https://drive.google.com/file/d/1Yx6WgRpr2OnPnpNhnI4tO3UPHIOtDWDO/view?usp=sharing",
+  sea: "https://drive.google.com/file/d/1puH015sK8q7L6eImu2oTg_oQiYEMGGru/view?usp=sharing"
 };
 
 const timeline = [
   { phase: "Registration",  title: "Self-Funded Registration Opens",  date: "Current",         desc: "Applications open to youth across Southeast Asia (ages 15–23). Spots are limited; secure yours early." },
   { phase: "Preparation",   title: "Passport Submission Deadline",    date: "September 8, 2026",desc: "All confirmed delegates must submit a passport valid for at least 6 months prior to the departure date." },
-  { phase: "Onboarding",    title: "Pre-Departure Mentoring",         date: "Sep – Oct 2026",  desc: "Receive the A-B-C onboarding pack: logistics guide, Foundations of Impact pre-reading, and the Blueprint worksheet." },
+  { phase: "Onboarding",    title: "Pre-Departure Onboarding",        date: "Sep – Oct 2026",  desc: "Receive the A-B-C onboarding pack: logistics guide, Foundations of Impact pre-reading, and the Blueprint worksheet." },
   { phase: "Execution",     title: "GIF Singapore Residency",         date: "Nov 17-20, 2026", desc: "4 Days 3 Nights of intensive Project Incubation at NUS, campus tours, dorm stay, and cultural exploration." },
-  { phase: "Post-Program",  title: "Impact Follow-Through",           date: "Dec 2026 onwards",desc: "Continue building your NGO/project with structured support from IELS. Publish your impact report." },
+  { phase: "Post-Program",  title: "Impact Follow-Through",           date: "Dec 2026 onwards",desc: "Optional continued support from IELS if you wish to keep building and scaling your NGO/project." },
 ];
 
 const itinerary = [
@@ -38,9 +38,9 @@ const itinerary = [
     date: "17 Nov 2026",
     title: "Arrival & Ecosystem Onboarding",
     activities: [
-      "Arrival & Greeting in Singapore",
-      "Official Check-in at NUS Dormitory",
-      "Program Orientation & Ecosystem Briefing",
+      "Arrival in Singapore",
+      "Check-in to NUS Dormitory",
+      "NUS Campus Tour",
     ],
     icon: PlaneTakeoff
   },
@@ -49,9 +49,9 @@ const itinerary = [
     date: "18 Nov 2026",
     title: "Incubation Phase & Cultural Immersion",
     activities: [
-      "Leadership & Project Incubation Workshop at NUS",
-      "Direct Consultation & Mentoring",
-      "Singapore City Exploration (Chinatown)",
+      "Leadership Incubation Class",
+      "Project Incubation Class",
+      "Consultation & Feedback Session"
     ],
     icon: Lightbulb
   },
@@ -60,9 +60,9 @@ const itinerary = [
     date: "19 Nov 2026",
     title: "Campus Experience & Networking",
     activities: [
-      "Exclusive NUS Campus Tour",
-      "Advanced Incubation Session",
-      "Networking & Regional Delegate Exchange",
+      "Advanced Project Incubation Class",
+      "Consultation & Feedback Session",
+      "Cultural Exploration & Free Time at Chinatown"
     ],
     icon: Compass
   },
@@ -71,9 +71,9 @@ const itinerary = [
     date: "20 Nov 2026",
     title: "Closing & Departure",
     activities: [
-      "Closing Ceremony & Certificate Awarding",
-      "Exclusive Merchandise Distribution",
-      "Check-out and Departure to Home Country",
+      "Final Project Presentation",
+      "Awarding Ceremony",
+      "Farewell Session"
     ],
     icon: CheckCircle
   }
@@ -174,11 +174,11 @@ export default function GIFEventPage() {
 
           {/* Headline */}
           <h1 className="text-3xl md:text-6xl font-black text-white leading-tight mb-6">
-            Lead. Build. <span className="text-[#FFD1D1]">Impact.</span>
+            Ready to Create Impact? <span className="text-[#FFD1D1]">Batch 2 is Calling.</span>
           </h1>
 
           <p className="text-base md:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed mb-10 font-light">
-            A leadership & project incubation residency at the National University of Singapore — built for youth change-makers aged 15–23 across Southeast Asia.
+            Open for Southeast Asia Youths • Self Funded Only
           </p>
 
           {/* Dual Track CTA */}
@@ -411,11 +411,10 @@ export default function GIFEventPage() {
               </div>
               <div className="mb-6">
                 <div className="flex items-baseline gap-1 text-[#304156]">
-                  <span className="text-lg font-bold text-[#304156]/60">IDR</span>
-                  <span className="text-5xl font-black text-[#304156]">7,650</span>
-                  <span className="text-2xl font-bold text-[#304156]/40">,000</span>
+                  <span className="text-lg font-bold text-[#304156]/60">USD</span>
+                  <span className="text-5xl font-black text-[#304156]">450</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-2 font-medium">≈ <strong className="text-[#304156]">USD 470</strong> (subject to exchange rate)</p>
+                <p className="text-sm text-gray-500 mt-2 font-medium">One-time program fee</p>
               </div>
               <ul className="space-y-3 mb-10 flex-1">
                 {benefits.map((b) => (
@@ -441,58 +440,6 @@ export default function GIFEventPage() {
             </div>
           </div>
 
-        </div>
-      </section>
-
-      {/* ===================================================
-          CURRICULUM — 4 MODULES
-      =================================================== */}
-      <section className="py-20 px-6 bg-gradient-to-b from-[#2F4055] to-[#304156] text-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-extrabold text-white mb-3">Incubation Curriculum</h2>
-            <p className="text-white/60 max-w-xl mx-auto">
-              Four core modules focused on the meta-skills of leadership. Real frameworks, real application.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mb-14">
-            {modules.map((m) => (
-              <div key={m.num} className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 transition-all">
-                <div className="flex items-start gap-5">
-                  <div className="shrink-0">
-                    <div className="text-xs font-black text-[#FFD1D1] tracking-widest mb-2">MOD {m.num}</div>
-                    <div className="bg-white/10 p-3 rounded-xl">
-                      <m.icon className="w-6 h-6 text-[#FFD1D1]" />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg mb-2">{m.title}</h3>
-                    <p className="text-sm text-white/60 leading-relaxed">{m.desc}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Daily Rundown */}
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10">
-            <div className="flex items-center gap-3 mb-8">
-              <Clock className="w-6 h-6 text-[#FFD1D1]" />
-              <h3 className="font-bold text-white text-xl">General Daily Incubation Flow</h3>
-            </div>
-            <div className="space-y-6">
-              {dailyRundown.map((slot) => (
-                <div key={slot.time} className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
-                  <div className="shrink-0 w-36 text-sm font-bold text-[#FFD1D1] md:pt-0.5">{slot.time}</div>
-                  <div className="flex-1 pb-6 border-b border-white/10 last:border-0 last:pb-0">
-                    <div className="font-bold text-white text-base mb-1">{slot.label}</div>
-                    <div className="text-sm text-white/60 leading-relaxed">{slot.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -540,7 +487,7 @@ export default function GIFEventPage() {
               className="h-14 w-auto brightness-0 invert opacity-90 mx-auto" />
           </div>
           <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-6">
-            Ready to Build Your Legacy? <br />
+            Ready to Create Impact? <br />
             <span className="text-[#FFD1D1]">Batch 2 is Calling.</span>
           </h2>
           <p className="text-white/80 max-w-xl mx-auto mb-10 leading-relaxed text-lg font-light">

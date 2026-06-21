@@ -160,7 +160,6 @@ export default function Header() {
     "/quiz",
     "/school/sign-in",
     "/dashboard",
-    "/events/gif",
     "/cafe",
     "/planner",
     "/privacy-policy",
