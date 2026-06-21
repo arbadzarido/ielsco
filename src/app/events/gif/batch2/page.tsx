@@ -166,20 +166,34 @@ export default function GIFEventPage() {
             </div>
           </div>
 
-          {/* Departure badge */}
+                    {/* Departure badge */}
+
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#304156]/80 border border-white/20 backdrop-blur-md text-white font-bold text-sm mb-6 shadow-xl">
+
             <Calendar className="w-4 h-4 text-[#FFD1D1]" />
+
             17 - 20 November 2026 · 4D3N in Singapore
+
           </div>
 
+
+
           {/* Headline */}
+
           <h1 className="text-3xl md:text-6xl font-black text-white leading-tight mb-6">
-            Ready to Create Impact? <span className="text-[#FFD1D1]">Batch 2 is Calling.</span>
+
+            Lead. Build. <span className="text-[#FFD1D1]">Impact.</span>
+
           </h1>
 
+
+
           <p className="text-base md:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed mb-10 font-light">
-            Open for Southeast Asia Youths • Self Funded Only
+
+            A leadership & project incubation residency at the National University of Singapore — built for youth change-makers aged 15–23 across Southeast Asia.
+
           </p>
+
 
           {/* Dual Track CTA */}
           <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto relative z-10">
