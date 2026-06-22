@@ -20,8 +20,8 @@ import { Button } from "@/components/ui/button";
 
 const links = {
   register: "https://forms.gle/nR1P3GVrp4czmA4U8",
-  indo: "https://drive.google.com/file/d/1Yx6WgRpr2OnPnpNhnI4tO3UPHIOtDWDO/view?usp=sharing",
-  sea: "https://drive.google.com/file/d/1puH015sK8q7L6eImu2oTg_oQiYEMGGru/view?usp=sharing"
+  indo: "https://drive.google.com/file/d/13g8i_xJ0uJRESbeYdVv7dcK6qluTNDMm/view?usp=sharing",
+  sea: "https://drive.google.com/file/d/1oLVidkbp4WTlOoyOM1d5ywbWEqGWTulz/view?usp=sharing"
 };
 
 const timeline = [
@@ -426,7 +426,7 @@ export default function GIFEventPage() {
               <div className="mb-6">
                 <div className="flex items-baseline gap-1 text-[#304156]">
                   <span className="text-lg font-bold text-[#304156]/60">USD</span>
-                  <span className="text-5xl font-black text-[#304156]">450</span>
+                  <span className="text-5xl font-black text-[#304156]">475</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-2 font-medium">One-time program fee</p>
               </div>
