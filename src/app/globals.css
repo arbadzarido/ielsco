@@ -2,7 +2,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
+/* SEBELUMNYA: */
+/*
 .font-geologica {
   font-family: var(--font-geologica);
 }
@@ -10,8 +11,27 @@
 .font-inter {
   font-family: var(--font-inter);
 }
-html { scroll-behavior: smooth; }
+*/
 
+/* GANTI MENJADI: */
+/* Setup font Apple Garamond (Sistem/Fallback) & Jakarta Sans (Variable) */
+:root {
+  /* Kalau lu punya file lokal, panggil url() nya. Kalau nggak, pakai fallback serif umum yang mirip */
+  --font-apple-garamond: "Apple Garamond", "Garamond", "Baskerville", "Times New Roman", serif;
+  /* Variable ini otomatis terisi oleh Next.js kalau di-load dari layout.tsx */
+  --font-plus-jakarta: var(--font-plus-jakarta, 'Plus Jakarta Sans', sans-serif); 
+}
+
+/* Custom utility class untuk font */
+.font-serif {
+  font-family: var(--font-apple-garamond);
+}
+
+.font-sans {
+  font-family: var(--font-plus-jakarta);
+}
+
+html { scroll-behavior: smooth; }
 @keyframes bounce-slow {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
@@ -56,6 +76,8 @@ html { scroll-behavior: smooth; }
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: var(--font-plus-jakarta);
+  --font-serif: var(--font-apple-garamond);
 }
 
 :root {
@@ -134,12 +156,16 @@ html { scroll-behavior: smooth; }
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Otomatis jadikan semua heading pakai Apple Garamond */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
   }
 }

@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Geologica } from "next/font/google";
+// 1. Import Plus Jakarta Sans
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-// Import Wrapper baru tadi (bukan Header langsung)
 import LayoutWrapper from "@/components/LayoutWrapper";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const geologica = Geologica({
-  variable: "--font-geologica",
+// 2. Setup Plus Jakarta Sans
+const jakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
 });
 
@@ -36,11 +32,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* Catatan: bg-[#2F4157] adalah background biru tua public.
-         DashboardLayout nanti akan menimpanya dengan background sendiri (min-h-screen bg-gray...).
-      */}
       <body
-        className={`${geologica.variable} ${inter.variable} antialiased bg-[#2F4157] font-inter`}
+        // 3. Masukkan variable Jakarta Sans dan set font-sans sebagai default
+        className={`${jakartaSans.variable} antialiased bg-[#2F4157] font-sans`}
       >
         {/* --- SEO SCHEMA MARKUP START --- */}
         <script
@@ -63,7 +57,6 @@ export default function RootLayout({
         />
         {/* --- SEO SCHEMA MARKUP END --- */}
 
-        {/* Gunakan Wrapper untuk mengatur logika Header & Padding */}
         <LayoutWrapper>
           {children}
         </LayoutWrapper>
