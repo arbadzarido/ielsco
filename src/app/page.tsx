@@ -316,14 +316,14 @@ export default function Home() {
     </p>
 
     <div className="flex flex-col sm:flex-row gap-4 pt-2 w-full sm:w-auto animate-fadeIn" style={{ animationDelay: "400ms" }}>
-      <Button asChild className="bg-[#E56668] text-white font-extrabold px-10 py-6 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 rounded-full group w-full sm:w-auto">
+      <Button asChild className="bg-[#E56668] text-white font-extrabold px-10 py-3 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 rounded-full group w-full sm:w-auto">
         <Link href="/welcome/start" className="flex items-center justify-center gap-2">
           Find Your Path
           <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
         </Link>
       </Button>
 
-      <Button asChild className="bg-white text-[#1A2534] font-extrabold px-10 py-6 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:bg-[#1A2534] hover:text-white hover:shadow-[6px_6px_0px_#E56668] hover:-translate-y-1 transition-all duration-300 rounded-full w-full sm:w-auto">
+      <Button asChild className="bg-white text-[#1A2534] font-extrabold px-10 py-3 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:bg-[#1A2534] hover:text-white hover:shadow-[6px_6px_0px_#E56668] hover:-translate-y-1 transition-all duration-300 rounded-full w-full sm:w-auto">
         <Link href="/about" className="flex items-center justify-center">Learn More</Link>
       </Button>
     </div>
@@ -454,7 +454,7 @@ export default function Home() {
 
             {/* Bottom CTA under staircase */}
             <div className="text-center mt-20">
-              <Button asChild className="bg-[#E56668] text-white font-bold px-10 py-6 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 rounded-full group">
+              <Button asChild className="bg-[#E56668] text-white font-bold px-10 py-3 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 rounded-full group">
                 <Link href="/welcome/start" className="flex items-center justify-center gap-2">
                   Take Our Free Assessment
                   <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
@@ -565,7 +565,7 @@ export default function Home() {
                 From academic exchanges at Tohoku University to international programs in the Philippines. Our members are proving that with the right ecosystem, Indonesian talent is absolutely unstoppable.
               </p>
               <div className="pt-4">
-                <Button asChild className="bg-[#E56668] text-white font-extrabold border-2 border-white shadow-[4px_4px_0px_rgba(255,255,255,0.3)] hover:shadow-[6px_6px_0px_rgba(255,255,255,0.4)] hover:-translate-y-1 rounded-full px-10 py-6 text-lg group w-full sm:w-auto transition-all duration-300">
+                <Button asChild className="bg-[#E56668] text-white font-extrabold border-2 border-white shadow-[4px_4px_0px_rgba(255,255,255,0.3)] hover:shadow-[6px_6px_0px_rgba(255,255,255,0.4)] hover:-translate-y-1 rounded-full px-10 py-3 text-lg group w-full sm:w-auto transition-all duration-300">
                   <Link href="/stories" className="flex items-center justify-center gap-3">
                     Discover Their Stories
                     <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
@@ -667,7 +667,7 @@ export default function Home() {
                 <p className="text-white/80 text-lg mb-10 leading-relaxed font-medium">
                   Join 8,700+ members practicing English in real conversations. Build confidence, make friends, and improve naturally through daily speaking sessions.
                 </p>
-                <Button asChild className="bg-[#E56668] text-white font-bold hover:bg-[#c94f51] rounded-full px-10 py-6 text-lg group w-full sm:w-auto border-2 border-white/30 shadow-[4px_4px_0px_rgba(255,255,255,0.2)] hover:shadow-[6px_6px_0px_rgba(255,255,255,0.3)] hover:-translate-y-1 transition-all duration-300">
+                <Button asChild className="bg-[#E56668] text-white font-bold hover:bg-[#c94f51] rounded-full px-10 py-3 text-lg group w-full sm:w-auto border-2 border-white/30 shadow-[4px_4px_0px_rgba(255,255,255,0.2)] hover:shadow-[6px_6px_0px_rgba(255,255,255,0.3)] hover:-translate-y-1 transition-all duration-300">
                   <Link href="/iels-lounge" className="flex items-center justify-center gap-3">
                     Join the Community
                     <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
