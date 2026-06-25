@@ -46,7 +46,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="hidden md:flex justify-center md:justify-start w-full">
             <div className="relative w-full h-64 md:h-96 select-none pointer-events-none">
               <Image
-                src="/images/contents/general/Hi!.svg"
+                src="/images/contents/mascot/elco.svg"
                 alt="IELS Mascot"
                 fill
                 className="object-contain drop-shadow-xl"
