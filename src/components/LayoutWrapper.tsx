@@ -34,7 +34,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       */}
       <Header />
       
-      <main className={shouldRemovePadding ? "pt-0" : "pt-10"}>
+      <main className={shouldRemovePadding ? "pt-0" : "pt-20"}>
         {children}
       </main>
     </>

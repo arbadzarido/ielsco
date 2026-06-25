@@ -136,8 +136,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           <div className="animate-fadeIn">
             <Image
               src="/images/logos/iels_white1.png"
-              width={120}
-              height={120}
+              width={90}
+              height={90}
               alt="IELS Logo"
               className="mx-auto mb-6 drop-shadow-2xl"
             />
@@ -152,16 +152,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             IELS, legally incorporated as PT English Space Berkah Indonesia, is an inclusive, goal-driven community designed to help ambitious Southeast Asian youth unlock scholarships, remote work, and international opportunities.
           </p>
 
-          <div className="pt-6 animate-fadeIn flex flex-col sm:flex-row justify-center gap-4" style={{ animationDelay: "600ms" }}>
-            <a
-              href="https://drive.google.com/file/d/1JgTczzvuf6nwpMMkLmMUGO0TrUkkJLXN/view?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex justify-center items-center gap-2 bg-[#E56668] text-white px-8 py-3.5 rounded-full font-bold hover:bg-[#c94f51] transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 text-sm sm:text-base"
-            >
-              Read 1-Year Strategic Plan <ExternalLink size={18} />
-            </a>
-          </div>
+       
         </div>
       </div>
 
@@ -187,7 +178,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                   For too long, English has been taught just as a school subject to pass exams.
                 </p>
                 <p className="text-xl sm:text-2xl font-extrabold text-[#E56668] mt-3">
-                  At IELS (PT English Space Berkah Indonesia), we believe English is not a subject. It is access.
+                  At IELSco, we believe English is not a subject. It is access.
                 </p>
               </div>
             </div>
@@ -368,7 +359,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <div className="md:col-span-2 bg-[#F7F8FA] rounded-[40px] p-10 lg:p-14 border border-gray-100 relative overflow-hidden group hover:border-[#E56668]/30 transition-colors duration-500">
               <div className="relative z-10">
                 <p className="text-[64px] lg:text-[96px] font-black text-[#2F4157] leading-none mb-4 tracking-tighter">
-                  6,800+
+                  8,700+
                 </p>
                 <p className="text-2xl font-extrabold text-[#2F4157] mb-2">Active IELScouts</p>
                 <p className="text-gray-500 max-w-sm text-lg">

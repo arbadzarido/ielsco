@@ -319,45 +319,6 @@ export default function Home() {
         </section>
 
         {/* =========================================
-            TRANSITION SECTION — Why IELSCO Bridge
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-16 lg:py-20 bg-[#FAFAFA] border-b border-gray-100">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-[#E56668]/10 border-2 border-[#E56668] flex items-center justify-center">
-                  <TrendingUp size={28} className="text-[#E56668]" strokeWidth={2} />
-                </div>
-                <h3 className="text-xl font-extrabold text-[#1A2534]">Structured Pathways</h3>
-                <p className="text-gray-600 font-medium text-sm leading-relaxed">
-                  From beginner to proficiency — clear milestones guide every step of your journey.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-[#1A2534]/10 border-2 border-[#1A2534] flex items-center justify-center">
-                  <Briefcase size={28} className="text-[#1A2534]" strokeWidth={2} />
-                </div>
-                <h3 className="text-xl font-extrabold text-[#1A2534]">Real Opportunities</h3>
-                <p className="text-gray-600 font-medium text-sm leading-relaxed">
-                  Direct access to scholarships, internships, and careers with global partners.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-[#E56668]/10 border-2 border-[#E56668] flex items-center justify-center">
-                  <CheckCircle size={28} className="text-[#E56668]" strokeWidth={2} />
-                </div>
-                <h3 className="text-xl font-extrabold text-[#1A2534]">Proven Results</h3>
-                <p className="text-gray-600 font-medium text-sm leading-relaxed">
-                  110+ success stories prove that with IELSCO, your goals are within reach.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
             2️⃣ STATS STRIP
         ========================================= */}
         <section className="px-6 sm:px-12 lg:px-[100px] py-14 bg-white border-b border-gray-100">
