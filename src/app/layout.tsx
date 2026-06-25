@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ fontSize: '75%' }}>
       <body
         // 3. Masukkan variable Jakarta Sans dan set font-sans sebagai default
         className={`${jakartaSans.variable} antialiased bg-[#2F4157] font-sans`}

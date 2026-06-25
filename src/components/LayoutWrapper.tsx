@@ -1,3 +1,4 @@
+  // LayoutWrapper.tsx
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -33,7 +34,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       */}
       <Header />
       
-      <main className={shouldRemovePadding ? "pt-0" : "pt-30"}>
+      <main className={shouldRemovePadding ? "pt-0" : "pt-10"}>
         {children}
       </main>
     </>

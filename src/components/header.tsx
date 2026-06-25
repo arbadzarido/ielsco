@@ -378,20 +378,20 @@ export default function Header() {
 
   // ──────────────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed top-0 left-0 right-0 w-full bg-[#2F4157] flex items-center justify-between py-6 lg:py-10 px-4 sm:px-8 lg:px-[100px] z-50 shadow-md">
+    <div className="fixed top-0 left-0 right-0 w-full bg-[#2F4157] flex items-center justify-between py-5 lg:py-7 px-4 sm:px-8 lg:px-[100px] z-50 shadow-md">
       {/* Logo */}
       <Link
         href="/"
         className="flex items-center font-geologica gap-3 lg:gap-[19px]"
         onClick={closeMobileMenu}
       >
-        <Image
-          src="/images/logos/iels_horizontal_white.png"
-          width={100}
-          height={100}
-          className="lg:w-[195px]"
-          alt="IELS Logo White"
-        />
+      <Image
+  src="/images/logos/iels_horizontal_white.png"
+  width={120} // Turunin default width-nya
+  height={120}
+  className="lg:w-[140px]" // Lebar 140px biasanya udah sweet-spot untuk desktop
+  alt="IELS Logo White"
+/>
       </Link>
 
       {/* ── DESKTOP NAV ── */}
