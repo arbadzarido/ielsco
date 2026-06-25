@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, MapPin, Rocket } from "lucide-react";
+import { Sparkles, MapPin, Rocket, Globe } from "lucide-react";
 
 /* ===== CONFIG ===== */
 const IS_ENABLED = true;
-const DEADLINE = new Date("2026-03-23T23:59:59+07:00");
+// Updated registration deadline to 21 September 2026 23:59
+const DEADLINE = new Date("2026-09-21T23:59:59+07:00");
 const STORAGE_KEY = "iels-gif-popup-state";
 
 /* ===== COUNTDOWN ===== */
@@ -71,8 +72,8 @@ export default function GIFPopup() {
   const [isMinimized, setIsMinimized] = useState(false);
 
   // LOGIKA DINAMIS UNTUK LINK CTA
-  // Jika dibuka di /dashboard, arahkan ke /dashboard/gif. Selain itu arahkan ke /events/gif.
-  const targetUrl = pathname === "/dashboard" ? "/dashboard/gif" : "/events/gif";
+  // Jika dibuka di /dashboard, arahkan ke /dashboard/gif. Selain itu arahkan ke /events/gif/batch2.
+  const targetUrl = pathname === "/dashboard" ? "/dashboard/gif" : "/events/gif/batch2";
 
   useEffect(() => {
     if (!IS_ENABLED) return;
@@ -135,7 +136,7 @@ export default function GIFPopup() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#FFD1D1]" />
               <p className="text-sm font-bold text-white tracking-wide">
-                GIF Singapore 2026
+                GIF Singapore Batch 2
               </p>
             </div>
             <button
@@ -149,7 +150,7 @@ export default function GIFPopup() {
           {/* SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto bg-gray-50">
             <Image
-              src="/images/contents/events/GIF1.png" 
+              src="/images/contents/events/gif2.png" 
               alt="GIF Singapore Poster"
               width={1080}
               height={1080}
@@ -157,15 +158,19 @@ export default function GIFPopup() {
               priority
             />
             <div className="px-6 py-5 bg-white text-center">
+               <div className="inline-flex items-center gap-1.5 bg-[#304156]/10 px-3 py-1 rounded-md mb-3">
+                 <Globe className="w-3 h-3 text-[#304156]" />
+                 <span className="text-[10px] font-bold text-[#304156] uppercase tracking-wider">Self-Funded • SEA Youth</span>
+               </div>
                <h3 className="text-xl font-extrabold text-[#304156] mb-2 leading-tight">
-                 Fully Funded Opportunity to <br/><span className="text-[#914D4D]">NUS, Singapore 🇸🇬</span>
+                 Global Impact Fellowship <br/><span className="text-[#914D4D]">Batch 2 in Singapore 🇸🇬</span>
                </h3>
                <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                 Join 20 selected delegates for an exclusive incubation boot camp and build real SDG 4 impact.
+                 Join a 4 Days 3 Nights exclusive leadership & project incubation boot camp at the National University of Singapore (NUS). Open for youth across Southeast Asia!
                </p>
                <div className="inline-flex items-center gap-2 bg-[#304156]/5 px-3 py-1.5 rounded-lg border border-[#304156]/10">
                  <MapPin className="w-4 h-4 text-[#914D4D]" />
-                 <span className="text-xs font-bold text-[#304156]">May 5 - 12, 2026</span>
+                 <span className="text-xs font-bold text-[#304156]">17 – 20 Nov 2026</span>
                </div>
             </div>
           </div>
@@ -174,7 +179,7 @@ export default function GIFPopup() {
           <div className="border-t border-gray-100 px-6 py-5 bg-white space-y-5 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] relative z-20">
             <div className="text-center">
               <p className="text-[10px] font-black uppercase tracking-widest text-[#914D4D] mb-2">
-                Administration Phase Closes In:
+                Registration Closes In:
               </p>
               <CountdownTimer />
             </div>
@@ -216,7 +221,7 @@ export default function GIFPopup() {
             <Rocket className="w-4 h-4 text-white group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
           </div>
           <span className="hidden sm:inline text-sm font-bold tracking-wide">
-            GIF Singapore 2026
+            GIF Singapore Batch 2
           </span>
           <div className="flex h-3 w-3 relative ml-1">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFD1D1] opacity-75"></span>
