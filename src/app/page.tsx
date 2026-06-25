@@ -777,7 +777,7 @@ export default function Home() {
               </p>
             </div>
 
-            <Button asChild className="bg-[#E56668] text-white font-extrabold px-14 py-7 text-xl border-2 border-[#1A2534] shadow-[6px_6px_0px_#1A2534] hover:shadow-[8px_8px_0px_#1A2534] hover:-translate-y-2 transition-all duration-300 rounded-full group">
+            <Button asChild className="bg-[#E56668] text-white font-extrabold px-14 py-3 text-xl border-2 border-[#1A2534] shadow-[6px_6px_0px_#1A2534] hover:shadow-[8px_8px_0px_#1A2534] hover:-translate-y-2 transition-all duration-300 rounded-full group">
               <Link href="/welcome/start" className="flex items-center justify-center gap-4">
                 Start Now!
                 <ArrowRight className="group-hover:translate-x-2 transition-transform" size={24} />
