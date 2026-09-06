@@ -32,7 +32,7 @@ export default function ProductsPage() {
       name: "IELS for Schools",
       desc: "One-year structured English programs for schools & universities with measurable outcomes.",
       emoji: "🏫",
-      href: "/products/schools",
+      href: "https://school.ielsco.com",
     },
     {
       name: "Resources & Recordings",

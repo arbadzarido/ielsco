@@ -93,11 +93,11 @@ export default function Footer() {
             {[
               { name: "IELS Lounge", url: "/iels-lounge" },
               { name: "IELS Insight Series", url: "/events" },
-              { name: "IELS for Schools", url: "/products/schools" },
+              { name: "IELS for Schools", url: "https://school.ielsco.com" },
               { name: "IELS Events", url: "/events" },
               { name: "IELS English Test", url: "/test" },
               { name: "English Students Launchpad", url: "/events/launchpad" },
-              { name: "Global Impact Fellowship", url: "/events/gif" },
+              { name: "Global Impact Fellowship", url: "/events/gif/batch2" },
             ].map((item) => (
               <Link
                 key={item.name}

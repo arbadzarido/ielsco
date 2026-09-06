@@ -11,12 +11,8 @@ interface PricingModalProps {
   isPreAuth?: boolean;
 }
 
-// === TAHAP 1: SIAPIN LINK MAYAR LU DI SINI ===
 const MAYAR_LINKS = {
-  // Link produk Insider / Pro (Monthly/Yearly biasanya diatur di dalam produk Mayar)
   pro: "https://ielsco.myr.id/m/insider-iels-lounge-premium", 
-  
-  // Link produk Visionary / Lifetime (LU HARUS BIKIN PRODUK INI DI MAYAR & GANTI LINKNYA)
   visionary: "https://ielsco.myr.id/m/visionary-iels-lounge-exclusive" 
 };
 

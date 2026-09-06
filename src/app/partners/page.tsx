@@ -85,7 +85,7 @@ export default function PartnersPage() {
       emoji: "🎓",
       desc: "Structured English programs, curriculum support, and student readiness for academic and global pathways.",
       cta: "I'm from School",
-      link: "/products/schools",
+      link: "https://school.ielsco.com",
     },
     {
       title: "Global Universities",
