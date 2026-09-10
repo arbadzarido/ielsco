@@ -70,9 +70,9 @@ export default function Footer() {
           <p className="font-bold text-lg text-white">Community</p>
           <div className="flex flex-col gap-2 text-white/80">
             {[
-              { name: "Member Stories", url: "/stories" },
-              { name: "Program Updates", url: "/stories" },
-              { name: "Partners Update", url: "/stories" },
+              { name: "Member Stories", url: "https://circle.ielsco.com/stories" },
+              { name: "Program Updates", url: "https://circle.ielsco.com/stories" },
+              { name: "Partners Update", url: "https://circle.ielsco.com/stories" },
               { name: "Speaking Club", url: "/iels-lounge#talkroom" },
             ].map((item) => (
               <Link

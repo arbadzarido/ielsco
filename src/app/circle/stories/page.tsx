@@ -420,7 +420,7 @@ const BTN_GHOST =
                         asChild
                         className="bg-[#E56668] text-white px-6 py-2 hover:bg-[#C04C4E] mt-4"
                       ><Link
-                            href={`/circle/stories/${generateSlug(news.title)}`}
+                            href={`/stories/${generateSlug(news.title)}`}
                             onClick={handleReadMore}
                           >
                             

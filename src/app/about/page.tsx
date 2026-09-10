@@ -345,7 +345,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             </div>
             <div className="pb-2">
               <Link 
-                href="/stories" 
+                href="https://circle.ielsco.com/stories"
                 className="group inline-flex items-center gap-3 bg-[#F7F8FA] border border-gray-200 text-[#2F4157] px-6 py-3 rounded-full font-bold hover:border-[#E56668] hover:text-[#E56668] transition-all duration-300 shadow-sm"
               >
                 Read Success Stories 

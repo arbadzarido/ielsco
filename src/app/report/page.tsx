@@ -445,7 +445,7 @@ function Batch2Report({ onBack }: { onBack: () => void }) {
 
             <div className="text-center mt-12">
               <Link 
-                href="/stories"
+                href="https://circle.ielsco.com/stories"
                 className="inline-flex items-center gap-2 bg-[#E56668] text-white font-bold px-8 py-4 rounded-full hover:bg-[#c94f51] transition-all duration-300 hover:shadow-xl"
               >
                 Read Success Stories

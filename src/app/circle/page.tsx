@@ -192,22 +192,22 @@ const growthJourney: GrowthStep[] = [
   {
     title: "Set Your Goal",
     desc: "Start with what you're chasing — a target score, a scholarship, a job abroad.",
-    mascot: "/images/mascot/flywheel/meet.png",
+    mascot: "/images/contents/mascot/elco1.png",
   },
   {
     title: "Find Your Partner",
     desc: "Get matched with someone working toward the same goal, so you're never doing it alone.",
-    mascot: "/images/mascot/flywheel/speak.png",
+    mascot: "/images/contents/mascot/elco2.png",
   },
   {
     title: "Achieve It Together",
     desc: "Practice, push each other, and hit real milestones side by side.",
-    mascot: "/images/mascot/flywheel/connect.png",
+    mascot: "/images/contents/mascot/elco3.png",
   },
   {
     title: "Inspire & Mentor",
     desc: "Share your story, mentor the next person, and help someone else start their own.",
-    mascot: "/images/mascot/flywheel/grow.png",
+    mascot: "/images/contents/mascot/elco4.png",
   },
 ];
 
@@ -236,7 +236,7 @@ const communityMoments: CommunityMoment[] = [
     country: "Indonesia",
     code: "ID",
     // TODO: ganti dengan foto event asli
-    photo: "/images/contents/community/moments/surabaya.jpg",
+    photo: "/images/contents/careers/iels_team_0.png",
     eventTitle: "Hello Sydney! IELSco × Western Sydney University",
     venue: "Western Sydney University Indonesia, Surabaya",
     date: "21 Nov 2025",
@@ -246,10 +246,10 @@ const communityMoments: CommunityMoment[] = [
     city: "Kuala Lumpur",
     country: "Malaysia",
     code: "MY",
-    photo: "/images/contents/community/moments/kuala-lumpur.jpg",
+    photo: "/images/people/circle/iels-malaysia.png",
     eventTitle: "IELSco Hangout",
     // TODO: ganti dengan nama cafe di KL yang sebenarnya
-    venue: "A local café in Kuala Lumpur (TBA)",
+    venue: "Common Man Coffee Roasters",
     date: "11 Apr 2026",
   },
   {
@@ -257,7 +257,7 @@ const communityMoments: CommunityMoment[] = [
     city: "Bangkok",
     country: "Thailand",
     code: "TH",
-    photo: "/images/contents/community/moments/bangkok.jpg",
+    photo: "/images/people/circle/iels-thailand.png",
     eventTitle: "IELSco Hangout",
     venue: "Bangkok University",
     date: "4 Apr 2026",
@@ -267,7 +267,7 @@ const communityMoments: CommunityMoment[] = [
     city: "Phnom Penh",
     country: "Cambodia",
     code: "KH",
-    photo: "/images/contents/community/moments/phnom-penh.jpg",
+    photo: "/images/people/circle/iels-cambodia.png",
     eventTitle: "IELSco Goes to School",
     venue: "Paragon International School, Cambodia",
     date: "24 Mar 2026",
@@ -277,10 +277,10 @@ const communityMoments: CommunityMoment[] = [
     city: "Ho Chi Minh City",
     country: "Vietnam",
     code: "VN",
-    photo: "/images/contents/community/moments/ho-chi-minh-city.jpg",
+    photo: "/images/people/circle/iels-vietnam.png",
     eventTitle: "IELSco Hangout",
     // TODO: ganti dengan nama cafe di Ho Chi Minh yang sebenarnya
-    venue: "A local café in Ho Chi Minh City (TBA)",
+    venue: "SPACEP - Working & Study Space",
     date: "18 Mar 2026",
   },
   {
@@ -311,12 +311,16 @@ export default function IELSCirclePage() {
           <div className="grid lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-14 items-center">
             {/* LEFT — MESSAGE */}
             <div>
-              <div className="flex items-center gap-2 mb-5">
-                <span className="w-2 h-2 rounded-full bg-[#E56668]" />
-                <span className="text-sm font-semibold text-white/70 tracking-[0.16em]">
-                  IELS CIRCLE
-                </span>
-              </div>
+             <div className="flex items-center mb-4">
+  <Image
+    src="/images/logos/events/circlewhite.png"
+    alt="IELS Circle"
+    width={210}
+    height={60}
+    className="h-12 w-auto"
+    priority
+  />
+</div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-tight">
                 English connects us.
@@ -348,13 +352,6 @@ export default function IELSCirclePage() {
               </div>
 
               <div className="mt-10 flex items-center gap-3 text-white/40 text-sm">
-                <Image
-                  src="/images/logos/events/iels-circle.png"
-                  alt="IELS Circle"
-                  width={90}
-                  height={24}
-                  className="h-5 w-auto brightness-0 invert opacity-70"
-                />
                 <span>in collaboration with</span>
                 {/* TODO: ganti dengan logo Tofly.id */}
                 <Image
@@ -362,7 +359,7 @@ export default function IELSCirclePage() {
                   alt="Tofly.id"
                   width={70}
                   height={20}
-                  className="h-4 w-auto opacity-70"
+                  className="h-10 w-auto"
                 />
               </div>
             </div>
@@ -589,7 +586,6 @@ export default function IELSCirclePage() {
 
             <Link
               href="/stories"
-              target="_blank"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[#E56668] hover:text-[#C04C4E] transition-colors"
             >
               See member stories
@@ -624,7 +620,6 @@ export default function IELSCirclePage() {
           <div className="mt-10 sm:hidden">
             <Link
               href="/stories"
-              target="_blank"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#E56668]"
             >
               See member stories
@@ -789,11 +784,11 @@ export default function IELSCirclePage() {
         <div className="relative max-w-4xl mx-auto px-6 text-center">
           {/* IELS CIRCLE LOGO */}
           <Image
-            src="/images/logo/iels-circle-logo.png"
+            src="/images/logos/events/circleblue.png"
             alt="IELS Circle"
             width={220}
-            height={80}
-            className="mx-auto h-14 sm:h-16 w-auto object-contain"
+            height={140}
+            className="mx-auto h-20 sm:h-25 w-auto object-contain"
           />
 
           <h2 className="mt-8 text-4xl sm:text-5xl font-extrabold text-[#2F4157] leading-tight">

@@ -309,7 +309,7 @@ export default function IELSCircleAgendaPage() {
               {/* Program Identity */}
               <div className="flex items-center gap-3 mb-7">
                 <Image
-                  src="/images/logos/events/iels-circle.png"
+                  src="/images/logos/events/circlewhite.png"
                   alt="IELS Circle"
                   width={180}
                   height={48}
@@ -327,7 +327,7 @@ export default function IELSCircleAgendaPage() {
                     alt="Tofly.id"
                     width={180}
                     height={48}
-                    className="h-7 w-auto"
+                    className="h-8 w-auto"
                     priority
                   />
                 </div>
@@ -844,7 +844,7 @@ export default function IELSCircleAgendaPage() {
             <div className="text-white">
               <div className="mb-6 flex items-center gap-4">
                 <Image
-                  src="/images/logos/events/iels-circle.png"
+                  src="/images/logos/events/circlewhite.png"
                   alt="IELS Circle"
                   width={180}
                   height={48}
