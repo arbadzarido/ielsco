@@ -845,7 +845,6 @@ export default function IELSCirclePage() {
           <div className="mt-6">
             <Link
               href={AGENDA_LINK}
-              target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-semibold text-[#2F4157]/70 hover:text-[#2F4157] underline underline-offset-4"
             >
