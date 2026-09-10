@@ -2,7 +2,8 @@
 // src/middleware.ts
 // Middleware utama IELS — menggabungkan:
 //   1. Bot killer & rate limiter (kode lama)
-//   2. Subdomain rewrite: school.ielsco.com -> app/school/*  (BARU)
+//   2. Subdomain rewrite: school.ielsco.com -> app/school/*  (kode lama)
+//   2B. Subdomain rewrite: circle.ielsco.com -> app/circle/*  (BARU)
 //   3. Auth redirect via Supabase SSR (kode lama)
 // =============================================================================
 
@@ -56,6 +57,33 @@ export async function proxy(request: NextRequest) {
       return NextResponse.rewrite(url);
     }
     // Kalau sudah ada /school prefix, lanjut tanpa rewrite
+  }
+
+  // ===========================================================================
+  // STEP 2B — SUBDOMAIN REWRITE: circle.ielsco.com
+  //
+  // Sama persis pola-nya kayak school.ielsco.com di atas, cuma arahnya ke
+  // src/app/circle/*. Karena file kamu sudah ada di
+  // src/app/circle/page.tsx dan src/app/circle/agenda/page.tsx, gak perlu
+  // pindahin/rename file apa pun — cukup rewrite host-nya di sini.
+  //
+  // Contoh:
+  //   circle.ielsco.com            -> app/circle/page.tsx
+  //   circle.ielsco.com/agenda     -> app/circle/agenda/page.tsx
+  // ===========================================================================
+
+  const isCircleSubdomain =
+    host === 'circle.ielsco.com' ||
+    host.startsWith('circle.localhost');   // untuk dev lokal
+
+  if (isCircleSubdomain) {
+    // Hanya rewrite kalau path belum dimulai dengan /circle
+    // (mencegah double-prefix /circle/circle/...)
+    if (!url.pathname.startsWith('/circle')) {
+      url.pathname = `/circle${url.pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    // Kalau sudah ada /circle prefix, lanjut tanpa rewrite
   }
 
   // ===========================================================================
@@ -163,6 +191,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // ── Redirect rules ──────────────────────────────────────────────────────────
+  // Catatan: IELS Circle (circle.ielsco.com) saat ini adalah halaman publik
+  // tanpa proteksi auth, jadi isCircleSubdomain sengaja belum dipakai di
+  // kondisi-kondisi di bawah. Kalau nanti ada halaman circle yang butuh
+  // login, tinggal tambahin kondisi baru di sini mengikuti pola school.
 
   const pathname = request.nextUrl.pathname;
 
