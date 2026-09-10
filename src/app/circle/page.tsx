@@ -336,10 +336,11 @@ export default function IELSCirclePage() {
                   asChild
                   className="bg-[#E56668] hover:bg-[#C04C4E] px-8 py-3 rounded-full text-white font-semibold"
                 >
-                  <Link href="#join">Join IELS Circle</Link>
+                  <Link href="https://forms.gle/ADAEiK5Uj2aRBgf39" target="_blank">Join IELS Circle</Link>
                 </Button>
                 <Link
-                  href="#circle"
+                  href="https://circle.ielsco.com/agenda"
+                  target="_blank"
                   className="text-sm font-semibold text-white/80 hover:text-white underline underline-offset-4"
                 >
                   Explore the community
@@ -456,6 +457,7 @@ export default function IELSCirclePage() {
                   >
                     <Link
                       href={DISCORD_LINK}
+                      target="_blank"
                       className="flex items-center gap-2"
                     >
                       <FaDiscord className="text-lg" /> Join our Discord
@@ -468,6 +470,7 @@ export default function IELSCirclePage() {
                   >
                     <Link
                       href={INSTAGRAM_LINK}
+                      target="_blank"
                       className="flex items-center gap-2"
                     >
                       <FaInstagram className="text-lg text-[#E56668]" /> Follow
@@ -477,6 +480,7 @@ export default function IELSCirclePage() {
 
                   <Link
                     href={ACCOUNT_LINK}
+                    target="_blank"
                     className="text-sm font-semibold text-gray-500 hover:text-[#2F4157] underline underline-offset-4"
                   >
                     Create your free account
@@ -585,6 +589,7 @@ export default function IELSCirclePage() {
 
             <Link
               href="/stories"
+              target="_blank"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[#E56668] hover:text-[#C04C4E] transition-colors"
             >
               See member stories
@@ -619,6 +624,7 @@ export default function IELSCirclePage() {
           <div className="mt-10 sm:hidden">
             <Link
               href="/stories"
+              target="_blank"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#E56668]"
             >
               See member stories
@@ -819,7 +825,7 @@ export default function IELSCirclePage() {
               asChild
               className="bg-[#5865F2] hover:bg-[#4752C4] px-8 py-3 rounded-full text-white font-semibold"
             >
-              <Link href={DISCORD_LINK} className="flex items-center gap-2">
+              <Link href={DISCORD_LINK} target="_blank" className="flex items-center gap-2">
                 <FaDiscord className="text-lg" />
                 Join our Discord
               </Link>

@@ -661,7 +661,7 @@ function CommunityContent() {
                 {item.title}
               </p>
               <Link
-                href={`https://ielsco.com/stories/${generateSlug(item.title)}`}
+                href={`https://circle.ielsco.com/stories/${generateSlug(item.title)}`}
                 target="_blank"
                 className="text-[10px] font-bold text-[#577E90] hover:underline mt-1 flex items-center gap-1"
               >
@@ -675,7 +675,7 @@ function CommunityContent() {
       {/* Explore All Stories button */}
       <div className="px-6 pb-6">
         <Link
-          href="https://ielsco.com/stories"
+          href="https://circle.ielsco.com/stories"
           target="_blank"
           className="flex items-center justify-center gap-2 w-full py-3 bg-[#304156] text-white rounded-2xl font-bold text-xs hover:bg-[#253344] transition-all"
         >

@@ -5,7 +5,7 @@ import Footer from "@/components/footer";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function CountUp({
   end,
@@ -40,6 +40,64 @@ function CountUp({
       {count.toLocaleString()}
       {suffix}
     </span>
+  );
+}
+
+// Batas akhir pendaftaran: 9 Oktober 2026, 23:59 WIB (UTC+7)
+const REGISTRATION_DEADLINE = new Date("2026-10-09T23:59:59+07:00");
+
+function CountdownTimer() {
+  // null di initial render -> dihitung ulang di useEffect (client-only) biar
+  // gak ada hydration mismatch antara waktu render server & waktu di browser.
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    const update = () =>
+      setTimeLeft(REGISTRATION_DEADLINE.getTime() - Date.now());
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (timeLeft === null) return null;
+
+  if (timeLeft <= 0) {
+    return (
+      <span className="text-[#E56668] font-bold">Registration Closed</span>
+    );
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+  const seconds = Math.floor((timeLeft / 1000) % 60);
+
+  return (
+    <div className="flex gap-3">
+      {(
+        [
+          ["Days", days],
+          ["Hours", hours],
+          ["Min", minutes],
+          ["Sec", seconds],
+        ] as const
+      ).map(([label, value], i) => (
+        <div
+          key={label}
+          className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/15 text-center"
+        >
+          <div className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums">
+            {i === 0 ? value : pad(value)}
+          </div>
+          <p className="mt-0.5 text-[10px] sm:text-xs uppercase tracking-wide text-white/70">
+            {label}
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -191,6 +249,40 @@ const whatsIncluded = [
 export default function IELSCircleAgendaPage() {
   const [pressed, setPressed] = useState<number | null>(null);
 
+  // Program Timeline: drag-to-scroll pakai mouse di desktop (bukan cuma
+  // touch/keyboard) + tombol panah sebagai alternatif yang lebih jelas.
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
+
+  const onTimelinePointerDown = (e: React.MouseEvent) => {
+    const el = timelineRef.current;
+    if (!el) return;
+    dragRef.current.isDown = true;
+    dragRef.current.moved = false;
+    dragRef.current.startX = e.pageX - el.offsetLeft;
+    dragRef.current.scrollLeft = el.scrollLeft;
+  };
+
+  const stopTimelineDrag = () => {
+    dragRef.current.isDown = false;
+  };
+
+  const onTimelinePointerMove = (e: React.MouseEvent) => {
+    const el = timelineRef.current;
+    if (!el || !dragRef.current.isDown) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    const walk = x - dragRef.current.startX;
+    if (Math.abs(walk) > 5) dragRef.current.moved = true;
+    el.scrollLeft = dragRef.current.scrollLeft - walk;
+  };
+
+  const scrollTimeline = (direction: 1 | -1) => {
+    const el = timelineRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
+  };
+
   return (
     <main className="bg-white text-[#2F4157]">
       <Header />
@@ -265,7 +357,13 @@ export default function IELSCircleAgendaPage() {
               {/* CTA */}
               <div className="mt-9 flex flex-col sm:flex-row sm:items-center gap-4">
                 <Button asChild className={primaryCtaClass}>
-                  <Link href={REGISTRATION_LINK}>Join IELS Circle</Link>
+                  <Link
+                    href={REGISTRATION_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Join IELS Circle
+                  </Link>
                 </Button>
 
                 <span className="text-sm text-white/60">
@@ -326,35 +424,34 @@ export default function IELSCircleAgendaPage() {
       </section>
 
       {/* ================= QUICK FACTS ================= */}
-      <section className="py-10 sm:py-12 bg-white border-b border-gray-100">
+      <section className="py-14 sm:py-16 bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl text-[#2F4157]">
-                <CountUp end={8} />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="rounded-3xl bg-[#FAFAFA] border border-gray-200 p-7 sm:p-8 text-center sm:text-left">
+              <p className="text-4xl sm:text-5xl font-extrabold text-[#2F4157]">
+                <CountUp end={19} suffix="K+" />
               </p>
-              <p className="mt-1 text-sm text-gray-500">weeks of learning</p>
+              <p className="mt-2 text-sm sm:text-base font-medium text-gray-500">
+                Members across the community
+              </p>
             </div>
 
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl text-[#E56668]">
-                <CountUp end={4} />
+            <div className="rounded-3xl bg-[#FAFAFA] border border-gray-200 p-7 sm:p-8 text-center sm:text-left">
+              <p className="text-4xl sm:text-5xl font-extrabold text-[#E56668]">
+                <CountUp end={5} />
               </p>
-              <p className="mt-1 text-sm text-gray-500">activities every week</p>
+              <p className="mt-2 text-sm sm:text-base font-medium text-gray-500">
+                Countries across Southeast Asia
+              </p>
             </div>
 
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl text-[#2F4157]">
-                <CountUp end={100} suffix="%" />
+            <div className="rounded-3xl bg-[#FAFAFA] border border-gray-200 p-7 sm:p-8 text-center sm:text-left">
+              <p className="text-4xl sm:text-5xl font-extrabold text-[#2F4157]">
+                <CountUp end={100} suffix="+" />
               </p>
-              <p className="mt-1 text-sm text-gray-500">free to join</p>
-            </div>
-
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl text-[#2F4157]">
-                <CountUp end={programTimeline.length} />
+              <p className="mt-2 text-sm sm:text-base font-medium text-gray-500">
+                Learning materials & resources
               </p>
-              <p className="mt-1 text-sm text-gray-500">milestones to graduation</p>
             </div>
           </div>
         </div>
@@ -569,9 +666,36 @@ export default function IELSCircleAgendaPage() {
         </div>
 
         <div className="relative max-w-[1400px] mx-auto">
+          {/* desktop nav arrows — drag/swipe works too, this is just the discoverable option */}
+          <div className="hidden sm:flex items-center justify-end gap-2 px-12 mb-4">
+            <button
+              type="button"
+              onClick={() => scrollTimeline(-1)}
+              aria-label="Previous week"
+              className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#2F4157] hover:border-[#E56668] hover:text-[#E56668] transition-colors"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollTimeline(1)}
+              aria-label="Next week"
+              className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#2F4157] hover:border-[#E56668] hover:text-[#E56668] transition-colors"
+            >
+              →
+            </button>
+          </div>
+
           <div className="absolute left-0 right-0 top-1/2 h-[6px] bg-[#E56668]/30 rounded-full -translate-y-1/2" />
 
-          <div className="overflow-x-auto px-6 sm:px-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div
+            ref={timelineRef}
+            onMouseDown={onTimelinePointerDown}
+            onMouseMove={onTimelinePointerMove}
+            onMouseUp={stopTimelineDrag}
+            onMouseLeave={stopTimelineDrag}
+            className="overflow-x-auto px-6 sm:px-12 cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          >
             <div className="flex gap-6 sm:gap-8 w-max py-6 mx-auto snap-x snap-mandatory">
               {programTimeline.map((item, i) => {
                 const isActive = pressed === i;
@@ -579,7 +703,14 @@ export default function IELSCircleAgendaPage() {
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setPressed(isActive ? null : i)}
+                    onClick={() => {
+                      // abaikan klik yang sebenarnya adalah akhir dari sebuah drag
+                      if (dragRef.current.moved) {
+                        dragRef.current.moved = false;
+                        return;
+                      }
+                      setPressed(isActive ? null : i);
+                    }}
                     className={`
                       relative min-w-[260px] max-w-[260px] sm:min-w-[320px] sm:max-w-[320px]
                       shrink-0 snap-center text-left
@@ -740,20 +871,28 @@ export default function IELSCircleAgendaPage() {
                 <b> one conversation at a time</b> — completely free.
               </p>
 
-              <div className="space-y-2 text-sm text-white/80 mb-10">
+              <div className="space-y-2 text-sm text-white/80 mb-8">
                 <p>🧭 Be part of the early Circle members</p>
                 <p>🗓️ 8 weeks, 4 activities a week, zero cost</p>
               </div>
 
+              <div className="mb-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50 mb-3">
+                  Registration closes 9 Oct 2026, 23:59 WIB
+                </p>
+                <CountdownTimer />
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <Button asChild className={primaryCtaClass}>
-                  <Link href={REGISTRATION_LINK}>
+                  <Link
+                    href={REGISTRATION_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Join IELS Circle — It&apos;s Free!
                   </Link>
                 </Button>
-                <span className="text-sm text-white/60">
-                  Registration closes Fri, 9 Oct 2026, 23.59 WIB
-                </span>
               </div>
             </div>
           </div>

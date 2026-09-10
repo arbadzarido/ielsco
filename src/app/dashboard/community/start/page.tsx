@@ -387,7 +387,7 @@ const FeaturesSlide = () => (
             icon: BookOpen,
             title: "IELS Inspire: Success Stories",
             desc: "Read inspiring journeys from 800+ members who achieved their dreams. Share your own story too!",
-            link: "https://ielsco.com/stories",
+            link: "https://circle.ielsco.com/stories",
             color: "from-[#577E90] to-[#304156]"
           },
           {

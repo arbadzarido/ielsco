@@ -10,6 +10,7 @@ import {
   Home,
   Info,
   BookOpen,
+  Users,
   Grid,
   LogIn,
   Menu,
@@ -69,13 +70,16 @@ export default function Header() {
   const profileRef = useRef<HTMLDivElement>(null);
 // ─── RUNTIME DOMAIN DETECTION (Anti-Cache Fix) ───────────────────────────
   const [isInsideSchoolSubdomain, setIsInsideSchoolSubdomain] = useState(false);
+  const [isInsideCircleSubdomain, setIsInsideCircleSubdomain] = useState(false);
   const [mainDomainBase, setMainDomainBase] = useState("https://ielsco.com");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
       const isSchool = hostname.includes("school.");
+      const isCircle = hostname.includes("circle.");
       setIsInsideSchoolSubdomain(isSchool);
+      setIsInsideCircleSubdomain(isCircle);
       setMainDomainBase(hostname.includes("localhost") ? "http://localhost:3000" : "https://ielsco.com");
     }
   }, [pathname]);
@@ -176,34 +180,49 @@ export default function Header() {
   // Deteksi host untuk memaksa redirect antar subdomain/main domain
   const isBrowser = typeof window !== "undefined";
   const currentHostname = isBrowser ? window.location.hostname : "";
- 
+
+  // Kalau lagi di subdomain manapun (school. atau circle.), link-link umum
+  // (Home/About/Products) harus balik ke main domain, bukan path relatif.
+  const isOffMainDomain = isInsideSchoolSubdomain || isInsideCircleSubdomain;
+
+  // ─── Circle subdomain base URL ────────────────────────────────────────────
+  // Lokal dev: src/app/circle/page.tsx (localhost:3000/circle)
+  // Production: circle.ielsco.com
+  const circleBase =
+    isBrowser && currentHostname.includes("localhost")
+      ? "http://localhost:3000/circle"
+      : "https://circle.ielsco.com";
 
   // ─── NAV ITEMS (DOMAIN-AWARE CONFIGURATION) ───────────────────────────────
   const navItems = [
     { 
       name: "Home",    
-      path: isInsideSchoolSubdomain ? `${mainDomainBase}/` : "/", 
+      path: isOffMainDomain ? `${mainDomainBase}/` : "/", 
       icon: Home 
     },
     { 
       name: "About",   
-      path: isInsideSchoolSubdomain ? `${mainDomainBase}/about` : "/about", 
+      path: isOffMainDomain ? `${mainDomainBase}/about` : "/about", 
       icon: Info 
     },
-    { 
-      name: "Stories", 
-      path: isInsideSchoolSubdomain ? `${mainDomainBase}/stories` : "/stories", 
-      icon: BookOpen 
+    {
+      name: "Circle",
+      path: circleBase,
+      icon: Users,
+      children: [
+        { name: "Agenda",  path: `${circleBase}/agenda`,  icon: Calendar },
+        { name: "Stories", path: `${circleBase}/stories`, icon: BookOpen },
+      ],
     },
     {
       name: "Products",
-      path: isInsideSchoolSubdomain ? `${mainDomainBase}/products` : "/products",
+      path: isOffMainDomain ? `${mainDomainBase}/products` : "/products",
       icon: Grid,
       children: [
-        { name: "IELS Lounge",         path: isInsideSchoolSubdomain ? `${mainDomainBase}/iels-lounge` : "/iels-lounge", icon: Coffee },
-        { name: "IELS Courses",        path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/courses` : "/products/courses", icon: GraduationCap },
-        { name: "IELS English Test",   path: isInsideSchoolSubdomain ? `${mainDomainBase}/test` : "/test", icon: FileCheck },
-        { name: "IELS Events",         path: isInsideSchoolSubdomain ? `${mainDomainBase}/events` : "/events", icon: Calendar },
+        { name: "IELS Lounge",         path: isOffMainDomain ? `${mainDomainBase}/iels-lounge` : "/iels-lounge", icon: Coffee },
+        { name: "IELS Courses",        path: isOffMainDomain ? `${mainDomainBase}/products/courses` : "/products/courses", icon: GraduationCap },
+        { name: "IELS English Test",   path: isOffMainDomain ? `${mainDomainBase}/test` : "/test", icon: FileCheck },
+        { name: "IELS Events",         path: isOffMainDomain ? `${mainDomainBase}/events` : "/events", icon: Calendar },
         { 
           name: "IELS for Schools",  
           path: typeof window !== "undefined" && window.location.hostname.includes("localhost")
@@ -211,7 +230,7 @@ export default function Header() {
             : "https://school.ielsco.com",   
           icon: School 
         },
-        { name: "E-books & Recordings", path: isInsideSchoolSubdomain ? `${mainDomainBase}/products/resources` : "/products/resources", icon: Library },
+        { name: "E-books & Recordings", path: isOffMainDomain ? `${mainDomainBase}/products/resources` : "/products/resources", icon: Library },
       ],
     },
   ];
@@ -403,12 +422,18 @@ export default function Header() {
 if ("children" in item && item.children) {
   const isOpen   = openDropdown === item.name;
 
-  // GANTI baris isActive asli lu dengan baris di bawah ini:
-  const isActive = pathname?.startsWith("/products") || 
-                   pathname?.startsWith("/test") || 
-                   pathname?.startsWith("/iels-lounge") || 
-                   pathname?.startsWith("/events") ||
-                   isInsideSchoolSubdomain; // Otomatis highlight jika di portal sekolah
+  // isActive dihitung per-item, karena tiap dropdown punya "wilayah" path
+  // dan kondisi subdomain-nya sendiri-sendiri.
+  const isActive =
+    item.name === "Products"
+      ? pathname?.startsWith("/products") ||
+        pathname?.startsWith("/test") ||
+        pathname?.startsWith("/iels-lounge") ||
+        pathname?.startsWith("/events") ||
+        isInsideSchoolSubdomain // Otomatis highlight jika di portal sekolah
+      : item.name === "Circle"
+      ? pathname?.startsWith("/circle") || isInsideCircleSubdomain // Otomatis highlight jika di circle.ielsco.com
+      : pathname?.startsWith(item.path);
 
             return (
               <div
@@ -534,12 +559,17 @@ if ("children" in item && item.children) {
 if ("children" in item && item.children) {
   const isOpen   = openDropdown === item.name;
 
-  // GANTI baris isActive asli lu dengan baris di bawah ini:
-  const isActive = pathname?.startsWith("/products") || 
-                   pathname?.startsWith("/test") || 
-                   pathname?.startsWith("/iels-lounge") || 
-                   pathname?.startsWith("/events") ||
-                   isInsideSchoolSubdomain;
+  // isActive dihitung per-item, sama seperti versi desktop.
+  const isActive =
+    item.name === "Products"
+      ? pathname?.startsWith("/products") ||
+        pathname?.startsWith("/test") ||
+        pathname?.startsWith("/iels-lounge") ||
+        pathname?.startsWith("/events") ||
+        isInsideSchoolSubdomain
+      : item.name === "Circle"
+      ? pathname?.startsWith("/circle") || isInsideCircleSubdomain
+      : pathname?.startsWith(item.path);
 
               return (
                 <div key={item.name} className="overflow-hidden">
