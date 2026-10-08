@@ -192,7 +192,20 @@ export default function Header() {
     isBrowser && currentHostname.includes("localhost")
       ? "http://localhost:3000/circle"
       : "https://circle.ielsco.com";
+      
+      // ─── Sign In URL (domain-aware) ───────────────────────────────────────────
+// ielsco.com          → /sign-in (same origin)
+// circle.ielsco.com   → ielsco.com/sign-in (auth lives on the main domain)
+// school.ielsco.com   → /sign-in (stays on school.ielsco.com)
+// localhost           → /sign-in, or /school/sign-in when under /school
+const isLocalhost = isBrowser && currentHostname.includes("localhost");
+const isLocalSchool = isLocalhost && !!pathname?.startsWith("/school");
 
+const signInHref = isInsideCircleSubdomain
+  ? `${mainDomainBase}/sign-in`
+  : isLocalSchool
+  ? "/school/sign-in"
+  : "/sign-in";
   // ─── NAV ITEMS (DOMAIN-AWARE CONFIGURATION) ───────────────────────────────
   const navItems = [
     { 
@@ -255,8 +268,8 @@ export default function Header() {
         return (
           <div className="pt-4 mt-4 border-t border-white/10">
             <Link
-              href="/sign-in"
-              onClick={closeMobileMenu}
+  href={signInHref}   // was: "/sign-in"
+  onClick={closeMobileMenu}
               className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-[#E56668] text-white font-bold hover:bg-[#C04C4E] transition-all shadow-lg"
             >
               <LogIn size={20} />
@@ -267,7 +280,7 @@ export default function Header() {
       }
       return (
         <Link
-          href="/sign-in"
+          href={signInHref} 
           className="ml-2 inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] transition transform hover:scale-[1.02] shadow-lg shadow-red-900/20"
         >
           <LogIn size={18} />
