@@ -26,7 +26,24 @@ begin
     alter table public.event_registrations alter column email drop not null;
   end if;
 end $$;
-create unique index if not exists event_registrations_user_event_key on public.event_registrations (user_id, event_id);
+-- Production's existing table has created_at NOT NULL without a default (the add-column above is skipped there), and
+-- the app inserts only (user_id, event_id). Defaults are metadata-only changes; existing rows are untouched.
+alter table public.event_registrations alter column created_at set default now();
+alter table public.event_registrations alter column attended set default false;
+-- One unique (user_id, event_id) is required for upserts. Production already has one (a unique constraint), and a
+-- fresh install gets the primary key, so only create it when no unique index on exactly these columns exists.
+do $$
+begin
+  if not exists (
+    select 1 from pg_index i
+    where i.indrelid = 'public.event_registrations'::regclass and i.indisunique
+      and (select array_agg(a.attname::text order by k.ord)
+           from unnest(i.indkey::int2[]) with ordinality k(attnum, ord)
+           join pg_attribute a on a.attrelid = i.indrelid and a.attnum = k.attnum) = array['user_id', 'event_id']
+  ) then
+    create unique index event_registrations_user_event_key on public.event_registrations (user_id, event_id);
+  end if;
+end $$;
 
 alter table public.event_registrations enable row level security;
 
