@@ -70,6 +70,9 @@ function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient
   const router = useRouter();
   const { t } = useI18n();
   const [timezone, setTimezone] = useState("WIB");
+  // public.users.timezone does not exist in every database (it is missing in production as of 2026-10-17).
+  // The control is only shown once a read confirms the column exists, so members never get a failing save.
+  const [tzAvailable, setTzAvailable] = useState(false);
   const [tzStatus, setTzStatus] = useState<Status>(null);
   const [tzSaving, setTzSaving] = useState(false);
   const [current, setCurrent] = useState("");
@@ -80,7 +83,9 @@ function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient
   const usesPassword = user.app_metadata?.providers?.includes("email") ?? user.app_metadata?.provider === "email";
 
   useEffect(() => {
-    supabase.from("users").select("timezone").eq("id", user.id).maybeSingle().then(({ data }) => {
+    supabase.from("users").select("timezone").eq("id", user.id).maybeSingle().then(({ data, error }) => {
+      if (error) return;
+      setTzAvailable(true);
       if (data?.timezone) setTimezone(data.timezone);
     });
   }, [supabase, user.id]);
@@ -158,13 +163,13 @@ function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient
               <LanguageSelect testId="settings-language-select" />
               <p className="mt-2 text-sm text-[#2F4157]/60">Changes apply right away and follow your account.</p>
             </div>
-            <div>
+            {tzAvailable && <div>
               <label htmlFor="settings-timezone" className={labelClass}>Time zone</label>
               <select id="settings-timezone" data-testid="settings-timezone" value={timezone} disabled={tzSaving} onChange={(e) => saveTimezone(e.target.value)} className={inputClass}>
                 {TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
               </select>
               <p className="mt-2 text-sm text-[#2F4157]/60">Used for course session times.</p>
-            </div>
+            </div>}
           </div>
           <div className="mt-4"><StatusLine status={tzStatus} testId="settings-timezone-status" /></div>
         </Section>
