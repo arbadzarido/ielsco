@@ -7,12 +7,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   X, ChevronDown, ChevronUp, BookOpen,
-  CheckCircle2, Clock, Award, Star, ArrowRight,
+  CheckCircle2, Clock, Award, ArrowRight,
   ExternalLink, MessageCircle,
 } from "lucide-react";
 import {
   CoursePackage, MENTORS, COURSE_PACKAGES,
-  GOOGLE_FORM_URL, WHATSAPP_URL, PRICE_PER_SESSION, LOUNGE_VALUE, CourseTrack,
+  GOOGLE_FORM_URL, WHATSAPP_URL, PRICE_PER_SESSION, CourseTrack,
 } from "@/data/courses";
 
 interface CurriculumModalProps {
@@ -192,9 +192,6 @@ export default function CurriculumModal({
             <span className="flex items-center gap-1.5">
               <Award size={11} /> Certificate
             </span>
-            <span className="flex items-center gap-1.5">
-              <Star size={11} /> IELS Lounge 1yr
-            </span>
             <span className="ml-auto font-black text-white text-base">
               {formatIDR(pkg.sessions * PRICE_PER_SESSION)}
             </span>
@@ -305,13 +302,6 @@ export default function CurriculumModal({
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500 flex items-center gap-2">
                       <span className="text-[9px] bg-[#577E90]/15 text-[#304156] px-1.5 py-0.5 rounded font-black uppercase">Free</span>
-                      IELS Lounge Premium (1 Year)
-                    </span>
-                    <span className="text-gray-300 line-through text-xs">{formatIDR(LOUNGE_VALUE)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 flex items-center gap-2">
-                      <span className="text-[9px] bg-[#577E90]/15 text-[#304156] px-1.5 py-0.5 rounded font-black uppercase">Free</span>
                       Placement Test + Certificate
                     </span>
                     <span className="text-gray-300 line-through text-xs">Rp 150.000</span>
@@ -322,7 +312,7 @@ export default function CurriculumModal({
                       <p className="font-black text-2xl text-[#304156]">
                         {formatIDR(pkg.sessions * PRICE_PER_SESSION)}
                       </p>
-                      <p className="text-[10px] text-gray-400">Lounge & Certificate included</p>
+                      <p className="text-[10px] text-gray-400">Certificate included</p>
                     </div>
                   </div>
                 </div>

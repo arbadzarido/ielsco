@@ -82,7 +82,6 @@ export const MENTORS: Mentor[] = [
 // ─── PRICING ─────────────────────────────────────────────────────────────────
 
 export const PRICE_PER_SESSION = 90000;
-export const LOUNGE_VALUE = 200000;
 
 // ─── CURRICULUM: GRAMMAR ─────────────────────────────────────────────────────
 
@@ -273,7 +272,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "grammar-intensive", name: "Grammar Mastery", type: "intensive", sessions: 8,
     mentorId: "arba", trackId: "grammar", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 8 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "8-session intensive covering the complete grammar system. Fix your weak spots fast before a test, job application, or study abroad program.",
     outcomes: ["Master all essential tense forms and conditionals", "Write grammatically accurate professional emails and reports", "Eliminate the top 20 errors common to Indonesian speakers", "Earn IELS Grammar Certificate"],
     curriculum: grammarIntensive, level: "A2 – C1", badge: "⚡",
@@ -281,7 +280,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "grammar-extensive", name: "Grammar Mastery", type: "extensive", sessions: 21,
     mentorId: "arba", trackId: "grammar", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 21 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session deep dive from grammar foundations to professional-level accuracy. For learners who want lasting confidence across writing and speaking.",
     outcomes: ["Master all grammar areas from fundamentals to advanced", "Apply grammar across written and spoken English", "Write professional reports, essays, and research papers", "Build a personal grammar reference system", "Earn IELS Grammar Certificate"],
     curriculum: grammarExtensive, level: "A1 – C2", badge: "🏅",
@@ -290,7 +289,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "test-prep-intensive", name: "IELTS / TOEFL / TOEIC Prep", type: "intensive", sessions: 8,
     mentorId: "arba", trackId: "standardized-test", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 8 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "Focused 8-session strategy course for IELTS, TOEFL, or TOEIC. Learn exactly what examiners look for and how to maximize your score in each section.",
     outcomes: ["Understand scoring criteria and examiner expectations", "Master time management across all test sections", "Practice Writing Task 1 & 2 / TOEFL Integrated & Independent", "Improve listening and reading speed strategies", "Earn IELS Test Prep Certificate"],
     curriculum: testPrepIntensive, level: "B1 – C1", badge: "🎯",
@@ -298,7 +297,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "test-prep-extensive", name: "IELTS / TOEFL / TOEIC Prep", type: "extensive", sessions: 21,
     mentorId: "arba", trackId: "standardized-test", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 21 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session comprehensive test mastery covering all four skills, TOEIC-specific strategy, two full mock exam days, and a final score sprint. Walk in confident.",
     outcomes: ["Achieve target band/score with systematic preparation", "Master all question types across IELTS, TOEFL, and TOEIC", "Complete 2 full timed mock exams with mentor debrief", "Build test-day stamina and anxiety management", "Earn IELS Test Prep Certificate"],
     curriculum: testPrepExtensive, level: "A2 – C2", badge: "🏅",
@@ -307,7 +306,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "speaking-intensive", name: "Speaking Fluency", type: "intensive", sessions: 8,
     mentorId: "dhila", trackId: "speaking", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 8 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "8-session intensive to unlock your speaking confidence for real-life conversations, job interviews, and global environments.",
     outcomes: ["Speak confidently in professional settings", "Handle job interviews in English with structure and clarity", "Improve pronunciation and natural flow", "Earn IELS Speaking Certificate"],
     curriculum: speakingIntensive, level: "B1 – C2", badge: "⚡",
@@ -315,7 +314,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "speaking-extensive", name: "Speaking Fluency", type: "extensive", sessions: 21,
     mentorId: "dhila", trackId: "speaking", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 21 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session comprehensive speaking program from pronunciation foundations to leadership-level communication. For those who want to truly think and live in English.",
     outcomes: ["Communicate naturally and confidently in any professional context", "Lead meetings, presentations, and negotiations in English", "Build fluency through reduced translation lag", "Earn IELS Speaking & Professional English Certificate"],
     curriculum: speakingExtensive, level: "A2 – C2", badge: "🏅",
@@ -324,7 +323,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "work-abroad-intensive", name: "Work Abroad & Remote Careers", type: "intensive", sessions: 8,
     mentorId: "dhila", trackId: "work-abroad", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 8 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "Purpose-built for professionals targeting global remote companies or international careers. Master async communication, LinkedIn, and cross-cultural teamwork.",
     outcomes: ["Write effective emails, Slack messages, and async updates", "Nail English-language interviews for remote/global roles", "Understand cross-cultural workplace dynamics", "Earn IELS Professional English Certificate"],
     curriculum: workAbroadIntensive, level: "B1 – C2", badge: "⚡",
@@ -332,7 +331,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "work-abroad-extensive", name: "Work Abroad & Remote Careers", type: "extensive", sessions: 21,
     mentorId: "dhila", trackId: "work-abroad", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 21 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session deep program covering everything from application to thriving in a global remote team — cover letters, onboarding, negotiation, leadership, and beyond.",
     outcomes: ["Build a complete professional English career package", "Communicate confidently from application through performance reviews", "Navigate remote team culture, conflict, and leadership", "Earn IELS Work Abroad & Remote Careers Certificate"],
     curriculum: workAbroadExtensive, level: "B1 – C2", badge: "🏅",
@@ -341,7 +340,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "writing-intensive", name: "Writing Excellence", type: "intensive", sessions: 8,
     mentorId: "hana", trackId: "writing", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 8 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "8-session writing boot camp covering academic essays, paragraph structure, and professional writing. Build writing confidence fast.",
     outcomes: ["Write clear, structured academic essays", "Apply paragraph models (PEEL/TEEL) consistently", "Master introduction, thesis, and conclusion writing", "Earn IELS Writing Certificate"],
     curriculum: writingIntensive, level: "B1 – C1", badge: "⚡",
@@ -349,7 +348,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "writing-extensive", name: "Writing Excellence", type: "extensive", sessions: 21,
     mentorId: "hana", trackId: "writing", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 21 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session comprehensive writing mastery from foundational essays to scholarship applications, research papers, and professional documents.",
     outcomes: ["Write compelling scholarship essays and motivation letters", "Produce research papers and academic reports confidently", "Develop a professional writing portfolio", "Build lifelong self-editing skills", "Earn IELS Writing & Scholarship Essay Certificate"],
     curriculum: writingExtensive, level: "A2 – C2", badge: "🏅",
@@ -358,7 +357,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "scholarship-intensive", name: "Scholarship Essay", type: "intensive", sessions: 8,
     mentorId: "hana", trackId: "scholarship-essay", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 8 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "Laser-focused 8-session program for scholarship applicants targeting LPDP, Chevening, DAAD, or university programs. Write essays that win.",
     outcomes: ["Write authentic, compelling motivation letters", "Tailor essays to specific scholarship programs", "Master personal statement storytelling", "Earn IELS Scholarship Writing Certificate"],
     curriculum: scholarshipIntensive, level: "B2 – C2", badge: "🎖",
@@ -366,7 +365,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   {
     id: "scholarship-extensive", name: "Scholarship Essay", type: "extensive", sessions: 21,
     mentorId: "hana", trackId: "scholarship-essay", pricePerSession: PRICE_PER_SESSION,
-    loungeAccess: true, loungeValue: LOUNGE_VALUE, totalPrice: 21 * PRICE_PER_SESSION + LOUNGE_VALUE,
+    loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session end-to-end scholarship mastery — from story mining and essay writing to interview preparation, recommendation letter briefing, and submission review.",
     outcomes: ["Build a full scholarship application portfolio", "Write tailored essays for LPDP, Chevening, DAAD, and more", "Prepare for panel and 1-on-1 scholarship interviews", "Navigate rejections, deferrals, and reapplication cycles", "Earn IELS Scholarship Essay Certificate"],
     curriculum: scholarshipExtensive, level: "B2 – C2", badge: "🏅",

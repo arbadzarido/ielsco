@@ -116,7 +116,10 @@ export default function Header({ profile }: HeaderProps) {
 
   const closeMobileMenu = () => setIsMobileOpen(false);
 
+  // Subscription tiers were retired in 2026-10, so no tier badge is shown.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getTierBadge = (tier: "explorer" | "insider" | "visionary") => {
+    return null;
     switch(tier) {
       case "visionary":
         return (

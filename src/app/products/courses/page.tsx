@@ -224,7 +224,7 @@ export default function CoursesPage() {
                     "Max 15 students per class",
                     "Regular speaking practice sessions",
                     "Supportive learning community",
-                    "Lifetime IELS Lounge access"
+                    "Free access to the IELS Circle community"
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 font-medium">
                       <CheckCircle size={18} className="text-[#2F4157] shrink-0 mt-0.5" />
@@ -243,7 +243,7 @@ export default function CoursesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 mb-8">
                 {[
                   "Native-like speaking confidence",
-                  "Full IELS Lounge Premium access",
+                  "IELS Circle community access",
                   "Personalized learning dashboard",
                   "Structured, proven curriculum",
                   "Customized study materials",
@@ -497,10 +497,6 @@ export default function CoursesPage() {
                   <span className="text-white/60">Sessions</span>
                   <span className="font-bold">{formatIDR(customSessions * PRICE_PER_SESSION)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">IELS Lounge Premium</span>
-                  <span className="font-bold text-emerald-400">FREE</span>
-                </div>
                 <div className="border-t border-white/20 pt-2 flex justify-between">
                   <span className="font-black">Total</span>
                   <span className="font-black text-[#E56668] text-xl">{formatIDR(customSessions * PRICE_PER_SESSION)}</span>
@@ -546,7 +542,6 @@ export default function CoursesPage() {
             { q: "Can I reschedule my sessions?", a: "Absolutely. Just give us 24 hours notice and we'll find a time that works for you." },
             { q: "What if I don't hit my goal?", a: "We offer a progress guarantee: free retake session if you don't see improvement. Your success is our success." },
             { q: "Can I switch mentors or topics?", a: "Yes, anytime. We track your progress so you won't lose momentum or repeat lessons." },
-            { q: "What's included in IELS Lounge Premium?", a: "Lifetime access to live speaking clubs, English socials, mock exam sessions, and a thriving community of learners." },
             { q: "How do I register and pay?", a: "Fill the form, we'll confirm your course and payment details. Bank transfer to Bank Jago or other methods available." },
           ].map((faq, i) => (
             <details key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm group">

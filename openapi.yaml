@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: IELS API
   version: 1.0.0
-  description: API spec for IELS membership, test access, events, and Mayar integration.
+  description: API spec for IELS test access, events and transactions. (The Mayar webhook was retired in 2026-10.)
 servers:
   - url: https://hkubzamchahvdpvojepc.supabase.co
     description: Production
@@ -73,17 +73,6 @@ components:
         ok: { type: boolean }
         status: { type: string, enum: [valid, used, invalid] }
         message: { type: string }
-
-    MayarWebhook:
-      type: object
-      description: Raw payload from Mayar — stored as-is (schema depends on Mayar)
-      properties:
-        txId:
-          type: string
-        status:
-          type: string
-        data:
-          type: object
 
     Event:
       type: object
@@ -178,20 +167,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidateCodeResponse'
-
-  /webhooks/mayar:
-    post:
-      summary: Webhook receiver for Mayar payments
-      description: Signed webhook. Validate signature server-side.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MayarWebhook'
-      responses:
-        '200':
-          description: accepted
 
   /transactions/{txId}:
     get:

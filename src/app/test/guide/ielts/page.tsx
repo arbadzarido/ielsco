@@ -466,7 +466,6 @@ function validateCode() {
         points: [
           "Everything in Package B",
           "Live speaking simulation",
-          "1-Year IELS Lounge Premium access",
           "Chance to win free Official IELTS Test (worth Rp 3.6M)",
         ],
       },

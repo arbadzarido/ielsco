@@ -153,7 +153,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ persona, onRestart }, re
                 href="/sign-up"
                 className="inline-flex items-center justify-center w-full md:w-auto px-10 py-5 rounded-2xl bg-[#E56668] hover:bg-[#C04C4E] text-white font-black text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 active:scale-95 group"
               >
-                🚀 Create Free Account & Join Lounge
+                🚀 Create Free Account & Join IELS Circle
               </a>
               <p className="text-xs text-gray-500 font-bold mt-4 uppercase tracking-widest">
                 Takes less than 1 minute

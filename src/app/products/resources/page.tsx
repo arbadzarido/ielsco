@@ -143,8 +143,8 @@ export default function ResourcesPage() {
               </Button>
 
               <Button asChild className={BTN_SECONDARY}>
-                <Link href="/iels-lounge">
-                  Join IELS Lounge
+                <Link href="/circle">
+                  Join IELS Circle
                 </Link>
               </Button>
             </div>

@@ -272,7 +272,7 @@ if (!registration) {
                   Study Materials
                 </h4>
                 <p className="text-sm text-[#577E90] leading-relaxed">
-                  Access premium preparation resources and practice tests
+                  Access preparation resources and practice tests
                 </p>
               </div>
 
@@ -330,7 +330,7 @@ if (!registration) {
                 </h1>
 
                 <p className="text-white/80 text-base lg:text-lg leading-relaxed">
-                  Track your progress, access premium materials, and achieve your
+                  Track your progress, access learning materials, and achieve your
                   target score with personalized guidance.
                 </p>
               </div>

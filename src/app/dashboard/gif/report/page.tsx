@@ -1455,13 +1455,6 @@ const handleResetStatus = async () => {
                   <h3 className="font-bold text-[#304156] text-xl mb-4">Your Phase 3 Appreciation Package</h3>
                   
                   <div className="space-y-4">
-                    {/* Visionary Membership */}
-                    <div className="flex items-start gap-3">
-                      <Crown className="w-5 h-5 text-[#914D4D] shrink-0 mt-0.5" />
-                      <p className="text-sm text-[#304156]/80 leading-relaxed">
-                        <strong className="text-[#304156]">1-Year Visionary Membership:</strong> A free upgrade to our highest, most exclusive community tier. Keep learning, growing, and building with top-tier access.
-                      </p>
-                    </div>
                     
                     {/* English Global Festival 2027 */}
                     <div className="flex items-start gap-3">
@@ -1486,7 +1479,7 @@ const handleResetStatus = async () => {
                   <Link href="/dashboard/circle" className="inline-block w-full sm:w-auto">
                     <Button className="w-full sm:w-auto px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-[#2F4055] to-[#914D4D] text-white shadow-xl flex items-center justify-center gap-2 hover:to-[#2F4055] transition-all group">
                       <Crown className="w-5 h-5 group-hover:scale-110 transition-transform" /> 
-                      Claim Visionary Status
+                      Join IELS Circle
                     </Button>
                   </Link>
                 </div>

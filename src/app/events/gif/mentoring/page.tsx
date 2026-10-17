@@ -486,10 +486,6 @@ export default function SGTripMentoringPage() {
               </li>
               <li className="flex items-start gap-3 text-sm text-gray-600">
                 <CheckCircle className="w-5 h-5 text-[#914D4D] shrink-0" />
-                <span><strong>1-Year Access</strong> IELS Lounge Premium</span>
-              </li>
-              <li className="flex items-start gap-3 text-sm text-gray-600">
-                <CheckCircle className="w-5 h-5 text-[#914D4D] shrink-0" />
                 <span><strong>Direct Interview</strong> with NUS Partners</span>
               </li>
             </ul>

@@ -17,17 +17,6 @@ function createClient() {
   return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 }
 
-// DB values: "pro" = Insider, "visionary" = Visionary; no active membership = Explorer (free).
-function TierBadge({ tier }: { tier: string | null }) {
-  const map: Record<string, { label: string; color: string }> = {
-    pro: { label: "INSIDER", color: "bg-[#2F4157]" },
-    visionary: { label: "VISIONARY", color: "bg-[#577E90]" },
-    explorer: { label: "EXPLORER", color: "bg-[#8A96A6]" },
-  };
-  const t = map[tier ?? "explorer"] ?? map.explorer;
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${t.color}`}>{t.label}</span>;
-}
-
 const HIDDEN_PATHS = [
   "/school/dashboard", "/quiz", "/school/sign-in", "/dashboard", "/cafe", "/planner", "/privacy-policy",
   "/terms-of-service", "/welcome/start", "/welcome/result", "/sign-in", "/sign-up", "/api/auth",
@@ -43,7 +32,6 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  const [userTier, setUserTier] = useState<string>("explorer");
   const [authLoading, setAuthLoading] = useState(true);
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,14 +53,10 @@ export default function Header() {
     const supabase = createClient();
     async function fetchProfile(userId: string) {
       const { data: userData } = await supabase.from("users").select("full_name, avatar_url").eq("id", userId).single();
-      const { data: membership } = await supabase
-        .from("memberships").select("tier").eq("user_id", userId).eq("status", "active")
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (userData) {
         setUserName(userData.full_name ?? null);
         setUserAvatar(userData.avatar_url ?? null);
       }
-      setUserTier(membership?.tier ?? "explorer");
     }
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) { setUser(user); fetchProfile(user.id); }
@@ -82,7 +66,7 @@ export default function Header() {
       const u = session?.user ?? null;
       setUser(u);
       if (u) fetchProfile(u.id);
-      else { setUserName(null); setUserAvatar(null); setUserTier("explorer"); }
+      else { setUserName(null); setUserAvatar(null); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -170,7 +154,6 @@ export default function Header() {
             <Avatar size={40} />
             <div className="min-w-0">
               <p className="truncate text-[15px] font-bold text-[#1A2534]">{userName}</p>
-              <TierBadge tier={userTier} />
             </div>
           </div>
           <Link href={main("/dashboard")} className={cn(btnPrimary, "w-full")}>
@@ -199,7 +182,6 @@ export default function Header() {
           <div role="menu" className="absolute right-0 mt-2 w-64 rounded-2xl border border-[#E6E9EE] bg-white p-2 shadow-[0_16px_40px_rgba(26,37,52,0.12)]">
             <div className="border-b border-[#E6E9EE] px-3 pb-3 pt-2">
               <p className="truncate text-[15px] font-bold text-[#1A2534]">{userName}</p>
-              <div className="mt-1"><TierBadge tier={userTier} /></div>
             </div>
             <Link role="menuitem" href={main("/dashboard")} onClick={() => setProfileOpen(false)} className={cn("mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium text-[#2F4157] hover:bg-[#F1F4F8]", focusRing)}>
               <LayoutDashboard size={18} aria-hidden="true" /> Go to dashboard

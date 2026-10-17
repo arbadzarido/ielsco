@@ -105,13 +105,13 @@ export function getRecommendedPrograms(scores: Record<string, number>): Program[
 
   const programs: Program[] = [];
 
-  // Always recommend Lounge for beginners / social learners
+  // Always recommend IELS Circle (free weekly sessions) for beginners / social learners
   if (isBeginnerOrSocial || highest === "social" || highest === "beginner") {
     programs.push({
-      name: "IELS Lounge",
-      tag: "Community · Daily Practice",
-      desc: "Your judgment-free daily speaking space. Practice English every night with thousands of SEA learners — build real confidence through real conversations.",
-      href: "/iels-lounge",
+      name: "IELS Circle",
+      tag: "Community · Weekly sessions",
+      desc: "Free online sessions every Wednesday and Saturday with learners across Southeast Asia. Practise speaking on a new topic each time.",
+      href: "/circle",
       accent: "bg-[#1A2534]",
     });
   }

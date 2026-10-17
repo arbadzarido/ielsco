@@ -63,8 +63,10 @@ interface PortfolioData {
   };
 }
 
-// --- TIER BADGE ---
+// --- TIER BADGE --- (subscription tiers retired 2026-10: nothing is shown)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TierBadge = ({ tier }: { tier: UserTier }) => {
+  return null;
   const config = {
     explorer: { label: "Explorer", bg: "bg-white/10", text: "text-white", border: "border-white/20" },
     insider: { label: "Insider", bg: "bg-[#E56668]/20", text: "text-[#E56668]", border: "border-[#E56668]/30" },

@@ -8,7 +8,7 @@ import { EmptyState, Notice } from "../PageStates";
 import { ResourceRow } from "../resources/ResourceRow";
 import { btnLink, btnPrimary, btnSecondary } from "../ui";
 import { CATEGORY_TO_TRACK, GOOGLE_FORM_URL, WHATSAPP_URL, formatIDR, isCourseTrack, trackInfo } from "@/data/dashboard/courses";
-import { PRICE_PER_SESSION, LOUNGE_VALUE } from "@/data/courses";
+import { PRICE_PER_SESSION } from "@/data/courses";
 import { DEMO_RESOURCES } from "@/data/dashboard/resources";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ export function CourseDetailView({ user, track }: DashboardCtx & { track: string
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#577E90]">{p.type === "intensive" ? "Intensive" : "Extensive"} · {p.sessions} live sessions</p>
             <p className="mt-2 text-3xl font-bold">{formatIDR(p.totalPrice)}</p>
             <p className="text-sm text-[#2F4157]/55">
-              {p.sessions} × {formatIDR(PRICE_PER_SESSION)}{p.loungeAccess ? ` + IELS Lounge access ${formatIDR(LOUNGE_VALUE)}` : ""} (prices from the IELS course catalogue)
+              {p.sessions} × {formatIDR(PRICE_PER_SESSION)} (prices from the IELS course catalogue)
             </p>
             <p className="mt-4 text-base"><span className="font-semibold">Level:</span> {p.level}</p>
             <p className="mt-1 text-base text-[#2F4157]/75">{p.description}</p>
