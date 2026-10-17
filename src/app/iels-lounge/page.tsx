@@ -2,13 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useState, useEffect } from "react";
 import { testimonialsData } from "@/data/testimonials";
 import type { Testimonial } from "@/data/testimonials";
 import { Button } from "@/components/ui/button";
-import GIFPopup from "@/components/GIFPopup";
 import PricingModal from "@/components/subscription/PricingModal";
 import { ArrowRight, Target, Users, Trophy, Gift, Star, Compass, Megaphone, PlayCircle } from "lucide-react";
 
@@ -51,9 +49,8 @@ export default function LoungePage() {
 
   return (
     <div className="bg-white min-h-screen font-sans selection:bg-[#E56668] selection:text-white overflow-x-hidden">
-      <Header />
 
-      <main className="flex flex-col w-full">
+      <div className="flex flex-col w-full">
         
     {/* ===== HERO ===== */}
         <section className="px-6 pt-32 pb-16 max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12">
@@ -533,10 +530,9 @@ export default function LoungePage() {
 
         </section>
 
-      </main>
+      </div>
 
       <Footer />
-      <GIFPopup />
 
       {/* Pricing Modal */}
       {showPricingModal && (

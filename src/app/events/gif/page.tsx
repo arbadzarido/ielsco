@@ -1,10 +1,19 @@
 "use client";
 import { Plane, Building2, Utensils, MessageCircle, Info, Download, Briefcase, Lightbulb, Award, Gift, ExternalLink, Clock, Search, Rocket, FileText, ArrowRight, CheckCircle, XCircle, Calendar, ShieldCheck, Gem, Users } from 'lucide-react';
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+
+// Batch 1 self-funded registration window (from this page's own copy: normal price ends May 20, 2026).
+// After it closes the page says so instead of inviting registrations.
+const BATCH1_REGISTRATION_CLOSES = "2026-05-20T23:59:59+07:00";
+function useRegistrationOpen() {
+  const [open, setOpen] = useState(true);
+  useEffect(() => setOpen(Date.now() < Date.parse(BATCH1_REGISTRATION_CLOSES)), []);
+  return open;
+}
 
 type TimelineItem = {
   phase: string;
@@ -71,9 +80,9 @@ const timeline = [
   ];
 
 export default function SGITPage() {
+  const registrationOpen = useRegistrationOpen();
   return (
-    <main className="min-h-screen bg-white text-[#304156] font-geologica">
-      <Header />
+    <div className="min-h-screen bg-white text-[#304156] font-geologica">
 
    {/* ================= HERO SECTION ================= */}
       {/* Background set to NightFall Blue fallback, with Gradient Overlay */}
@@ -144,7 +153,7 @@ export default function SGITPage() {
             
             <h3 className="text-xl md:text-2xl font-black text-white mb-2 flex items-center justify-center gap-2">
               <Rocket className="w-6 h-6 text-white" />
-              Now Open for Self-Funded Registration!
+              {registrationOpen ? "Now Open for Self-Funded Registration!" : "Batch 1 self-funded registration closed on May 20, 2026"}
             </h3>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-6 relative z-10">
@@ -162,6 +171,7 @@ export default function SGITPage() {
 
             {/* CALL TO ACTIONS */}
             <div className="flex flex-col sm:flex-row gap-3 mt-6 relative z-10">
+              {registrationOpen ? (
               <a 
                 href="https://forms.gle/Xe6JTRNL9MFQ1uVw8" 
                 target="_blank" 
@@ -171,6 +181,12 @@ export default function SGITPage() {
                 Register Now
                 <ExternalLink className="w-4 h-4 ml-2" />
               </a>
+              ) : (
+              <Link href="/events/gif/batch2" className="flex-1 bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center transition-all shadow-lg text-sm">
+                See GIF Batch 2
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+              )}
               <a 
                 href="https://drive.google.com/file/d/1PA6ubLekEa-SZMjQt8UWYlepYywzBTvE/view?usp=drivesdk" 
                 target="_blank" 
@@ -625,6 +641,7 @@ export default function SGITPage() {
 
               {/* CTA BUTTONS */}
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                {registrationOpen ? (
                 <a 
                   href="https://forms.gle/x1KqxuhZVMsp5yQ36" 
                   target="_blank" 
@@ -634,6 +651,12 @@ export default function SGITPage() {
                   Register Now
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </a>
+                ) : (
+                <Link href="/events/gif/batch2" className="bg-white text-[#914D4D] font-bold px-6 py-3.5 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl text-center flex items-center justify-center">
+                  Registration closed · See GIF Batch 2
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+                )}
                 <a 
                   href="https://drive.google.com/file/d/1PA6ubLekEa-SZMjQt8UWYlepYywzBTvE/view?usp=drivesdk" 
                   target="_blank" 
@@ -687,7 +710,7 @@ export default function SGITPage() {
         </div>
       </section>
       <Footer />
-    </main>
+    </div>
   );
 }
 

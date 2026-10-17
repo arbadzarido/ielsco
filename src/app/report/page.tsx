@@ -1,6 +1,5 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,7 +56,6 @@ export default function Reports() {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-white">
         
         {/* Hero Section */}
@@ -187,7 +185,6 @@ export default function Reports() {
 function Batch2Report({ onBack }: { onBack: () => void }) {
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-white">
         
         {/* Header with Back Button */}

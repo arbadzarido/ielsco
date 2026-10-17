@@ -22,7 +22,8 @@ export async function proxy(request: NextRequest) {
   // STEP 1 — VERCEL URL PROTECTION
   // Redirect .vercel.app URLs langsung ke main domain
   // ===========================================================================
-  if (host.includes('.vercel.app')) {
+  // Preview deployments stay reachable on their own URL so changes can be checked before they reach production.
+  if (host.includes('.vercel.app') && process.env.VERCEL_ENV !== 'preview') {
     url.host     = 'ielsco.com';
     url.protocol = 'https:';
     url.port     = '';

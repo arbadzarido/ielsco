@@ -1,7 +1,6 @@
 "use client";
 // src/app/courses/page.tsx
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import { useRef, useState } from "react";
@@ -68,8 +67,7 @@ export default function CoursesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F7F8FA] text-[#294154] font-geologica">
-      <Header />
+    <div className="min-h-screen bg-[#F7F8FA] text-[#294154] font-geologica">
 
       {/* ─── HERO: PERSONALIZED LEARNING JOURNEY ─── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#2F4157] via-[#243344] to-[#1e2a38] text-white">
@@ -399,14 +397,14 @@ export default function CoursesPage() {
           <div className="hidden lg:flex items-center gap-3">
             <button
               onClick={() => scrollCourses("left")}
-              className="w-10 h-10 rounded-full bg-white border-2 border-[#1A2534] text-[#1A2534] shadow-[2px_2px_0px_#1A2534] hover:bg-[#FAFAFA] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center font-bold"
+              className="w-10 h-10 rounded-full bg-white border border-[#1A2534]/10 text-[#1A2534] shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:bg-[#FAFAFA] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center font-bold"
               aria-label="Scroll left"
             >
               <ArrowLeft size={18} />
             </button>
             <button
               onClick={() => scrollCourses("right")}
-              className="w-10 h-10 rounded-full bg-[#E56668] border-2 border-[#1A2534] text-white shadow-[2px_2px_0px_#1A2534] hover:opacity-90 active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center font-bold"
+              className="w-10 h-10 rounded-full bg-[#E56668] border border-[#1A2534]/10 text-white shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:opacity-90 active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center font-bold"
               aria-label="Scroll right"
             >
               <ArrowRight size={18} />
@@ -613,6 +611,6 @@ export default function CoursesPage() {
         onClose={() => setSelectedTrack(null)} 
         isDashboard={false} 
       />
-    </main>
+    </div>
   );
 }

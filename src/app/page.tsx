@@ -1,694 +1,283 @@
 "use client";
 
-import Header from "@/components/header";
-import Footer from "@/components/footer";
 import Image from "next/image";
-import CountUp from "react-countup";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import GIFPopup from "@/components/GIFPopup";
-import { useState, useEffect, useRef } from "react";
-import { ArrowRight, GraduationCap, Briefcase, TrendingUp, Star, CheckCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, ArrowUpRight, CalendarClock, Compass, Users, Sparkles } from "lucide-react";
+import Footer from "@/components/footer";
+import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, textLink, siteRoot } from "@/components/site/ui";
+import { cn } from "@/lib/utils";
+import { memberStoriesData } from "@/data/member-stories";
+import { eventsData } from "@/data/events";
+import { GIF_BATCH, gifRegistrationOpen } from "@/data/gif";
+import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
+import { generateSlug } from "@/utils/slug";
+import { wibDeadline } from "@/lib/events/deadline";
 
-// =========================================
-// MASCOT COMPONENT (3D Parallax + Stop-Motion)
-// =========================================
-function MascotHero() {
-  const [currentFrame, setCurrentFrame] = useState(0);
-  const frames = [
-    "/images/contents/mascot/hi.svg",
-    "/images/contents/mascot/hi2.svg",
-    "/images/contents/mascot/elco.svg",
-  ];
+// Public landing page. Positioning: Community & Opportunities for Southeast Asian learners.
+// Everything time-based (sessions, registration status) is computed in the browser after mount, so the page never
+// shows a stale "open" state and server/client renders match.
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentFrame((prev) => (prev + 1) % frames.length);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [frames.length]);
+const STORIES = memberStoriesData.slice(0, 3);
 
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isClicked, setIsClicked] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+function useNow() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
+  return now;
+}
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - left - width / 2) / 15;
-    const y = -(e.clientY - top - height / 2) / 15;
-    setTilt({ x, y });
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setTilt({ x: 0, y: 0 });
-  };
-
+function Hero() {
   return (
-    <div className="flex justify-center items-center w-full z-10 animate-fadeIn" style={{ perspective: "1000px" }}>
-      <div
-        ref={containerRef}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onMouseDown={() => setIsClicked(true)}
-        onMouseUp={() => setIsClicked(false)}
-        className="relative w-[240px] sm:w-[320px] lg:w-[480px] aspect-square cursor-grab active:cursor-grabbing"
-        style={{
-          transform: `rotateX(${tilt.y}deg) rotateY(${tilt.x}deg) scale3d(${isClicked ? 0.9 : 1}, ${isClicked ? 0.9 : 1}, 1)`,
-          transition: isHovered && !isClicked ? "transform 0.1s ease-out" : "transform 0.4s cubic-bezier(0.25, 1.5, 0.5, 1)",
-          transformStyle: "preserve-3d",
-        }}
-      >
-        {frames.map((src, index) => (
-          <Image
-            key={src}
-            src={src}
-            alt={`IELS Mascot Pose ${index + 1}`}
-            fill
-            priority
-            sizes="(max-width: 640px) 240px, (max-width: 1024px) 320px, 480px"
-            className={`object-contain mx-auto transition-opacity duration-0 ${
-              index === currentFrame ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              filter: `drop-shadow(${tilt.x * -1 + 6}px ${tilt.y + 6}px 0px rgba(26,37,52,0.12))`,
-            }}
-          />
-        ))}
-        <div
-          className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-300 mix-blend-overlay"
-          style={{
-            background: `radial-gradient(circle at ${50 + tilt.x * 2}% ${50 - tilt.y * 2}%, rgba(255,255,255,0.3) 0%, transparent 60%)`,
-            opacity: isHovered ? 1 : 0,
-          }}
-        />
+    <section className="bg-white pb-[56px] pt-[40px] md:pb-[88px] md:pt-[64px]" aria-labelledby="hero-heading">
+      <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16")}>
+        <div>
+          <p className={eyebrow}>IELS · Community &amp; Opportunities</p>
+          <h1 id="hero-heading" className={cn(h1, "mt-4")}>
+            Find your people.<br />
+            <span className="text-[#E56668]">Find your next opportunity.</span>
+          </h1>
+          <p className={cn(lead, "mt-6 max-w-[560px]")}>
+            IELS connects learners across Southeast Asia with peers, mentors and free resources, and with programs for
+            studying and working abroad. Practise together every week, learn from members who have done it, and apply
+            when an opportunity fits you.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link href="/sign-up" className={btnPrimary} data-testid="landing-join">
+              Join IELS for free <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <Link href="/circle" className={btnSecondary} data-testid="landing-circle">
+              See how the Circle works
+            </Link>
+          </div>
+          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free account · Weekly sessions on Wednesdays and Saturdays</p>
+        </div>
+        <div className="relative">
+          <div className="relative aspect-[16/10] overflow-hidden rounded-[28px] border border-[#E6E9EE]">
+            <Image src="/images/contents/careers/iels_team_0.png" alt="IELS members together at an in-person IELS session" fill priority
+              sizes="(min-width: 1024px) 520px, 100vw" className="object-cover" />
+          </div>
+          <div className="absolute -bottom-6 left-4 right-4 flex items-center gap-3 rounded-[18px] border border-[#E6E9EE] bg-white p-3 pr-4 shadow-[0_12px_32px_rgba(26,37,52,0.08)] sm:left-auto sm:right-6 sm:w-[300px]">
+            <Image src="/images/contents/mascot/hi.svg" alt="" width={48} height={48} className="h-12 w-12 shrink-0" />
+            <p className="text-[14px] leading-snug text-[#2F4157]">
+              <span className="font-bold text-[#1A2534]">New here?</span> Start with one Circle session. Listening counts too.
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-// =========================================
-// MAIN PAGE
-// =========================================
-export default function Home() {
-  const studyPartners = [
-    { name: "Deakin University", logo: "/images/logos/uni/deakin.png" },
-    { name: "Monash University", logo: "/images/logos/uni/monash.png" },
-    { name: "WSU", logo: "/images/logos/uni/wsu.jpg" },
-    { name: "NUS", logo: "/images/logos/uni/nus.png" },
-  ];
+const STEPS = [
+  { icon: Compass, n: "01", title: "Discover", text: "Free guides, recordings and scholarship lists, plus stories from members who have studied, interned and volunteered abroad.", href: "/products/resources", cta: "Browse free resources" },
+  { icon: Users, n: "02", title: "Participate", text: "Join IELS Circle: online sessions every Wednesday at 19:00 and Saturday at 13:00 WIB, each with a new topic to talk about.", href: "/circle", cta: "Meet the Circle" },
+  { icon: Sparkles, n: "03", title: "Take the next step", text: "Apply to programs such as the Global Impact Fellowship and join events run with universities and partners.", href: "/events", cta: "See events and programs" },
+];
 
-  const workPartners = [
-    { name: "Skilio", logo: "/images/logos/company/skilio.png" },
-    { name: "Glints", logo: "/images/logos/company/glints.png" },
-    { name: "Upwork", logo: "/images/logos/company/upwork.png" },
-    { name: "Teman Startup", logo: "/images/logos/company/ts.png" },
-  ];
+function HowItWorks() {
+  return (
+    <section className={section} aria-labelledby="how-heading" id="how-it-works">
+      <div className={container}>
+        <div className="max-w-[640px]">
+          <p className={eyebrow}>How IELS works</p>
+          <h2 id="how-heading" className={cn(h2, "mt-3")}>From your first conversation to your first application</h2>
+        </div>
+        <ol className="mt-12 grid gap-6 md:grid-cols-3">
+          {STEPS.map((s) => (
+            <li key={s.n} className={cn(card, "flex flex-col p-7")}>
+              <div className="flex items-center justify-between">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><s.icon size={20} aria-hidden="true" /></span>
+                <span className="text-[14px] font-bold text-[#577E90]">{s.n}</span>
+              </div>
+              <h3 className={cn(h3, "mt-6")}>{s.title}</h3>
+              <p className={cn(body, "mt-2 flex-1")}>{s.text}</p>
+              <Link href={s.href} className={cn(textLink, "mt-6")}>{s.cta} <ArrowRight size={16} aria-hidden="true" /></Link>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
 
-  // ── NARASI DIUPDATE ──────────────────────────────────────────
-  const journeySteps = [
-    {
-      num: "01",
-      tag: "For Beginners",
-      title: "Build the Foundation",
-      // UPDATED: highlight SEA community, bukan just "find your voice"
-      desc: "Connect with thousands of English learners across Southeast Asia. Practice daily, grow together, and build real confidence in a supportive community that never judges.",
-      icon: "/images/contents/general/speaking.png",
-      accent: "bg-[#1A2534]",
-      tagColor: "bg-white/10 text-white/70",
-    },
-    {
-      num: "02",
-      tag: "EPT Prep",
-      title: "Bridge to Proficiency",
-      desc: "Targeted IELTS & TOEFL preparation. Get the scores you need to unlock global opportunities.",
-      icon: "/images/contents/general/pencil.png",
-      accent: "bg-[#E56668]",
-      tagColor: "bg-white/20 text-white/90",
-    },
-    {
-      num: "03",
-      tag: "Goal Tracking",
-      title: "Reach Your Goal",
-      // UPDATED: "track your progress towards your goals"
-      desc: "Track your progress towards your goals in real time. Whether it's a dream university or a global career, we keep you on course — and celebrate every milestone with you.",
-      icon: "/images/contents/general/globe.png",
-      accent: "bg-[#1A2534]",
-      tagColor: "bg-white/10 text-white/70",
-    },
-  ];
+function CircleSessions() {
+  const now = useNow();
+  const sessions = useMemo(() => (now ? upcomingSessions(2, now) : []), [now]);
+  return (
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="circle-heading">
+      <div className={cn(container, "grid items-center gap-12 lg:grid-cols-2 lg:gap-16")}>
+        <div className="relative order-last aspect-[16/11] overflow-hidden rounded-[28px] border border-[#E6E9EE] lg:order-first">
+          <Image src="/images/contents/general/iels_gathering.png" alt="IELS members smiling around a table at a meet-up" fill sizes="(min-width: 1024px) 540px, 100vw" className="object-cover" />
+        </div>
+        <div>
+          <p className={eyebrow}>IELS Circle</p>
+          <h2 id="circle-heading" className={cn(h2, "mt-3")}>A weekly place to practise, ask and share</h2>
+          <p className={cn(lead, "mt-4")}>
+            Circle sessions are online and open to members. Each one has a topic, from scholarship essays to small talk, so you
+            always have something to say.
+          </p>
+          <ul className="mt-8 space-y-3" aria-live="polite">
+            {sessions.length === 0 && <li className="h-[76px] animate-pulse rounded-[18px] bg-[#F1F4F8]" aria-hidden="true" />}
+            {sessions.map((s) => {
+              const f = formatSessionWib(s.start);
+              return (
+                <li key={s.id} className={cn(card, "flex items-start gap-4 p-4")}>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><CalendarClock size={20} aria-hidden="true" /></span>
+                  <div>
+                    <p className="text-[14px] font-semibold text-[#577E90]">{f.day} · {f.time}</p>
+                    <p className="mt-0.5 text-[16px] font-bold text-[#1A2534]">{s.topic.title}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/circle" className={btnPrimary}>Explore IELS Circle <ArrowRight size={18} aria-hidden="true" /></Link>
+            <Link href="/circle/agenda" className={btnSecondary}>Cohort agenda</Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Stories() {
+  return (
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="stories-heading">
+      <div className={container}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-[620px]">
+            <p className={eyebrow}>Member stories</p>
+            <h2 id="stories-heading" className={cn(h2, "mt-3")}>Written by members, in their own words</h2>
+          </div>
+          <Link href="/circle/stories" className={textLink}>Read all stories <ArrowRight size={16} aria-hidden="true" /></Link>
+        </div>
+        <ul className="mt-10 grid gap-6 md:grid-cols-3">
+          {STORIES.map((s) => (
+            <li key={s.id}>
+              <Link href={`/circle/stories/${generateSlug(s.title)}`} className={cn(cardLink, "flex h-full flex-col overflow-hidden")}>
+                <div className="relative aspect-[16/9] bg-[#F1F4F8]">
+                  <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover" />
+                </div>
+                <div className="flex flex-1 flex-col p-6">
+                  <h3 className="text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</h3>
+                  <div className="mt-auto flex items-center gap-3 pt-6">
+                    <Image src={s.author.avatar} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-semibold text-[#1A2534]">{s.author.name}</p>
+                      {s.author.role && <p className="truncate text-[13px] text-[#2F4157]/65">{s.author.role}</p>}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function Opportunities() {
+  const now = useNow();
+  const gifOpen = now ? gifRegistrationOpen(now) : null;
+  // The next event whose registration is still open, straight from the events data. Nothing shown if there is none.
+  const nextEvent = useMemo(() => {
+    if (!now) return null;
+    return eventsData
+      .map((e) => ({ e, closes: new Date(wibDeadline(e.registrationDateDeadline, e.registrationTimeDeadline)) }))
+      .filter(({ closes }) => closes > now)
+      .sort((a, b) => a.closes.getTime() - b.closes.getTime())[0] ?? null;
+  }, [now]);
+  const fmt = (d: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric" }).format(d);
 
   return (
-    <div className="bg-[#FAFAFA] min-h-screen font-sans selection:bg-[#E56668] selection:text-white overflow-x-hidden text-[#1A2534]">
-      <Header />
-      <main className="flex flex-col w-full">
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="opps-heading">
+      <div className={container}>
+        <div className="max-w-[640px]">
+          <p className={eyebrow}>Programs &amp; opportunities</p>
+          <h2 id="opps-heading" className={cn(h2, "mt-3")}>Ways to go further with IELS</h2>
+          <p className={cn(lead, "mt-4")}>Programs open and close through the year. Dates and status below come from the event pages themselves.</p>
+        </div>
 
-        {/* =========================================
-            1️⃣ HERO SECTION
-        ========================================= */}
-        <section className="relative flex flex-col lg:flex-row items-center justify-between w-full gap-8 lg:gap-12 pt-28 sm:pt-32 lg:pt-36 pb-20 lg:pb-28 overflow-hidden bg-[#FAFAFA] px-6 sm:px-12 lg:px-[100px]">
-
-          {/* Background Community Photo */}
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="/images/contents/careers/iels_team_0.png"
-              alt="IELS Community"
-              fill
-              priority
-              className="object-cover opacity-[0.07]"
-            />
-          </div>
-
-          {/* Grid Background */}
-          <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#1A25340A_1px,transparent_1px),linear-gradient(to_bottom,#1A25340A_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)]"></div>
-
-          {/* Mascot */}
-          <div className="relative z-10 w-full lg:w-[40%] flex justify-center lg:justify-start">
-            <MascotHero />
-          </div>
-
-          {/* Text */}
-          <div className="relative z-20 flex flex-col justify-center items-center lg:items-start text-center lg:text-left w-full lg:w-[60%] space-y-7">
-
-            <span className="inline-flex items-center gap-2 bg-white border-2 border-[#1A2534] shadow-[2px_2px_0px_#1A2534] text-[#1A2534] px-5 py-2 rounded-full text-sm font-bold tracking-wide animate-fadeIn">
-              🌏 Southeast Asia's Goal-Driven English Ecosystem
-            </span>
-
-            <h1 className="text-[42px] sm:text-[48px] lg:text-[56px] leading-[1.05] text-[#1A2534] font-sans animate-fadeIn" style={{ animationDelay: "100ms" }}>
-              <span className="font-extrabold block">Your English Journey,</span>
-              <span className="font-extrabold text-[#E56668] block">
-                Personalized for Your Ambition.
-              </span>
-            </h1>
-
-            {/* UPDATED subtitle: mention courses */}
-            <p className="text-base sm:text-lg lg:text-xl text-[#2F4157] max-w-2xl leading-relaxed animate-fadeIn font-medium" style={{ animationDelay: "200ms" }}>
-               From learning the basics to acing your English Proficiency Test. We provide the IELTS & TOEFL preparation, resources, global opportunities, and progress tracking you need to study or work abroad.{" "}
-              <span className="font-bold text-[#1A2534]">track your goals and go global.</span>
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 pt-4 w-full sm:w-auto animate-fadeIn" style={{ animationDelay: "400ms" }}>
-              <Button asChild className="bg-[#E56668] text-white font-extrabold px-10 py-3 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 rounded-full group w-full sm:w-auto">
-                <Link href="/welcome/start" className="flex items-center justify-center gap-2">
-                  Find Your Path
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
-                </Link>
-              </Button>
-
-              {/* UPDATED: "Apply Course" → /products/courses */}
-              <Button asChild className="bg-white text-[#1A2534] font-extrabold px-10 py-3 text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:bg-[#1A2534] hover:text-white hover:shadow-[6px_6px_0px_#E56668] hover:-translate-y-1 transition-all duration-300 rounded-full w-full sm:w-auto">
-                <Link href="/products/courses" className="flex items-center justify-center">Apply Course</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            2️⃣ STATS STRIP
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-14 bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-8">
-              {[
-                { num: 8700, suffix: "+", label: "Active Members",  desc: "Growing daily",          color: "text-[#E56668]" },
-                { num: 810,  suffix: "+", label: "Success Stories", desc: "Scholarships & awards",  color: "text-[#1A2534]" },
-                { num: 135,  suffix: "+", label: "Global Careers",  desc: "Remote jobs & interns",  color: "text-[#E56668]" },
-                { num: 35,   suffix: "+", label: "Study Abroad",    desc: "International programs", color: "text-[#1A2534]" },
-              ].map((stat, i) => (
-                <div key={i} className="bg-[#FAFAFA] p-6 sm:p-8 rounded-[28px] border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 text-center sm:text-left">
-                  <p className={`text-4xl sm:text-5xl font-black ${stat.color} mb-2 tracking-tighter`}>
-                    <CountUp end={stat.num} duration={2.5} separator="," enableScrollSpy />{stat.suffix}
-                  </p>
-                  <p className="text-base sm:text-lg font-bold text-[#1A2534]">{stat.label}</p>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">{stat.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            3️⃣ JOURNEY STAIRCASE SECTION
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-20 lg:py-24 bg-[#FAFAFA]">
-          <div className="max-w-7xl mx-auto">
-
-            <div className="text-center space-y-4 mb-16">
-              <span className="inline-block bg-white border-2 border-[#1A2534] text-[#E56668] font-extrabold text-xs sm:text-sm tracking-widest uppercase px-5 py-2 rounded-full shadow-[2px_2px_0px_#1A2534]">
-                Your Learning Path
-              </span>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1A2534] leading-tight tracking-tight">
-                Master English at Every<br />
-                <span className="text-[#E56668]">Stage of Your Goal.</span>
-              </h2>
-              <p className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto font-medium">
-                No matter where you start, IELS gives you a clear, structured path to your global destination.
-              </p>
-            </div>
-
-            {/* Desktop Staircase */}
-            <div className="hidden lg:flex flex-col gap-0 relative">
-              <div className="absolute left-[50%] top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#1A2534]/10 via-[#E56668]/40 to-[#1A2534]/10 -translate-x-1/2 z-0" />
-
-              {journeySteps.map((step, i) => {
-                const isEven = i % 2 === 0;
-                return (
-                  <div key={i} className={`relative flex items-center gap-0 mb-4 ${isEven ? "flex-row" : "flex-row-reverse"}`}>
-                    <div className={`w-[calc(50%-40px)] ${isEven ? "mr-auto pl-0 pr-8" : "ml-auto pr-0 pl-8"}`}>
-                      <div
-                        className={`${step.accent} rounded-[32px] p-6 lg:p-8 text-white border-2 border-[#1A2534] shadow-[6px_6px_0px_#1A2534] group hover:-translate-y-2 hover:shadow-[10px_10px_0px_#1A2534] transition-all duration-300`}
-                        style={{ marginTop: i === 1 ? "28px" : i === 2 ? "56px" : "0px" }}
-                      >
-                        <span className={`text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block ${step.tagColor} border border-white/20`}>
-                          {step.tag}
-                        </span>
-                        <div className="flex items-start gap-4 mb-4">
-                          <div className="w-14 h-14 bg-white/15 border-2 border-white/30 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Image src={step.icon} alt={step.title} width={32} height={32} className="object-contain" />
-                          </div>
-                          <div>
-                            <p className="text-4xl font-black text-white/20 leading-none mb-1">{step.num}</p>
-                            <h3 className="text-xl font-extrabold text-white leading-tight">{step.title}</h3>
-                          </div>
-                        </div>
-                        <p className="text-white/85 leading-relaxed text-sm font-medium">{step.desc}</p>
-                      </div>
-                    </div>
-
-                    <div
-                      className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center justify-center"
-                      style={{ top: i === 0 ? "24px" : i === 1 ? "56px" : "88px" }}
-                    >
-                      <div className="w-10 h-10 rounded-full bg-[#E56668] border-4 border-white shadow-[0_0_0_3px_#1A2534] flex items-center justify-center">
-                        <span className="text-white font-black text-sm">{i + 1}</span>
-                      </div>
-                    </div>
-
-                    <div className={`w-[calc(50%-40px)] ${isEven ? "ml-auto" : "mr-auto"}`} />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Mobile Staircase */}
-            <div className="lg:hidden flex flex-col gap-5 relative">
-              <div className="absolute left-6 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#1A2534]/10 via-[#E56668]/40 to-[#1A2534]/10 z-0" />
-              {journeySteps.map((step, i) => (
-                <div key={i} className="flex gap-4 relative z-10">
-                  <div className="w-10 h-10 rounded-full bg-[#E56668] border-4 border-white shadow-[0_0_0_2px_#1A2534] flex items-center justify-center shrink-0 mt-2">
-                    <span className="text-white font-black text-sm">{i + 1}</span>
-                  </div>
-                  <div className={`${step.accent} rounded-[24px] p-6 text-white border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] flex-1`}>
-                    <span className={`text-[10px] sm:text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block ${step.tagColor} border border-white/20`}>
-                      {step.tag}
-                    </span>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
-                        <Image src={step.icon} alt={step.title} width={24} height={24} className="object-contain" />
-                      </div>
-                      <h3 className="text-lg font-extrabold text-white">{step.title}</h3>
-                    </div>
-                    <p className="text-white/85 leading-relaxed text-sm font-medium">{step.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center mt-16">
-              <Button asChild className="bg-[#E56668] text-white font-bold px-8 py-3 text-base sm:text-lg border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 rounded-full group">
-                <Link href="/welcome/start" className="flex items-center justify-center gap-2">
-                  Take Our Free Assessment
-                  <ArrowRight className="group-hover:translate-x-1 transition-transform" size={18} />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            4️⃣ PATHS SECTION
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-16 lg:py-24 bg-white">
-          <div className="max-w-7xl mx-auto">
-
-            <div className="text-center space-y-4 mb-16">
-              <span className="inline-block border-2 border-[#E56668] text-[#E56668] font-extrabold text-sm tracking-widest uppercase px-5 py-2 rounded-full shadow-[2px_2px_0px_#E56668]">
-                Choose Your Track
-              </span>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1A2534] tracking-tight">
-                Study or Work.<br />
-                <span className="text-[#E56668]">We'll Get You There.</span>
-              </h2>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-10">
-
-              {/* Study Path */}
-              <div className="relative bg-[#1A2534] border-2 border-[#1A2534] rounded-[40px] p-10 lg:p-14 text-white shadow-[8px_8px_0px_#E56668] group hover:-translate-y-2 hover:shadow-[12px_12px_0px_#E56668] transition-all duration-300">
-                <div className="relative z-10 flex flex-col h-full">
-                  <div className="w-16 h-16 bg-[#E56668] border-2 border-white rounded-2xl flex items-center justify-center mb-8 shadow-[3px_3px_0px_#FFF] transform -rotate-3 group-hover:rotate-0 transition-transform duration-300">
-                    <GraduationCap size={32} className="text-white" strokeWidth={2.5} />
-                  </div>
-                  <h3 className="text-3xl font-extrabold mb-4">Study Abroad</h3>
-                  <p className="text-white/85 mb-10 leading-relaxed text-lg font-medium">
-                    Win scholarships, ace standardized tests, and secure admission to top universities worldwide. We guide you from English proficiency to application success.
-                  </p>
-                  <div className="mb-10 mt-auto">
-                    <div className="flex items-center gap-4 bg-white/8 p-4 rounded-2xl border-2 border-[#E56668]">
-                      <div className="w-10 h-10 rounded-full bg-[#E56668] flex items-center justify-center shrink-0 border-2 border-white">
-                        <CheckCircle size={18} className="text-white" />
-                      </div>
-                      <span className="text-sm font-bold">Direct access to 9+ world-class university networks</span>
-                    </div>
-                  </div>
-                  <div className="border-t-2 border-dashed border-white/25 pt-6">
-                    <p className="text-xs text-[#E56668] mb-4 uppercase tracking-widest font-extrabold">Partner Universities</p>
-                    <div className="grid grid-cols-4 gap-3">
-                      {studyPartners.map((partner, index) => (
-                        <div key={index} className="bg-white rounded-xl h-14 flex items-center justify-center p-2 border-2 border-transparent hover:border-[#E56668] transition-colors overflow-hidden">
-                          <Image src={partner.logo} alt={partner.name} width={80} height={40} loading="lazy" className="object-contain max-h-full" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+        <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+          <Link href={GIF_BATCH.overviewPage} className={cn(cardLink, "grid overflow-hidden sm:grid-cols-[1fr_200px]")} data-testid="landing-gif">
+            <div className="flex flex-col p-7">
+              <div className="flex items-center gap-3">
+                <Image src="/images/logos/events/gifsgp.png" alt="" width={40} height={40} className="h-10 w-auto" />
+                <p className="text-[14px] font-semibold text-[#914D4D]">Global Impact Fellowship</p>
               </div>
-
-              {/* Work Path */}
-              <div className="relative bg-[#E56668] border-2 border-[#1A2534] rounded-[40px] p-10 lg:p-14 text-white shadow-[8px_8px_0px_#1A2534] group hover:-translate-y-2 hover:shadow-[12px_12px_0px_#1A2534] transition-all duration-300 lg:mt-12">
-                <div className="relative z-10 flex flex-col h-full">
-                  <div className="w-16 h-16 bg-[#1A2534] border-2 border-white rounded-2xl flex items-center justify-center mb-8 shadow-[3px_3px_0px_#FFF] transform rotate-3 group-hover:rotate-0 transition-transform duration-300">
-                    <Briefcase size={32} className="text-white" strokeWidth={2.5} />
-                  </div>
-                  <h3 className="text-3xl font-extrabold mb-4">Global Careers</h3>
-                  <p className="text-white/90 mb-10 leading-relaxed text-lg font-medium">
-                    Land remote jobs, secure international internships, and build professional careers with global companies. From interview prep to job placement.
-                  </p>
-                  <div className="mb-10 mt-auto">
-                    <div className="flex items-center gap-4 bg-white/15 p-4 rounded-2xl border-2 border-[#1A2534]">
-                      <div className="w-10 h-10 rounded-full bg-[#1A2534] flex items-center justify-center shrink-0 border-2 border-white">
-                        <CheckCircle size={18} className="text-white" />
-                      </div>
-                      <span className="text-sm font-bold">Strategic career pipeline to 30+ MNCs in Asia Pacific</span>
-                    </div>
-                  </div>
-                  <div className="border-t-2 border-dashed border-white/25 pt-6">
-                    <p className="text-xs text-[#1A2534] mb-4 uppercase tracking-widest font-extrabold">Partner Companies</p>
-                    <div className="grid grid-cols-4 gap-3">
-                      {workPartners.map((partner, index) => (
-                        <div key={index} className="bg-white rounded-xl h-14 flex items-center justify-center p-2 border-2 border-transparent hover:border-[#1A2534] transition-colors overflow-hidden">
-                          <Image src={partner.logo} alt={partner.name} width={80} height={40} loading="lazy" className="object-contain max-h-full" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <h3 className={cn(h3, "mt-5")}>Lead a project with youth from across Southeast Asia</h3>
+              <p className={cn(body, "mt-2")}>{GIF_BATCH.facts[0]}. {GIF_BATCH.facts[1]}.</p>
+              <div className="mt-auto pt-6">
+                {gifOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Registration open until {fmt(new Date(GIF_BATCH.registrationDeadline))}</span>}
+                {gifOpen === false && <span className={pill}>{GIF_BATCH.name}: registration closed</span>}
+                <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">About the fellowship <ArrowRight size={16} aria-hidden="true" /></span>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            5️⃣ MEMBER STORIES
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-16 lg:py-20 bg-[#1A2534] relative overflow-hidden">
-          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16 relative z-10">
-
-            <div className="w-full lg:w-1/2 space-y-6 text-center lg:text-left order-1 lg:order-none">
-              <div className="inline-block border-2 border-[#E56668] bg-[#E56668] text-white px-5 py-1.5 rounded-full font-black text-xs sm:text-sm tracking-widest uppercase shadow-[3px_3px_0px_rgba(255,255,255,0.3)]">
-                Social Proof
-              </div>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
-                They made it.<br />
-                <span className="text-[#E56668]">You're next.</span>
-              </h2>
-              <p className="text-white/80 text-base sm:text-lg font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
-                From academic exchanges at Tohoku University to international programs in the Philippines. Our members are proving that with the right ecosystem, Indonesian talent is absolutely unstoppable.
-              </p>
-              <div className="pt-2">
-                <Button asChild className="bg-[#E56668] text-white font-extrabold border-2 border-white shadow-[4px_4px_0px_rgba(255,255,255,0.3)] hover:shadow-[6px_6px_0px_rgba(255,255,255,0.4)] hover:-translate-y-1 rounded-full px-8 py-2.5 text-base sm:text-lg group w-full sm:w-auto transition-all duration-300">
-                  <Link href="https://circle.ielsco.com/stories" className="flex items-center justify-center gap-3">
-                    Discover Their Stories
-                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={18} />
-                  </Link>
-                </Button>
-              </div>
+            <div className="relative hidden min-h-[240px] sm:block">
+              <Image src={GIF_BATCH.poster} alt="" fill sizes="200px" className="object-cover" />
             </div>
+          </Link>
 
-            <div className="w-full lg:w-1/2 order-2 lg:order-none">
-              {/* Desktop Cards */}
-              <div className="hidden lg:block relative w-full h-[400px]">
-                <div className="absolute top-2 right-4 w-[300px] xl:w-[320px] bg-[#FAFAFA] border-2 border-[#1A2534] rounded-[24px] p-5 shadow-[6px_6px_0px_#E56668] transform rotate-3 hover:rotate-0 hover:-translate-y-2 transition-all duration-300 z-20 cursor-default">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#1A2534] shadow-[2px_2px_0px_#1A2534] relative shrink-0">
-                      <Image src="/images/contents/stories/member-stories/profile/jo.png" alt="George Abraham" fill className="object-cover" />
-                    </div>
-                    <div>
-                      <p className="font-extrabold text-[#1A2534] text-sm leading-tight">George "Jo" Abraham</p>
-                      <p className="text-[9px] text-[#E56668] font-black uppercase tracking-wider mt-0.5">ISUFST, Philippines</p>
-                    </div>
-                  </div>
-                  <p className="text-[#1A2534] font-medium text-xs xl:text-sm italic leading-relaxed">
-                    "English isn't just a subject—it's a passport. If you have the willingness to learn and the courage to use it, the world becomes a lot closer."
-                  </p>
-                </div>
-
-                <div className="absolute bottom-2 left-4 w-[320px] xl:w-[340px] bg-[#FAFAFA] border-2 border-[#1A2534] rounded-[24px] p-5 shadow-[6px_6px_0px_#E56668] transform -rotate-3 hover:rotate-0 hover:-translate-y-2 transition-all duration-300 z-30 cursor-default">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#1A2534] shadow-[2px_2px_0px_#1A2534] relative shrink-0">
-                      <Image src="/images/contents/stories/member-stories/profile/dzakwan.png" alt="Ahmad Zakwaan" fill className="object-cover" />
-                    </div>
-                    <div>
-                      <p className="font-extrabold text-[#1A2534] text-sm leading-tight">Ahmad Zakwaan</p>
-                      <p className="text-[9px] text-[#E56668] font-black uppercase tracking-wider mt-0.5">Tohoku Univ, Japan</p>
-                    </div>
-                  </div>
-                  <p className="text-[#1A2534] font-medium text-xs xl:text-sm italic leading-relaxed">
-                    "Studying in an international space robotics lab was a dream. English skills are the absolute key to unlocking global opportunity."
-                  </p>
-                </div>
-
-                <div className="absolute top-[45%] left-0 xl:left-[8%] w-[190px] xl:w-[210px] bg-[#E56668] border-2 border-white rounded-[24px] p-5 shadow-[4px_4px_0px_rgba(255,255,255,0.4)] transform -translate-y-1/2 -rotate-6 hover:rotate-0 transition-all duration-300 z-10 text-white cursor-default">
-                  <div className="flex items-center gap-1 mb-2">
-                    {[...Array(5)].map((_, i) => <Star key={i} fill="currentColor" className="text-yellow-300 w-4 h-4" />)}
-                  </div>
-                  <p className="font-black text-4xl xl:text-5xl mb-1 tracking-tighter">110+</p>
-                  <p className="text-xs font-bold leading-tight opacity-90">Success stories written by our amazing community.</p>
-                </div>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="flex flex-col gap-4 lg:hidden mt-4">
-                <div className="bg-[#E56668] border-2 border-white rounded-[20px] p-4 text-white text-center">
-                  <div className="flex justify-center gap-1 mb-2">
-                    {[...Array(5)].map((_, i) => <Star key={i} fill="currentColor" className="text-yellow-300 w-4 h-4" />)}
-                  </div>
-                  <p className="font-black text-3xl mb-1">110+</p>
-                  <p className="text-xs opacity-90">Global Success Stories</p>
-                </div>
-                {[
-                  { img: "/images/contents/stories/member-stories/profile/jo.png", name: 'George "Jo" Abraham', loc: "ISUFST, Philippines", quote: "English isn't just a subject—it's a passport. The world becomes a lot closer." },
-                  { img: "/images/contents/stories/member-stories/profile/dzakwan.png", name: "Ahmad Zakwaan", loc: "Tohoku Univ, Japan", quote: "English skills are the absolute key to unlocking global opportunity." },
-                ].map((c, i) => (
-                  <div key={i} className="bg-[#FAFAFA] border-2 border-[#1A2534] rounded-[20px] p-4 shadow-[4px_4px_0px_#E56668]">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#1A2534] relative shrink-0">
-                        <Image src={c.img} alt={c.name} fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-extrabold text-[#1A2534] text-xs">{c.name}</p>
-                        <p className="text-[9px] text-[#E56668] font-black uppercase tracking-wider">{c.loc}</p>
-                      </div>
-                    </div>
-                    <p className="text-[#1A2534] text-xs italic font-medium">"{c.quote}"</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            6️⃣ LOUNGE + COURSES — Two-card CTA
-            UPDATED: Split menjadi dua panel per request
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-16 bg-[#FAFAFA]">
-          <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8">
-
-            {/* Panel A: IELS Lounge */}
-            <div className="bg-[#1A2534] border-2 border-[#1A2534] rounded-[40px] p-10 lg:p-12 flex flex-col justify-between gap-8 shadow-[8px_8px_0px_#E56668] group hover:-translate-y-2 hover:shadow-[12px_12px_0px_#E56668] transition-all duration-300 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#E56668]/10 blur-[60px] rounded-full pointer-events-none" />
-
-              <div className="relative z-10">
-                <span className="font-extrabold tracking-widest uppercase text-xs mb-5 inline-block bg-[#E56668] text-white px-4 py-1.5 rounded-full border-2 border-white/20">
-                  Daily Practice
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 leading-tight">
-                  IELS Lounge:<br />
-                  <span className="text-[#E56668]">Your Daily Practice Space.</span>
-                </h2>
-                <p className="text-white/80 text-base leading-relaxed font-medium">
-                  Start from zero or refine your fluency. Join a community of SEA English learners 
-                  that practices together in a judgment-free zone — build real confidence through 
-                  real conversations, every night.
-                </p>
-              </div>
-
-              <div className="relative z-10 flex flex-col sm:flex-row gap-4 items-start">
-                <Button asChild className="bg-[#E56668] text-white font-bold hover:bg-[#c94f51] rounded-full px-8 py-3 text-base border-2 border-white/30 shadow-[3px_3px_0px_rgba(255,255,255,0.2)] hover:shadow-[5px_5px_0px_rgba(255,255,255,0.3)] hover:-translate-y-1 transition-all duration-300 group/btn w-full sm:w-auto">
-                  <Link href="/iels-lounge" className="flex items-center justify-center gap-2">
-                    Join Our Community
-                    <ArrowRight className="group-hover/btn:translate-x-1 transition-transform" size={18} />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Panel B: IELTS/TOEFL Courses */}
-            <div className="bg-[#E56668] border-2 border-[#1A2534] rounded-[40px] p-10 lg:p-12 flex flex-col justify-between gap-8 shadow-[8px_8px_0px_#1A2534] group hover:-translate-y-2 hover:shadow-[12px_12px_0px_#1A2534] transition-all duration-300 relative overflow-hidden">
-              <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-[#1A2534]/10 blur-[60px] rounded-full pointer-events-none" />
-
-              <div className="relative z-10">
-                <span className="font-extrabold tracking-widest uppercase text-xs mb-5 inline-block bg-[#1A2534] text-white px-4 py-1.5 rounded-full border-2 border-white/20">
-                  IELTS & TOEFL Prep
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 leading-tight">
-                  Score with Purpose.
-                </h2>
-                <p className="text-white/90 text-base leading-relaxed font-medium">
-                  Don't just chase numbers. Use our mock tests and structured courses to hit the 
-                  exact score requirements for your target university or visa — guided by 
-                  experienced mentors who've been there.
-                </p>
-              </div>
-
-              <div className="relative z-10 flex flex-col sm:flex-row gap-4 items-start">
-                <Button asChild className="bg-[#1A2534] text-white font-bold hover:bg-[#2F4157] rounded-full px-8 py-3 text-base border-2 border-white/30 shadow-[3px_3px_0px_rgba(255,255,255,0.2)] hover:shadow-[5px_5px_0px_rgba(255,255,255,0.3)] hover:-translate-y-1 transition-all duration-300 group/btn w-full sm:w-auto">
-                  <Link href="/products/courses" className="flex items-center justify-center gap-2">
-                    Enroll in Course
-                    <ArrowRight className="group-hover/btn:translate-x-1 transition-transform" size={18} />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            7️⃣ PRODUCTS — Quick Links
-        ========================================= */}
-        <section className="px-6 sm:px-12 lg:px-[100px] py-16 bg-[#FAFAFA]">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  icon: "/images/contents/general/laptop.png",
-                  iconBg: "bg-[#E56668]/10 group-hover:bg-[#E56668]",
-                  title: "IELS English Test",
-                  desc: "Don't let guesswork hold you back. Take our proficiency test to understand your skills, and get a personalized learning roadmap tailored to your study or career goals.",
-                  link: "/test",
-                  linkText: "Take the Test",
-                  linkColor: "text-[#E56668] hover:border-[#E56668]",
-                },
-                {
-                  icon: "/images/contents/general/chat.png",
-                  iconBg: "bg-[#1A2534]/10 group-hover:bg-[#1A2534]",
-                  title: "Global Events",
-                  desc: "Join our fellowships abroad to build the profile you need to secure your spot at top universities or global companies.",
-                  link: "/events",
-                  linkText: "See What's On",
-                  linkColor: "text-[#1A2534] hover:border-[#1A2534]",
-                },
-                {
-                  icon: "/images/contents/general/bookmark_icon.png",
-                  iconBg: "bg-[#E56668]/10 group-hover:bg-[#E56668]",
-                  title: "Free Resources",
-                  desc: "Access our complete library of grammar guides, learning materials, and curated scholarship lists designed to help you navigate your journey abroad for free.",
-                  link: "/products/resources",
-                  linkText: "Access Library",
-                  linkColor: "text-[#E56668] hover:border-[#E56668]",
-                },
-              ].map((card, i) => (
-                <div key={i} className="bg-white p-10 rounded-[40px] border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:-translate-y-2 hover:shadow-[8px_8px_0px_#E56668] transition-all duration-300 group">
-                  <div className={`w-16 h-16 ${card.iconBg} border-2 border-[#1A2534] rounded-2xl flex items-center justify-center mb-8 transition-colors duration-500`}>
-                    <Image src={card.icon} alt={card.title} width={36} height={36} className="object-contain" />
-                  </div>
-                  <h3 className="font-extrabold text-2xl text-[#1A2534] mb-4">{card.title}</h3>
-                  <p className="text-gray-600 mb-8 leading-relaxed font-medium">{card.desc}</p>
-                  <Link href={card.link} className={`inline-flex items-center gap-2 font-extrabold hover:gap-4 transition-all uppercase tracking-wide text-sm border-b-2 border-transparent pb-1 ${card.linkColor}`}>
-                    {card.linkText} <ArrowRight size={18} />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================
-            8️⃣ FINAL CTA
-        ========================================= */}
-        <section className="w-full bg-[#FAFAFA] text-center pt-20 pb-40 px-6 sm:px-12 lg:px-[100px] relative border-t-2 border-dashed border-gray-200">
-
-          <div className="absolute top-10 left-[8%] opacity-15 w-20 h-20 hidden lg:block">
-            <Image src="/images/contents/general/globe.png" alt="" fill className="object-contain" />
-          </div>
-          <div className="absolute top-14 right-[8%] opacity-15 w-20 h-20 hidden lg:block">
-            <Image src="/images/contents/general/pencil.png" alt="" fill className="object-contain" />
-          </div>
-          <div className="absolute bottom-28 left-[12%] opacity-10 w-16 h-16 hidden lg:block">
-            <Image src="/images/contents/general/speaking.png" alt="" fill className="object-contain" />
-          </div>
-          <div className="absolute bottom-28 right-[12%] opacity-10 w-16 h-16 hidden lg:block">
-            <Image src="/images/contents/general/chat.png" alt="" fill className="object-contain" />
-          </div>
-
-          <div className="max-w-4xl mx-auto flex flex-col items-center justify-center gap-10 relative z-10">
-            <div className="space-y-6">
-              <h2 className="text-[44px] sm:text-[60px] lg:text-[76px] font-extrabold leading-[1.07] text-[#1A2534] tracking-tight">
-                Ready to Go{" "}
-                <span className="text-[#E56668] relative inline-block">
-                  Global?
-                  <svg className="absolute w-full h-3 -bottom-1 left-0 opacity-60" viewBox="0 0 200 12" fill="none">
-                    <path d="M2 9 C40 3, 100 1, 198 7" stroke="#E56668" strokeWidth="4" strokeLinecap="round" fill="none" />
-                  </svg>
-                </span>
-              </h2>
-              <p className="text-xl sm:text-2xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed">
-                Join thousands of ambitious Indonesian students building their path to scholarships, remote careers, and international opportunities.
-              </p>
-            </div>
-
-            <Button asChild className="bg-[#E56668] text-white font-extrabold px-14 py-3 text-xl border-2 border-[#1A2534] shadow-[6px_6px_0px_#1A2534] hover:shadow-[8px_8px_0px_#1A2534] hover:-translate-y-2 transition-all duration-300 rounded-full group">
-              <Link href="/welcome/start" className="flex items-center justify-center gap-4">
-                Start Now!
-                <ArrowRight className="group-hover:translate-x-2 transition-transform" size={24} />
+          <div className="grid gap-6">
+            {nextEvent ? (
+              <Link href={`/events/${generateSlug(nextEvent.e.title)}`} className={cn(cardLink, "p-7")} data-testid="landing-next-event">
+                <p className="text-[14px] font-semibold text-[#577E90]">Next event · registration open</p>
+                <h3 className={cn(h3, "mt-2")}>{nextEvent.e.title}</h3>
+                <p className={cn(body, "mt-2")}>Register by {fmt(nextEvent.closes)}.</p>
+                <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">Event details <ArrowRight size={16} aria-hidden="true" /></span>
               </Link>
-            </Button>
-
-            <p className="text-sm text-gray-400 font-medium">Free to join · 8,700+ members · Start in 2 minutes</p>
+            ) : (
+              <Link href="/events" className={cn(cardLink, "p-7")}>
+                <p className="text-[14px] font-semibold text-[#577E90]">Events</p>
+                <h3 className={cn(h3, "mt-2")}>Info sessions, workshops and fellowships</h3>
+                <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">See all events <ArrowRight size={16} aria-hidden="true" /></span>
+              </Link>
+            )}
+            <a href="https://school.ielsco.com" className={cn(cardLink, "p-7")}>
+              <p className="text-[14px] font-semibold text-[#577E90]">For schools</p>
+              <h3 className={cn(h3, "mt-2")}>IELS for Schools</h3>
+              <p className={cn(body, "mt-2")}>A portal for partner schools to follow their students&apos; English learning.</p>
+              <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">Visit the school portal <ArrowUpRight size={16} aria-hidden="true" /></span>
+            </a>
           </div>
-        </section>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-      </main>
+function FinalCta() {
+  return (
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="final-heading">
+      <div className={cn(container, "flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between")}>
+        <div className="flex items-center gap-5">
+          <Image src="/images/contents/mascot/happy.svg" alt="" width={88} height={88} className="hidden h-[88px] w-[88px] shrink-0 sm:block" />
+          <div>
+            <h2 id="final-heading" className={h2}>Start with one session</h2>
+            <p className={cn(lead, "mt-2 max-w-[560px]")}>Create a free account and join the next Circle session.</p>
+          </div>
+        </div>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <Link href="/sign-up" className={btnPrimary}>Join IELS for free <ArrowRight size={18} aria-hidden="true" /></Link>
+          <Link href="/about" className={btnSecondary}>About IELS</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
+export default function Home() {
+  return (
+    <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="landing-page">
+      <Hero />
+      <HowItWorks />
+      <CircleSessions />
+      <Stories />
+      <Opportunities />
+      <FinalCta />
       <Footer />
-      <GIFPopup />
-
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(28px); }
-          to   { opacity: 1; transform: translateY(0);    }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          opacity: 0;
-        }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
     </div>
   );
 }

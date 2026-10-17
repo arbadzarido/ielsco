@@ -1,4 +1,3 @@
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import Link from "next/link";
@@ -108,7 +107,6 @@ export default async function DetailStoriesPage({
   if (!memberStory) {
     return (
       <div>
-        <Header />
         <div className="flex flex-col items-center justify-center min-h-[400px] bg-white pt-32">
           <h1 className="text-2xl font-bold text-[#2F4157] mb-4">
             Story Not Found
@@ -132,8 +130,7 @@ export default async function DetailStoriesPage({
     .slice(0, 3);
 
   return (
-    <div className="bg-white">
-      <Header />
+    <div className="bg-white [&_:is(h1,h2,h3,h4,h5,h6)]:font-sans">
 
       {/* ================= HERO ================= */}
       <section className="relative pt-16 md:pt-0">
@@ -245,7 +242,7 @@ export default async function DetailStoriesPage({
             {memberStory.highlights.map((h, i) => (
               <div
                 key={i}
-                className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-4 sm:p-5 text-center"
+                className="rounded-2xl bg-white border border-[#E6E9EE] p-4 sm:p-5 text-center"
               >
                 <p className="text-xl sm:text-2xl font-extrabold text-[#2F4157]">
                   {h.value}
@@ -340,7 +337,7 @@ export default async function DetailStoriesPage({
       {/* ================= CONNECT ================= */}
       {hasSocial && (
         <section className="max-w-3xl mx-auto px-4 sm:px-8 lg:px-0 mt-16 sm:mt-20">
-          <div className="rounded-3xl border border-gray-200 bg-[#FAFAFA] p-6 sm:p-8 text-center">
+          <div className="rounded-3xl border border-[#E6E9EE] bg-white p-6 sm:p-8 text-center">
             <h3 className="text-lg sm:text-xl font-extrabold text-[#2F4157]">
               Connect with {firstName(author.name)}
             </h3>
@@ -384,23 +381,22 @@ export default async function DetailStoriesPage({
       )}
 
       {/* ================= IELS CIRCLE CTA ================= */}
-      <section className="relative bg-[#2F4157] mt-20 sm:mt-24 py-14 sm:py-16 overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-[360px] h-[360px] bg-[#E56668]/15 rounded-full blur-[120px]" />
+      <section className="relative mt-20 overflow-hidden border-y border-[#E6E9EE] bg-white py-14 sm:mt-24 sm:py-16">
         <div className="relative max-w-3xl mx-auto px-4 sm:px-8 lg:px-0 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#E56668]">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#577E90]">
             Meet more SEAblings
           </p>
-          <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+          <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[#1A2534] leading-tight">
             This story is one of many journeys happening across Southeast
             Asia.
           </h3>
-          <p className="mt-4 text-white/80">
+          <p className="mt-4 text-[#2F4157]/75">
             Practice English. Meet people from Southeast Asia. Exchange
             experiences. Discover opportunities.
           </p>
           <Button
             asChild
-            className="mt-7 bg-[#E56668] hover:bg-[#C04C4E] px-8 py-3 rounded-full text-white font-semibold"
+            className="mt-7 bg-[#2F4157] hover:bg-[#1A2534] px-8 py-3 rounded-full text-white font-semibold"
           >
             <Link href={CIRCLE_LINK} target="_blank" rel="noopener noreferrer">
               Join IELS Circle

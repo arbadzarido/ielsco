@@ -2,7 +2,6 @@
 
 import { useState, use } from "react";
 import { notFound } from "next/navigation";
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import RoleModal from "@/components/careers/RoleModal";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ export default function DivisionPage({ params }: DivisionPageProps) {
 
   return (
     <>
-      <Header />
 
       {/* ===== HERO ===== */}
       <section className="relative min-h-[65vh] lg:min-h-[75vh] overflow-hidden flex items-center">

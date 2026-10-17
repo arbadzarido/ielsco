@@ -1,6 +1,5 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -157,8 +156,7 @@ function validateCode() {
 }
   return (
     <div className="min-h-screen bg-white text-[#294154] antialiased">
-      <Header />
-      <main className="max-w-5xl mx-auto px-6 py-12 lg:py-20 space-y-12">
+      <div className="max-w-5xl mx-auto px-6 py-12 lg:py-20 space-y-12">
         {/* HERO */}
         <section className="p-8 lg:p-12 ">
           <div className="flex flex-col lg:flex-row items-center gap-8">
@@ -574,7 +572,7 @@ function validateCode() {
           </div>
         </section>
 
-      </main>
+      </div>
       <Footer />
     </div>
   );

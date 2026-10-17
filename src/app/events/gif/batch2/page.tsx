@@ -8,8 +8,9 @@ import {
   TrendingUp, Handshake, Layers, Heart, Map, Zap, PlaneTakeoff, Compass,
   Camera, FileWarning
 } from "lucide-react";
-import Header  from "@/components/header";
 import Footer  from "@/components/footer";
+import { useEffect as useEffectGif, useState as useStateGif } from "react";
+import { gifRegistrationOpen } from "@/data/gif";
 import Image   from "next/image";
 import Link    from "next/link";
 import { Button } from "@/components/ui/button";
@@ -127,9 +128,11 @@ const benefits = [
 // ============================================================
 
 export default function GIFEventPage() {
+  // Registration status from src/data/gif.ts (deadline 21 Sep 2026). After it, buttons say registration closed.
+  const [registrationOpen, setRegistrationOpen] = useStateGif(true);
+  useEffectGif(() => setRegistrationOpen(gifRegistrationOpen()), []);
   return (
-    <main className="min-h-screen bg-white text-[#304156] font-geologica">
-      <Header />
+    <div className="min-h-screen bg-white text-[#304156] font-geologica">
 
       {/* ===================================================
           HERO
@@ -210,9 +213,9 @@ export default function GIFEventPage() {
                   </div>
                 </div>
                 <div className="mt-auto space-y-2.5">
-                  <a href={links.register} target="_blank" rel="noopener noreferrer" className="bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center w-full shadow-lg text-sm transition-colors">
+                  {registrationOpen ? (<a href={links.register} target="_blank" rel="noopener noreferrer" className="bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center w-full shadow-lg text-sm transition-colors">
                     Register Now <ExternalLink className="w-4 h-4 ml-2" />
-                  </a>
+                  </a>) : (<span aria-disabled="true" className="bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center w-full shadow-lg text-sm transition-colors cursor-not-allowed opacity-70">Registration closed on 21 Sep 2026</span>)}
                   <a href={links.indo} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center w-full text-sm transition-colors">
                     Download Guidebook <Download className="w-4 h-4 ml-2" />
                   </a>
@@ -232,9 +235,9 @@ export default function GIFEventPage() {
                   </div>
                 </div>
                 <div className="mt-auto space-y-2.5">
-                  <a href={links.register} target="_blank" rel="noopener noreferrer" className="bg-[#304156] hover:bg-[#253344] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center w-full shadow-lg text-sm transition-colors">
+                  {registrationOpen ? (<a href={links.register} target="_blank" rel="noopener noreferrer" className="bg-[#304156] hover:bg-[#253344] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center w-full shadow-lg text-sm transition-colors">
                     Register Now <ExternalLink className="w-4 h-4 ml-2" />
-                  </a>
+                  </a>) : (<span aria-disabled="true" className="bg-[#304156] hover:bg-[#253344] text-white py-3.5 px-4 rounded-xl font-bold flex items-center justify-center w-full shadow-lg text-sm transition-colors cursor-not-allowed opacity-70">Registration closed on 21 Sep 2026</span>)}
                   <a href={links.sea} target="_blank" rel="noopener noreferrer" className="bg-white/10 hover:bg-white/20 border border-white/20 text-white py-3 px-4 rounded-xl font-bold flex items-center justify-center w-full text-sm transition-colors">
                     Download Guidebook <Download className="w-4 h-4 ml-2" />
                   </a>
@@ -399,9 +402,9 @@ export default function GIFEventPage() {
               </ul>
               
               <div className="space-y-3">
-                <a href={links.register} target="_blank" rel="noopener noreferrer" className="w-full bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-4 rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg">
+                {registrationOpen ? (<a href={links.register} target="_blank" rel="noopener noreferrer" className="w-full bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-4 rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg">
                   Register Now <ExternalLink className="w-4 h-4 ml-2" />
-                </a>
+                </a>) : (<span aria-disabled="true" className="w-full bg-[#914D4D] hover:bg-[#7a3e3e] text-white py-4 rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg cursor-not-allowed opacity-70">Registration closed on 21 Sep 2026</span>)}
                 <a href={links.indo} target="_blank" rel="noopener noreferrer" className="w-full bg-white border-2 border-gray-100 hover:border-[#914D4D]/30 hover:bg-gray-50 text-[#304156] py-3.5 rounded-xl font-bold flex items-center justify-center transition-colors">
                   Download Guidebook <Download className="w-4 h-4 ml-2" />
                 </a>
@@ -440,9 +443,9 @@ export default function GIFEventPage() {
               </ul>
               
               <div className="space-y-3">
-                <a href={links.register} target="_blank" rel="noopener noreferrer" className="w-full bg-[#304156] hover:bg-[#233040] text-white py-4 rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg">
+                {registrationOpen ? (<a href={links.register} target="_blank" rel="noopener noreferrer" className="w-full bg-[#304156] hover:bg-[#233040] text-white py-4 rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg">
                   Register Now <ExternalLink className="w-4 h-4 ml-2" />
-                </a>
+                </a>) : (<span aria-disabled="true" className="w-full bg-[#304156] hover:bg-[#233040] text-white py-4 rounded-xl font-bold flex items-center justify-center transition-colors shadow-lg cursor-not-allowed opacity-70">Registration closed on 21 Sep 2026</span>)}
                 <a href={links.sea} target="_blank" rel="noopener noreferrer" className="w-full bg-white border-2 border-gray-100 hover:border-[#304156]/30 hover:bg-gray-50 text-[#304156] py-3.5 rounded-xl font-bold flex items-center justify-center transition-colors">
                   Download Guidebook <Download className="w-4 h-4 ml-2" />
                 </a>
@@ -509,10 +512,10 @@ export default function GIFEventPage() {
           </p>
 
           <div className="flex flex-col items-center gap-4 justify-center mb-12">
-            <a href={links.register} target="_blank" rel="noopener noreferrer"
+            {registrationOpen ? (<a href={links.register} target="_blank" rel="noopener noreferrer"
               className="bg-white text-[#914D4D] font-bold px-10 py-4 rounded-xl hover:bg-gray-100 transition-all shadow-xl flex items-center justify-center gap-2 text-lg">
               Register Now <ExternalLink className="w-5 h-5" />
-            </a>
+            </a>) : (<span aria-disabled="true" className="bg-white text-[#914D4D] font-bold px-10 py-4 rounded-xl hover:bg-gray-100 transition-all shadow-xl flex items-center justify-center gap-2 text-lg cursor-not-allowed opacity-70">Registration closed on 21 Sep 2026</span>)}
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-2">
               <a href={links.indo} target="_blank" rel="noopener noreferrer"
@@ -540,6 +543,6 @@ export default function GIFEventPage() {
       </section>
 
       <Footer />
-    </main>
+    </div>
   );
 }

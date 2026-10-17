@@ -1,11 +1,14 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ArrowUpRight, Lock } from "lucide-react";
+import { CIRCLE_COHORT } from "@/data/dashboard/circle";
+import { CIRCLE_DISCORD_LINK, CIRCLE_REGISTRATION_LINK } from "@/components/circle/PublicSessions";
+import { btnAccent, btnSecondary, pill } from "@/components/site/ui";
+import { cn } from "@/lib/utils";
 
 function CountUp({
   end,
@@ -44,7 +47,7 @@ function CountUp({
 }
 
 // Batas akhir pendaftaran: 9 Oktober 2026, 23:59 WIB (UTC+7)
-const REGISTRATION_DEADLINE = new Date("2026-10-09T23:59:59+07:00");
+const REGISTRATION_DEADLINE = new Date(CIRCLE_COHORT.registrationClosesAt);
 
 function CountdownTimer() {
   // null di initial render -> dihitung ulang di useEffect (client-only) biar
@@ -64,7 +67,7 @@ function CountdownTimer() {
 
   if (timeLeft <= 0) {
     return (
-      <span className="text-[#E56668] font-bold">Registration Closed</span>
+      <span className="font-bold text-[#2F4157]/70">Registration closed</span>
     );
   }
 
@@ -87,12 +90,12 @@ function CountdownTimer() {
       ).map(([label, value], i) => (
         <div
           key={label}
-          className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/15 text-center"
+          className="rounded-2xl border border-[#E6E9EE] bg-white px-4 py-3 text-center"
         >
-          <div className="text-2xl sm:text-3xl font-extrabold text-white tabular-nums">
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#1A2534] tabular-nums">
             {i === 0 ? value : pad(value)}
           </div>
-          <p className="mt-0.5 text-[10px] sm:text-xs uppercase tracking-wide text-white/70">
+          <p className="mt-0.5 text-[10px] sm:text-xs uppercase tracking-wide text-[#2F4157]/60">
             {label}
           </p>
         </div>
@@ -101,12 +104,30 @@ function CountdownTimer() {
   );
 }
 
-// TODO: ganti dengan link Google Form pendaftaran IELS Circle
-const REGISTRATION_LINK = "https://forms.gle/ADAEiK5Uj2aRBgf39";
 
-// dipakai di kedua CTA (hero & final) biar tombolnya konsisten
-const primaryCtaClass =
-  "bg-[#E56668] hover:bg-[#C04C4E] text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:scale-[0.97] w-full sm:w-auto";
+// Registration for the cohort uses the existing IELS Circle form while it is open. After the deadline the button is
+// replaced by a closed notice and the community channels, so visitors never see an expired call to action.
+function CohortCta({ label }: { label: string }) {
+  const [open, setOpen] = useState<boolean | null>(null);
+  useEffect(() => setOpen(REGISTRATION_DEADLINE.getTime() > Date.now()), []);
+  if (open === null) return <span className="h-[46px] w-[220px] animate-pulse rounded-full bg-[#F1F4F8]" aria-hidden="true" />;
+  if (open) {
+    return (
+      <a href={CIRCLE_REGISTRATION_LINK} target="_blank" rel="noopener noreferrer" className={btnAccent} data-testid="cohort-register">
+        {label} <ArrowUpRight size={18} aria-hidden="true" />
+      </a>
+    );
+  }
+  return (
+    <div className="flex flex-col items-start gap-3" data-testid="cohort-closed">
+      <span className={cn(pill, "px-4 py-2 text-[14px]")}><Lock size={14} aria-hidden="true" /> Registration for this cohort closed on 9 October 2026</span>
+      <div className="flex flex-wrap gap-3">
+        <a href={CIRCLE_DISCORD_LINK} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Join our Discord for the next cohort</a>
+        <Link href="/circle#sessions" className={btnSecondary}>Weekly sessions</Link>
+      </div>
+    </div>
+  );
+}
 
 /* ================= DATA ================= */
 
@@ -284,23 +305,10 @@ export default function IELSCircleAgendaPage() {
   };
 
   return (
-    <main className="bg-white text-[#2F4157]">
-      <Header />
+    <div className="bg-white text-[#2F4157] [&_:is(h1,h2,h3,h4,h5,h6)]:font-sans">
 
       {/* ================= HERO ================= */}
-      <section className="relative overflow-hidden">
-        {/* Background photo */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/contents/careers/iels_team_0.png"
-            alt="IELS Circle community"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-[#2F4157]/85" />
-        </div>
+      <section className="relative overflow-hidden border-b border-[#E6E9EE] bg-white">
 
         <div className="relative max-w-6xl mx-auto px-6 py-14 sm:py-16 lg:py-20">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
@@ -309,16 +317,16 @@ export default function IELSCircleAgendaPage() {
               {/* Program Identity */}
               <div className="flex items-center gap-3 mb-7">
                 <Image
-                  src="/images/logos/events/circlewhite.png"
+                  src="/images/logos/events/circleblue.png"
                   alt="IELS Circle"
                   width={180}
                   height={48}
-                  className="h-9 w-auto brightness-0 invert opacity-90"
+                  className="h-9 w-auto"
                   priority
                 />
-                <span className="h-5 w-px bg-white/25" />
+                <span className="h-5 w-px bg-[#E6E9EE]" />
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-white/65 whitespace-nowrap">
+                  <span className="text-sm text-[#2F4157]/60 whitespace-nowrap">
                     In collaboration with
                   </span>
                   {/* TODO: ganti dengan logo Tofly.id */}
@@ -336,37 +344,29 @@ export default function IELSCircleAgendaPage() {
               {/* Small contextual label */}
               <div className="inline-flex items-center gap-2 mb-6">
                 <span className="w-2 h-2 rounded-full bg-[#E56668]" />
-                <span className="text-sm font-semibold text-white/80 tracking-wide">
+                <span className="text-sm font-semibold text-[#577E90] tracking-wide">
                   FREE 8-WEEK ENGLISH COMMUNITY
                 </span>
               </div>
 
               {/* Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-tight max-w-3xl">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1A2534] leading-[1.05] tracking-tight max-w-3xl">
                 Make English a part of your{" "}
                 <span className="text-[#E56668]">everyday life.</span>
               </h1>
 
               {/* Supporting copy */}
-              <p className="mt-7 text-base sm:text-lg text-white/85 leading-relaxed max-w-2xl">
+              <p className="mt-7 text-base sm:text-lg text-[#2F4157]/80 leading-relaxed max-w-2xl">
                 Join an 8-week learning community where you can practice English,
                 meet like-minded young people, and build a habit of using English
                 beyond the classroom.
               </p>
 
               {/* CTA */}
-              <div className="mt-9 flex flex-col sm:flex-row sm:items-center gap-4">
-                <Button asChild className={primaryCtaClass}>
-                  <Link
-                    href={REGISTRATION_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Join IELS Circle
-                  </Link>
-                </Button>
+              <div className="mt-9 flex flex-col items-start gap-4">
+                <CohortCta label="Join IELS Circle" />
 
-                <span className="text-sm text-white/60">
+                <span className="text-sm text-[#2F4157]/60">
                   Free to join · Sep 11 – Oct 9, 2026
                 </span>
               </div>
@@ -374,7 +374,7 @@ export default function IELSCircleAgendaPage() {
 
             {/* RIGHT — PROGRAM SNAPSHOT */}
             <div className="lg:justify-self-end w-full max-w-md">
-              <div className="rounded-3xl bg-white p-7 sm:p-8 shadow-2xl">
+              <div className="rounded-3xl bg-white p-7 sm:p-8 border border-[#E6E9EE]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E56668]">
@@ -427,7 +427,7 @@ export default function IELSCircleAgendaPage() {
       <section className="py-14 sm:py-16 bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="rounded-3xl bg-[#FAFAFA] border border-gray-200 p-7 sm:p-8 text-center sm:text-left">
+            <div className="rounded-3xl bg-white border border-[#E6E9EE] p-7 sm:p-8 text-center sm:text-left">
               <p className="text-4xl sm:text-5xl font-extrabold text-[#2F4157]">
                 <CountUp end={19} suffix="K+" />
               </p>
@@ -436,7 +436,7 @@ export default function IELSCircleAgendaPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl bg-[#FAFAFA] border border-gray-200 p-7 sm:p-8 text-center sm:text-left">
+            <div className="rounded-3xl bg-white border border-[#E6E9EE] p-7 sm:p-8 text-center sm:text-left">
               <p className="text-4xl sm:text-5xl font-extrabold text-[#E56668]">
                 <CountUp end={5} />
               </p>
@@ -445,7 +445,7 @@ export default function IELSCircleAgendaPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl bg-[#FAFAFA] border border-gray-200 p-7 sm:p-8 text-center sm:text-left">
+            <div className="rounded-3xl bg-white border border-[#E6E9EE] p-7 sm:p-8 text-center sm:text-left">
               <p className="text-4xl sm:text-5xl font-extrabold text-[#2F4157]">
                 <CountUp end={100} suffix="+" />
               </p>
@@ -485,7 +485,7 @@ export default function IELSCircleAgendaPage() {
           {/* PROBLEM → SOLUTION */}
           <div className="mt-14 grid lg:grid-cols-2 gap-8">
             {/* LEFT — REAL PROBLEMS */}
-            <div className="rounded-3xl border border-gray-200 bg-[#FAFAFA] p-7 sm:p-8">
+            <div className="rounded-3xl border border-gray-200 bg-white p-7 sm:p-8">
               <p className="text-sm font-semibold text-[#2F4157] mb-6">
                 Maybe you&apos;ve felt this before:
               </p>
@@ -714,7 +714,7 @@ export default function IELSCircleAgendaPage() {
                     className={`
                       relative min-w-[260px] max-w-[260px] sm:min-w-[320px] sm:max-w-[320px]
                       shrink-0 snap-center text-left
-                      rounded-3xl bg-[#FAFAFA] p-6
+                      rounded-3xl bg-white p-6
                       border transition-all duration-300
                       hover:shadow-xl hover:-translate-y-1
                       ${
@@ -784,7 +784,7 @@ export default function IELSCircleAgendaPage() {
             </div>
 
             {/* RIGHT CONTENT */}
-            <div className="relative rounded-3xl border border-gray-200 bg-[#FAFAFA] p-8">
+            <div className="relative rounded-3xl border border-gray-200 bg-white p-8">
               {/* ACCENT BAR */}
               <div className="absolute left-0 top-6 bottom-6 w-1 rounded-full bg-[#E56668]" />
 
@@ -808,17 +808,14 @@ export default function IELSCircleAgendaPage() {
       </section>
 
       {/* ================= FINAL CTA ================= */}
-      <section className="relative bg-[#2F4157] py-16 sm:py-20 overflow-hidden">
-        {/* BACKGROUND GLOW */}
-        <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-[#E56668]/20 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-24 -left-24 w-[420px] h-[420px] bg-white/10 rounded-full blur-[120px]" />
+      <section className="relative overflow-hidden border-t border-[#E6E9EE] bg-white py-16 sm:py-20">
 
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* IMAGE COLLAGE */}
             <div className="relative h-[300px] sm:h-[360px] lg:h-[440px] w-full flex items-center justify-center">
               {/* IMAGE BACK */}
-              <div className="absolute left-4 sm:left-6 lg:left-0 top-10 sm:top-8 lg:top-10 w-[78%] sm:w-[70%] lg:w-[65%] aspect-[4/3] rotate-[-3deg] lg:rotate-[-6deg] rounded-3xl border-4 border-white shadow-2xl overflow-hidden z-10">
+              <div className="absolute left-4 sm:left-6 lg:left-0 top-10 sm:top-8 lg:top-10 w-[78%] sm:w-[70%] lg:w-[65%] aspect-[4/3] rotate-[-3deg] lg:rotate-[-6deg] rounded-3xl border border-[#E6E9EE] overflow-hidden z-10">
                 <Image
                   src="/images/contents/careers/banner/business.jpeg"
                   alt="IELS Circle Speaking Club"
@@ -829,7 +826,7 @@ export default function IELSCircleAgendaPage() {
               </div>
 
               {/* IMAGE FRONT */}
-              <div className="absolute right-2 sm:right-4 lg:right-0 bottom-6 sm:bottom-4 lg:bottom-8 w-[82%] sm:w-[75%] lg:w-[70%] aspect-[4/3] rotate-[2deg] lg:rotate-[4deg] rounded-3xl border-4 border-white shadow-2xl overflow-hidden z-20">
+              <div className="absolute right-2 sm:right-4 lg:right-0 bottom-6 sm:bottom-4 lg:bottom-8 w-[82%] sm:w-[75%] lg:w-[70%] aspect-[4/3] rotate-[2deg] lg:rotate-[4deg] rounded-3xl border border-[#E6E9EE] overflow-hidden z-20">
                 <Image
                   src="/images/contents/careers/banner/talent.jpeg"
                   alt="IELS Circle Community"
@@ -841,16 +838,16 @@ export default function IELSCircleAgendaPage() {
             </div>
 
             {/* CONTENT */}
-            <div className="text-white">
+            <div className="text-[#1A2534]">
               <div className="mb-6 flex items-center gap-4">
                 <Image
-                  src="/images/logos/events/circlewhite.png"
+                  src="/images/logos/events/circleblue.png"
                   alt="IELS Circle"
                   width={180}
                   height={48}
-                  className="h-10 w-auto brightness-0 invert opacity-90"
+                  className="h-10 w-auto"
                 />
-                <span className="text-white/50 text-sm">×</span>
+                <span className="text-[#2F4157]/50 text-sm">×</span>
                 {/* TODO: ganti dengan logo kolaborasi Tofly.id */}
                 <Image
                   src="/images/logos/company/tofly.png"
@@ -865,34 +862,26 @@ export default function IELSCircleAgendaPage() {
                 Ready to Join the <span className="text-[#E56668]">Circle</span>?
               </h2>
 
-              <p className="text-white/90 leading-relaxed max-w-xl mb-8">
+              <p className="text-[#2F4157]/80 leading-relaxed max-w-xl mb-8">
                 Join a growing community of Southeast Asian youth practicing
                 <b> English</b>, building <b>friendships</b>, and growing
                 <b> one conversation at a time</b> — completely free.
               </p>
 
-              <div className="space-y-2 text-sm text-white/80 mb-8">
+              <div className="space-y-2 text-sm text-[#2F4157]/75 mb-8">
                 <p>🧭 Be part of the early Circle members</p>
                 <p>🗓️ 8 weeks, 4 activities a week, zero cost</p>
               </div>
 
               <div className="mb-8">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2F4157]/50 mb-3">
                   Registration closes 9 Oct 2026, 23:59 WIB
                 </p>
                 <CountdownTimer />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <Button asChild className={primaryCtaClass}>
-                  <Link
-                    href={REGISTRATION_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Join IELS Circle — It&apos;s Free!
-                  </Link>
-                </Button>
+                <CohortCta label="Join IELS Circle — It's Free!" />
               </div>
             </div>
           </div>
@@ -900,6 +889,6 @@ export default function IELSCircleAgendaPage() {
       </section>
 
       <Footer />
-    </main>
+    </div>
   );
 }

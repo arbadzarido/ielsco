@@ -34,7 +34,9 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       */}
       <Header />
       
-      <main className={shouldRemovePadding ? "pt-0" : "pt-20"}>
+      {/* One global header for every public page (it hides itself on dashboards/auth, see header.tsx).
+          Pages must not render their own <Header />. */}
+      <main className={shouldRemovePadding ? "pt-0" : "pt-24"}>
         {children}
       </main>
     </>

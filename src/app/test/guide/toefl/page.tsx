@@ -2,7 +2,6 @@
 
 // src/app/test/guide/page.tsx
 /* Server component (App Router) */
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,9 +11,8 @@ export default function TestGuidePage() {
 
   return (
     <div className="min-h-screen bg-white text-[#294154] antialiased">
-      <Header />
 
-      <main className="max-w-5xl mx-auto px-6 py-12 lg:py-20 space-y-10">
+      <div className="max-w-5xl mx-auto px-6 py-12 lg:py-20 space-y-10">
         {/* Intro / Hero */}
         <section className="bg-gradient-to-b from-white to-[#fffaf6] rounded-2xl p-8 lg:p-12 shadow-sm border border-[#294154]/6">
           <div className="flex flex-col lg:flex-row items-center gap-6">
@@ -252,7 +250,7 @@ export default function TestGuidePage() {
             </a>
           </div>
         </section>
-      </main>
+      </div>
 
       <Footer />
     </div>

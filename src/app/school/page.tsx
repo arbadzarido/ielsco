@@ -1,6 +1,5 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import CountUp from "react-countup";
@@ -172,8 +171,7 @@ export default function SchoolsPage() {
   const tab = TAB_CONTENT[activeTab];
 
   return (
-    <main className="min-h-screen bg-white text-[#294154] font-geologica">
-      <Header />
+    <div className="min-h-screen bg-white text-[#294154] font-geologica">
       <div className="max-w-7xl mx-auto px-6 py-16 space-y-20">
 
         {/* HERO */}
@@ -703,6 +701,6 @@ export default function SchoolsPage() {
       </div>
 
       <Footer />
-    </main>
+    </div>
   );
 }

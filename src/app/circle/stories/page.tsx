@@ -1,6 +1,5 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +26,7 @@ const FILTERS: { key: SubFilter; label: string }[] = [
 ];
 
 const BTN_NAVY =
-  "inline-flex items-center justify-center rounded-full bg-[#294154] text-white font-semibold px-6 py-3 hover:bg-[#21363f] transition active:scale-[0.97]";
+  "inline-flex items-center justify-center rounded-full bg-[#2F4157] text-white font-semibold px-6 py-3 hover:bg-[#1A2534] transition active:scale-[0.97]";
 const BTN_GHOST =
   "inline-flex items-center justify-center rounded-full border border-gray-200 text-[#294154] font-medium px-5 py-2 hover:bg-gray-50 transition";
 
@@ -83,8 +82,7 @@ export default function Stories() {
   };
 
   return (
-    <div>
-      <Header />
+    <div className="bg-white [&_:is(h1,h2,h3,h4,h5,h6)]:font-sans">
       <LoadingOverlay isLoading={isLoading} message="Loading story..." />
 
       <div className="px-4 sm:px-6 lg:px-[100px] pt-1 pb-8 sm:pb-12 lg:pb-16 bg-white text-[#2F4157]">

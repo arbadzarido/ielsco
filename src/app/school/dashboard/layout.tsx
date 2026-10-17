@@ -53,11 +53,11 @@ export default async function SchoolLayout({
 
         {/* Page content */}
         {/* pb-24 on mobile to clear the fixed bottom nav */}
-        <main className="flex-1 px-4 py-5 lg:px-8 lg:py-8 pb-24 lg:pb-8 overflow-x-hidden">
+        <div className="flex-1 px-4 py-5 lg:px-8 lg:py-8 pb-24 lg:pb-8 overflow-x-hidden">
           <div className="w-full max-w-[1400px] mx-auto">
             {children}
           </div>
-        </main>
+        </div>
       </div>
 
     </div>

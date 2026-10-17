@@ -1,6 +1,5 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import Link from "next/link";
@@ -97,8 +96,7 @@ function CountdownTimer() {
 
 export default function SGTripMentoringPage() {
   return (
-    <main className="min-h-screen bg-white text-[#304156] font-geologica">
-      <Header />
+    <div className="min-h-screen bg-white text-[#304156] font-geologica">
 
       {/* ================= HERO ================= */}
       <section className="relative overflow-hidden">
@@ -514,6 +512,6 @@ export default function SGTripMentoringPage() {
       </section>
 
       <Footer />
-    </main>
+    </div>
   );
 }

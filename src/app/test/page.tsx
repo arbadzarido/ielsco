@@ -1,7 +1,6 @@
 "use client";
 
 import Footer from "@/components/footer";
-import Header from "@/components/header";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,8 +58,7 @@ export default function TestSelectionPage() {
 
   return (
     <div>
-    <Header />
-    <main className="min-h-screen bg-gradient-to-b from-white to-[#f7f9f8] text-[#294154] font-geologica">
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f9f8] text-[#294154] font-geologica">
       <div className="max-w-6xl mx-auto px-6 py-16 space-y-20">
         {/* ================= HERO ================= */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -267,7 +265,7 @@ export default function TestSelectionPage() {
     prevent cheating.
   </p>
 </article>
-  
+
  {/* Pricing & Packages */}
 <article
   id="register"
@@ -606,7 +604,7 @@ export default function TestSelectionPage() {
 
         </div>
       
-    </main>
+    </div>
     <Footer/>
     </div>
   );

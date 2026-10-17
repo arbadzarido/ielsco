@@ -1,6 +1,5 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Image from "next/image";
 import CountUp from "react-countup";
@@ -13,8 +12,7 @@ export default function PartnersPage() {
 
     const [active] = useState(false);
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#ffffff] text-[#294154] font-geologica">
-       <Header />
+    <div className="min-h-screen overflow-x-hidden bg-[#ffffff] text-[#294154] font-geologica">
       {/* ===== HERO SECTION ===== */}
 <section className="relative overflow-hidden w-full bg-white py-16 px-4 sm:px-6">
   <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -660,7 +658,7 @@ export default function PartnersPage() {
   </div>
 </section>
       <Footer />
-    </main>
+    </div>
   );
 }
 

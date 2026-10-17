@@ -1,26 +1,20 @@
 "use client";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import ReactCountryFlag from "react-country-flag";
-// pastikan react-icons sudah terinstall: npm install react-icons
 import { FaDiscord, FaInstagram } from "react-icons/fa";
+import { ArrowRight } from "lucide-react";
+import { PublicSessions, CIRCLE_DISCORD_LINK } from "@/components/circle/PublicSessions";
+import { btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h2, lead, section, textLink, siteRoot } from "@/components/site/ui";
+import { cn } from "@/lib/utils";
 
-// TODO: ganti dengan link pembuatan akun IELS (account.ielsco.com atau sejenisnya)
 const ACCOUNT_LINK = "https://ielsco.com/sign-up";
-// TODO: ganti dengan invite link Discord IELS Circle
-const DISCORD_LINK = "https://discord.gg/apFxnhvhWr";
-// TODO: ganti kalau handle Instagram-nya beda
+const DISCORD_LINK = CIRCLE_DISCORD_LINK;
 const INSTAGRAM_LINK = "https://instagram.com/iels_co";
-const CIRCLE_REGISTRATION_LINK = "https://forms.gle/ADAEiK5Uj2aRBgf39";
-// halaman yang menjelaskan apa aja yang ada di IELS Circle (agenda, event, dsb.)
-const AGENDA_LINK = "https://circle.ielsco.com/agenda";
 
-/* ================= FLAG HELPER ================= */
 
 function Flag({ code, className = "" }: { code: string; className?: string }) {
   return (
@@ -102,84 +96,6 @@ const memberStories: MemberStory[] = [
   },
 ];
 
-function StoryCard({
-  story,
-  className = "",
-}: {
-  story: MemberStory;
-  className?: string;
-}) {
-  return (
-    <div className={`group ${className}`}>
-      {/* PHOTO */}
-      <div className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden">
-        <Image
-          src={story.photo}
-          alt={story.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-
-        <div className="absolute inset-0 bg-gradient-to-t from-[#2F4157]/80 via-transparent to-transparent" />
-
-        <span className="absolute top-4 left-4 text-xs font-semibold bg-white/90 text-[#2F4157] rounded-full px-3 py-1">
-          {story.tag}
-        </span>
-
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <p className="font-extrabold text-xl">{story.name}</p>
-        </div>
-      </div>
-
-      {/* COUNTRY ROUTE */}
-      <div className="mt-5 flex items-center gap-3">
-        {/* FROM */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-11 h-11 rounded-xl bg-[#FAFAFA] border border-gray-200 flex items-center justify-center shadow-sm">
-            <span className="text-2xl">
-              <Flag code={countryCodeMap[story.fromCountry]} />
-            </span>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-              From
-            </p>
-            <p className="text-sm font-bold text-[#2F4157]">
-              {story.fromCountry}
-            </p>
-          </div>
-        </div>
-
-        {/* ARROW */}
-        <span className="text-lg font-bold text-[#E56668] mx-1">→</span>
-
-        {/* TO */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-11 h-11 rounded-xl bg-[#E56668]/5 border border-[#E56668]/20 flex items-center justify-center shadow-sm">
-            <span className="text-2xl">
-              <Flag code={countryCodeMap[story.toCountry]} />
-            </span>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-              To
-            </p>
-            <p className="text-sm font-bold text-[#2F4157]">
-              {story.toCountry}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* STORY */}
-      <p className="mt-4 text-gray-700 leading-relaxed">{story.story}</p>
-    </div>
-  );
-}
-
-// Setting Goals -> Find Partner -> Achieve Goals -> Inspire Others
 type GrowthStep = {
   title: string;
   desc: string;
@@ -196,7 +112,7 @@ const growthJourney: GrowthStep[] = [
   },
   {
     title: "Find Your Partner",
-    desc: "Get matched with someone working toward the same goal, so you're never doing it alone.",
+    desc: "Meet someone working toward the same goal in the Circle, so you're never doing it alone.",
     mascot: "/images/contents/mascot/elco2.png",
   },
   {
@@ -290,570 +206,214 @@ const communityMoments: CommunityMoment[] = [
   },
 ];
 
+function StoryCard({ story }: { story: MemberStory }) {
+  return (
+    <article className={cn(card, "flex h-full flex-col overflow-hidden")}>
+      <div className="relative aspect-[4/5] w-full bg-[#F1F4F8]">
+        <Image src={story.photo} alt={story.name} fill sizes="(min-width: 768px) 360px, 80vw" className="object-cover" />
+        <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-[#2F4157]">{story.tag}</span>
+      </div>
+      <div className="flex flex-1 flex-col p-6">
+        <p className="text-[20px] font-bold text-[#1A2534]">{story.name}</p>
+        <p className="mt-2 flex flex-wrap items-center gap-2 text-[14px] font-medium text-[#2F4157]/75">
+          <Flag code={countryCodeMap[story.fromCountry]} /> {story.fromCountry}
+          <span aria-hidden="true">→</span>
+          <Flag code={countryCodeMap[story.toCountry]} /> {story.toCountry}
+        </p>
+        <p className="mt-4 text-[15px] leading-relaxed text-[#2F4157]/80">{story.story}</p>
+      </div>
+    </article>
+  );
+}
+
 /* ================= PAGE ================= */
 
 export default function IELSCirclePage() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [activeMoment, setActiveMoment] = useState<string | null>(null);
-
-  const selectedCountryData =
-    seaCountries.find((c) => c.name === selectedCountry) ?? null;
+  const selectedCountryData = seaCountries.find((c) => c.name === selectedCountry) ?? null;
 
   return (
-    <main className="bg-white text-[#2F4157] overflow-x-hidden">
-      <Header />
-
-      {/* ================= HERO (satu-satunya section navy) ================= */}
-      <section className="relative overflow-hidden bg-[#2F4157]">
-        <div className="absolute -top-32 -right-32 w-[480px] h-[480px] bg-[#E56668]/15 rounded-full blur-[140px]" />
-
-        <div className="relative max-w-7xl mx-auto px-6 py-12 sm:py-14 lg:py-16">
-          <div className="grid lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-14 items-center">
-            {/* LEFT — MESSAGE */}
-            <div>
-             <div className="flex items-center mb-4">
-  <Image
-    src="/images/logos/events/circlewhite.png"
-    alt="IELS Circle"
-    width={210}
-    height={60}
-    className="h-12 w-auto"
-    priority
-  />
-</div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.05] tracking-tight">
-                English connects us.
-                <br />
-                <span className="text-[#E56668]">
-                  Southeast Asia brings us together.
-                </span>
-              </h1>
-
-              <p className="mt-6 text-lg text-white/80 max-w-lg">
-                A growing English community connecting young people across
-                Southeast Asia.
-              </p>
-
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Button
-                  asChild
-                  className="bg-[#E56668] hover:bg-[#C04C4E] px-8 py-3 rounded-full text-white font-semibold"
-                >
-                  <Link href="https://forms.gle/ADAEiK5Uj2aRBgf39" target="_blank">Join IELS Circle</Link>
-                </Button>
-                <Link
-                  href="https://circle.ielsco.com/agenda"
-                  target="_blank"
-                  className="text-sm font-semibold text-white/80 hover:text-white underline underline-offset-4"
-                >
-                  Explore the community
-                </Link>
-              </div>
-
-              <div className="mt-10 flex items-center gap-3 text-white/40 text-sm">
-                <span>in collaboration with</span>
-                {/* TODO: ganti dengan logo Tofly.id */}
-                <Image
-                  src="/images/logos/company/tofly.png"
-                  alt="Tofly.id"
-                  width={70}
-                  height={20}
-                  className="h-10 w-auto"
-                />
-              </div>
+    <div className={cn(siteRoot, "bg-white")} data-testid="circle-page">
+      {/* HERO */}
+      <section className="bg-white pb-[56px] pt-[40px] md:pb-[80px] md:pt-[64px]">
+        <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]")}>
+          <div>
+            <Image src="/images/logos/events/circleblue.png" alt="IELS Circle" width={180} height={115} priority className="h-auto w-[150px]" />
+            <h1 className="mt-6 text-[36px] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#1A2534] sm:text-[44px] lg:text-[50px]">
+              English connects us.<br />
+              <span className="text-[#E56668]">Southeast Asia brings us together.</span>
+            </h1>
+            <p className={cn(lead, "mt-5 max-w-[560px]")}>A growing English community connecting young people across Southeast Asia.</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a href="#sessions" className={btnPrimary} data-testid="circle-hero-sessions">Join a weekly session</a>
+              <Link href="/circle/stories" className={btnSecondary}>Read member stories</Link>
             </div>
-
-       {/* RIGHT — HERO IMAGE (foto asli 1800x1350) */}
-<div className="relative w-full flex items-center justify-center">
-{/* mobile & tablet */}
-<div className="relative lg:hidden mx-auto w-[92vw] aspect-[4/3] overflow-hidden">
-  <Image
-    src="/images/people/circle/seastudent.png"
-    alt="IELS Circle members collage"
-    fill
-    sizes="92vw"
-    className="object-contain object-center"
-    priority
-  />
-</div>
-
-  {/* desktop */}
-  <div className="hidden lg:block relative w-full max-w-[640px] xl:max-w-[820px] aspect-[4/3] overflow-hidden">
-    <Image
-      src="/images/people/circle/seastudent.png"
-      alt="IELS Circle members collage"
-      fill
-      sizes="(min-width: 1280px) 820px, 640px"
-      className="object-contain object-center"
-      priority
-    />
-  </div>
-</div>
+            <p className="mt-6 flex items-center gap-3 text-[14px] text-[#2F4157]/60">
+              <span>in collaboration with</span>
+              <Image src="/images/logos/company/tofly.png" alt="Tofly.id" width={70} height={20} className="h-5 w-auto" />
+            </p>
+          </div>
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#E6E9EE]">
+            <Image src="/images/people/circle/seastudent.png" alt="IELS Circle members collage" fill priority sizes="(min-width: 1024px) 600px, 92vw" className="object-cover" />
           </div>
         </div>
       </section>
 
-      {/* ================= WHERE ARE YOU FROM ================= */}
-      <section id="join" className="py-16 sm:py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#2F4157]">
-            Where are you from?
-          </h2>
+      <PublicSessions />
 
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+      {/* WHERE ARE YOU FROM */}
+      <section id="join" className={cn(section, "scroll-mt-[96px] border-t border-[#E6E9EE]")} aria-labelledby="from-heading">
+        <div className={cn(container, "text-center")}>
+          <h2 id="from-heading" className={h2}>Where are you from?</h2>
+          <div className="mx-auto mt-10 grid max-w-[920px] grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
             {seaCountries.map((c) => {
               const isSelected = selectedCountry === c.name;
               return (
-                <button
-                  key={c.code}
-                  onClick={() => setSelectedCountry(isSelected ? null : c.name)}
-                  className={`
-                    flex flex-col items-center justify-center gap-2
-                    rounded-2xl py-5 px-2
-                    border transition-all duration-200
-                    ${
-                      isSelected
-                        ? "border-[#E56668] bg-[#E56668]/10 -translate-y-1 shadow-lg"
-                        : "border-gray-200 hover:border-[#E56668]/50 hover:-translate-y-0.5"
-                    }
-                  `}
-                >
-                  <span className="text-3xl leading-none">
-                    <Flag code={c.code} />
-                  </span>
-                  <span className="text-sm font-semibold text-[#2F4157]">
-                    {c.name}
-                  </span>
+                <button key={c.code} type="button" aria-pressed={isSelected} onClick={() => setSelectedCountry(isSelected ? null : c.name)}
+                  className={cn("flex flex-col items-center justify-center gap-2 rounded-[18px] border px-2 py-5 text-[14px] font-semibold transition-colors", focusRing,
+                    isSelected ? "border-[#2F4157] bg-[#2F4157] text-white" : "border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]")}>
+                  <span className="text-[24px]"><Flag code={c.code} /></span>
+                  {c.name}
                 </button>
               );
             })}
           </div>
-
-          {/* GREETING + CTA */}
-          <div
-            className={`
-              mt-10 transition-all duration-300
-              ${selectedCountryData ? "opacity-100" : "opacity-0 pointer-events-none h-0"}
-            `}
-          >
+          <div aria-live="polite" className="mt-10 min-h-[1px]">
             {selectedCountryData && (
-              <>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[#E56668]">
-                  {selectedCountryData.greeting}
-                </p>
-                <p className="mt-2 text-sm text-gray-500">
-                  That&apos;s &quot;hi, how are you?&quot; in {selectedCountryData.name} —
-                  welcome to the Circle 👋
-                </p>
-
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                  <Button
-                    asChild
-                    className="bg-[#5865F2] hover:bg-[#4752C4] px-6 py-3 rounded-full text-white font-semibold"
-                  >
-                    <Link
-                      href={DISCORD_LINK}
-                      target="_blank"
-                      className="flex items-center gap-2"
-                    >
-                      <FaDiscord className="text-lg" /> Join our Discord
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    className="bg-white border border-[#E56668] text-[#2F4157] hover:bg-[#E56668]/10 px-6 py-3 rounded-full font-semibold"
-                  >
-                    <Link
-                      href={INSTAGRAM_LINK}
-                      target="_blank"
-                      className="flex items-center gap-2"
-                    >
-                      <FaInstagram className="text-lg text-[#E56668]" /> Follow
-                      our Instagram
-                    </Link>
-                  </Button>
-
-                  <Link
-                    href={ACCOUNT_LINK}
-                    target="_blank"
-                    className="text-sm font-semibold text-gray-500 hover:text-[#2F4157] underline underline-offset-4"
-                  >
-                    Create your free account
-                  </Link>
+              <div className="mx-auto max-w-[640px]">
+                <p className="text-[28px] font-extrabold text-[#1A2534]">{selectedCountryData.greeting}</p>
+                <p className={cn(lead, "mt-2")}>That&apos;s &quot;hi, how are you?&quot; in {selectedCountryData.name}. Welcome to the Circle 👋</p>
+                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                  <a href={DISCORD_LINK} target="_blank" rel="noopener noreferrer" className={btnPrimary}><FaDiscord aria-hidden="true" /> Join our Discord</a>
+                  <a href={INSTAGRAM_LINK} target="_blank" rel="noopener noreferrer" className={btnSecondary}><FaInstagram aria-hidden="true" /> Follow our Instagram</a>
+                  <a href={ACCOUNT_LINK} className={btnSecondary}>Create your free account</a>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* ================= SOUTHEAST ASIA MAP ================= */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-widest text-[#E56668]">
-              Our community
+      {/* COMMUNITY ACROSS SEA */}
+      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="region-heading">
+        <div className={cn(container, "grid items-center gap-12 lg:grid-cols-2")}>
+          <div>
+            <p className={eyebrow}>Our community</p>
+            <h2 id="region-heading" className={cn(h2, "mt-3")}>Growing across Southeast Asia</h2>
+            <p className={cn(lead, "mt-4")}>
+              More than 19,000 learners and teachers have been part of the IELS community, with people joining us from across
+              the region and beyond.
             </p>
-
-            <h2 className="mt-2 text-3xl sm:text-5xl font-extrabold text-[#2F4157] leading-tight">
-              Growing across Southeast Asia.
-            </h2>
-
-            <p className="mt-4 text-gray-500 max-w-xl leading-relaxed">
-              More than 19,000 learners and teachers have been part of the IELS
-              community, with people joining us from across the region and beyond.
+            <dl className="mt-8 grid grid-cols-3 gap-4">
+              {[["19K+", "learners & teachers"], ["93%", "from Southeast Asia"], ["7%", "from beyond SEA"]].map(([v, l]) => (
+                <div key={l} className={cn(card, "p-4")}>
+                  <dt className="sr-only">{l}</dt>
+                  <dd><span className="block text-[26px] font-extrabold text-[#1A2534]">{v}</span><span className="text-[14px] text-[#2F4157]/70">{l}</span></dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[14px] text-[#2F4157]/75">
+              <span>🇮🇩 <strong className="text-[#1A2534]">Indonesia 68%</strong></span>
+              <span>🇹🇭 Thailand 10%</span><span>🇲🇾 Malaysia 7%</span><span>🇰🇭 Cambodia 5%</span><span>🇻🇳 Vietnam 3%</span>
+              <span>+ 7% beyond Southeast Asia</span>
             </p>
           </div>
-
-          {/* MAP */}
-          <div className="relative mt-10 aspect-[4/3] sm:aspect-[16/10] w-full rounded-3xl bg-[#FAFAFA] border border-gray-200 overflow-hidden">
-            <Image
-              src="/images/people/circle/seamaps.png"
-              alt="Southeast Asia map"
-              fill
-              className="object-contain p-0 opacity-90 pointer-events-none select-none"
-            />
-          </div>
-
-          {/* COMMUNITY BREAKDOWN */}
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl font-extrabold text-[#2F4157]">
-                19K+
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                learners & teachers
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl font-extrabold text-[#E56668]">
-                93%
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                from Southeast Asia
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl font-extrabold text-[#2F4157]">
-                68%
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                from Indonesia
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-[#FAFAFA] border border-gray-200 p-5">
-              <p className="text-2xl sm:text-3xl font-extrabold text-[#2F4157]">
-                7%
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                from beyond SEA
-              </p>
-            </div>
-          </div>
-
-          {/* COUNTRY BREAKDOWN */}
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500">
-            <span>
-              🇮🇩 <strong className="text-[#2F4157]">Indonesia 68%</strong>
-            </span>
-            <span>🇹🇭 Thailand 10%</span>
-            <span>🇲🇾 Malaysia 7%</span>
-            <span>🇰🇭 Cambodia 5%</span>
-            <span>🇻🇳 Vietnam 3%</span>
-            <span>+ 7% beyond Southeast Asia</span>
+          <div className="relative aspect-[4/3]">
+            <Image src="/images/people/circle/seamaps.png" alt="Map of Southeast Asia" fill sizes="(min-width: 1024px) 540px, 92vw" className="object-contain" />
           </div>
         </div>
       </section>
 
-      {/* ================= MEMBER STORIES ================= */}
-      <section id="circle" className="py-16 sm:py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-end justify-between gap-6">
+      {/* MEMBER STORIES */}
+      <section id="circle" className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="meet-heading">
+        <div className={container}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-[#2F4157]">
-                Meet the Circle.
-              </h2>
-
-              <p className="mt-4 text-gray-500 max-w-md">
-                Real people. Different countries. Real journeys.
-              </p>
+              <h2 id="meet-heading" className={h2}>Meet the Circle</h2>
+              <p className={cn(lead, "mt-2")}>Real people. Different countries. Real journeys.</p>
             </div>
-
-            <Link
-              href="/stories"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[#E56668] hover:text-[#C04C4E] transition-colors"
-            >
-              See member stories
-              <span>→</span>
-            </Link>
+            <Link href="/circle/stories" className={textLink}>See member stories <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
-
-          {/* swipe hint — mobile only */}
-          <p className="mt-2 text-xs text-gray-400 sm:hidden">
-            Swipe to explore →
-          </p>
-
-          {/* MOBILE — horizontal slider, Linh → Rafi → Sokha */}
-          <div className="mt-6 sm:hidden -mx-6 px-6 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {memberStories.map((m) => (
-              <StoryCard
-                key={m.name}
-                story={m}
-                className="w-[78%] shrink-0 snap-center"
-              />
-            ))}
-          </div>
-
-          {/* DESKTOP — grid (unchanged) */}
-          <div className="mt-14 hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {memberStories.map((m) => (
-              <StoryCard key={m.name} story={m} />
-            ))}
-          </div>
-
-          {/* MOBILE LINK */}
-          <div className="mt-10 sm:hidden">
-            <Link
-              href="/stories"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#E56668]"
-            >
-              See member stories
-              <span>→</span>
-            </Link>
-          </div>
+          <ul className="-mx-4 mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
+            {memberStories.map((m) => <li key={m.name} className="w-[80%] shrink-0 snap-start sm:w-[55%] md:w-auto"><StoryCard story={m} /></li>)}
+          </ul>
         </div>
       </section>
 
-      {/* ================= COMMUNITY MOMENTS ================= */}
-      <section className="py-24 sm:py-28 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#2F4157] max-w-2xl leading-tight">
-            60 events. One growing region.
-          </h2>
-          <p className="mt-4 text-gray-500 max-w-lg">
-            Online and offline, we&apos;ve shown up across Southeast Asia
-            since January 2025 — and we&apos;re just getting started.
+      {/* COMMUNITY MOMENTS */}
+      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="moments-heading">
+        <div className={container}>
+          <h2 id="moments-heading" className={h2}>60 events. One growing region.</h2>
+          <p className={cn(lead, "mt-3 max-w-[640px]")}>
+            Online and offline, we&apos;ve shown up across Southeast Asia since January 2025, and we&apos;re just getting started.
           </p>
-          <p className="mt-2 text-sm font-semibold text-[#E56668]">
-            Hover or tap a moment to see what happened →
-          </p>
-
-          {/* clean, gapless 3x2 grid — Instagram-style, tap/hover for details */}
-          <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-px bg-gray-200 w-full overflow-hidden">
+          <ul className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3">
             {communityMoments.map((m) =>
               m.kind === "past" ? (
-                <button
-                  key={m.city}
-                  type="button"
-                  onClick={() =>
-                    setActiveMoment(activeMoment === m.city ? null : m.city)
-                  }
-                  className="group relative aspect-square w-full overflow-hidden bg-white text-left"
-                >
-                  {/* TODO: ganti dengan foto event asli */}
-                  <Image
-                    src={m.photo}
-                    alt={`${m.city}, ${m.country}`}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#2F4157]/70 via-transparent to-transparent" />
-
-                  <span className="absolute top-3 left-3 flex items-center gap-1.5 text-xs font-semibold bg-white/90 rounded-full px-2.5 py-1 text-[#2F4157]">
-                    <Flag code={m.code} /> {m.city}
-                  </span>
-
-                  {/* slide-up detail panel: hover on desktop, tap-to-toggle on mobile */}
-                  <div
-                    className={`
-                      absolute inset-x-0 bottom-0 bg-[#2F4157]/95 text-white p-3 sm:p-4
-                      transition-transform duration-300 ease-out
-                      ${
-                        activeMoment === m.city
-                          ? "translate-y-0"
-                          : "translate-y-full group-hover:translate-y-0"
-                      }
-                    `}
-                  >
-                    <p className="text-[10px] sm:text-[11px] font-semibold text-[#E56668] uppercase tracking-wider">
-                      {m.date}
-                    </p>
-                    <p className="mt-1 text-xs sm:text-sm font-bold leading-snug">
-                      {m.eventTitle}
-                    </p>
-                    <p className="mt-0.5 text-[11px] sm:text-xs text-white/70">
-                      {m.venue}
-                    </p>
-                  </div>
-                </button>
+                <li key={m.city}>
+                  <button type="button" aria-expanded={activeMoment === m.city} onClick={() => setActiveMoment(activeMoment === m.city ? null : m.city)}
+                    className={cn("group relative block aspect-square w-full overflow-hidden rounded-[18px] text-left", focusRing)}>
+                    <Image src={m.photo} alt={`${m.eventTitle}, ${m.city}`} fill sizes="(min-width: 768px) 360px, 50vw" className="object-cover" />
+                    <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-[#1A2534]"><Flag code={m.code} /> {m.city}</span>
+                    <span className={cn("absolute inset-x-0 bottom-0 bg-white/95 p-3 text-[#1A2534] transition-transform duration-300 sm:p-4",
+                      activeMoment === m.city ? "translate-y-0" : "translate-y-full group-hover:translate-y-0 group-focus-visible:translate-y-0")}>
+                      <span className="block text-[12px] font-semibold text-[#577E90]">{m.date}</span>
+                      <span className="block text-[14px] font-bold leading-snug">{m.eventTitle}</span>
+                      <span className="block text-[13px] text-[#2F4157]/70">{m.venue}</span>
+                    </span>
+                  </button>
+                </li>
               ) : (
-                <div
-                  key={m.label}
-                  className="relative aspect-square flex flex-col items-center justify-center gap-2 bg-[#FAFAFA]"
-                >
-                  <div className="flex items-center gap-1.5 text-2xl">
-                    {m.codes.map((code) => (
-                      <Flag key={code} code={code} />
-                    ))}
-                  </div>
-                  <p className="text-sm font-bold text-[#2F4157] text-center px-3">
-                    {m.label}
-                  </p>
-                  <span className="text-xs font-semibold text-[#E56668] bg-[#E56668]/10 rounded-full px-2.5 py-1">
-                    + more countries soon
-                  </span>
-                </div>
-              )
+                <li key={m.label} className="flex aspect-square flex-col items-center justify-center gap-2 rounded-[18px] border border-dashed border-[#C9D1DC] p-4 text-center">
+                  <span className="flex gap-2 text-[28px]">{m.codes.map((code) => <Flag key={code} code={code} />)}</span>
+                  <span className="text-[15px] font-bold text-[#1A2534]">{m.label}</span>
+                  <span className="text-[13px] text-[#2F4157]/65">+ more countries soon</span>
+                </li>
+              ),
             )}
-          </div>
+          </ul>
         </div>
       </section>
 
-      {/* ================= GROWTH JOURNEY (goal → partner → achieve → inspire) ================= */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-sm font-bold uppercase tracking-widest text-[#E56668]">
-            The Circle
+      {/* GROWTH JOURNEY */}
+      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="growth-heading">
+        <div className={container}>
+          <p className={eyebrow}>The Circle</p>
+          <h2 id="growth-heading" className={cn(h2, "mt-3")}>How the Circle keeps growing</h2>
+          <p className={cn(lead, "mt-3 max-w-[640px]")}>
+            Set a goal, find someone chasing the same one, achieve it together, then inspire the next person to start.
           </p>
-
-          <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-[#2F4157]">
-            How the Circle keeps growing.
-          </h2>
-
-          <p className="mt-3 text-gray-500 max-w-lg mx-auto">
-            Set a goal, get matched with someone chasing the same one, achieve
-            it together — then inspire the next person to start.
-          </p>
-
-          <div className="mt-14 grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {growthJourney.map((step, i) => (
-              <div
-                key={step.title}
-                className="relative rounded-3xl bg-[#FAFAFA] border border-gray-200 px-5 pt-6 pb-7"
-              >
-                {/* step number */}
-                <span className="absolute top-4 left-4 text-xs font-bold text-[#E56668]">
-                  0{i + 1}
-                </span>
-
-                {/* mascot */}
-                <div className="h-28 sm:h-32 flex items-end justify-center">
-                  <Image
-                    src={step.mascot}
-                    alt={`${step.title} mascot`}
-                    width={140}
-                    height={140}
-                    className="max-h-28 sm:max-h-32 w-auto object-contain"
-                  />
-                </div>
-
-                <h3 className="mt-5 text-lg font-extrabold text-[#2F4157]">
-                  {step.title}
-                </h3>
-
-                <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-                  {step.desc}
-                </p>
-
-                {/* arrow on desktop */}
-                {i < growthJourney.length - 1 && (
-                  <span className="hidden lg:block absolute top-1/2 -right-[18px] -translate-y-1/2 z-10 text-xl text-[#E56668] bg-white rounded-full px-1">
-                    →
-                  </span>
-                )}
-              </div>
+              <li key={step.title} className={cn(card, "flex flex-col items-center p-6 text-center")}>
+                <span className="self-start text-[14px] font-bold text-[#577E90]">0{i + 1}</span>
+                <Image src={step.mascot} alt="" width={120} height={120} className="h-[110px] w-auto" />
+                <h3 className="mt-4 text-[18px] font-bold text-[#1A2534]">{step.title}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#2F4157]/75">{step.desc}</p>
+              </li>
             ))}
-          </div>
-
-          <p className="mt-8 text-sm font-semibold text-[#E56668]">
-            ↺ Every success becomes someone else&apos;s starting point.
-          </p>
+          </ol>
+          <p className="mt-8 text-[15px] font-medium text-[#2F4157]/70">↺ Every success becomes someone else&apos;s starting point.</p>
         </div>
       </section>
 
-      {/* ================= FINAL CTA ================= */}
-      <section className="relative bg-white py-16 sm:py-20 overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-[420px] h-[420px] bg-[#E56668]/10 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-24 -left-24 w-[420px] h-[420px] bg-[#2F4157]/5 rounded-full blur-[120px]" />
-
-        <div className="relative max-w-4xl mx-auto px-6 text-center">
-          {/* IELS CIRCLE LOGO */}
-          <Image
-            src="/images/logos/events/circleblue.png"
-            alt="IELS Circle"
-            width={220}
-            height={140}
-            className="mx-auto h-20 sm:h-25 w-auto object-contain"
-          />
-
-          <h2 className="mt-8 text-4xl sm:text-5xl font-extrabold text-[#2F4157] leading-tight">
-            Your next connection could start here.
-          </h2>
-
-          <p className="mt-5 text-lg text-gray-600 max-w-xl mx-auto leading-relaxed">
-            Join IELS Circle, meet people from across Southeast Asia, and make
-            English part of how you connect with the region.
-          </p>
-
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            {/* PRIMARY CTA */}
-            <Button
-              asChild
-              className="bg-[#E56668] hover:bg-[#C04C4E] px-8 py-3 rounded-full text-white font-semibold"
-            >
-              <Link
-                href={CIRCLE_REGISTRATION_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Register for IELS Circle
-              </Link>
-            </Button>
-
-            {/* DISCORD */}
-            <Button
-              asChild
-              className="bg-[#5865F2] hover:bg-[#4752C4] px-8 py-3 rounded-full text-white font-semibold"
-            >
-              <Link href={DISCORD_LINK} target="_blank" className="flex items-center gap-2">
-                <FaDiscord className="text-lg" />
-                Join our Discord
-              </Link>
-            </Button>
-
-            {/* INSTAGRAM */}
-            <Link
-              href={INSTAGRAM_LINK}
-              aria-label="Follow IELS Circle on Instagram"
-              className="w-11 h-11 flex items-center justify-center rounded-full border border-gray-200 text-[#2F4157] hover:border-[#E56668] hover:text-[#E56668] transition-colors"
-            >
-              <FaInstagram className="text-lg" />
-            </Link>
+      {/* FINAL CTA */}
+      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="final-circle-heading">
+        <div className={cn(container, "flex flex-col items-center text-center")}>
+          <Image src="/images/logos/events/circleblue.png" alt="" width={180} height={115} className="h-auto w-[140px]" />
+          <h2 id="final-circle-heading" className={cn(h2, "mt-6 max-w-[720px]")}>Your next connection could start here</h2>
+          <p className={cn(lead, "mt-3 max-w-[620px]")}>Join IELS Circle, meet people from across Southeast Asia, and make English part of how you connect with the region.</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="#sessions" className={btnPrimary}>See this week&apos;s sessions</a>
+            <a href={DISCORD_LINK} target="_blank" rel="noopener noreferrer" className={btnSecondary}><FaDiscord aria-hidden="true" /> Join our Discord</a>
+            <a href={INSTAGRAM_LINK} target="_blank" rel="noopener noreferrer" aria-label="Follow IELS Circle on Instagram" className={btnSecondary}><FaInstagram aria-hidden="true" /></a>
           </div>
-
-          {/* WHAT'S INSIDE IELS CIRCLE */}
-          <div className="mt-6">
-            <Link
-              href={AGENDA_LINK}
-              rel="noopener noreferrer"
-              className="text-sm font-semibold text-[#2F4157]/70 hover:text-[#2F4157] underline underline-offset-4"
-            >
-              See what&apos;s inside IELS Circle →
-            </Link>
-          </div>
-
-          <p className="mt-6 text-xs text-gray-400">
-            Free to join · Open to English learners across Southeast Asia
-          </p>
+          <Link href="/circle/agenda" className={cn(textLink, "mt-6")}>See what&apos;s inside IELS Circle <ArrowRight size={16} aria-hidden="true" /></Link>
+          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free to join · Open to English learners across Southeast Asia</p>
         </div>
       </section>
-
       <Footer />
-    </main>
+    </div>
   );
 }

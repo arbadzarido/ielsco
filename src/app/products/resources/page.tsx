@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 
@@ -122,9 +121,8 @@ export default function ResourcesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#f8fbfc] to-[#fff6f6] text-[#294154]">
-      <Header />
 
-      <main className="max-w-6xl mx-auto px-6 py-14">
+      <div className="max-w-6xl mx-auto px-6 py-14">
         {/* HERO */}
         <section className="grid lg:grid-cols-12 gap-8 items-center mb-14">
           <div className="lg:col-span-7 space-y-6">
@@ -244,7 +242,7 @@ export default function ResourcesPage() {
             </Button>
           </div>
         </section>
-      </main>
+      </div>
 
       <Footer />
     </div>
