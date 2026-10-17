@@ -1,11 +1,15 @@
 
-[functions.mayar-webhook]
-enabled = true
-verify_jwt = true
-import_map = "./functions/mayar-webhook/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/mayar-webhook/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/mayar-webhook/*.html" ]
+# Legacy Mayar payment webhook (IELSco is moving away from subscriptions).
+#
+# The Supabase GitHub integration ("Deploy to production" on `main`) deploys every Edge Function declared in this
+# file. The live `mayar-webhook` runs WITHOUT JWT verification (checked 2026-10-17: an unauthenticated request reached
+# the function), because Mayar's payment callbacks don't send a Supabase JWT. Declaring it here with
+# `verify_jwt = true` would make the next production deploy redeploy it with verification on and reject Mayar's
+# callbacks, so it is intentionally NOT declared. The live function is left exactly as it is; the source stays in
+# supabase/functions/mayar-webhook for reference. Retiring it (and the Mayar products) is a separate, approved step.
+#
+# [functions.mayar-webhook]
+# enabled = true
+# verify_jwt = true
+# import_map = "./functions/mayar-webhook/deno.json"
+# entrypoint = "./functions/mayar-webhook/index.ts"
