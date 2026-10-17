@@ -704,5 +704,74 @@ export const eventsData: EventData[] = [
     meta_keywords:
       "study abroad Australia, English for global education, WSUI IELS event, studying abroad seminar, international education pathways, Surabaya event",
   },
+},
+  
+{
+  id: "12",
+  title: "GIF: Study at NUS Info Session — Explore NUS, Discover What's Next",
+  poster: "/images/contents/events/nusinfo.png",
+  description: `<div>
+  <div><strong>📅 Event Date: Sunday, 1 November 2026</strong></div>
+  <div><strong>⏰ Time: 12:45 – 14:45 GMT+7 (Western Indonesia Time)</strong></div>
+  <div><strong>💻 Format: Online Info Session</strong></div>
+  <div>&nbsp;</div>
+  <div><strong><em>GIF: Study at NUS Info Session</em> — Explore NUS, discover Singapore's education landscape, and learn about global opportunities.</strong></div>
+  <div>&nbsp;</div>
+  <div>Curious about studying at the National University of Singapore (NUS) and exploring opportunities beyond your home country? Join this online info session to hear perspectives on NUS, Singapore's entrepreneurship and innovation ecosystem, and how English can help connect young people with global opportunities.</div>
+  <div>&nbsp;</div>
+  <div><strong>🎤 Session Speakers:</strong></div>
+  <ul>
+    <li><strong>Benjamin Tey</strong> — Senior Manager, Outreach – International, NUS SCALE</li>
+    <li><strong>Claire Cheong</strong> — Former Head, International &amp; Impact Programmes, NUS Enterprise</li>
+    <li><strong>Arbadza Rido</strong> — Founder of IELSco; Project Officer, Global Impact Fellowship</li>
+  </ul>
+  <div>&nbsp;</div>
+  <div><strong>💡 What You'll Explore:</strong></div>
+  <ul>
+    <li>Discover NUS and explore what's next in your learning journey</li>
+    <li>Learn about Singapore's entrepreneurship and innovation ecosystem</li>
+    <li>Explore how English can connect you with education and global opportunities</li>
+    <li>Gain perspectives to help you consider your next steps</li>
+  </ul>
+  <div>&nbsp;</div>
+  <div><strong>🌏 Who Should Join?</strong></div>
+  <div>Students and young people who are curious about studying abroad, Singapore's education landscape, entrepreneurship, or international opportunities. Whether you're actively planning your next step or just starting to explore, you're welcome to join.</div>
+  <div>&nbsp;</div>
+  <div><strong>Registration is free. Complete the form to reserve your place.</strong></div>
+</div>
+<div>&nbsp;</div>
+<a href="https://forms.gle/TjGqyLKq9LWx94bq7" target="_blank"
+   style="
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    background-color: #E56668;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  "
+  onmouseover="this.style.backgroundColor='#C04C4E'"
+  onmouseout="this.style.backgroundColor='#E56668'"
+  onmousedown="this.style.transform='scale(0.97)'"
+  onmouseup="this.style.transform='scale(1)'"
+>
+  Register Now
+</a>`,
+  registrationLink: "https://forms.gle/TjGqyLKq9LWx94bq7",
+  startDate: "2026-11-01",
+  registrationTimeDeadline: "12:45",
+  registrationDateDeadline: "2026-11-01",
+  seo: {
+    meta_title: "GIF: Study at NUS Info Session — Singapore Education & Global Opportunities",
+    meta_description:
+      "Join the free online GIF: Study at NUS Info Session on 1 November 2026. Explore NUS, Singapore's entrepreneurship and innovation ecosystem, and global education opportunities.",
+    meta_keywords:
+      "Study at NUS, NUS info session, Singapore education, study abroad, Global Impact Fellowship, GIF, NUS SCALE, entrepreneurship, innovation ecosystem, global opportunities, IELSco",
+  },
 }
 ];
+
