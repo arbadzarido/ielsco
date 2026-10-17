@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Compass, LogOut } from "lucide-react";
+import { BottomSheet, sheetRow } from "./BottomSheet";
 import { ACCOUNT_ITEMS } from "./nav";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "./Avatar";
@@ -110,5 +111,62 @@ export function AccountMenu({ userName, userAvatar, placement = "down" }: { user
         </div>
       )}
     </div>
+  );
+}
+
+// Phones and tablets (< lg): the avatar in the top bar opens the account actions as a bottom sheet, the same pattern
+// as the "More" sheet and Elco's menus, instead of a desktop dropdown squeezed onto a phone.
+export function AccountSheet({ userName, userAvatar }: { userName: string; userAvatar?: string | null }) {
+  const router = useRouter();
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  const summary = useAccountSummary();
+  const fullName = summary?.display_name?.trim() || userName;
+  const name = shortName(fullName);
+  const avatar = summary?.hasProfile ? summary.avatar_url : userAvatar;
+  const detail = summary?.role_status?.trim() || "IELSco Member";
+
+  const signOut = async () => {
+    await createClient().auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  };
+
+  return (
+    <>
+      <button ref={opener} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}
+        aria-label={t("nav.openAccountMenu")} data-testid="account-menu-button"
+        className={cn("flex h-[44px] w-[44px] items-center justify-center rounded-full", focusRing)}>
+        <Avatar name={name} url={avatar} size={36} className="bg-[#304156] text-white" />
+      </button>
+      <BottomSheet open={open} onClose={close} title={t("nav.account")} returnFocusTo={opener} testId="account-sheet">
+        <div className="mb-[8px] flex items-center gap-[12px] rounded-[16px] bg-[#F7F8FA] p-[12px]" data-testid="account-sheet-identity">
+          <Avatar name={name} url={avatar} size={48} className="bg-[#304156] text-white" />
+          <div className="min-w-0">
+            <p className="truncate text-[16px] font-bold text-[#1A2534]" title={fullName}>{fullName}</p>
+            <p className="truncate text-[14px] text-[#2F4157]/60">{detail}</p>
+          </div>
+        </div>
+        <ul>
+          {MENU_LINKS.map(({ key, href, icon: Icon, id }) => (
+            <li key={href}>
+              <Link href={href} onClick={close} data-testid={`account-menu-${id}`} className={sheetRow}>
+                <Icon size={22} strokeWidth={1.8} className="shrink-0 text-[#577E90]" aria-hidden="true" />{t(key)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="my-[8px] h-[1px] bg-[#E3E7ED]" />
+        <div className="flex min-h-[48px] items-center px-[12px]">
+          <LanguageSelect testId="account-language-select" className="w-full gap-[14px] [&>svg]:h-[22px] [&>svg]:w-[22px] [&_select]:min-h-[44px] [&_select]:flex-1 [&_select]:text-[16px]" />
+        </div>
+        <div className="my-[8px] h-[1px] bg-[#E3E7ED]" />
+        <button type="button" onClick={signOut} data-testid="account-menu-sign-out" className={cn(sheetRow, "font-semibold text-[#C04C4E]")}>
+          <LogOut size={22} strokeWidth={1.8} className="shrink-0" aria-hidden="true" />{t("nav.signOut")}
+        </button>
+      </BottomSheet>
+    </>
   );
 }

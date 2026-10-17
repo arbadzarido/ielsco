@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AccountMenu } from "./AccountMenu";
+import { AccountSheet } from "./AccountMenu";
 import { glass, focusRing } from "./ui";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export default function DashboardHeader({ userName = "Learner", userAvatar }: { 
           <span className="text-[18px] font-bold text-[#2F4157]">IELSco</span>
           <span className="sr-only">dashboard home</span>
         </Link>
-        <AccountMenu userName={userName} userAvatar={userAvatar} />
+        <AccountSheet userName={userName} userAvatar={userAvatar} />
       </div>
     </header>
   );
