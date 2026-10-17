@@ -248,7 +248,7 @@ export default function OnboardingModal({ onClose, userTier }: OnboardingModalPr
 
           <button
             onClick={onClose}
-            className="w-full py-4 bg-gradient-to-r from-[#CB2129] to-[#d63540] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gradient-to-r from-[#E56668] to-[#d63540] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
           >
             Go to Community Dashboard
             <ArrowRight size={20} />
@@ -299,7 +299,7 @@ export default function OnboardingModal({ onClose, userTier }: OnboardingModalPr
               <div 
                 key={idx}
                 className={`h-1.5 rounded-full flex-1 transition-all ${
-                  idx <= currentStep ? 'bg-[#CB2129]' : 'bg-gray-200'
+                  idx <= currentStep ? 'bg-[#E56668]' : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -340,7 +340,7 @@ export default function OnboardingModal({ onClose, userTier }: OnboardingModalPr
             {currentStep < steps.length - 1 ? (
               <button
                 onClick={nextStep}
-                className="px-6 py-2.5 bg-[#CB2129] text-white rounded-xl font-bold hover:bg-[#A81B22] transition-all flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#d65557] transition-all flex items-center gap-2"
               >
                 Next
                 <ArrowRight size={16} />

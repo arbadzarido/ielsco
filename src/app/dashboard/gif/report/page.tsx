@@ -1483,7 +1483,7 @@ const handleResetStatus = async () => {
 
                 {/* Call to Action dipindah ke bawah */}
                 <div>
-                  <Link href="/dashboard/community" className="inline-block w-full sm:w-auto">
+                  <Link href="/dashboard/circle" className="inline-block w-full sm:w-auto">
                     <Button className="w-full sm:w-auto px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-[#2F4055] to-[#914D4D] text-white shadow-xl flex items-center justify-center gap-2 hover:to-[#2F4055] transition-all group">
                       <Crown className="w-5 h-5 group-hover:scale-110 transition-transform" /> 
                       Claim Visionary Status

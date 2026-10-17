@@ -22,6 +22,7 @@ import RegistrationStatusCard from "@/components/test/RegistrationStatusCard";
 import TestCard from "@/components/test/TestCard";
 import ResourceLibrary from "@/components/test/ResourceLibrary";
 import MasterClassSection from "@/components/test/MasterClassSection";
+import { ElcoCallout } from "@/components/elco/ElcoCallout";
 
 // --- Types ---
 type UserTier = "explorer" | "insider" | "visionary";
@@ -197,7 +198,7 @@ if (!registration) {
         <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
  {/* HERO & Stats Grid */}
          
-            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#CDC6BC]/20">
+            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#E3E7ED]/20">
               <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
                  <Target size={16} />
@@ -220,8 +221,8 @@ if (!registration) {
         <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
           {/* Access Denied Card */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-            <div className="lg:col-span-2 bg-white border border-[#CDC6BC] rounded-[32px] p-8 md:p-10 shadow-sm text-center">
-              <div className="w-20 h-20 bg-[#F6F3EF] rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-[#304156]">
+            <div className="lg:col-span-2 bg-white border border-[#E3E7ED] rounded-[32px] p-8 md:p-10 shadow-sm text-center">
+              <div className="w-20 h-20 bg-[#F7F8FA] rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-[#304156]">
                 <Target className="text-[#304156]" size={40} />
               </div>
               <h2 className="text-3xl font-bold text-[#304156] mb-3">
@@ -257,14 +258,14 @@ if (!registration) {
             </div>
           </div>
           {/* Benefits Section */}
-          <div className="bg-white border border-[#CDC6BC] rounded-[32px] p-8 md:p-10 shadow-sm">
+          <div className="bg-white border border-[#E3E7ED] rounded-[32px] p-8 md:p-10 shadow-sm">
             <h3 className="text-2xl font-bold text-[#304156] mb-8 text-center">
               What You'll Get After Registration
             </h3>
 
             <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#CDC6BC]">
+                <div className="w-16 h-16 bg-[#F7F8FA] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#E3E7ED]">
                   <BookOpen className="text-[#304156]" size={28} />
                 </div>
                 <h4 className="font-bold text-[#304156] mb-2">
@@ -276,7 +277,7 @@ if (!registration) {
               </div>
 
               <div className="text-center">
-                <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#CDC6BC]">
+                <div className="w-16 h-16 bg-[#F7F8FA] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#E3E7ED]">
                   <TrendingUp className="text-[#304156]" size={28} />
                 </div>
                 <h4 className="font-bold text-[#304156] mb-2">
@@ -288,7 +289,7 @@ if (!registration) {
               </div>
 
               <div className="text-center">
-                <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#CDC6BC]">
+                <div className="w-16 h-16 bg-[#F7F8FA] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#E3E7ED]">
                   <Award className="text-[#304156]" size={28} />
                 </div>
                 <h4 className="font-bold text-[#304156] mb-2">
@@ -344,7 +345,7 @@ if (!registration) {
                 {(preTest?.overall_score || preTest?.ielts_band) && (
                   <div className="bg-white/5 backdrop-blur-xl px-6 py-4 sm:px-8 sm:py-5 rounded-[24px] border border-white/10 text-center min-w-[130px] sm:min-w-[140px] flex-1 sm:flex-none">
                     <p className="text-[9px] sm:text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Current Band</p>
-                    <p className="font-black text-[#CB2129] text-xl sm:text-2xl tracking-tighter">
+                    <p className="font-black text-[#E56668] text-xl sm:text-2xl tracking-tighter">
                       {preTest?.overall_score || preTest?.ielts_band}
                     </p>
                   </div>
@@ -367,7 +368,7 @@ if (!registration) {
                 <h2 className="text-3xl font-bold text-[#304156] tracking-tight font-geologica">
                   Required Modules
                 </h2>
-                <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
+                <div className="h-px flex-1 bg-[#E3E7ED]/30 hidden md:block" />
               </div>
             </div>
 
@@ -420,11 +421,11 @@ if (!registration) {
                 
                 {/* 1. Master Class */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4 border-b border-[#CDC6BC]/30 pb-4">
+                  <div className="flex items-center gap-4 border-b border-[#E3E7ED]/30 pb-4">
                     <h3 className="text-xl sm:text-2xl font-bold text-[#304156] tracking-tight font-geologica">
                       IELTS Master Class
                     </h3>
-                    <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
+                    <div className="h-px flex-1 bg-[#E3E7ED]/30 hidden md:block" />
                   </div>
                   <div className="w-full max-w-full overflow-hidden px-1">
                     <MasterClassSection />
@@ -433,11 +434,11 @@ if (!registration) {
 
                 {/* 2. Resource Library */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4 border-b border-[#CDC6BC]/30 pb-4">
+                  <div className="flex items-center gap-4 border-b border-[#E3E7ED]/30 pb-4">
                     <h3 className="text-xl sm:text-2xl font-bold text-[#304156] tracking-tight font-geologica">
                       IELTS Resources
                     </h3>
-                    <div className="h-px flex-1 bg-[#CDC6BC]/30 hidden md:block" />
+                    <div className="h-px flex-1 bg-[#E3E7ED]/30 hidden md:block" />
                   </div>
                   <div className="w-full max-w-full overflow-hidden px-1">
                     <ResourceLibrary />
@@ -447,13 +448,13 @@ if (!registration) {
 
               {/* RIGHT COLUMN: Sidebar Content */}
               <aside className="space-y-8">
-                <div className="bg-[#F6F3EF] p-6 sm:p-8 rounded-[32px] border border-[#CDC6BC]/40 shadow-sm lg:sticky lg:top-24">
-                  <h3 className="text-[10px] font-black text-[#577E90] uppercase tracking-[0.2em] mb-8 border-b border-[#CDC6BC]/50 pb-4">Upcoming Systems</h3>
+                <div className="bg-[#F7F8FA] p-6 sm:p-8 rounded-[32px] border border-[#E3E7ED]/40 shadow-sm lg:sticky lg:top-24">
+                  <h3 className="text-[10px] font-black text-[#577E90] uppercase tracking-[0.2em] mb-8 border-b border-[#E3E7ED]/50 pb-4">Upcoming Systems</h3>
                   <div className="space-y-3">
                     {['TOEFL iBT', 'TOEIC Mastery', 'SAT Digital'].map((item) => (
-                      <div key={item} className="p-4 bg-white rounded-2xl border border-[#CDC6BC]/20 flex justify-between items-center opacity-40">
+                      <div key={item} className="p-4 bg-white rounded-2xl border border-[#E3E7ED]/20 flex justify-between items-center opacity-40">
                         <span className="font-bold text-[#304156] text-[11px] uppercase">{item}</span>
-                        <Lock size={12} className="text-[#CDC6BC]" />
+                        <Lock size={12} className="text-[#E3E7ED]" />
                       </div>
                     ))}
                   </div>
@@ -462,6 +463,9 @@ if (!registration) {
 
             </div>
           )}
+        </div>
+        <div className="mx-auto mt-12 max-w-7xl px-4 sm:px-8 lg:px-12">
+          <ElcoCallout refId="dashboard-test" title="Keep practising between test sessions" body="Use Elco for short daily practice and feedback on the skills your test checks." />
         </div>
       </div>
     </DashboardLayout>

@@ -1,589 +1,208 @@
 "use client";
+
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; // <-- IMPORT INI DITAMBAHKAN
-import { createBrowserClient } from "@supabase/ssr";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { 
-  User, Lock, Bell, Globe, Shield, ArrowRight, 
-  CreditCard, Camera, Trash2, Check, Crown,
-  Languages, Clock, Moon, Eye, EyeOff,
-  AlertCircle, Loader2, CheckCircle2, X
-} from "lucide-react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, GraduationCap, IdCard, Languages, LogOut, Shield, UserRound } from "lucide-react";
+import { DashboardPage } from "@/components/dashboard/DashboardPage";
+import { PageHeader } from "@/components/dashboard/PageStates";
+import { btnPrimary, btnSecondary, cardGloss, focusRing, inputClass, labelClass } from "@/components/dashboard/ui";
+import { LanguageSelect } from "@/components/i18n/LanguageSelect";
+import { ConnectedApps } from "@/components/dashboard/settings/ConnectedApps";
+import { ELCO_ENABLED } from "@/lib/elco";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
-// --- TYPE DITAMBAHKAN DI SINI BIAR GAK ERROR ---
-type UserTier = "explorer" | "insider" | "visionary";
+const TIMEZONES = [
+  { value: "WIB", label: "WIB (UTC+7)" },
+  { value: "WITA", label: "WITA (UTC+8)" },
+  { value: "WIT", label: "WIT (UTC+9)" },
+];
 
-export default function SettingsPage() {
-  const router = useRouter(); // <-- INIT ROUTER DITAMBAHKAN
-  
-  const [activeTab, setActiveTab] = useState("preferences");
-  const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  
-  // Form states
-  const [language, setLanguage] = useState("en");
-  const [timezone, setTimezone] = useState("WIB");
-  
-  // Password change
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  
-  // Notifications
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+type Status = { ok: boolean; text: string } | null;
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  // --- DATA FETCHING (REVISED: ALIGNED WITH SETTINGS PAGE) ---
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        router.push("/sign-in");
-        return;
-      }
-
-      // 1. TEMBAK LANGSUNG KE MEMBERSHIPS (Bypass tabel users)
-      const { data: dbMembership } = await supabase
-        .from("memberships")
-        .select("*")
-        .eq("user_id", authUser.id)
-        .maybeSingle();
-
-      // 2. Ambil Profil (WAJIB masukin language & timezone buat form settings)
-      const { data: dbUser } = await supabase
-        .from("users")
-        .select(`full_name, language, timezone, avatar_url, user_profiles(institution, batch)`)
-        .eq("id", authUser.id)
-        .maybeSingle();
-
-      // 3. MAPPING TIER (Harus Konsisten!)
-      const dbTier = dbMembership?.tier;
-      let uiTier: UserTier = "explorer";
-
-      if (dbTier === "pro") {
-        uiTier = "insider";
-      } else if (dbTier === "premium" || dbTier === "visionary") {
-        uiTier = "visionary";
-      }
-
-      // 4. Update Form States dengan data dari DB
-      setLanguage(dbUser?.language || "en");
-      setTimezone(dbUser?.timezone || "WIB");
-
-      // 5. Update State Data (Bentuknya diratain/flat khusus buat Settings)
-      setUserData({
-        id: authUser.id,
-        email: authUser.email, // Dibutuhkan buat form reset password & display
-        full_name: dbUser?.full_name || authUser.user_metadata?.full_name || "User",
-        uiTier: uiTier, 
-        avatar_url: dbUser?.avatar_url || authUser.user_metadata?.avatar_url || "",
-      });
-
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [router, supabase]);
-
-  // Show message helper
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
-  };
-
-
-    // Save preferences
-  const handleSavePreferences = async () => {
-    if (!userData) return;
-    
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          language: language,
-          timezone: timezone,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userData.id);
-
-      if (error) throw error;
-
-      showMessage('success', 'Preferences updated successfully!');
-    } catch (error: any) {
-      showMessage('error', error.message || 'Failed to save preferences');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Change password
-  const handleChangePassword = async () => {
-  if (!currentPassword) {
-    showMessage('error', 'Please enter your current password first');
-    return;
-  }
-
-  if (!newPassword || !confirmPassword) {
-    showMessage('error', 'Please fill in all password fields');
-    return;
-  }
-
-  if (newPassword !== confirmPassword) {
-    showMessage('error', 'New passwords do not match');
-    return;
-  }
-
-  if (newPassword.length < 6) {
-    showMessage('error', 'Password must be at least 6 characters');
-    return;
-  }
-
-  setSaving(true);
-  try {
-    // Re-authenticate dulu dengan current password
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: userData?.email,
-      password: currentPassword,
-    });
-
-    if (signInError) {
-      showMessage('error', 'Current password is incorrect');
-      setSaving(false);
-      return;
-    }
-
-    // Baru update ke password baru
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) throw error;
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    showMessage('success', 'Password changed successfully!');
-  } catch (error: any) {
-    showMessage('error', error.message || 'Failed to change password');
-  } finally {
-    setSaving(false);
-  }
-};
-
-  // Request password reset email
-  const handleForgotPassword = async () => {
-    if (!userData?.email) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(userData.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) throw error;
-
-      showMessage('success', `Password reset email sent to ${userData.email}`);
-    } catch (error: any) {
-      showMessage('error', error.message || 'Failed to send reset email');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const menuItems = [
-    { id: "preferences", label: "Preferences", icon: Globe },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "notifications", label: "Notifications", icon: Bell },
-  ];
-
-  if (loading) {
-    return (
-      <DashboardLayout userName="Loading..." userTier="explorer" userAvatar="">
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#E56668]" />
+function Section({ id, icon, title, description, children }: { id: string; icon: ReactNode; title: string; description?: string; children: ReactNode }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-title`} className={cn(cardGloss, "scroll-mt-24 p-6 md:p-8")}>
+      <div className="mb-6 flex items-start gap-3">
+        <span className="mt-0.5 text-[#577E90]" aria-hidden="true">{icon}</span>
+        <div>
+          <h2 id={`${id}-title`} className="text-xl font-bold">{title}</h2>
+          {description && <p className="mt-1 text-base text-[#2F4157]/65">{description}</p>}
         </div>
-      </DashboardLayout>
-    );
-  }
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function StatusLine({ status, testId }: { status: Status; testId: string }) {
+  if (!status) return null;
+  return (
+    <p role={status.ok ? "status" : "alert"} data-testid={testId} className={cn("flex items-center gap-2 text-base", status.ok ? "text-[#577E90]" : "text-[#C04C4E]")}>
+      {status.ok && <CheckCircle2 size={16} aria-hidden="true" />} {status.text}
+    </p>
+  );
+}
+
+function PasswordField({ id, label, value, onChange, autoComplete }: { id: string; label: string; value: string; onChange: (v: string) => void; autoComplete: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label htmlFor={id} className={labelClass}>{label}</label>
+      <div className="relative">
+        <input id={id} type={show ? "text" : "password"} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} className={cn(inputClass, "pr-12")} />
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          aria-label={show ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          className={cn("absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#2F4157]/50 hover:text-[#2F4157]", focusRing)}
+        >
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient }) {
+  const router = useRouter();
+  const { t } = useI18n();
+  const [timezone, setTimezone] = useState("WIB");
+  const [tzStatus, setTzStatus] = useState<Status>(null);
+  const [tzSaving, setTzSaving] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [pwStatus, setPwStatus] = useState<Status>(null);
+  const [pwSaving, setPwSaving] = useState(false);
+  const usesPassword = user.app_metadata?.providers?.includes("email") ?? user.app_metadata?.provider === "email";
+
+  useEffect(() => {
+    supabase.from("users").select("timezone").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.timezone) setTimezone(data.timezone);
+    });
+  }, [supabase, user.id]);
+
+  const saveTimezone = async (value: string) => {
+    const previous = timezone;
+    setTimezone(value);
+    setTzSaving(true);
+    setTzStatus(null);
+    const { error } = await supabase.from("users").update({ timezone: value, updated_at: new Date().toISOString() }).eq("id", user.id);
+    setTzSaving(false);
+    if (error) {
+      setTimezone(previous);
+      setTzStatus({ ok: false, text: `Couldn't save your time zone: ${error.message}` });
+    } else setTzStatus({ ok: true, text: "Time zone saved." });
+  };
+
+  const changePassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setPwStatus(null);
+    if (!current || !next || !confirm) return setPwStatus({ ok: false, text: "Fill in all three password fields." });
+    if (next.length < 8) return setPwStatus({ ok: false, text: "Use at least 8 characters for your new password." });
+    if (next !== confirm) return setPwStatus({ ok: false, text: "The new passwords don't match." });
+    setPwSaving(true);
+    // Confirm the current password first, so an unattended signed-in session can't be used to change it.
+    const { error: authError } = await supabase.auth.signInWithPassword({ email: user.email ?? "", password: current });
+    if (authError) {
+      setPwSaving(false);
+      return setPwStatus({ ok: false, text: "Your current password isn't correct." });
+    }
+    const { error } = await supabase.auth.updateUser({ password: next });
+    setPwSaving(false);
+    if (error) return setPwStatus({ ok: false, text: `Couldn't change your password: ${error.message}` });
+    setCurrent("");
+    setNext("");
+    setConfirm("");
+    setPwStatus({ ok: true, text: "Password changed." });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  };
 
   return (
-<DashboardLayout 
-      userName={userData?.full_name?.split(' ')[0] || "User"} 
-      userTier={userData?.uiTier || "explorer"} // SEKARANG SUDAH DINAMIS
-      userAvatar={userData?.avatar_url}
-    >
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 pb-20">
-        
-        {/* Notification Toast */}
-        {message && (
-          <div className={cn(
-            "fixed top-24 right-6 z-50 px-6 py-4 rounded-2xl shadow-2xl border-2 flex items-center gap-3 animate-in slide-in-from-top-5",
-            message.type === 'success' 
-              ? "bg-green-50 border-green-200" 
-              : "bg-red-50 border-red-200"
-          )}>
-            {message.type === 'success' ? (
-              <CheckCircle2 className="text-green-600" size={20} />
-            ) : (
-              <AlertCircle className="text-red-600" size={20} />
-            )}
-            <p className={cn(
-              "font-bold text-sm",
-              message.type === 'success' ? "text-green-800" : "text-red-800"
-            )}>
-              {message.text}
-            </p>
-            <button onClick={() => setMessage(null)}>
-              <X className="text-gray-400 hover:text-gray-600" size={18} />
-            </button>
-          </div>
-        )}
+    <div className="mx-auto max-w-3xl px-4 py-10 md:px-6 md:py-14" data-testid="settings-page">
+      <PageHeader title={t("nav.settings")} description="Your account, language and security." />
+      <div className="space-y-6">
+        <Section id="account" icon={<UserRound size={22} />} title="Account" description={`Signed in as ${user.email ?? "your IELS account"}.`}>
+          <ul className="divide-y divide-[#E3E7ED] rounded-xl border border-[#E3E7ED]">
+            {[
+              { href: "/dashboard/profile", icon: UserRound, title: "Profile", body: "Name, photo, bio and how you appear in People." },
+              { href: "/dashboard/profile/account", icon: IdCard, title: "Account details", body: "Private details for event registration and certificates." },
+              { href: "/dashboard/my-learning", icon: GraduationCap, title: t("nav.myLearning"), body: "Your courses and purchases." },
+            ].map(({ href, icon: Icon, title, body }) => (
+              <li key={href}>
+                <Link href={href} className={cn("flex items-center gap-4 px-4 py-4 hover:bg-[#F7F8FA]", focusRing)}>
+                  <Icon size={20} className="shrink-0 text-[#577E90]" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{title}</span>
+                    <span className="block text-base text-[#2F4157]/60">{body}</span>
+                  </span>
+                  <ArrowRight size={16} className="text-[#2F4157]/40" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
 
-        {/* Header */}
-        <div className="bg-gradient-to-br from-[#2F4157] to-[#1e2b3a] pt-16 pb-32 px-6 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-10 w-96 h-96 bg-[#E56668] rounded-full blur-3xl" />
-            <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500 rounded-full blur-3xl" />
+        <Section id="language" icon={<Languages size={22} />} title="Language & region">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <p className={labelClass}>Interface language</p>
+              <LanguageSelect testId="settings-language-select" />
+              <p className="mt-2 text-sm text-[#2F4157]/60">Changes apply right away and follow your account.</p>
+            </div>
+            <div>
+              <label htmlFor="settings-timezone" className={labelClass}>Time zone</label>
+              <select id="settings-timezone" data-testid="settings-timezone" value={timezone} disabled={tzSaving} onChange={(e) => saveTimezone(e.target.value)} className={inputClass}>
+                {TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+              </select>
+              <p className="mt-2 text-sm text-[#2F4157]/60">Used for course session times.</p>
+            </div>
           </div>
-          
-          <div className="max-w-7xl text-center mx-auto relative z-10">
-            <h1 className="text-4xl font-extrabold text-white mb-2">Settings</h1>
-            <p className="text-blue-200">Manage your preferences</p>
-          </div>
-        </div>
+          <div className="mt-4"><StatusLine status={tzStatus} testId="settings-timezone-status" /></div>
+        </Section>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-20">
-          <div className="flex flex-col lg:flex-row gap-6">
-            
-            {/* Sidebar */}
-            <aside className="lg:w-64 space-y-3">
-              <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-lg p-3">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all mb-2 last:mb-0",
-                      activeTab === item.id 
-                        ? "bg-[#E56668] text-white shadow-lg" 
-                        : "text-gray-600 hover:bg-gray-50"
-                    )}
-                  >
-                    <item.icon size={18} />
-                    {item.label}
-                  </button>
-                ))}
+        <Section id="security" icon={<Shield size={22} />} title="Password & security">
+          {usesPassword ? (
+            <form onSubmit={changePassword} noValidate className="space-y-4" data-testid="settings-password-form">
+              <PasswordField id="pw-current" label="Current password" value={current} onChange={setCurrent} autoComplete="current-password" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <PasswordField id="pw-new" label="New password" value={next} onChange={setNext} autoComplete="new-password" />
+                <PasswordField id="pw-confirm" label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
               </div>
-            </aside>
+              <p className="text-sm text-[#2F4157]/60">At least 8 characters. A longer phrase is stronger than symbols.</p>
+              <StatusLine status={pwStatus} testId="settings-password-status" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button type="submit" disabled={pwSaving} className={btnPrimary}>{pwSaving ? "Changing…" : "Change password"}</button>
+                <Link href="/sign-in/forgot" className={btnSecondary}>Forgot your password?</Link>
+              </div>
+            </form>
+          ) : (
+            <p className="text-base text-[#2F4157]/70">You sign in with Google, so there&apos;s no IELS password to change. Manage security in your Google account.</p>
+          )}
+        </Section>
 
-            {/* Main Panel */}
-            <main className="flex-1 bg-white rounded-3xl border-2 border-gray-100 shadow-2xl p-8">
-              
-  
- {/* Preferences Tab */}
-{activeTab === "preferences" && (
-  <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-right-3 px-1">
-    <div className="border-b border-gray-100 pb-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-[#2F4157] flex items-center gap-2">
-        <Globe className="text-[#E56668]" size={24} />
-        App Preferences
-      </h2>
-      <p className="text-gray-500 text-sm mt-1">Customize your IELS experience</p>
-    </div>
+        {ELCO_ENABLED && <ConnectedApps supabase={supabase} />}
 
-    <div className="space-y-4">
-       {/* SECTION 2: Membership Connect */}
-                    <div className="space-y-6">
-                      <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Subscription</h3>
-                      
-                      <div className="p-6 sm:p-8 bg-gradient-to-br from-[#2F4157] to-[#1e2b3a] rounded-[2rem] border border-white/10 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                        <div className="absolute top-0 right-0 p-3 opacity-10">
-                          <Crown size={120} />
-                        </div>
-                        <div className="relative z-10">
-                          <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-2">Your Current Plan</p>
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-3xl font-black capitalize tracking-tight">
-                              IELS {userData?.uiTier || "Explorer"}
-                            </h3>
-                            <span className="px-3 py-1 bg-white/20 rounded-md text-[10px] font-bold uppercase tracking-widest">
-                              Active
-                            </span>
-                          </div>
-                          <p className="text-sm text-white/70 mt-2">
-                            {userData?.uiTier === "explorer" 
-                              ? "Upgrade to unlock public portfolio & mentoring." 
-                              : "You have access to premium Lounge features."}
-                          </p>
-                        </div>
-                        
-                        {/* THE REDIRECT BUTTON TO MANAGE SUBSCRIPTION */}
-                        <Link 
-                          href="/dashboard/settings/membership"
-                          className="relative z-10 w-full sm:w-auto px-6 py-4 bg-white text-[#2F4157] rounded-xl font-black text-sm hover:bg-gray-100 transition-all shadow-lg flex items-center justify-center gap-2 group"
-                        >
-                          Manage Subscription 
-                          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      </div>
-                    </div>
-
-                    <hr className="border-gray-100" />
-      {/* 1. Language - Stack on Mobile, Row on Tablet/Desktop */}
-      <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-purple-50/30 rounded-2xl border border-blue-100">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-start gap-4 flex-1">
-            <div className="p-3 bg-white rounded-xl shadow-sm shrink-0">
-              <Languages className="text-[#2F4157]" size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-[#2F4157] mb-1">Language</p>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Choose your preferred language for the dashboard
-              </p>
-            </div>
+        <section className={cn(cardGloss, "flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between md:p-8")}>
+          <div>
+            <h2 className="text-xl font-bold">Sign out</h2>
+            <p className="mt-1 text-base text-[#2F4157]/65">To delete your account, email support@ielsco.com from your account&apos;s email address.</p>
           </div>
-          
-          {/* w-full on mobile, min-w-180 on desktop */}
-          <select 
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="w-full sm:w-auto bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-[#E56668] transition-colors sm:min-w-[180px]"
-          >
-            <option value="en">🇬🇧 English (UK)</option>
-            <option value="id">🇮🇩 Bahasa Indonesia</option>
-          </select>
-        </div>
-      </div>
-
-      {/* 2. Timezone - Stack on Mobile */}
-      <div className="p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-100">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-start gap-4 flex-1">
-            <div className="p-3 bg-white rounded-xl shadow-sm shrink-0">
-              <Clock className="text-[#2F4157]" size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-[#2F4157] mb-1">Timezone</p>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Sync schedules with your local time
-              </p>
-            </div>
-          </div>
-          
-          <select 
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            className="w-full sm:w-auto bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-[#E56668] transition-colors sm:min-w-[180px]"
-          >
-            <option value="WIB">WIB (UTC+7)</option>
-            <option value="WITA">WITA (UTC+8)</option>
-            <option value="WIT">WIT (UTC+9)</option>
-          </select>
-        </div>
-      </div>
-
-      {/* 3. Dark Mode - Coming Soon */}
-      <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-slate-50/30 rounded-2xl border border-gray-100 opacity-70">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-start gap-4 flex-1">
-            <div className="p-3 bg-white rounded-xl shadow-sm shrink-0">
-              <Moon className="text-[#2F4157]" size={20} />
-            </div>
-            <div>
-              <p className="font-bold text-[#2F4157] mb-1">Dark Mode</p>
-              <p className="text-sm text-gray-600">Easier on the eyes during late night study</p>
-            </div>
-          </div>
-          
-          <div className="relative w-full sm:w-auto flex justify-end sm:block">
-            <div className="w-12 h-6 bg-gray-200 rounded-full cursor-not-allowed" />
-            <span className="absolute -bottom-5 right-0 text-[10px] font-black text-[#577E90] uppercase tracking-wider">
-              Coming Soon
-            </span>
-          </div>
-        </div>
+          <button type="button" data-testid="settings-sign-out" onClick={signOut} className={btnSecondary}><LogOut size={16} /> Sign out</button>
+        </section>
       </div>
     </div>
-
-    {/* Save Button */}
-    <div className="pt-4">
-      <button
-        onClick={handleSavePreferences}
-        disabled={saving}
-        className="w-full sm:w-auto px-10 py-4 bg-[#CB2129] text-white rounded-xl font-bold hover:bg-[#A81B22] transition-all shadow-lg shadow-red-900/10 disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {saving ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
-        {saving ? "Saving Changes..." : "Save Preferences"}
-      </button>
-    </div>
-  </div>
-)}
-
-              {/* Security Tab */}
-              {activeTab === "security" && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-right-3">
-                  <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-2xl font-bold text-[#2F4157] flex items-center gap-2">
-                      <Shield className="text-[#E56668]" size={24} />
-                      Security & Privacy
-                    </h2>
-                    <p className="text-gray-500 text-sm mt-1">Manage your password and account security</p>
-                  </div>
-
-                  {/* Change Password */}
-                  <div className="p-6 bg-gradient-to-br from-red-50 to-orange-50/30 rounded-2xl border border-red-100">
-                    <h3 className="font-bold text-[#2F4157] mb-4 flex items-center gap-2">
-                      <Lock size={18} />
-                      Change Password
-                    </h3>
-                    
-                    <div className="space-y-4">
-                      {/* Current Password — tambah DI ATAS field "New Password" */}
-<div>
-  <label className="block text-sm font-bold text-[#2F4157] mb-2">
-    Current Password
-  </label>
-  <div className="relative">
-    <input
-      type={showCurrentPassword ? "text" : "password"}
-      value={currentPassword}
-      onChange={(e) => setCurrentPassword(e.target.value)}
-      className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-[#E56668] focus:outline-none transition-colors font-medium"
-      placeholder="Enter your current password"
-    />
-    <button
-      type="button"
-      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-    >
-      {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-    </button>
-  </div>
-</div>
-                      {/* New Password */}
-                      <div>
-                        <label className="block text-sm font-bold text-[#2F4157] mb-2">
-                          New Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showNewPassword ? "text" : "password"}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:border-[#E56668] focus:outline-none transition-colors font-medium"
-                            placeholder="Enter new password"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                          >
-                            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Confirm Password */}
-                      <div>
-                        <label className="block text-sm font-bold text-[#2F4157] mb-2">
-                          Confirm New Password
-                        </label>
-                        <input
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#E56668] focus:outline-none transition-colors font-medium"
-                          placeholder="Confirm new password"
-                        />
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <button
-                          onClick={handleChangePassword}
-                          disabled={saving || !newPassword || !confirmPassword}
-                          className="flex-1 px-6 py-3 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#d65557] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          {saving ? (
-                            <>
-                              <Loader2 className="animate-spin" size={18} />
-                              Updating...
-                            </>
-                          ) : (
-                            <>
-                              <Lock size={18} />
-                              Update Password
-                            </>
-                          )}
-                        </button>
-                        <Link
-                          href="/sign-in/forgot"
-                          className="px-6 py-3 bg-white border-2 border-gray-200 text-[#2F4157] rounded-xl font-bold hover:border-[#E56668] hover:text-[#E56668] transition-all text-center"
-                        >
-                          Forgot Password?
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Security Info */}
-                  <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
-                    <h3 className="font-bold text-[#2F4157] mb-3 flex items-center gap-2">
-                      <AlertCircle size={18} className="text-blue-600" />
-                      Password Requirements
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                      <li className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                        At least 6 characters long
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                        Contains letters and numbers recommended
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                        Avoid using common passwords
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Notifications Tab */}
-              {activeTab === "notifications" && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-right-3">
-                  <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-2xl font-bold text-[#2F4157] flex items-center gap-2">
-                      <Bell className="text-[#E56668]" size={24} />
-                      Notification Preferences
-                    </h2>
-                    <p className="text-gray-500 text-sm mt-1">Control how you receive updates</p>
-                  </div>
-
-                  <div className="p-8 bg-gradient-to-br from-yellow-50 to-amber-50/30 rounded-2xl border border-yellow-100 text-center">
-                    <Bell className="mx-auto text-yellow-600 mb-4" size={48} />
-                    <h3 className="font-bold text-[#2F4157] mb-2">Coming Soon</h3>
-                    <p className="text-gray-600 text-sm max-w-md mx-auto">
-                      Notification preferences will be available in the next update. You'll be able to customize email, push, and in-app notifications.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </main>
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
   );
+}
+
+export default function SettingsPage() {
+  return <DashboardPage>{({ user, supabase }) => <SettingsView user={user} supabase={supabase} />}</DashboardPage>;
 }

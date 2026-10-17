@@ -131,18 +131,18 @@ const PricingModal = ({ onClose, isPreAuth }: PricingModalProps) => {
               initial={{ opacity: 0, height: 0, y: -10 }} 
               animate={{ opacity: 1, height: 'auto', y: 0 }} 
               exit={{ opacity: 0, height: 0, y: -10 }}
-              className="bg-[#CB2129]/10 border-b border-[#CB2129]/20 px-6 py-4 flex items-center justify-between gap-4 overflow-hidden"
+              className="bg-[#E56668]/10 border-b border-[#E56668]/20 px-6 py-4 flex items-center justify-between gap-4 overflow-hidden"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#CB2129]/20 flex items-center justify-center shrink-0">
-                  <AlertCircle size={16} className="text-[#CB2129]" />
+                <div className="w-8 h-8 rounded-full bg-[#E56668]/20 flex items-center justify-center shrink-0">
+                  <AlertCircle size={16} className="text-[#E56668]" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[#CB2129]">Navigation Failed</p>
-                  <p className="text-xs text-[#CB2129]/80">{errorMsg}</p>
+                  <p className="text-sm font-bold text-[#E56668]">Navigation Failed</p>
+                  <p className="text-xs text-[#E56668]/80">{errorMsg}</p>
                 </div>
               </div>
-              <button onClick={() => setErrorMsg(null)} className="p-2 hover:bg-[#CB2129]/10 rounded-full transition text-[#CB2129]">
+              <button onClick={() => setErrorMsg(null)} className="p-2 hover:bg-[#E56668]/10 rounded-full transition text-[#E56668]">
                 <X size={16} />
               </button>
             </motion.div>

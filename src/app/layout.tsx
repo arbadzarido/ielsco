@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 import LayoutWrapper from "@/components/LayoutWrapper";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
 
 // 2. Setup Plus Jakarta Sans
 const jakartaSans = Plus_Jakarta_Sans({
@@ -34,7 +35,7 @@ export default function RootLayout({
     <html lang="en" style={{ fontSize: '75%' }}>
       <body
         // 3. Masukkan variable Jakarta Sans dan set font-sans sebagai default
-        className={`${jakartaSans.variable} antialiased bg-[#2F4157] font-sans`}
+        className={`${jakartaSans.variable} antialiased bg-white text-[#1A2534] font-sans`}
       >
         {/* --- SEO SCHEMA MARKUP START --- */}
         <script
@@ -57,9 +58,11 @@ export default function RootLayout({
         />
         {/* --- SEO SCHEMA MARKUP END --- */}
 
-        <LayoutWrapper>
-          {children}
-        </LayoutWrapper>
+        <I18nProvider>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </I18nProvider>
       </body>
     </html>
   );

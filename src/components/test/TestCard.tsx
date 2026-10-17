@@ -72,7 +72,7 @@ export default function TestCard({
         ? "border-gray-200 opacity-75 grayscale" 
         : status === 'completed'
         ? "border-green-200 hover:shadow-xl hover:border-green-400"
-        : "border-[#CDC6BC]/40 hover:shadow-xl hover:border-[#CB2129]/30"
+        : "border-[#E3E7ED]/40 hover:shadow-xl hover:border-[#E56668]/30"
     )}>
       
       {/* Lock Overlay */}

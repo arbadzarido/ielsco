@@ -1328,7 +1328,7 @@ const showMentoringClosed = !isMentoring && (IS_SCREENING_PHASE || IS_POST_ANNOU
               </div>
               <div className="mt-auto">
                 {isLoungeDone ? (
-                  <Link href="/dashboard/community" className="block">
+                  <Link href="/dashboard/circle" className="block">
                     <Button className="w-full py-3 rounded-xl font-bold bg-[#304156] hover:bg-[#2F4055] text-white shadow-md hover:shadow-xl transition-all group relative overflow-hidden">
                       <span className="relative z-10 flex items-center justify-center">Access IELS Lounge <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
                     </Button>

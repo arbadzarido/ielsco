@@ -67,7 +67,7 @@ router.push("/sign-in/forgot/new-password?verified=true");
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       // Pastikan redirectTo mengarah ke callback agar session terbentuk aman
-      redirectTo: `${window.location.origin}/api/auth/callback?next=/sign-in/forgot/new-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/sign-in/forgot/new-password`,
     });
 
     if (error) {

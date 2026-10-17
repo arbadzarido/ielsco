@@ -87,13 +87,13 @@ export default function MyLibraryPage() {
       userName={userData.name}
       userAvatar={userData.avatar}
     >
-      <div className="min-h-screen bg-[#F6F3EF]">
+      <div className="min-h-screen bg-[#F7F8FA]">
         
 
         <div className="max-w-7xl mx-auto px-4 lg:px-12 py-12">
           {/* HERO & Stats Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
-            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#CDC6BC]/20">
+            <div className="lg:col-span-3 bg-gradient-to-br from-[#304156] to-[#1e2a38] rounded-[32px] p-8 md:p-10 text-white relative overflow-hidden shadow-lg border border-[#E3E7ED]/20">
               <div className="text-left max-w-3xl mx-auto">
               <div className="inline-flex items-left gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider mb-6">
                 <Library size={16} />
@@ -129,8 +129,8 @@ export default function MyLibraryPage() {
               <div className="absolute top-0 right-0 w-80 h-80 bg-[#577E90]/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 mix-blend-screen"></div>
             </div>
 
-            <div className="bg-white border border-[#CDC6BC] rounded-[32px] p-6 shadow-sm flex flex-col justify-center items-center text-center">
-              <div className="w-16 h-16 bg-[#F6F3EF] rounded-2xl flex items-center justify-center mb-4 border border-[#CDC6BC]/50">
+            <div className="bg-white border border-[#E3E7ED] rounded-[32px] p-6 shadow-sm flex flex-col justify-center items-center text-center">
+              <div className="w-16 h-16 bg-[#F7F8FA] rounded-2xl flex items-center justify-center mb-4 border border-[#E3E7ED]/50">
                 <Download className="text-[#304156]" size={32} />
               </div>
               <p className="text-[#577E90] font-bold text-xs uppercase tracking-wider">
@@ -155,10 +155,10 @@ export default function MyLibraryPage() {
               <input
                 type="text"
                 placeholder="Search resources..."
-                className="w-full pl-12 pr-4 py-3 bg-white border border-[#CDC6BC] rounded-2xl text-sm focus:ring-2 focus:ring-[#304156] focus:border-transparent outline-none"
+                className="w-full pl-12 pr-4 py-3 bg-white border border-[#E3E7ED] rounded-2xl text-sm focus:ring-2 focus:ring-[#304156] focus:border-transparent outline-none"
               />
             </div>
-            <button className="px-6 py-3 bg-white border border-[#CDC6BC] rounded-2xl font-semibold text-sm hover:bg-[#F6F3EF] transition-all flex items-center gap-2 justify-center">
+            <button className="px-6 py-3 bg-white border border-[#E3E7ED] rounded-2xl font-semibold text-sm hover:bg-[#F7F8FA] transition-all flex items-center gap-2 justify-center">
               <Filter size={18} />
               Filter
             </button>
@@ -167,8 +167,8 @@ export default function MyLibraryPage() {
           {/* Resource Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Example Resource Card */}
-            <div className="bg-white border border-[#CDC6BC] rounded-[24px] p-6 hover:shadow-sm transition-all">
-              <div className="w-12 h-12 bg-[#F6F3EF] rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-white border border-[#E3E7ED] rounded-[24px] p-6 hover:shadow-sm transition-all">
+              <div className="w-12 h-12 bg-[#F7F8FA] rounded-xl flex items-center justify-center mb-4">
                 <FileText className="text-[#304156]" size={24} />
               </div>
               <h3 className="font-bold text-[#304156] mb-2">

@@ -5,10 +5,11 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/data/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 import {
   Form,
@@ -50,6 +51,11 @@ export default function RegisterPage() {
   const [popup, setPopup] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const router = useRouter();
+  // Where to go after sign-up (e.g. back to an event to finish registering). Read on the client only.
+  const [nextUrl, setNextUrl] = useState("/dashboard");
+  useEffect(() => {
+    setNextUrl(safeNextPath(new URLSearchParams(window.location.search).get("next"), "/dashboard"));
+  }, []);
 
   const form = useForm({
     resolver: zodResolver(SignupSchema),
@@ -75,7 +81,7 @@ export default function RegisterPage() {
           data: {
             full_name: values.fullName,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`
         }
       });
 
@@ -103,7 +109,7 @@ export default function RegisterPage() {
         } else {
           // Auto logged in
           setPopup("Account created successfully! Redirecting... 🚀");
-          setTimeout(() => router.push("/dashboard"), 1500);
+          setTimeout(() => router.push(nextUrl), 1500);
         }
       }
     } catch (error: any) {
@@ -129,7 +135,7 @@ export default function RegisterPage() {
 
       if (data.session) {
         setPopup("Account verified successfully! Redirecting... 🚀");
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push(nextUrl), 1500);
       }
     } catch (error: any) {
       setPopup(`Invalid verification code: ${error.message}`);
@@ -161,7 +167,7 @@ export default function RegisterPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback?next=/dashboard`,
+          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -283,7 +289,7 @@ export default function RegisterPage() {
 
               <p className="text-center text-gray-500 text-sm">
                 Already part of IELS?{" "}
-                <Link href="/sign-in" className="text-[#E56668] font-bold hover:underline">Sign in</Link>
+                <Link href={nextUrl === "/dashboard" ? "/sign-in" : `/sign-in?next=${encodeURIComponent(nextUrl)}`} className="text-[#E56668] font-bold hover:underline">Sign in</Link>
               </p>
             </div>
           </div>

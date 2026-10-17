@@ -1,0 +1,22 @@
+-- MANUAL REVIEW REQUIRED - NOT part of the dashboard migrations, NOT applied automatically.
+--
+-- Finding (2026-10-16, read-only check with the public/publishable key, no row contents fetched):
+--   An anonymous request to /rest/v1/private_student_overview returned a row count of 37.
+--   Per src/app/school/dashboard/mentor/page.tsx this view exposes student_name, student_email,
+--   contract_url, course/session progress and scores. Anyone with the site's public key
+--   (shipped to every browser) can read it.
+--
+-- Step 1 (safe, recommended now): remove anonymous access. The only caller in the codebase is the
+-- signed-in school mentor dashboard, which uses the authenticated role, so this does not break it.
+revoke all on public.private_student_overview from anon;
+
+-- Step 2 (needs a decision; left commented out): any signed-in IELSco member can probably still read
+-- every row, because a view runs with its owner's rights and bypasses the RLS of its base tables.
+-- Making it respect the caller's RLS is the proper fix, BUT the mentor dashboard will then only see
+-- rows the mentor's own RLS policies allow. Check those policies on the base tables first.
+--
+-- alter view public.private_student_overview set (security_invoker = true);
+--
+-- Verify after running (as anon, should return 401/permission denied):
+--   curl -I -H "apikey: <publishable key>" -H "Prefer: count=exact" \
+--     "https://<project-ref>.supabase.co/rest/v1/private_student_overview?select=*&limit=0"

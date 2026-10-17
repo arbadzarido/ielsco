@@ -80,7 +80,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
-          <div className="flex items-center gap-2 text-[#CB2129] font-bold text-sm uppercase tracking-wider mb-2">
+          <div className="flex items-center gap-2 text-[#E56668] font-bold text-sm uppercase tracking-wider mb-2">
             <Sparkles size={16} />
             Premium Access
           </div>
@@ -91,7 +91,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
             Expert-led video lessons to boost your IELTS score.
           </p>
         </div>
-        <div className="px-4 py-2 bg-[#F6F3EF] border border-[#CDC6BC] rounded-full">
+        <div className="px-4 py-2 bg-[#F7F8FA] border border-[#E3E7ED] rounded-full">
           <p className="text-sm font-bold text-[#553223]">
             {masterClassVideos.length} Modules Available
           </p>
@@ -103,7 +103,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
         {currentVideos.map((video) => (
           <div
             key={video.id}
-            className="bg-white rounded-2xl border border-[#CDC6BC]/50 shadow-sm hover:shadow-xl transition-all overflow-hidden group flex flex-col"
+            className="bg-white rounded-2xl border border-[#E3E7ED]/50 shadow-sm hover:shadow-xl transition-all overflow-hidden group flex flex-col"
           >
             {/* Thumbnail Box */}
             <div className="relative aspect-video overflow-hidden">
@@ -122,7 +122,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
               </div>
 
               {video.completed && (
-                <div className="absolute top-3 left-3 px-3 py-1 bg-[#CB2129] rounded-lg text-white text-xs font-bold flex items-center gap-1 shadow-lg">
+                <div className="absolute top-3 left-3 px-3 py-1 bg-[#E56668] rounded-lg text-white text-xs font-bold flex items-center gap-1 shadow-lg">
                   <CheckCircle2 size={12} />
                   Completed
                 </div>
@@ -131,7 +131,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
 
             {/* Content Box */}
             <div className="p-6 flex flex-col flex-1">
-              <h3 className="text-xl font-bold text-[#304156] mb-3 line-clamp-2 leading-tight group-hover:text-[#CB2129] transition-colors">
+              <h3 className="text-xl font-bold text-[#304156] mb-3 line-clamp-2 leading-tight group-hover:text-[#E56668] transition-colors">
                 {video.title}
               </h3>
               <p className="text-sm text-gray-500 mb-6 line-clamp-2 leading-relaxed">
@@ -140,7 +140,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
 
               <div className="mt-auto flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-[#F6F3EF] rounded-full flex items-center justify-center border border-[#CDC6BC]">
+                  <div className="w-9 h-9 bg-[#F7F8FA] rounded-full flex items-center justify-center border border-[#E3E7ED]">
                     <BookOpen size={16} className="text-[#553223]" />
                   </div>
                   <div>
@@ -153,7 +153,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
                   href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#A81B22] shadow-md hover:shadow-red-200 transition-all active:scale-95"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#d65557] shadow-md hover:shadow-red-200 transition-all active:scale-95"
                 >
                   <PlayCircle size={18} />
                   Watch
@@ -177,7 +177,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
       <div className="mt-12 p-8 bg-[#304156] rounded-3xl relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-full bg-[#577E90]/20 skew-x-12 translate-x-20 transition-transform group-hover:translate-x-10 duration-700" />
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-          <div className="w-16 h-16 bg-[#CB2129] rounded-2xl flex items-center justify-center shadow-xl rotate-3">
+          <div className="w-16 h-16 bg-[#E56668] rounded-2xl flex items-center justify-center shadow-xl rotate-3">
             <PlayCircle size={32} className="text-white" />
           </div>
           <div className="flex-1 text-center md:text-left">
@@ -188,7 +188,7 @@ export default function MasterClassSection({ className }: MasterClassSectionProp
               We add new materials every week to ensure you get the best preparation.
             </p>
           </div>
-          <button className="px-8 py-3 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#A81B22] transition-all shadow-lg hover:shadow-red-900/40">
+          <button className="px-8 py-3 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#d65557] transition-all shadow-lg hover:shadow-red-900/40">
             Notify Me
           </button>
         </div>

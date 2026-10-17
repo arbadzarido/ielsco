@@ -406,7 +406,7 @@ export default function SchoolDashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* ── Page Title ── */}
         <div>
           <p className="text-[11px] font-bold uppercase tracking-widest text-[#E56668] mb-1">
@@ -655,7 +655,7 @@ export default function SchoolDashboardPage() {
             Not Just a Course. A Global Launchpad.
           </span>
         </p>
-      </main>
+      </div>
 
       {/* Inline font import */}
       <style>{`

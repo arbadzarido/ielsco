@@ -169,3 +169,65 @@ html { scroll-behavior: smooth; }
     @apply font-serif;
   }
 }
+
+/* =============================================================================
+   IELSco design tokens (merged redesign)
+   One palette for the public site and the dashboards: clean white surfaces,
+   neutral gray fills, the original IELSco navy / coral / teal brand colours and
+   a restrained "glossy" treatment (hairline borders, inner highlight, soft depth).
+   The Tailwind class-string equivalents live in src/components/dashboard/ui.ts.
+   ============================================================================= */
+:root {
+  /* Brand */
+  --iels-navy: #2F4157;
+  --iels-navy-deep: #1A2534;
+  --iels-coral: #E56668;
+  --iels-coral-hover: #C04C4E;
+  --iels-teal: #577E90;
+  --iels-maroon: #914D4D; /* GIF programme accent */
+
+  /* Surfaces (no cream / beige) */
+  --iels-bg: #FFFFFF;
+  --iels-surface: #FFFFFF;
+  --iels-surface-muted: #F7F8FA;
+  --iels-surface-sunken: #F1F4F8;
+  --iels-border: #E3E7ED;
+  --iels-border-strong: #CBD3DD;
+
+  /* Text */
+  --iels-text: #1A2534;
+  --iels-text-muted: rgba(47, 65, 87, 0.7);
+
+  /* Depth */
+  --iels-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --iels-shadow-sm: 0 1px 2px rgba(47, 65, 87, 0.05);
+  --iels-shadow-md: 0 10px 30px rgba(47, 65, 87, 0.08);
+  --iels-shadow-lg: 0 18px 44px rgba(47, 65, 87, 0.12);
+
+  /* Radii */
+  --iels-radius-sm: 0.75rem;
+  --iels-radius-md: 1rem;
+  --iels-radius-lg: 1.5rem;
+  --iels-radius-xl: 2rem;
+}
+
+/* Glossy surfaces for the public pages (mirrors `glass` / `cardGloss` in ui.ts). */
+.iels-glass {
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--iels-highlight), 0 8px 30px rgba(47, 65, 87, 0.08);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .iels-glass {
+    background: rgba(255, 255, 255, 0.75);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    backdrop-filter: blur(24px) saturate(1.4);
+  }
+}
+.iels-card {
+  background: var(--iels-surface);
+  border: 1px solid var(--iels-border);
+  border-radius: var(--iels-radius-lg);
+  box-shadow: var(--iels-highlight), var(--iels-shadow-md);
+}
+

@@ -1,12 +1,17 @@
-// src/app/api/auth/callback/route.ts
+// src/app/auth/callback/route.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { safeNextPath, trustedBaseUrl } from '@/lib/safe-redirect'
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  // Security: only same-site relative paths (was an open redirect: `${base}${next}` with any `next`).
+  const next = safeNextPath(searchParams.get('next'), '/dashboard')
+
+  // Base URL from an allowlisted Host / X-Forwarded-Host only; otherwise the canonical site URL.
+  const base = trustedBaseUrl(request.headers)
 
   if (code) {
     const cookieStore = await cookies()
@@ -29,22 +34,14 @@ export async function GET(request: Request) {
       }
     )
 
-    // Tukar Code dengan Session
+    // Exchange the auth code for a session
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // FIX RACE CONDITION:
-      // Kita tentukan URL tujuan dengan handling forwarded host (untuk Vercel/Production)
-      const forwardedHost = request.headers.get('x-forwarded-host') 
-      const isLocal = origin.includes('localhost')
-      // Gunakan https jika di production/vercel
-      const base = isLocal ? origin : (forwardedHost ? `https://${forwardedHost}` : origin)
-      
-      // Redirect langsung
       return NextResponse.redirect(`${base}${next}`)
     }
   }
 
-  // Jika gagal / error
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  // Failed / missing code: back to sign-in with an error flag (the old /auth/auth-code-error page never existed).
+  return NextResponse.redirect(`${base}/sign-in?error=auth_callback`)
 }

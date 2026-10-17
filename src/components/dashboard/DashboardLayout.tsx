@@ -1,40 +1,40 @@
 "use client";
 
 import { ReactNode } from "react";
-import DashboardHeader from "./DashboardHeader"; 
+import DashboardHeader from "./DashboardHeader";
+import { DashboardSidebar } from "./DashboardSidebar";
+import { MobileTabBar } from "./MobileTabBar";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  userTier?: "explorer" | "insider" | "visionary"; // Logic tier sudah disiapkan di sini
+  // Kept so legacy dashboard pages still compile. Tiers are no longer shown in the core dashboard.
+  userTier?: "explorer" | "insider" | "visionary";
   userName?: string;
-  userAvatar?: string;
+  userAvatar?: string | null;
 }
 
-export default function DashboardLayout({
-  children,
-  userTier = "explorer", // Default ke explorer (free tier)
-  userName = "Learner",
-  userAvatar
-}: DashboardLayoutProps) {
+export default function DashboardLayout({ children, userName = "Learner", userAvatar }: DashboardLayoutProps) {
+  const { t } = useI18n();
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
-      
-      {/* 1. TERUSKAN PROP userTier KE HEADER */}
-      <DashboardHeader 
-        userName={userName} 
-        userAvatar={userAvatar} 
-        userTier={userTier} // <--- Tambahkan ini
-      />
-
-      <main className="flex-1 w-full relative z-0">
-        {children}
-      </main>
-
-      <footer className="py-8 text-center border-t border-gray-200/60 mt-auto bg-white/50">
-        <p className="text-xs text-gray-400 font-medium">
-          © 2026 IELS Ecosystem. All rights reserved.
-        </p>
-      </footer>
+    <div className="min-h-screen bg-[#F5F7FA] bg-[radial-gradient(1100px_520px_at_0%_0%,#E6EEF4_0%,transparent_60%),radial-gradient(900px_480px_at_100%_0%,#FBEFEF_0%,transparent_55%)] font-sans text-[#2F4157]">
+      <a
+        href="#dashboard-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-[#2F4157]"
+      >
+        {t("common.skipToContent")}
+      </a>
+      <DashboardSidebar userName={userName} userAvatar={userAvatar} />
+      <div className="flex min-h-screen flex-col lg:pl-[336px]">
+        <DashboardHeader userName={userName} userAvatar={userAvatar} />
+        <div id="dashboard-main" className="relative z-0 w-full flex-1 pb-[calc(104px+env(safe-area-inset-bottom))] lg:pb-0">
+          {children}
+        </div>
+        <footer className="hidden border-t border-[#E3E7ED]/60 py-6 text-center text-sm text-[#2F4157]/50 lg:block">
+          © {new Date().getFullYear()} IELS. All rights reserved.
+        </footer>
+      </div>
+      <MobileTabBar />
     </div>
   );
 }

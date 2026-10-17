@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function NotFound() {
   return (
-    <main className="fixed inset-0 z-[9999] min-h-screen bg-white flex flex-col items-center justify-center p-6 overflow-hidden">
+    <div className="fixed inset-0 z-[9999] min-h-screen bg-white flex flex-col items-center justify-center p-6 overflow-hidden">
       
       {/* ── MAIN CONTAINER ── */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20 max-w-5xl w-full">
@@ -88,6 +88,6 @@ export default function NotFound() {
         </div>
       </div>
 
-    </main>
+    </div>
   );
 }

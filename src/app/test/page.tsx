@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { VALID_CODES } from "@/data/test/codes";
 import { Button } from "@/components/ui/button";
+import { ElcoCallout } from "@/components/elco/ElcoCallout";
 
 type CodeEntry = {
   code: string;
@@ -265,6 +266,9 @@ export default function TestSelectionPage() {
     prevent cheating.
   </p>
 </article>
+  
+ {/* Elco: daily practice between test sessions */}
+ <ElcoCallout refId="test" title="Practise before your test" body="Elco gives you daily speaking and writing practice with feedback on your recurring mistakes. A practice companion, not an official score." />
 
  {/* Pricing & Packages */}
 <article

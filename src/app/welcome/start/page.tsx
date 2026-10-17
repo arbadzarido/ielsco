@@ -61,8 +61,8 @@ function QuestionCard({
               onClick={() => onSelect(i)}
               className={`flex items-center gap-3 px-5 py-3 rounded-2xl border-2 text-left font-semibold text-sm transition-all duration-200 group
                 ${isSelected
-                  ? "bg-[#1A2534] border-[#1A2534] text-white shadow-[4px_4px_0px_#E56668]"
-                  : "bg-white border-gray-200 text-[#1A2534] hover:border-[#1A2534] hover:shadow-[4px_4px_0px_#1A2534] hover:-translate-y-0.5"
+                  ? "bg-[#1A2534] border-[#1A2534] text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_12px_30px_rgba(229,102,104,0.25)]"
+                  : "bg-white border-gray-200 text-[#1A2534] hover:border-[#1A2534] hover:shadow-[0_18px_44px_rgba(26,37,52,0.16)] hover:-translate-y-0.5"
                 }`}
             >
               {opt.emoji && (
@@ -105,7 +105,7 @@ function ResultView({
       className="w-full max-w-2xl mx-auto space-y-6"
     >
       {/* Hero result card */}
-      <div className="bg-[#1A2534] rounded-3xl overflow-hidden border-2 border-[#1A2534] shadow-[8px_8px_0px_#E56668]">
+      <div className="bg-[#1A2534] rounded-3xl overflow-hidden border border-[#1A2534]/10 shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_12px_30px_rgba(229,102,104,0.25)]">
         {/* Mascot */}
         <div className="flex justify-center pt-8 pb-3 bg-[#1A2534]">
           <Image
@@ -142,7 +142,7 @@ function ResultView({
             <Link
               key={prog.href}
               href={prog.href}
-              className={`${prog.accent} rounded-2xl p-5 text-white border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#E56668] transition-all duration-300 flex flex-col gap-3 group`}
+              className={`${prog.accent} rounded-2xl p-5 text-white border border-[#1A2534]/10 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(229,102,104,0.30)] transition-all duration-300 flex flex-col gap-3 group`}
             >
               <span className="text-[10px] font-extrabold uppercase tracking-widest bg-white/15 border border-white/20 px-3 py-1 rounded-full w-fit">
                 {prog.tag}
@@ -168,14 +168,14 @@ function ResultView({
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <Link
             href="/sign-up"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#E56668] text-white font-extrabold px-8 py-3 border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:shadow-[6px_6px_0px_#1A2534] hover:-translate-y-1 transition-all duration-300 group"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#E56668] text-white font-extrabold px-8 py-3 border border-[#1A2534]/10 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:shadow-[0_18px_44px_rgba(26,37,52,0.16)] hover:-translate-y-1 transition-all duration-300 group"
           >
             Create an Account
             <ArrowRight className="group-hover:translate-x-1 transition-transform" size={18} />
           </Link>
           <Link
             href="/sign-in"
-            className="inline-flex items-center justify-center rounded-full bg-white text-[#1A2534] font-extrabold px-8 py-3 border-2 border-[#1A2534] shadow-[4px_4px_0px_#1A2534] hover:bg-[#1A2534] hover:text-white hover:shadow-[6px_6px_0px_#E56668] hover:-translate-y-1 transition-all duration-300"
+            className="inline-flex items-center justify-center rounded-full bg-white text-[#1A2534] font-extrabold px-8 py-3 border border-[#1A2534]/10 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:bg-[#1A2534] hover:text-white hover:shadow-[0_18px_44px_rgba(229,102,104,0.30)] hover:-translate-y-1 transition-all duration-300"
           >
             Sign In
           </Link>
@@ -258,7 +258,7 @@ function DailySlider({
               [&::-webkit-slider-thumb]:bg-white
               [&::-webkit-slider-thumb]:border-4
               [&::-webkit-slider-thumb]:border-[#E56668]
-              [&::-webkit-slider-thumb]:shadow-[2px_2px_0px_#1A2534]
+              [&::-webkit-slider-thumb]:shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)]
               [&::-webkit-slider-thumb]:-mt-[8px]
               [&::-webkit-slider-thumb]:transition-transform
               [&::-webkit-slider-thumb]:hover:scale-110
@@ -290,13 +290,13 @@ function DailySlider({
       <div className="flex gap-3 justify-center">
         <button
           onClick={onBack}
-          className="inline-flex items-center justify-center rounded-full border-2 border-[#1A2534] bg-white text-[#1A2534] font-bold px-8 py-3 shadow-[3px_3px_0px_#1A2534] hover:bg-[#1A2534] hover:text-white transition-all duration-200 active:scale-[0.97]"
+          className="inline-flex items-center justify-center rounded-full border border-[#1A2534]/10 bg-white text-[#1A2534] font-bold px-8 py-3 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:bg-[#1A2534] hover:text-white transition-all duration-200 active:scale-[0.97]"
         >
           Back
         </button>
         <button
           onClick={onFinish}
-          className="inline-flex items-center justify-center rounded-full bg-[#E56668] text-white font-bold px-8 py-3 border-2 border-[#1A2534] shadow-[3px_3px_0px_#1A2534] hover:shadow-[5px_5px_0px_#1A2534] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
+          className="inline-flex items-center justify-center rounded-full bg-[#E56668] text-white font-bold px-8 py-3 border border-[#1A2534]/10 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:shadow-[0_18px_44px_rgba(26,37,52,0.16)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97]"
         >
           See My Results
         </button>
@@ -366,7 +366,7 @@ export default function StartPage() {
 
   return (
     // Dihapus 'justify-center' agar konten sejajar wajar dari atas, 'pt-[120px]' diganti jadi 'pt-24 md:pt-32'
-    <main className="min-h-screen flex flex-col items-center bg-white text-[#1A2534] px-6 pt-14 md:pt-20 pb-25">
+    <div className="min-h-screen flex flex-col items-center bg-white text-[#1A2534] px-6 pt-14 md:pt-20 pb-25">
       <div className="w-full max-w-2xl">
 
         {/* Header — only during quiz / slider */}
@@ -407,14 +407,14 @@ export default function StartPage() {
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={onBack}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-[#1A2534] bg-white text-[#1A2534] font-bold px-8 py-3 shadow-[3px_3px_0px_#1A2534] hover:bg-[#1A2534] hover:text-white transition-all duration-200 active:scale-[0.97]"
+                  className="inline-flex items-center justify-center rounded-full border border-[#1A2534]/10 bg-white text-[#1A2534] font-bold px-8 py-3 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:bg-[#1A2534] hover:text-white transition-all duration-200 active:scale-[0.97]"
                 >
                   Back
                 </button>
                 <button
                   onClick={onNext}
                   disabled={answers[step] === null}
-                  className="inline-flex items-center justify-center rounded-full bg-[#E56668] text-white font-bold px-8 py-3 border-2 border-[#1A2534] shadow-[3px_3px_0px_#1A2534] hover:shadow-[5px_5px_0px_#1A2534] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0px_#1A2534]"
+                  className="inline-flex items-center justify-center rounded-full bg-[#E56668] text-white font-bold px-8 py-3 border border-[#1A2534]/10 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_10px_30px_rgba(26,37,52,0.10)] hover:shadow-[0_18px_44px_rgba(26,37,52,0.16)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_18px_44px_rgba(26,37,52,0.16)]"
                 >
                   {step === total - 1 ? "Next" : "Next"}
                 </button>
@@ -442,6 +442,6 @@ export default function StartPage() {
           )}
         </AnimatePresence>
       </div>
-    </main>
+    </div>
   );
 }

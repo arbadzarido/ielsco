@@ -9,6 +9,7 @@ import { useState, Suspense } from "react";
 import { supabase } from "@/data/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 import {
   Form,
@@ -36,7 +37,8 @@ function SignInContent() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextUrl = searchParams.get("next") || "/dashboard";
+  // Security: only same-site relative paths (an absolute "next" used to send people off-site after sign-in).
+  const nextUrl = safeNextPath(searchParams.get("next"), "/dashboard");
 
   const form = useForm({
     resolver: zodResolver(SignInSchema),
@@ -86,7 +88,7 @@ function SignInContent() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback?next=${nextUrl}`,
+          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -201,7 +203,7 @@ function SignInContent() {
 
         <p className="text-center text-gray-500 text-sm">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="text-[#E56668] font-bold hover:underline">
+          <Link href={nextUrl === "/dashboard" ? "/sign-up" : `/sign-up?next=${encodeURIComponent(nextUrl)}`} className="text-[#E56668] font-bold hover:underline">
             Sign up here
           </Link>
         </p>

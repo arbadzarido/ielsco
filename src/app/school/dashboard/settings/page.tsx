@@ -268,7 +268,7 @@ export default function SettingsPage() {
         </aside>
 
         {/* Main Panel */}
-        <main className="flex-1 bg-white rounded-[20px] border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-8">
+        <div className="flex-1 bg-white rounded-[20px] border border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-8">
           
           {/* Preferences Tab */}
           {activeTab === "preferences" && (
@@ -547,7 +547,7 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );

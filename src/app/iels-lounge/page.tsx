@@ -9,6 +9,7 @@ import type { Testimonial } from "@/data/testimonials";
 import { Button } from "@/components/ui/button";
 import PricingModal from "@/components/subscription/PricingModal";
 import { ArrowRight, Target, Users, Trophy, Gift, Star, Compass, Megaphone, PlayCircle } from "lucide-react";
+import { ElcoCallout } from "@/components/elco/ElcoCallout";
 
 export default function LoungePage() {
   // Enhanced Carousel Data
@@ -495,6 +496,13 @@ export default function LoungePage() {
                 })}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Elco: solo practice between Lounge sessions */}
+        <section className="bg-white px-6 pt-4 sm:px-12 lg:px-[100px]">
+          <div className="mx-auto max-w-5xl">
+            <ElcoCallout refId="lounge" title="Practise on your own between sessions" body="Warm up with Elco before the Lounge: a short conversation with feedback you can use the same night." />
           </div>
         </section>
 

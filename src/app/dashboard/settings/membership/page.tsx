@@ -205,7 +205,7 @@ export default function SubscriptionSettings() {
                     <div className={cn(
                       "w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl",
                       isVisionary ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white" :
-                      isInsider ? "bg-gradient-to-br from-[#E56668] to-[#CB2129] text-white" :
+                      isInsider ? "bg-gradient-to-br from-[#E56668] to-[#E56668] text-white" :
                       "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-500"
                     )}>
                       {isVisionary ? <Crown size={40} /> : isInsider ? <Zap size={40} /> : <Shield size={40} />}

@@ -130,10 +130,15 @@ export async function proxy(request: NextRequest) {
   // ===========================================================================
 
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Elco's server calls the signed integration endpoints from one IP for all its users, so they get their own
+    // bucket (still limited) instead of sharing the 20/10s browser limit. Being in this bucket grants nothing:
+    // every one of these routes verifies the HMAC signature itself (src/lib/integrations/signature.ts).
+    const isElcoServerCall = /^\/api\/integrations\/elco\/(exchange|goals|summary|revoke)$/.test(request.nextUrl.pathname);
     const now        = Date.now();
     const WINDOW_MS  = 10_000;
-    const MAX_REQ    = 20;
-    const record     = requestTracker.get(ip) || { count: 0, timestamp: now };
+    const MAX_REQ    = isElcoServerCall ? 60 : 20;
+    const bucket     = isElcoServerCall ? `elco-int-${ip}` : ip;
+    const record     = requestTracker.get(bucket) || { count: 0, timestamp: now };
 
     if (now - record.timestamp > WINDOW_MS) {
       record.count     = 1;
@@ -142,7 +147,7 @@ export async function proxy(request: NextRequest) {
       record.count++;
     }
 
-    requestTracker.set(ip, record);
+    requestTracker.set(bucket, record);
 
     if (record.count > MAX_REQ) {
       console.warn(`[SECURITY ALERT] API spam blocked — IP: ${ip}`);

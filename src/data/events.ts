@@ -7,6 +7,8 @@ export interface EventData {
   startDate: string;
   registrationTimeDeadline: string;
   registrationDateDeadline: string;
+  // Optional WhatsApp group shown to registered members after one-click registration (dashboard).
+  whatsappGroup?: string;
   seo: {
     meta_title: string;
     meta_description: string;

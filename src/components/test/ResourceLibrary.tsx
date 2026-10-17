@@ -146,7 +146,7 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
             placeholder="Search materials..." 
             value={searchQuery}
             onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(0);}}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#CDC6BC]/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#577E90]/20"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E3E7ED]/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#577E90]/20"
           />
         </div>
       </div>
@@ -154,9 +154,9 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
       {/* Main Flow (Paginated) */}
       <div className="grid gap-6 mb-12">
         {currentResources.map((resource, index) => (
-          <div key={resource.id} className="group bg-white hover:bg-[#F6F3EF] border border-[#CDC6BC]/30 rounded-2xl overflow-hidden transition-all flex flex-col sm:flex-row items-center shadow-sm">
+          <div key={resource.id} className="group bg-white hover:bg-[#F7F8FA] border border-[#E3E7ED]/30 rounded-2xl overflow-hidden transition-all flex flex-col sm:flex-row items-center shadow-sm">
             {/* Thumbnail Preview */}
-            <div className="w-full sm:w-48 aspect-video sm:aspect-square bg-gray-100 relative overflow-hidden shrink-0 border-r border-[#CDC6BC]/20">
+            <div className="w-full sm:w-48 aspect-video sm:aspect-square bg-gray-100 relative overflow-hidden shrink-0 border-r border-[#E3E7ED]/20">
               <img 
                 src={getDriveThumbnail(resource.driveId)} 
                 alt={resource.title}
@@ -173,7 +173,7 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
                 <span className="text-[10px] font-bold text-[#577E90] uppercase tracking-widest bg-[#577E90]/5 px-2 py-0.5 rounded mb-2 inline-block">
                   {resource.type}
                 </span>
-                <h3 className="text-xl font-bold text-[#304156] group-hover:text-[#CB2129] transition-colors">{resource.title}</h3>
+                <h3 className="text-xl font-bold text-[#304156] group-hover:text-[#E56668] transition-colors">{resource.title}</h3>
                 <p className="text-sm text-gray-500 mt-1">{resource.description}</p>
               </div>
               
@@ -181,7 +181,7 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
                 <a 
                   href={`https://drive.google.com/file/d/${resource.driveId}/view`} 
                   target="_blank" 
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#A81B22] shadow-md hover:shadow-red-200 transition-all active:scale-95"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#E56668] text-white rounded-xl font-bold hover:bg-[#d65557] shadow-md hover:shadow-red-200 transition-all active:scale-95"
                 >
                   <Eye size={16} /> Open
                 </a>
@@ -196,7 +196,7 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
       )}
 
       {/* Folders & Practice Section */}
-      <div className="mt-20 pt-10 border-t border-[#CDC6BC]/30">
+      <div className="mt-20 pt-10 border-t border-[#E3E7ED]/30">
         <h3 className="text-2xl font-bold text-[#304156] mb-8">Specialized Practice Packs</h3>
         <div className="grid md:grid-cols-3 gap-6">
           {specializedFolders.map((folder, idx) => (
@@ -206,7 +206,7 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
                 ? `https://drive.google.com/drive/folders/${folder.driveId}` 
                 : `https://drive.google.com/file/d/${folder.driveId}/view`}
               target="_blank"
-              className="p-8 bg-white rounded-[2rem] border border-[#CDC6BC]/30 hover:border-[#CB2129] transition-all group relative overflow-hidden"
+              className="p-8 bg-white rounded-[2rem] border border-[#E3E7ED]/30 hover:border-[#E56668] transition-all group relative overflow-hidden"
             >
               <div className="absolute -top-4 -right-4 w-24 h-24 bg-gray-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
               <div className="relative z-10">
@@ -215,7 +215,7 @@ export default function ResourceLibrary({ className }: ResourceLibraryProps) {
                 </div>
                 <h4 className="text-xl font-bold text-[#304156] mb-2">{folder.title}</h4>
                 <p className="text-sm text-gray-500 mb-6">{folder.description}</p>
-                <div className="text-[#CB2129] text-sm font-bold flex items-center gap-2">
+                <div className="text-[#E56668] text-sm font-bold flex items-center gap-2">
                   Explore Now <ExternalLink size={14} />
                 </div>
               </div>
