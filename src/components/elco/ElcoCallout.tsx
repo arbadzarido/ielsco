@@ -10,7 +10,7 @@ export function ElcoCallout({
   refId,
   title,
   body,
-  cta = "Try Elco AI",
+  cta = "Start learning with Elco",
   className,
 }: {
   refId: string;

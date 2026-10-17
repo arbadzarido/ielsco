@@ -178,9 +178,9 @@ export const en = {
     explore: "Explore GIF",
   },
   elcoPromo: {
-    title: "Try Elco AI",
-    body: "Practice English with personalized AI learning.",
-    cta: "Start learning",
+    title: "Learn English with Elco AI",
+    body: "Guided practice, Elco Chat and feedback, built around your goals.",
+    cta: "Start learning with Elco",
     newTab: "(opens Elco AI in a new tab)",
   },
   myGoals: {

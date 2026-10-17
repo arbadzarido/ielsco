@@ -181,9 +181,9 @@ export const id: DeepPartial<Messages> = {
     explore: "Jelajahi GIF",
   },
   elcoPromo: {
-    title: "Coba Elco AI",
-    body: "Latihan bahasa Inggris dengan pembelajaran AI yang personal.",
-    cta: "Mulai belajar",
+    title: "Belajar bahasa Inggris dengan Elco AI",
+    body: "Latihan terarah, Elco Chat, dan umpan balik sesuai tujuanmu.",
+    cta: "Mulai belajar dengan Elco",
     newTab: "(membuka Elco AI di tab baru)",
   },
   myGoals: {

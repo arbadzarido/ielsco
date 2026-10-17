@@ -13,6 +13,7 @@ import { GIF_BATCH, gifRegistrationOpen } from "@/data/gif";
 import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
 import { generateSlug } from "@/utils/slug";
 import { wibDeadline } from "@/lib/events/deadline";
+import { ELCO_ENABLED, ELCO_MASCOT, elcoHref } from "@/lib/elco";
 
 // Public landing page. Positioning: Community & Opportunities for Southeast Asian learners.
 // Everything time-based (sessions, registration status) is computed in the browser after mount, so the page never
@@ -248,6 +249,34 @@ function Opportunities() {
   );
 }
 
+// Elco AI, IELSco's English-learning companion (separate app at ai.ielsco.com). Shown only when NEXT_PUBLIC_ELCO_ENABLED
+// is "true", i.e. after the Elco deployment has been verified, so the landing page never links to a missing site.
+function ElcoSection() {
+  if (!ELCO_ENABLED) return null;
+  return (
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="elco-heading" data-testid="landing-elco">
+      <div className={cn(container, "grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-14")}>
+        <Image src={ELCO_MASCOT} alt="" width={160} height={157} className="mx-auto h-[140px] w-auto lg:h-[160px]" />
+        <div>
+          <p className={eyebrow}>Elco AI · by IELS</p>
+          <h2 id="elco-heading" className={cn(h2, "mt-3")}>Learn English with Elco AI</h2>
+          <p className={cn(lead, "mt-4 max-w-[640px]")}>
+            Elco is IELS&apos;s English-learning companion: guided practice planned around your goals, conversations with
+            Elco Chat, feedback on your speaking and writing, and a vocabulary notebook. IELS stays your home for people,
+            Circle and opportunities.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <a href={elcoHref("landing")} target="_blank" rel="noopener noreferrer" className={btnPrimary} data-testid="landing-elco-cta">
+              Start learning with Elco <ArrowUpRight size={18} aria-hidden="true" />
+            </a>
+            <p className="text-[14px] text-[#2F4157]/60">Free to start · separate Elco account</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCta() {
   return (
     <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="final-heading">
@@ -276,6 +305,7 @@ export default function Home() {
       <CircleSessions />
       <Stories />
       <Opportunities />
+      <ElcoSection />
       <FinalCta />
       <Footer />
     </div>
