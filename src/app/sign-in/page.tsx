@@ -1,7 +1,7 @@
 "use client";
 
 import AuthLayout from "@/components/auth/AuthLayout";
-import Image from "next/image";
+import { AuthDivider, AuthNotice, GoogleButton, authInput, authLabel, authLink, authPrimary } from "@/components/auth/AuthUI";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,31 +10,20 @@ import { supabase } from "@/data/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { safeNextPath } from "@/lib/safe-redirect";
-
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage
-} from "@/components/ui/form";
-
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Popup from "@/components/ui/popup";
 
 const SignInSchema = z.object({
-  email: z.string().email("Hmm… that email doesn't look valid 👀"),
-  password: z.string().min(1, "Password is required")
+  email: z.string().email("Please enter a valid email address."),
+  password: z.string().min(1, "Please enter your password.")
 });
 
 function SignInContent() {
   const [loading, setLoading] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [popup, setPopup] = useState("");
-  
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   // Security: only same-site relative paths (an absolute "next" used to send people off-site after sign-in).
@@ -42,200 +31,117 @@ function SignInContent() {
 
   const form = useForm({
     resolver: zodResolver(SignInSchema),
-    defaultValues: {
-      email: "",
-      password: ""
-    }
+    defaultValues: { email: "", password: "" }
   });
+  const { errors } = form.formState;
 
   const onSubmit = async (values: z.infer<typeof SignInSchema>) => {
     setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password });
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          setPopup("Invalid email or password. Please try again! 🔐");
-        } else if (error.message.includes("Email not confirmed")) {
-          setPopup("Please verify your email before signing in. Check your inbox! 📧");
-        } else {
-          setPopup(`Error: ${error.message}`);
-        }
+        if (error.message.includes("Invalid login credentials")) setError("That email and password don't match. Please try again.");
+        else if (error.message.includes("Email not confirmed")) setError("Please confirm your email first. Check your inbox for the code or link.");
+        else setError("Something went wrong. Please try again.");
         setLoading(false);
         return;
       }
-
       if (data.user) {
-        setPopup("Welcome back! Redirecting... 🎉");
+        setStatus("Signed in. Taking you to your dashboard…");
         router.refresh();
-        setTimeout(() => {
-          router.push(nextUrl);
-        }, 1000);
+        router.push(nextUrl);
       }
-    } catch (error: any) {
-      console.error("Sign in error:", error);
-      setPopup("Something went wrong. Please try again! 😔");
+    } catch (err) {
+      console.error("Sign in error:", err);
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleBusy(true);
     try {
       const origin = window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          queryParams: { access_type: "offline", prompt: "consent" },
         }
       });
-
       if (error) {
-        setPopup(`Google sign-in error: ${error.message}`);
+        setError("We couldn't sign you in with Google. Please try again or use your email.");
+        setGoogleBusy(false);
       }
-    } catch (error: any) {
-      console.error("Google sign-in error:", error);
-      setPopup("Google sign-in failed. Please try again! 😔");
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError("We couldn't sign you in with Google. Please try again or use your email.");
+      setGoogleBusy(false);
     }
   };
 
   return (
-    <>
-      {popup && <Popup message={popup} onClose={() => setPopup("")} />}
-
-      <div className="space-y-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold text-[#2F4157]">Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="example@mail.com"
-                      className="border rounded-xl w-full p-3 bg-[#F7F8FA] focus:ring-2 focus:ring-[#E56668]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-[#E56668]" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-semibold text-[#2F4157]">Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPass ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className="border rounded-xl w-full p-3 bg-[#F7F8FA] focus:ring-2 focus:ring-[#E56668]"
-                        {...field}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-4 top-3 text-gray-500"
-                        onClick={() => setShowPass(!showPass)}
-                      >
-                        {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-[#E56668]" />
-                </FormItem>
-              )}
-            />
-
-            <div className="text-right">
-              <Link href="/sign-in/forgot" className="text-sm text-[#E56668] hover:underline font-medium">
-                Forgot password?
-              </Link>
-            </div>
-
-            <Button
-              disabled={loading}
-              type="submit"
-              className="w-full py-3 rounded-full bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] disabled:bg-[#C04C4E] transition-all"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="animate-spin" size={18} />
-                  Signing in...
-                </span>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </form>
-        </Form>
-
-        <div className="flex items-center gap-3">
-          <div className="flex-grow border-t" />
-          <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">or</span>
-          <div className="flex-grow border-t" />
+    <div>
+      <GoogleButton onClick={handleGoogleSignIn} busy={googleBusy} disabled={loading} />
+      <AuthDivider />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-[16px]" noValidate data-testid="sign-in-form">
+        <div>
+          <label htmlFor="sign-in-email" className={authLabel}>Email</label>
+          <input id="sign-in-email" type="email" autoComplete="email" placeholder="you@example.com" aria-invalid={!!errors.email}
+            className={authInput} data-testid="auth-email-input" {...form.register("email")} />
+          {errors.email && <p className="mt-[4px] text-[14px] text-[#C04C4E]">{errors.email.message}</p>}
         </div>
-
-        <button
-          onClick={handleGoogleSignIn}
-          className="inline-flex items-center justify-center gap-3 rounded-full w-full py-3.5 bg-[#294154] text-white font-bold hover:shadow-lg transition active:scale-[0.97]"
-        >
-          <Image 
-  src="https://authjs.dev/img/providers/google.svg" 
-  alt="Google" 
-  width="20" 
-  height="20" 
-  className="mr-2"
-/>
-          Continue with Google
+        <div>
+          <label htmlFor="sign-in-password" className={authLabel}>Password</label>
+          <div className="relative">
+            <input id="sign-in-password" type={showPass ? "text" : "password"} autoComplete="current-password" aria-invalid={!!errors.password}
+              className={`${authInput} pr-12`} data-testid="auth-password-input" {...form.register("password")} />
+            <button type="button" onClick={() => setShowPass(!showPass)} aria-label={showPass ? "Hide password" : "Show password"} aria-pressed={showPass}
+              className="absolute right-[8px] top-1/2 flex h-[36px] w-[36px] -translate-y-1/2 items-center justify-center rounded-full text-[#6B7A8F] hover:bg-[#F1F4F8]">
+              {showPass ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+            </button>
+          </div>
+          {errors.password && <p className="mt-[4px] text-[14px] text-[#C04C4E]">{errors.password.message}</p>}
+        </div>
+        <div className="flex justify-end">
+          <Link href="/sign-in/forgot" className="text-[14px] font-semibold text-[#C04C4E] hover:underline">Forgot password?</Link>
+        </div>
+        <AuthNotice message={error} />
+        <AuthNotice message={status} tone="success" />
+        <button disabled={loading} type="submit" className={authPrimary} data-testid="auth-submit-btn">
+          {loading && <Loader2 className="h-[16px] w-[16px] animate-spin" aria-hidden="true" />}
+          {loading ? "Signing in…" : "Sign in"}
         </button>
+      </form>
 
-        <p className="text-center text-gray-500 text-sm">
-          Don&apos;t have an account?{" "}
-          <Link href={nextUrl === "/dashboard" ? "/sign-up" : `/sign-up?next=${encodeURIComponent(nextUrl)}`} className="text-[#E56668] font-bold hover:underline">
-            Sign up here
-          </Link>
+      <p className="mt-[32px] text-center text-[15px] text-[#5A6A7E]">
+        Don&apos;t have an account?{" "}
+        <Link href={nextUrl === "/dashboard" ? "/sign-up" : `/sign-up?next=${encodeURIComponent(nextUrl)}`} className={authLink} data-testid="go-signup-link">
+          Sign up
+        </Link>
+      </p>
+
+      <div className="mt-[32px] space-y-1 border-t border-[#E3E7ED] pt-[24px] text-center text-[12px] leading-relaxed text-[#6B7A8F]">
+        <p>
+          By signing in to IELSco, you agree to our <Link href="/terms-of-service" className="underline">Terms</Link> and{" "}
+          <Link href="/privacy-policy" className="underline">Privacy Policy</Link>.
         </p>
-
-        <div className="pt-6 text-center text-[10px] text-gray-400 leading-relaxed space-y-1 border-t border-gray-100">
-          <p>
-            By signing in to IELS, you agree to our{" "}
-            <Link href="/terms-of-service" className="underline hover:text-gray-600 transition-colors">Terms</Link>{" "}
-            and{" "}
-            <Link href="/privacy-policy" className="underline hover:text-gray-600 transition-colors">Privacy Policy</Link>.
-          </p>
-          <p>
-            This site is protected by reCAPTCHA Enterprise and the Google{" "}
-            <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline hover:text-gray-600 transition-colors">Privacy Policy</a>{" "}
-            and{" "}
-            <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline hover:text-gray-600 transition-colors">Terms of Service</a>{" "}
-            apply.
-          </p>
-        </div>
+        <p>
+          This site is protected by reCAPTCHA Enterprise and the Google{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline">Privacy Policy</a> and{" "}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline">Terms of Service</a> apply.
+        </p>
       </div>
-    </>
+    </div>
   );
 }
 
 export default function SignInPage() {
   return (
-    <AuthLayout>
-      <Suspense fallback={
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E56668]"></div>
-        </div>
-      }>
+    <AuthLayout title="Welcome back" subtitle="Sign in to continue to your IELSco dashboard.">
+      <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="h-[24px] w-[24px] animate-spin text-[#2F4157]" aria-hidden="true" /></div>}>
         <SignInContent />
       </Suspense>
     </AuthLayout>

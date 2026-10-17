@@ -11,6 +11,8 @@ import { focusRing, glassMenu } from "./ui";
 import { LanguageSelect } from "@/components/i18n/LanguageSelect";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
+import { shortName } from "@/lib/names";
+import { useAccountSummary } from "./useAccountSummary";
 
 // Profile area: profile, My Learning, Settings, Help, the product tour, language and sign-out.
 const MENU_LINKS = [
@@ -23,6 +25,12 @@ export function AccountMenu({ userName, userAvatar, placement = "down" }: { user
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  // Same structure as Elco's sidebar profile: avatar, short name, one line of member detail (role, else "IELSco Member").
+  const summary = useAccountSummary();
+  const fullName = summary?.display_name?.trim() || userName;
+  const name = shortName(fullName);
+  const avatar = summary?.hasProfile ? summary.avatar_url : userAvatar;
+  const detail = summary?.role_status?.trim() || "IELSco Member";
 
   useEffect(() => {
     if (!open) return;
@@ -55,16 +63,24 @@ export function AccountMenu({ userName, userAvatar, placement = "down" }: { user
         aria-expanded={open}
         aria-label={t("nav.openAccountMenu")}
         onClick={() => setOpen((v) => !v)}
-        className={cn("flex items-center gap-2 rounded-xl p-1 pr-2 text-[#304156] hover:bg-[#304156]/[0.06]", placement === "up" && "w-full", focusRing)}
+        title={placement === "up" ? fullName : undefined}
+        className={cn("flex items-center gap-2 rounded-xl p-1 pr-2 text-[#304156] hover:bg-[#304156]/[0.06]", placement === "up" && "w-full gap-3 p-1.5", focusRing)}
       >
-        <Avatar name={userName} url={userAvatar} size={36} className="bg-[#304156] text-white" />
-        <span className={cn("truncate font-semibold", placement === "up" ? "min-w-0 flex-1 text-left text-[15px]" : "hidden max-w-[140px] text-[15px] sm:block")}>{placement === "up" ? userName : userName.split(" ")[0]}</span>
-        <ChevronDown size={16} className={cn("transition-transform", open !== (placement === "up") && "rotate-180")} />
+        <Avatar name={name} url={avatar} size={placement === "up" ? 40 : 36} className="bg-[#304156] text-white" />
+        {placement === "up" ? (
+          <span className="min-w-0 flex-1 text-left">
+            <span data-testid="sidebar-user-name" className="block truncate text-[15px] font-semibold leading-tight text-[#1A2534]">{name}</span>
+            <span data-testid="sidebar-user-detail" className="mt-0.5 block truncate text-[13px] leading-tight text-[#2F4157]/60">{detail}</span>
+          </span>
+        ) : (
+          <span className="hidden max-w-[140px] truncate text-[15px] font-semibold sm:block">{name.split(" ")[0]}</span>
+        )}
+        <ChevronDown size={16} className={cn("shrink-0 transition-transform", open !== (placement === "up") && "rotate-180")} />
       </button>
 
       {open && (
         <div role="menu" data-testid="account-menu" className={cn(glassMenu, "absolute right-0 z-50 w-64 rounded-2xl p-2", placement === "up" ? "bottom-full left-0 mb-3" : "mt-3 max-h-[calc(100dvh-6rem)] overflow-y-auto")}>
-          <p className="truncate px-3 pb-2 pt-1 text-base font-semibold text-[#2F4157]">{userName}</p>
+          <p className="truncate px-3 pb-2 pt-1 text-base font-semibold text-[#2F4157]">{fullName}</p>
           {MENU_LINKS.map(({ key, href, icon: Icon, id }) => (
             <Link
               key={href}

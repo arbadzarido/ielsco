@@ -1,7 +1,6 @@
 "use client";
 
 import AuthLayout from "@/components/auth/AuthLayout";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,12 +22,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, ShieldCheck, Loader2, ArrowLeft } from "lucide-react";
-import Popup from "@/components/ui/popup";
+import { AuthDivider, AuthNotice, GoogleButton, authInput, authLink, authPrimary } from "@/components/auth/AuthUI";
 
 const SignupSchema = z
   .object({
-    fullName: z.string().min(3, "Your name looks too short — try again? 😊"),
-    email: z.string().email("Hmm… that email doesn't look valid 👀"),
+    fullName: z.string().min(3, "Please enter your full name."),
+    email: z.string().email("Please enter a valid email address."),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -87,7 +86,7 @@ export default function RegisterPage() {
 
       if (authError) {
         if (authError.message.includes("already registered")) {
-          setPopup("This email is already registered. Please sign in instead! 🔐");
+          setPopup("An account with this email already exists. Please sign in instead.");
         } else {
           setPopup(`Error: ${authError.message}`);
         }
@@ -97,7 +96,7 @@ export default function RegisterPage() {
 
       if (authData.user) {
         if (authData.user.identities && authData.user.identities.length === 0) {
-          setPopup("This email is already registered. Please sign in instead! 🔐");
+          setPopup("An account with this email already exists. Please sign in instead.");
           setLoading(false);
           return;
         }
@@ -105,16 +104,16 @@ export default function RegisterPage() {
         if (!authData.session) {
           // Email confirmation required - show OTP section
           setIsVerifying(true);
-          setPopup("✅ Success! Please check your email for the 6-digit verification code.");
+          setPopup("Success! Check your email for the 6-digit verification code.");
         } else {
           // Auto logged in
-          setPopup("Account created successfully! Redirecting... 🚀");
+          setPopup("Account created successfully. Redirecting…");
           setTimeout(() => router.push(nextUrl), 1500);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Signup error:", error);
-      setPopup("Something went wrong. Please try again! 😔");
+      setPopup("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -134,11 +133,11 @@ export default function RegisterPage() {
       if (error) throw error;
 
       if (data.session) {
-        setPopup("Account verified successfully! Redirecting... 🚀");
+        setPopup("Account verified successfully. Redirecting…");
         setTimeout(() => router.push(nextUrl), 1500);
       }
-    } catch (error: any) {
-      setPopup(`Invalid verification code: ${error.message}`);
+    } catch (error) {
+      setPopup(`Invalid verification code: ${(error as Error).message}`);
     } finally {
       setLoading(false);
     }
@@ -153,9 +152,9 @@ export default function RegisterPage() {
       });
 
       if (error) throw error;
-      setPopup("Verification code resent! Check your email. 📧");
-    } catch (error: any) {
-      setPopup(`Failed to resend code: ${error.message}`);
+      setPopup("Verification code resent. Check your email.");
+    } catch (error) {
+      setPopup(`Failed to resend code: ${(error as Error).message}`);
     } finally {
       setLoading(false);
     }
@@ -178,19 +177,20 @@ export default function RegisterPage() {
       if (error) {
         setPopup(`Google sign-up error: ${error.message}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Google signup error:", error);
-      setPopup("Google sign-up failed. Please try again! 😔");
+      setPopup("We couldn't sign you up with Google. Please try again or use your email.");
     }
   };
 
   return (
-    <AuthLayout>
-      {popup && <Popup message={popup} onClose={() => setPopup("")} />}
-
-      <div className="space-y-6 pt-4">
+    <AuthLayout title={isVerifying ? "Check your email" : "Create your IELSco account"} subtitle={isVerifying ? "" : "Join the community. It takes a minute."}>
+      <div className="space-y-6">
+        <AuthNotice message={popup || null} tone={/success|resent|redirecting|verified|created/i.test(popup) ? "success" : "error"} />
         {!isVerifying ? (
           <div className="animate-in fade-in duration-500">
+            <GoogleButton onClick={handleGoogleSignUp} disabled={loading} />
+            <AuthDivider />
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 
@@ -199,9 +199,9 @@ export default function RegisterPage() {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-[#294154]">Full Name</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-[#2F4157]">Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Your full name" className="rounded-xl bg-[#F7F8FA]" {...field} />
+                        <Input placeholder="Your full name" className={authInput} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,9 +213,9 @@ export default function RegisterPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-[#294154]">Email</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-[#2F4157]">Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="example@mail.com" className="rounded-xl bg-[#F7F8FA]" {...field} />
+                        <Input placeholder="example@mail.com" className={authInput} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -227,12 +227,12 @@ export default function RegisterPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-[#294154]">Password</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-[#2F4157]">Password</FormLabel>
                       <div className="relative">
                         <FormControl>
-                          <Input type={showPass ? "text" : "password"} className="rounded-xl bg-[#F7F8FA]" {...field} />
+                          <Input type={showPass ? "text" : "password"} className={authInput} {...field} />
                         </FormControl>
-                        <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-3 text-gray-400">
+                        <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7A8F]">
                           {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
@@ -246,12 +246,12 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-semibold text-[#294154]">Confirm Password</FormLabel>
+                      <FormLabel className="text-sm font-semibold text-[#2F4157]">Confirm Password</FormLabel>
                       <div className="relative">
                         <FormControl>
-                          <Input type={showConfirm ? "text" : "password"} className="rounded-xl bg-[#F7F8FA]" {...field} />
+                          <Input type={showConfirm ? "text" : "password"} className={authInput} {...field} />
                         </FormControl>
-                        <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-4 top-3 text-gray-400">
+                        <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7A8F]">
                           {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
@@ -260,36 +260,16 @@ export default function RegisterPage() {
                   )}
                 />
 
-                <Button disabled={loading} type="submit" className="w-full py-3 rounded-full bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] disabled:bg-[#C04C4E] transition-all">
-                  {loading ? <Loader2 className="animate-spin" /> : "Sign Up"}
-                </Button>
+                <button disabled={loading} type="submit" className={authPrimary} data-testid="auth-submit-btn">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Create account"}
+                </button>
               </form>
             </Form>
 
             <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-grow border-t" />
-                <span className="text-gray-400 text-xs uppercase tracking-widest font-bold">or</span>
-                <div className="flex-grow border-t" />
-              </div>
-
-              <button
-                onClick={handleGoogleSignUp}
-                className="inline-flex items-center justify-center gap-3 rounded-full w-full py-3.5 bg-[#294154] text-white font-bold hover:shadow-lg transition active:scale-[0.97]"
-              >
-                <Image 
-                  src="https://authjs.dev/img/providers/google.svg" 
-                  alt="Google" 
-                  width="20" 
-                  height="20" 
-                  className="mr-2"
-                />
-                Continue with Google
-              </button>
-
-              <p className="text-center text-gray-500 text-sm">
-                Already part of IELS?{" "}
-                <Link href={nextUrl === "/dashboard" ? "/sign-in" : `/sign-in?next=${encodeURIComponent(nextUrl)}`} className="text-[#E56668] font-bold hover:underline">Sign in</Link>
+              <p className="mt-8 text-center text-[15px] text-[#5A6A7E]">
+                Already have an account?{" "}
+                <Link href={nextUrl === "/dashboard" ? "/sign-in" : `/sign-in?next=${encodeURIComponent(nextUrl)}`} className={authLink} data-testid="go-login-link">Sign in</Link>
               </p>
             </div>
           </div>
@@ -319,12 +299,12 @@ export default function RegisterPage() {
                 type="text"
                 maxLength={6}
                 placeholder="------"
-                className="w-full text-center text-4xl tracking-[0.4em] font-extrabold text-[#294154] border-b-2 border-gray-200 bg-transparent py-4 focus:outline-none focus:border-[#E56668] transition-all"
+                className="w-full text-center text-4xl tracking-[0.4em] font-extrabold text-[#294154] border-b-2 border-gray-200 bg-transparent py-4 focus:outline-none focus:border-[#2F4157] transition-all"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
               />
 
-              <Button disabled={loading || otp.length < 6} type="submit" className="w-full py-3 rounded-full bg-[#E56668] text-white font-semibold hover:bg-[#C04C4E] disabled:bg-[#C04C4E] transition-all">
+              <Button disabled={loading || otp.length < 6} type="submit" className={authPrimary}>
                 {loading ? <Loader2 className="animate-spin" /> : "Complete Sign Up"}
               </Button>
             </form>
@@ -334,7 +314,7 @@ export default function RegisterPage() {
               <button 
                 onClick={handleResendOtp} 
                 disabled={loading}
-                className="text-[#E56668] font-bold hover:underline disabled:opacity-50"
+                className="font-semibold text-[#C04C4E] hover:underline disabled:opacity-50"
               >
                 Resend
               </button>
@@ -342,9 +322,9 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <div className="pt-6 text-center text-[10px] text-gray-400 leading-relaxed space-y-1 border-t border-gray-100">
+        <div className="space-y-1 border-t border-[#E3E7ED] pt-6 text-center text-xs leading-relaxed text-[#6B7A8F]">
           <p>
-            By signing in to IELS, you agree to our{" "}
+            By creating an account, you agree to our{" "}
             <Link href="/terms-of-service" className="underline hover:text-gray-600 transition-colors">Terms</Link>{" "}
             and{" "}
             <Link href="/privacy-policy" className="underline hover:text-gray-600 transition-colors">Privacy Policy</Link>.

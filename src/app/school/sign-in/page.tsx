@@ -224,7 +224,7 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <AuthLayout>
+    <AuthLayout title="IELS for Schools" subtitle="Sign in for teachers and school admins.">
       <Suspense fallback={
         <div className="flex justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E56668]"></div>

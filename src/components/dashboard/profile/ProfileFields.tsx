@@ -4,6 +4,7 @@ import { ENGLISH_LEVELS, ORIGIN_OPTIONS, ROLE_OPTIONS } from "@/lib/dashboard/op
 import type { MemberProfile } from "@/lib/dashboard/types";
 import { CountrySelect } from "../goals/CountrySelect";
 import { inputClass, labelClass } from "../ui";
+import { AvatarField } from "./AvatarField";
 
 type Set = (patch: Partial<MemberProfile>) => void;
 
@@ -21,6 +22,9 @@ function Field({ id, label, optional, children }: { id: string; label: string; o
 export function BasicFields({ profile, set }: { profile: MemberProfile; set: Set }) {
   return (
     <div className="grid gap-5 md:grid-cols-2">
+      <div className="border-b border-[#E3E7ED] pb-5 md:col-span-2">
+        <AvatarField profile={profile} onChange={(url) => set({ avatar_url: url })} />
+      </div>
       <Field id="display-name" label="Display name">
         <input id="display-name" data-testid="profile-display-name" aria-required="true" aria-invalid={!profile.display_name.trim()} maxLength={80} value={profile.display_name} onChange={(e) => set({ display_name: e.target.value })} className={inputClass} />
       </Field>
@@ -48,11 +52,6 @@ export function BasicFields({ profile, set }: { profile: MemberProfile; set: Set
         <Field id="bio" label="Short bio" optional>
           <textarea id="bio" data-testid="profile-bio" rows={3} maxLength={300} value={profile.bio ?? ""} onChange={(e) => set({ bio: e.target.value || null })} placeholder="A sentence or two about you and what you're working towards." className={inputClass} />
           <p className="mt-1 text-right text-sm text-[#2F4157]/50">{(profile.bio ?? "").length}/300</p>
-        </Field>
-      </div>
-      <div className="md:col-span-2">
-        <Field id="avatar-url" label="Avatar image URL" optional>
-          <input id="avatar-url" type="url" data-testid="profile-avatar-url" value={profile.avatar_url ?? ""} onChange={(e) => set({ avatar_url: e.target.value || null })} placeholder="https://…" className={inputClass} />
         </Field>
       </div>
     </div>
