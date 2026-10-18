@@ -3,12 +3,12 @@
 
 export const SUPPORT_EMAIL = "support@ielsco.com";
 
-// Shown after a successful submission.
+// Shown after a successful submission (verbatim from the Member Stories brief).
 export const SUBMISSION_CONFIRMATION = {
-  title: "Thank you for sharing your story!",
+  title: "Thank you!",
   body:
-    "We've received your story. Our team will read it and may reach out by email if we need more details. " +
-    "Submitting doesn't guarantee publication: if your story is selected, we'll prepare it with you before anything goes live.",
+    "Thank you for sharing your journey with IELSco. Our team will review your submission and may edit the story for clarity while preserving your experience. " +
+    "Your story will not appear publicly until it has been reviewed and approved.",
 };
 
 export interface Question {
