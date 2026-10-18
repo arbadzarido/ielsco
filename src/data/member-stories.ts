@@ -1,4 +1,8 @@
 // ============================================================================
+// STATIC FALLBACK ONLY. Since 2026-10 the stories live in Supabase (public.member_stories, seeded from this file by
+// supabase/migrations/20261019010000_member_stories_seed.sql) and are edited in /dashboard/admin/stories. This file
+// is only served when the database can't be reached; edits here no longer reach the site.
+// ============================================================================
 // MemberStory data model — redesigned per the Member Stories Redesign brief.
 // Existing story content is preserved (see `content`); the new optional
 // fields (highlights, quotes, storySections, gallery, social links) are
@@ -83,12 +87,11 @@ export interface MemberStory {
   subcategory: "Internals" | "Lounge" | "Speakers" | "Inspires";
 }
 
-// Display labels for the subcategory filters. The underlying values stay
-// the same as before so existing data doesn't need to be migrated — only
-// how they're labeled in the UI changes.
+// Display labels. "Lounge" (formerly "IELS Circle Members") and "Speakers" are one canonical "IELS Circle"
+// category (`circle` in public.member_stories).
 export const subcategoryLabels: Record<MemberStory["subcategory"], string> = {
   Internals: "IELS Internals",
-  Lounge: "IELS Circle Members",
+  Lounge: "IELS Circle",
   Speakers: "IELS Circle",
   Inspires: "IELS Inspires",
 };

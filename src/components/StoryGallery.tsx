@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { GalleryItem } from "@/data/member-stories";
+import type { GalleryItemData as GalleryItem } from "@/lib/stories/types";
 
 export default function StoryGallery({
   items,
   authorName,
+  unoptimized = false,
 }: {
   items?: GalleryItem[];
   authorName: string;
+  unoptimized?: boolean;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -48,6 +50,7 @@ export default function StoryGallery({
               alt={item.caption ?? `${authorName} — moment ${i + 1}`}
               width={500}
               height={500}
+              unoptimized={unoptimized}
               className="w-full h-auto object-cover transition-transform duration-300 hover:scale-105"
             />
           </button>
@@ -95,6 +98,7 @@ export default function StoryGallery({
               }
               width={1000}
               height={1000}
+              unoptimized={unoptimized}
               className="w-full h-auto max-h-[80vh] object-contain rounded-2xl mx-auto"
             />
             {items[openIndex].caption && (

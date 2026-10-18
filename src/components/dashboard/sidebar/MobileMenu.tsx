@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_GROUPS, MOBILE_ITEMS, isNavActive } from "../nav";
+import { ADMIN_NAV_GROUP, NAV_GROUPS, MOBILE_ITEMS, isNavActive } from "../nav";
+import { useStoryAdmin } from "../stories-admin/useStoryAdmin";
 import { BottomSheet, sheetRow, sheetRowActive } from "../BottomSheet";
 import { GifBanner } from "./GifBanner";
 import { ElcoPromo } from "./ElcoPromo";
@@ -15,7 +16,8 @@ export function MobileMenu({ open, onClose, returnFocusTo }: { open: boolean; on
   const { t } = useI18n();
   const pathname = usePathname();
   const inBar = new Set(MOBILE_ITEMS.map((i) => i.id));
-  const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !inBar.has(i.id)) })).filter((g) => g.items.length);
+  const { isAdmin } = useStoryAdmin();
+  const groups = (isAdmin ? [...NAV_GROUPS, ADMIN_NAV_GROUP] : NAV_GROUPS).map((g) => ({ ...g, items: g.items.filter((i) => !inBar.has(i.id)) })).filter((g) => g.items.length);
 
   return (
     <BottomSheet open={open} onClose={onClose} title={t("nav.menu")} returnFocusTo={returnFocusTo} testId="mobile-menu">

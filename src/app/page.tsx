@@ -7,7 +7,7 @@ import { ArrowRight, ArrowUpRight, CalendarClock, Compass, Users, Sparkles } fro
 import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, textLink, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
-import { memberStoriesData } from "@/data/member-stories";
+import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 import { eventsData } from "@/data/events";
 import { GIF_BATCH, gifRegistrationOpen } from "@/data/gif";
 import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
@@ -19,7 +19,6 @@ import { ELCO_ENABLED, ELCO_MASCOT, elcoHref } from "@/lib/elco";
 // Everything time-based (sessions, registration status) is computed in the browser after mount, so the page never
 // shows a stale "open" state and server/client renders match.
 
-const STORIES = memberStoriesData.slice(0, 3);
 
 function useNow() {
   const [now, setNow] = useState<Date | null>(null);
@@ -143,6 +142,7 @@ function CircleSessions() {
 }
 
 function Stories() {
+  const stories = usePublishedStories(3);
   return (
     <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="stories-heading">
       <div className={container}>
@@ -154,16 +154,16 @@ function Stories() {
           <Link href="/circle/stories" className={textLink}>Read all stories <ArrowRight size={16} aria-hidden="true" /></Link>
         </div>
         <ul className="mt-10 grid gap-6 md:grid-cols-3">
-          {STORIES.map((s) => (
-            <li key={s.id}>
-              <Link href={`/circle/stories/${generateSlug(s.title)}`} className={cn(cardLink, "flex h-full flex-col overflow-hidden")}>
+          {stories.map((s) => (
+            <li key={s.slug}>
+              <Link href={`/circle/stories/${s.slug}`} className={cn(cardLink, "flex h-full flex-col overflow-hidden")}>
                 <div className="relative aspect-[16/9] bg-[#F1F4F8]">
-                  <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover" />
+                  {s.bannerImage && <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover" />}
                 </div>
                 <div className="flex flex-1 flex-col p-6">
                   <h3 className="text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</h3>
                   <div className="mt-auto flex items-center gap-3 pt-6">
-                    <Image src={s.author.avatar} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                    {s.author.avatar && <Image src={s.author.avatar} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-full object-cover" />}
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-semibold text-[#1A2534]">{s.author.name}</p>
                       {s.author.role && <p className="truncate text-[13px] text-[#2F4157]/65">{s.author.role}</p>}
