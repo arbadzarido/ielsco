@@ -28,6 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = story.seo.meta_title || `${story.title} | IELS Circle`;
   const description = storyDescription(story);
   return {
+    // Absolute URLs for og:image etc. The internal /circle/... path is served on www.ielsco.com too.
+    metadataBase: new URL("https://www.ielsco.com"),
     title,
     description,
     keywords: story.seo.meta_keywords || undefined,

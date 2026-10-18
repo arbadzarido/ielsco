@@ -43,7 +43,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           // eslint-disable-next-line @next/next/no-img-element
           <img src={banner} alt="" width={1200} height={630} style={{ position: "absolute", inset: 0, width: 1200, height: 630, objectFit: "cover" }} />
         )}
-        <div style={{ position: "absolute", inset: 0, display: "flex", background: "linear-gradient(to top, rgba(26,37,52,0.95) 0%, rgba(26,37,52,0.55) 55%, rgba(26,37,52,0.15) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", background: "linear-gradient(to top, rgba(26,37,52,0.97) 0%, rgba(26,37,52,0.88) 45%, rgba(26,37,52,0.35) 100%)" }} />
         <div style={{ position: "absolute", left: 64, right: 64, bottom: 56, display: "flex", flexDirection: "column", color: "white" }}>
           <div style={{ display: "flex", fontSize: 24, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#F3A5A6" }}>
             {story ? `${CATEGORY_LABELS[story.category]} · Member story` : "IELS Circle"}
