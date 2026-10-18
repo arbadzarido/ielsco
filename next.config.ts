@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: '*.googleusercontent.com' },
+      // Approved Member Stories media (public bucket "member-stories").
+      { protocol: 'https', hostname: 'hkubzamchahvdpvojepc.supabase.co', pathname: '/storage/v1/object/public/**' },
     ],
   },
 

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_GROUPS, isNavActive } from "../nav";
+import { ADMIN_NAV_GROUP, NAV_GROUPS, isNavActive } from "../nav";
+import { useStoryAdmin } from "../stories-admin/useStoryAdmin";
 import { focusRing } from "../ui";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
@@ -17,9 +18,11 @@ const idleCls = "font-medium text-[#2F4157]/80 hover:bg-[#2F4157]/[0.06] hover:t
 export function NavLinks({ onNavigate, testPrefix = "nav" }: { onNavigate?: () => void; testPrefix?: string }) {
   const pathname = usePathname();
   const { t } = useI18n();
+  const { isAdmin } = useStoryAdmin();
+  const groups = isAdmin ? [...NAV_GROUPS, ADMIN_NAV_GROUP] : NAV_GROUPS;
   return (
     <>
-      {NAV_GROUPS.map((group, gi) => (
+      {groups.map((group, gi) => (
         <div key={group.id} className={cn(gi > 0 && "mt-[18px] [@media(max-height:960px)]:mt-[12px]")}>
           {group.title && <p className="mb-[6px] px-[16px] text-[13px] font-semibold uppercase tracking-[0.08em] text-[#2F4157]/50" id={`${testPrefix}-group-${group.id}`}>{t(group.title)}</p>}
           <ul className="space-y-[4px]" aria-labelledby={group.title ? `${testPrefix}-group-${group.id}` : undefined}>

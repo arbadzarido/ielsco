@@ -10,8 +10,7 @@ import { Notice, PageHeader } from "../PageStates";
 import { btnPrimary, btnSecondary, cardGloss, focusRing, tag } from "../ui";
 import { LINKS } from "@/data/dashboard/config";
 import { CIRCLE_COHORT } from "@/data/dashboard/circle";
-import { memberStoriesData } from "@/data/member-stories";
-import { generateSlug } from "@/utils/slug";
+import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 import { formatSessionWib, upcomingSessions, type CircleSession } from "@/lib/circle/sessions";
 import { cancelCheckIn, checkIn, loadCheckins, type CheckinState } from "@/lib/circle/checkins";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -74,10 +73,7 @@ function SessionCard({ session, featured, state, busy, onToggle }: {
 }
 
 function Stories() {
-  const stories = useMemo(
-    () => [...memberStoriesData].sort((a, b) => Date.parse(b.date) - Date.parse(a.date)).slice(0, 3),
-    []
-  );
+  const stories = usePublishedStories(3);
   return (
     <section aria-labelledby="stories-heading">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -89,10 +85,10 @@ function Stories() {
       </div>
       <ul className="grid gap-5 md:grid-cols-3">
         {stories.map((s) => (
-          <li key={s.id}>
-            <Link href={`/circle/stories/${generateSlug(s.title)}`} className={cn("group block overflow-hidden rounded-3xl bg-white", cardGloss, focusRing)}>
+          <li key={s.slug}>
+            <Link href={`/circle/stories/${s.slug}`} className={cn("group block overflow-hidden rounded-3xl bg-white", cardGloss, focusRing)}>
               <span className="relative block aspect-[16/10] overflow-hidden bg-[#F1F4F8]">
-                <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+                {s.bannerImage && <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />}
               </span>
               <span className="flex flex-col gap-4 p-5">
                 <span className="block text-[17px] font-bold leading-snug text-[#1A2534]">{s.title}</span>
