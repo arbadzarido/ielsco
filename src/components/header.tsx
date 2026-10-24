@@ -7,10 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { ChevronDown, LayoutDashboard, LogOut, Menu, UserCircle, X } from "lucide-react";
-import { btnPrimary, focusRing } from "@/components/site/ui";
+import { btnPrimary, btnSecondary, focusRing } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 
-// Public-site header (Home, About, Product, Events, Circle). Hidden on dashboards and auth pages, which have their own
+// Public-site header (Opportunities, Community, Programs, Resources, For Schools, Membership). Hidden on dashboards and auth pages, which have their own
 // chrome. Domain-aware: on circle.ielsco.com / school.ielsco.com, main-site links point back to ielsco.com.
 
 function createClient() {
@@ -108,24 +108,37 @@ export default function Header() {
   const signInHref = host.circle ? `${host.main}/sign-in` : host.local && pathname?.startsWith("/school") ? "/school/sign-in" : "/sign-in";
   const onCircle = host.circle || !!pathname?.startsWith("/circle");
 
+  // Main navigation answers: what can I find (Opportunities, Resources), who do I meet (Community), what can I join
+  // (Programs, Membership), and the institutional path (For Schools). About, Partners and Careers live in the footer.
   const navItems: NavItem[] = [
-    { name: "Home", path: main("/"), active: !offMain && pathname === "/" },
-    { name: "About", path: main("/about"), active: !offMain && !!pathname?.startsWith("/about") },
-    { name: "Product", path: main("/products"), active: !offMain && !!pathname?.startsWith("/products") },
-    { name: "Events", path: main("/events"), active: !offMain && !!pathname?.startsWith("/events") },
+    { name: "Opportunities", path: main("/opportunities"), active: !offMain && !!pathname?.startsWith("/opportunities") },
     {
-      name: "Circle",
+      name: "Community",
       path: circleBase || "/",
       active: onCircle,
       children: [
-        { name: "Overview & weekly sessions", path: circleBase || "/" },
+        { name: "IELS Circle: weekly sessions", path: circleBase || "/" },
         { name: "Member stories", path: `${circleBase}/stories` },
         { name: "Cohort agenda", path: `${circleBase}/agenda` },
       ],
     },
+    {
+      name: "Programs",
+      path: main("/products"),
+      active: !offMain && (!!pathname?.startsWith("/products") && !pathname?.startsWith("/products/resources") || !!pathname?.startsWith("/events")),
+      children: [
+        { name: "All programs", path: main("/products") },
+        { name: "IELS Courses", path: main("/products/courses") },
+        { name: "Events", path: main("/events") },
+        { name: "Global Impact Fellowship", path: main("/events/gif") },
+      ],
+    },
+    { name: "Resources", path: main("/products/resources"), active: !offMain && !!pathname?.startsWith("/products/resources") },
+    { name: "For Schools", path: main("/school"), active: host.school || (!offMain && pathname === "/school") },
+    { name: "Membership", path: main("/membership"), active: !offMain && !!pathname?.startsWith("/membership") },
   ];
 
-  const linkBase = cn("rounded-full px-4 py-2 text-[15px] font-semibold transition-colors", focusRing);
+  const linkBase = cn("rounded-full px-3.5 py-2 text-[15px] font-semibold transition-colors", focusRing);
   const linkState = (active: boolean) => (active ? "bg-[#2F4157] text-white" : "text-[#2F4157]/80 hover:bg-[#F1F4F8] hover:text-[#2F4157]");
 
   const Avatar = ({ size = 36 }: { size?: number }) =>
@@ -142,9 +155,14 @@ export default function Header() {
     if (authLoading) return <span className="h-9 w-24 animate-pulse rounded-full bg-[#F1F4F8]" aria-hidden="true" />;
     if (!user) {
       return (
-        <Link href={signInHref} className={cn(btnPrimary, mobile && "w-full")} data-testid="header-sign-in">
-          Sign in
-        </Link>
+        <div className={cn("flex items-center gap-2", mobile && "flex-col items-stretch")}>
+          <Link href={signInHref} className={cn(mobile ? btnSecondary : "rounded-full px-3 py-2 text-[15px] font-semibold text-[#2F4157] hover:bg-[#F1F4F8]", focusRing)} data-testid="header-sign-in">
+            Sign in
+          </Link>
+          <Link href={main("/sign-up")} className={cn(btnPrimary, "min-h-[42px] px-5", mobile && "w-full")} data-testid="header-join">
+            Join free
+          </Link>
+        </div>
       );
     }
     if (mobile) {
@@ -202,12 +220,12 @@ export default function Header() {
           <Image src="/images/logos/iels_horizontal_navy.png" width={1564} height={409} sizes="140px" priority className="h-[30px] w-auto lg:h-[34px]" alt="IELS" />
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Main" className="hidden items-center gap-0.5 lg:flex">
           {navItems.map((item) =>
             item.children ? (
               <div key={item.name} className="relative" onMouseEnter={() => setOpenDropdown(item.name)} onMouseLeave={() => setOpenDropdown(null)}>
                 <div className={cn("flex items-center rounded-full transition-colors", linkState(item.active))}>
-                  <Link href={item.path} aria-current={item.active ? "page" : undefined} className={cn("rounded-full py-2 pl-4 pr-1 text-[15px] font-semibold", focusRing)}>
+                  <Link href={item.path} aria-current={item.active ? "page" : undefined} className={cn("rounded-full py-2 pl-3.5 pr-1 text-[15px] font-semibold", focusRing)}>
                     {item.name}
                   </Link>
                   <button
@@ -250,14 +268,14 @@ export default function Header() {
           aria-expanded={mobileOpen}
           aria-controls="site-mobile-menu"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          className={cn("flex h-11 w-11 items-center justify-center rounded-full text-[#2F4157] hover:bg-[#F1F4F8] md:hidden", focusRing)}
+          className={cn("flex h-11 w-11 items-center justify-center rounded-full text-[#2F4157] hover:bg-[#F1F4F8] lg:hidden", focusRing)}
         >
           {mobileOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div id="site-mobile-menu" className="fixed inset-x-0 bottom-0 top-[72px] overflow-y-auto border-t border-[#E6E9EE] bg-white md:hidden" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
+        <div id="site-mobile-menu" className="fixed inset-x-0 bottom-0 top-[72px] overflow-y-auto border-t border-[#E6E9EE] bg-white lg:hidden" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
           <nav aria-label="Main" className="mx-auto max-w-[560px] px-4 py-4">
             <ul className="space-y-1">
               {navItems.map((item) => (

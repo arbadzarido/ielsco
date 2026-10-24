@@ -1,137 +1,99 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, GraduationCap, Library, School, Sparkles, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Compass, GraduationCap, Library, School, Sparkles, Users, UserPlus } from "lucide-react";
 import Footer from "@/components/footer";
-import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, section, siteRoot } from "@/components/site/ui";
+import { Photo } from "@/components/site/Photo";
+import { body, btnPrimary, btnSecondary, cardLink, container, eyebrow, h1, h2, lead, section, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
 
 export const metadata: Metadata = {
-  title: "What IELS offers | Community & Opportunities",
-  description: "IELS connects Southeast Asian learners with people, free resources, the weekly IELS Circle, and programs such as the Global Impact Fellowship.",
+  title: "Programs at IELSco: opportunities, community, courses and fellowships",
+  description: "Everything IELSco offers in one place: the opportunity board, IELS Circle, member stories, IELS Courses, events, the Global Impact Fellowship, membership and IELS for Schools.",
+  alternates: { canonical: "https://ielsco.com/products" },
 };
 
-// Product page = IELS strategy: Community & Opportunities. Each offering links to a page that exists today.
-const JOURNEY = [
+type Item = { icon: typeof Compass; name: string; text: string; href: string; cost: string; external?: boolean };
+const GROUPS: { title: string; intro: string; items: Item[] }[] = [
   {
-    step: "01", title: "Discover", intro: "Find what's relevant to your goal, and the people who have walked that path.",
+    title: "Find opportunities", intro: "Know what exists and what it takes.",
     items: [
-      { icon: Library, name: "Free resources", text: "Grammar guides, recordings and scholarship lists to use at your own pace.", href: "/products/resources" },
-      { icon: BookOpen, name: "Member stories", text: "Members write about exchanges, internships and programs abroad, in their own words.", href: "/circle/stories" },
+      { icon: Compass, name: "Opportunity board", text: "Scholarships, fellowships and programs with official links and honest verification labels.", href: "/opportunities", cost: "Free" },
+      { icon: Library, name: "Free resources", text: "Checked guides for scholarships, CVs, essays, interviews and studying abroad.", href: "/products/resources", cost: "Free" },
+      { icon: BookOpen, name: "Member stories", text: "Members who studied, interned or volunteered abroad, in their own words.", href: "/circle/stories", cost: "Free" },
     ],
   },
   {
-    step: "02", title: "Participate", intro: "Practise with others every week and build the confidence to speak up.",
+    title: "Practise and connect", intro: "People to practise with and learn from.",
     items: [
-      { icon: Users, name: "IELS Circle", text: "Online sessions every Wednesday 19:00 and Saturday 13:00 WIB, each with a new topic.", href: "/circle" },
-      { icon: CalendarDays, name: "Circle cohort agenda", text: "The plan for the current Circle cohort, session by session.", href: "/circle/agenda" },
+      { icon: Users, name: "IELS Circle", text: "Open online speaking sessions every Wednesday 19:00 and Saturday 13:00 WIB.", href: "/circle", cost: "Free" },
+      { icon: CalendarDays, name: "Events", text: "Info sessions, workshops and talks, often with partner organizations.", href: "/events", cost: "Mostly free" },
+      { icon: UserPlus, name: "Membership", text: "Application clinics, written feedback, a study buddy and a private member group.", href: "/membership", cost: "Paid (opening soon)" },
     ],
   },
   {
-    step: "03", title: "Take the next step", intro: "Programs and events that open doors to study and work opportunities.",
+    title: "Go deeper", intro: "Structured programs with a clear outcome.",
     items: [
-      { icon: Sparkles, name: "Global Impact Fellowship", text: "A leadership and project incubation program for youth across Southeast Asia, held at NUS.", href: "/events/gif" },
-      { icon: CalendarDays, name: "Events", text: "Info sessions, workshops and fellowships with universities and partners.", href: "/events" },
+      { icon: GraduationCap, name: "IELS Courses", text: "Mentor-led courses for scholarship essays, careers abroad, tests and speaking.", href: "/products/courses", cost: "Paid per course" },
+      { icon: Sparkles, name: "Global Impact Fellowship", text: "Leadership and project incubation for youth across Southeast Asia, held at NUS.", href: "/events/gif", cost: "Self-funded" },
+      { icon: School, name: "IELS for Schools", text: "Sessions and workshops planned with your school.", href: "/school", cost: "Quoted per school" },
     ],
   },
 ];
 
-const ALSO = [
-  { icon: School, name: "IELS for Schools", text: "A portal for partner schools to follow their students' English learning.", href: "https://school.ielsco.com", external: true },
-  { icon: GraduationCap, name: "IELS Courses", text: "Guided English courses for communication, test preparation and professional growth.", href: "/products/courses" },
-];
-
-const PAST_PROGRAMS = [
-  { name: "English Global Festival", text: "A national showcase of English, ideas and youth collaboration." },
-  { name: "Step Up!", text: "A program for academic and professional English readiness." },
-  { name: "IELS Insight Series", text: "Discussions with mentors, universities and professionals." },
-  { name: "Singapore Global Insight Trip", text: "International exposure with universities and institutions in Singapore." },
-];
-
-export default function ProductsPage() {
+export default function ProgramsPage() {
   return (
-    <div className={cn(siteRoot, "bg-white")} data-testid="products-page">
-      <section className="bg-white pb-[56px] pt-[40px] md:pb-[72px] md:pt-[64px]">
-        <div className={cn(container, "grid items-center gap-10 lg:grid-cols-[1.2fr_1fr]")}>
+    <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="programs-page">
+      <section className="bg-white pb-[56px] pt-[40px] md:pb-[72px] md:pt-[64px]" aria-labelledby="hero">
+        <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16")}>
           <div>
-            <p className={eyebrow}>What IELS offers</p>
-            <h1 className={cn(h1, "mt-3")}>Community first. Opportunities next.</h1>
-            <p className={cn(lead, "mt-5 max-w-[600px]")}>
-              IELS is a community for learners across Southeast Asia. You discover resources and people, take part in the
-              weekly Circle, and move on to programs and opportunities when you are ready.
-            </p>
+            <p className={eyebrow}>Programs</p>
+            <h1 id="hero" className={cn(h1, "mt-4")}>Everything IELSco offers, and what it costs</h1>
+            <p className={cn(lead, "mt-6 max-w-[560px]")}>Most of it is free. Paid programs say so up front, and none of them is required to use the rest.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/sign-up" className={btnPrimary}>Join IELS for free <ArrowRight size={18} aria-hidden="true" /></Link>
-              <Link href="/events" className={btnSecondary}>See events and programs</Link>
+              <Link href="/sign-up" className={btnPrimary}>Create a free account <ArrowRight size={18} aria-hidden="true" /></Link>
+              <Link href="/opportunities" className={btnSecondary}>Browse opportunities</Link>
             </div>
           </div>
-          <div className="relative mx-auto aspect-square w-full max-w-[360px]">
-            <Image src="/images/contents/mascot/poses/wink-jump.png" alt="" fill sizes="360px" className="object-contain" priority />
-          </div>
+          <Photo photo="onlineSession" ratio="wide" priority position="center 30%" />
         </div>
       </section>
 
-      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="journey-heading">
-        <div className={container}>
-          <h2 id="journey-heading" className={h2}>How members use IELS</h2>
-          <ol className="mt-12 space-y-12">
-            {JOURNEY.map((j) => (
-              <li key={j.step} className="grid gap-6 lg:grid-cols-[300px_1fr] lg:gap-12">
-                <div>
-                  <span className="text-[14px] font-bold text-[#577E90]">{j.step}</span>
-                  <h3 className="mt-1 text-[26px] font-extrabold text-[#1A2534]">{j.title}</h3>
-                  <p className={cn(body, "mt-2")}>{j.intro}</p>
-                </div>
-                <ul className="grid gap-5 sm:grid-cols-2">
-                  {j.items.map((it) => (
-                    <li key={it.name}>
-                      <Link href={it.href} className={cn(cardLink, "flex h-full flex-col p-6")}>
-                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><it.icon size={20} aria-hidden="true" /></span>
-                        <span className={cn(h3, "mt-5")}>{it.name}</span>
-                        <span className={cn(body, "mt-2 flex-1")}>{it.text}</span>
-                        <span className="mt-5 flex items-center gap-1.5 text-[15px] font-semibold text-[#2F4157]">Open <ArrowRight size={16} aria-hidden="true" /></span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="also-heading">
-        <div className={cn(container, "grid gap-12 lg:grid-cols-2")}>
-          <div>
-            <h2 id="also-heading" className={h2}>Also from IELS</h2>
-            <ul className="mt-8 space-y-4">
-              {ALSO.map((a) => (
-                <li key={a.name}>
-                  <a href={a.href} {...(a.external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={cn(cardLink, "flex items-start gap-4 p-5")}>
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><a.icon size={20} aria-hidden="true" /></span>
-                    <span>
-                      <span className="flex items-center gap-1.5 text-[17px] font-bold text-[#1A2534]">{a.name}{a.external && <ArrowUpRight size={16} aria-hidden="true" />}</span>
-                      <span className={cn(body, "mt-1 block")}>{a.text}</span>
+      {GROUPS.map((g) => (
+        <section key={g.title} className={cn(section, "border-t border-[#E6E9EE]")} aria-label={g.title}>
+          <div className={container}>
+            <h2 className={h2}>{g.title}</h2>
+            <p className={cn(lead, "mt-2")}>{g.intro}</p>
+            <ul className="mt-8 grid gap-5 md:grid-cols-3">
+              {g.items.map((i) => (
+                <li key={i.name}>
+                  <Link href={i.href} className={cn(cardLink, "flex h-full flex-col p-7")}>
+                    <span className="flex items-center justify-between">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><i.icon size={20} aria-hidden="true" /></span>
+                      <span className="text-[13px] font-semibold text-[#577E90]">{i.cost}</span>
                     </span>
-                  </a>
+                    <span className="mt-5 text-[19px] font-bold text-[#1A2534]">{i.name}</span>
+                    <span className={cn(body, "mt-2 flex-1 text-[15px]")}>{i.text}</span>
+                    <ArrowRight size={17} className="mt-5 text-[#2F4157]" aria-hidden="true" />
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
-          <div>
-            <h2 className={h2}>Programs we have run</h2>
-            <p className={cn(body, "mt-3")}>Past IELS programs. Upcoming ones are announced on the events page.</p>
-            <ul className={cn(card, "mt-6 divide-y divide-[#E6E9EE]")}>
-              {PAST_PROGRAMS.map((p) => (
-                <li key={p.name} className="p-5">
-                  <p className="text-[16px] font-bold text-[#1A2534]">{p.name}</p>
-                  <p className={cn(body, "mt-1")}>{p.text}</p>
-                </li>
-              ))}
-            </ul>
+        </section>
+      ))}
+
+      {ELCO_ENABLED && (
+        <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="elco">
+          <div className={cn(container, "flex flex-col gap-6 md:flex-row md:items-center md:justify-between")}>
+            <div className="max-w-[640px]">
+              <h2 id="elco" className={h2}>Daily English practice? That&apos;s Elco AI</h2>
+              <p className={cn(lead, "mt-3")}>Elco AI is our separate English-learning app, with its own free and paid plans. IELSco stays your place for opportunities and people.</p>
+            </div>
+            <a href={elcoHref("programs")} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Open Elco AI <ArrowUpRight size={18} aria-hidden="true" /></a>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       <Footer />
     </div>
   );

@@ -6,7 +6,7 @@ export const ELCO_ENABLED = process.env.NEXT_PUBLIC_ELCO_ENABLED === "true";
 
 export const ELCO_URL = (process.env.NEXT_PUBLIC_ELCO_URL || "https://ai.ielsco.com").replace(/\/+$/, "");
 
-// Original IELSco mascot artwork (public/images/contents/mascot/).
+// The Elco robot is the mascot for both IELSco and Elco (public/images/contents/mascot/). The old owl is retired.
 export const ELCO_MASCOT = "/images/contents/mascot/elco.svg";
 export const ELCO_MASCOT_WAVE = "/images/contents/mascot/hi.svg";
 

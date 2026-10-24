@@ -10,6 +10,7 @@ import { ArrowRight } from "lucide-react";
 import { PublicSessions, CIRCLE_DISCORD_LINK } from "@/components/circle/PublicSessions";
 import { btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h2, lead, section, textLink, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 
 const ACCOUNT_LINK = "https://ielsco.com/sign-up";
 const DISCORD_LINK = CIRCLE_DISCORD_LINK;
@@ -24,6 +25,8 @@ function Flag({ code, className = "" }: { code: string; className?: string }) {
       style={{ width: "1.2em", height: "1.2em" }}
       className={className}
       title={code}
+      alt=""
+      aria-hidden="true"
     />
   );
 }
@@ -52,58 +55,12 @@ const seaCountries: SeaCountry[] = [
 ];
 
 // dipakai untuk negara di luar SEA juga (mis. tujuan member story)
-const countryCodeMap: Record<string, string> = {
-  ...Object.fromEntries(seaCountries.map((c) => [c.name, c.code])),
-  Japan: "JP",
-};
-
-type MemberStory = {
-  name: string;
-  photo: string;
-  fromCountry: string;
-  toCountry: string;
-  tag: string;
-  story: string;
-};
-
-const memberStories: MemberStory[] = [
-  {
-    name: "Linh",
-    photo: "/images/people/circle/linh.png",
-    fromCountry: "Vietnam",
-    toCountry: "Thailand",
-    tag: "Teaching",
-    story:
-      "Linh started out just wanting to practice her English. These days she's the one teaching it — based in Thailand, working as an English teacher.",
-  },
-  {
-    name: "Rafi",
-    photo: "/images/people/circle/rafi.png",
-    fromCountry: "Indonesia",
-    toCountry: "Singapore",
-    tag: "Internship",
-    story:
-      "Rafi joined the Circle to get more comfortable speaking English before job interviews. A few months later, he landed an internship in Singapore — and still checks in with the group every week.",
-  },
-  {
-    name: "Sokha",
-    photo: "/images/people/circle/sokha.png",
-    fromCountry: "Cambodia",
-    toCountry: "Japan",
-    tag: "Exchange",
-    story:
-      "Sokha practiced his speaking skills in the Circle before applying for an exchange program. He's currently in Japan, still part of the group chat back home.",
-  },
-];
-
 type GrowthStep = {
   title: string;
   desc: string;
   mascot: string;
 };
 
-// TODO: ganti mascot images ini dengan set baru yang sesuai step (goal/partner/achieve/inspire) —
-// sementara masih pakai aset lama (meet/speak/connect/grow) sebagai placeholder visual.
 const growthJourney: GrowthStep[] = [
   {
     title: "Set Your Goal",
@@ -206,23 +163,26 @@ const communityMoments: CommunityMoment[] = [
   },
 ];
 
-function StoryCard({ story }: { story: MemberStory }) {
+// Member stories come from the Member Stories CMS (published, consented stories only).
+function CircleStories() {
+  const stories = usePublishedStories(3);
   return (
-    <article className={cn(card, "flex h-full flex-col overflow-hidden")}>
-      <div className="relative aspect-[4/5] w-full bg-[#F1F4F8]">
-        <Image src={story.photo} alt={story.name} fill sizes="(min-width: 768px) 360px, 80vw" className="object-cover" />
-        <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-[#2F4157]">{story.tag}</span>
-      </div>
-      <div className="flex flex-1 flex-col p-6">
-        <p className="text-[20px] font-bold text-[#1A2534]">{story.name}</p>
-        <p className="mt-2 flex flex-wrap items-center gap-2 text-[14px] font-medium text-[#2F4157]/75">
-          <Flag code={countryCodeMap[story.fromCountry]} /> {story.fromCountry}
-          <span aria-hidden="true">→</span>
-          <Flag code={countryCodeMap[story.toCountry]} /> {story.toCountry}
-        </p>
-        <p className="mt-4 text-[15px] leading-relaxed text-[#2F4157]/80">{story.story}</p>
-      </div>
-    </article>
+    <ul className="-mx-4 mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
+      {stories.map((s) => (
+        <li key={s.slug} className="w-[80%] shrink-0 snap-start sm:w-[55%] md:w-auto">
+          <Link href={`/circle/stories/${s.slug}`} className={cn(card, "flex h-full flex-col overflow-hidden transition-colors hover:border-[#C9D1DC]", focusRing)}>
+            <div className="relative aspect-[16/9] bg-[#F1F4F8]">
+              {s.bannerImage && <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 360px, 80vw" className="object-cover" />}
+            </div>
+            <div className="flex flex-1 flex-col p-6">
+              <p className="text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</p>
+              <p className="mt-auto pt-5 text-[15px] font-semibold text-[#2F4157]">{s.author.name}</p>
+              {s.author.role && <p className="text-[13px] text-[#2F4157]/65">{s.author.role}</p>}
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -255,7 +215,7 @@ export default function IELSCirclePage() {
             </p>
           </div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#E6E9EE]">
-            <Image src="/images/people/circle/seastudent.png" alt="IELS Circle members collage" fill priority sizes="(min-width: 1024px) 600px, 92vw" className="object-cover" />
+            <Image src="/images/site/online-cohort.webp" alt="An online IELS Circle session on a video call" fill priority sizes="(min-width: 1024px) 600px, 92vw" className="object-cover" />
           </div>
         </div>
       </section>
@@ -331,13 +291,11 @@ export default function IELSCirclePage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h2 id="meet-heading" className={h2}>Meet the Circle</h2>
-              <p className={cn(lead, "mt-2")}>Real people. Different countries. Real journeys.</p>
+              <p className={cn(lead, "mt-2")}>Members who studied, interned or volunteered abroad, in their own words.</p>
             </div>
             <Link href="/circle/stories" className={textLink}>See member stories <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
-          <ul className="-mx-4 mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
-            {memberStories.map((m) => <li key={m.name} className="w-[80%] shrink-0 snap-start sm:w-[55%] md:w-auto"><StoryCard story={m} /></li>)}
-          </ul>
+          <CircleStories />
         </div>
       </section>
 

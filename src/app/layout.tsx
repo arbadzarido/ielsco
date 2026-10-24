@@ -5,6 +5,7 @@ import "./globals.css";
 
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 // 2. Setup Plus Jakarta Sans
 const jakartaSans = Plus_Jakarta_Sans({
@@ -13,8 +14,16 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "IELS | English Community",
-  description: "IELS (PT English Space Berkah Indonesia) is an inclusive English community empowering youths for global success through supportive mentorship. Join us today.",
+  metadataBase: new URL("https://ielsco.com"),
+  title: "IELSco | International opportunities and the community to go after them",
+  description: "IELSco helps young people in Southeast Asia find scholarships, fellowships and programs abroad, prepare strong applications and stay on track with a community. Free to join.",
+  openGraph: {
+    siteName: "IELSco",
+    type: "website",
+    locale: "en_US",
+    images: ["/images/site/community-in-person.webp"],
+  },
+  twitter: { card: "summary_large_image", site: "@ielsforall" },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -44,7 +53,8 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "PT English Space Berkah Indonesia",
+              "name": "IELSco",
+              "legalName": "PT English Space Berkah Indonesia",
               "alternateName": "IELS",
               "url": "https://ielsco.com",
               "logo": "https://ielsco.com/images/logos/iels_blue1.png",
@@ -63,6 +73,8 @@ export default function RootLayout({
             {children}
           </LayoutWrapper>
         </I18nProvider>
+        {/* Cookieless Vercel Web Analytics; only when the project has it switched on (NEXT_PUBLIC_ANALYTICS_ENABLED). */}
+        {process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true" && <Analytics />}
       </body>
     </html>
   );

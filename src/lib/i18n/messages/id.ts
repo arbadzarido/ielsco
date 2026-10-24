@@ -17,6 +17,8 @@ export const id: DeepPartial<Messages> = {
   nav: {
     adminGroup: "Admin",
     memberStories: "Cerita Anggota",
+    adminOperations: "Operasional",
+    adminOpportunities: "Papan peluang",
     resources: "Sumber belajar",
     events: "Acara",
     exploreGroup: "Jelajahi",

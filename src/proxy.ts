@@ -134,10 +134,12 @@ export async function proxy(request: NextRequest) {
     // bucket (still limited) instead of sharing the 20/10s browser limit. Being in this bucket grants nothing:
     // every one of these routes verifies the HMAC signature itself (src/lib/integrations/signature.ts).
     const isElcoServerCall = /^\/api\/integrations\/elco\/(exchange|goals|summary|revoke)$/.test(request.nextUrl.pathname);
+    // Midtrans sends every merchant's notifications from a few shared IPs; the route verifies each signature itself.
+    const isPaymentNotification = request.nextUrl.pathname === '/api/payments/midtrans/notification';
     const now        = Date.now();
     const WINDOW_MS  = 10_000;
-    const MAX_REQ    = isElcoServerCall ? 60 : 20;
-    const bucket     = isElcoServerCall ? `elco-int-${ip}` : ip;
+    const MAX_REQ    = isElcoServerCall || isPaymentNotification ? 60 : 20;
+    const bucket     = isElcoServerCall ? `elco-int-${ip}` : isPaymentNotification ? `midtrans-${ip}` : ip;
     const record     = requestTracker.get(bucket) || { count: 0, timestamp: now };
 
     if (now - record.timestamp > WINDOW_MS) {

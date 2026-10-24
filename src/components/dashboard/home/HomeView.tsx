@@ -7,6 +7,7 @@ import type { DashboardCtx } from "../DashboardPage";
 import { LoadingState, Notice, ProfilePendingNotice } from "../PageStates";
 import { ONBOARDING_LATER_KEY } from "../useMemberProfile";
 import { HomeHero } from "./HomeHero";
+import { NextStepsCard } from "./NextStepsCard";
 import { SavedShelf } from "./SavedShelf";
 import { CircleActivityBanner, CoursePromo } from "./HomePromos";
 import { SimilarPeople } from "./SimilarPeople";
@@ -46,6 +47,7 @@ export function HomeView({ user, profile, storage, supabase }: DashboardCtx) {
     <div className="mx-auto max-w-[110rem] space-y-14 px-4 py-10 md:space-y-16 md:px-6 md:py-14 lg:px-12">
       {storage === "unavailable" && <ProfilePendingNotice />}
       <div data-tour="ielsco-home"><HomeHero profile={profile} needsOnboarding={needsOnboarding} /></div>
+      <NextStepsCard supabase={supabase} userId={user.id} />
       <GifFeatureCard />
 
       {!needsOnboarding && !profile.origin_country && (

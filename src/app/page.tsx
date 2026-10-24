@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ArrowUpRight, CalendarClock, Compass, Users, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarClock, Compass, FileText, Users } from "lucide-react";
 import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, textLink, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
@@ -13,9 +13,14 @@ import { GIF_BATCH, gifRegistrationOpen } from "@/data/gif";
 import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
 import { generateSlug } from "@/utils/slug";
 import { wibDeadline } from "@/lib/events/deadline";
-import { ELCO_ENABLED, ELCO_MASCOT, elcoHref } from "@/lib/elco";
+import { ELCO_ENABLED, ELCO_MASCOT, ELCO_MASCOT_WAVE, elcoHref } from "@/lib/elco";
+import { Photo } from "@/components/site/Photo";
+import { createClient } from "@/lib/supabase/client";
+import { CATEGORY_LABEL, FUNDING_LABEL, type Opportunity } from "@/lib/opportunities";
+import { track } from "@/lib/analytics";
 
-// Public landing page. Positioning: Community & Opportunities for Southeast Asian learners.
+// Public landing page. Positioning: IELSco = international opportunities + the community and preparation to go after them.
+// The Elco robot is the shared IELSco/Elco mascot; Elco AI (English practice) is promoted in its own section.
 // Everything time-based (sessions, registration status) is computed in the browser after mount, so the page never
 // shows a stale "open" state and server/client renders match.
 
@@ -31,35 +36,31 @@ function Hero() {
     <section className="bg-white pb-[56px] pt-[40px] md:pb-[88px] md:pt-[64px]" aria-labelledby="hero-heading">
       <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16")}>
         <div>
-          <p className={eyebrow}>IELS · Community &amp; Opportunities</p>
+          <p className={eyebrow}>IELSco · Opportunities &amp; community</p>
           <h1 id="hero-heading" className={cn(h1, "mt-4")}>
-            Find your people.<br />
-            <span className="text-[#E56668]">Find your next opportunity.</span>
+            Go after international opportunities,<br />
+            <span className="text-[#E56668]">with people beside you.</span>
           </h1>
           <p className={cn(lead, "mt-6 max-w-[560px]")}>
-            IELS connects learners across Southeast Asia with peers, mentors and free resources, and with programs for
-            studying and working abroad. Practise together every week, learn from members who have done it, and apply
-            when an opportunity fits you.
+            IELSco helps young people in Southeast Asia find scholarships, fellowships and programs abroad, prepare strong
+            applications, and stay on track with a community that is doing the same.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/sign-up" className={btnPrimary} data-testid="landing-join">
-              Join IELS for free <ArrowRight size={18} aria-hidden="true" />
+            <Link href="/sign-up" className={btnPrimary} data-testid="landing-join" onClick={() => track("cta_click", { cta: "home_hero_join" })}>
+              Create a free account <ArrowRight size={18} aria-hidden="true" />
             </Link>
-            <Link href="/circle" className={btnSecondary} data-testid="landing-circle">
-              See how the Circle works
+            <Link href="/opportunities" className={btnSecondary} data-testid="landing-opportunities">
+              Browse opportunities
             </Link>
           </div>
-          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free account · Weekly sessions on Wednesdays and Saturdays</p>
+          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free account · Membership is optional</p>
         </div>
         <div className="relative">
-          <div className="relative aspect-[16/10] overflow-hidden rounded-[28px] border border-[#E6E9EE]">
-            <Image src="/images/contents/careers/iels_team_0.png" alt="IELS members together at an in-person IELS session" fill priority
-              sizes="(min-width: 1024px) 520px, 100vw" className="object-cover" />
-          </div>
-          <div className="absolute -bottom-6 left-4 right-4 flex items-center gap-3 rounded-[18px] border border-[#E6E9EE] bg-white p-3 pr-4 shadow-[0_12px_32px_rgba(26,37,52,0.08)] sm:left-auto sm:right-6 sm:w-[300px]">
-            <Image src="/images/contents/mascot/hi.svg" alt="" width={48} height={48} className="h-12 w-12 shrink-0" />
+          <Photo photo="communityInPerson" ratio="wide" priority sizes="(min-width: 1024px) 520px, 100vw" />
+          <div className="absolute -bottom-6 left-4 right-4 flex items-center gap-3 rounded-[18px] border border-[#E6E9EE] bg-white p-3 pr-4 shadow-[0_12px_32px_rgba(26,37,52,0.08)] sm:left-auto sm:right-6 sm:w-[310px]">
+            <Image src={ELCO_MASCOT_WAVE} alt="" width={48} height={48} className="h-12 w-12 shrink-0" />
             <p className="text-[14px] leading-snug text-[#2F4157]">
-              <span className="font-bold text-[#1A2534]">New here?</span> Start with one Circle session. Listening counts too.
+              <span className="font-bold text-[#1A2534]">IELS Circle is free.</span> Open sessions every Wednesday and Saturday.
             </p>
           </div>
         </div>
@@ -69,9 +70,9 @@ function Hero() {
 }
 
 const STEPS = [
-  { icon: Compass, n: "01", title: "Discover", text: "Free guides, recordings and scholarship lists, plus stories from members who have studied, interned and volunteered abroad.", href: "/products/resources", cta: "Browse free resources" },
-  { icon: Users, n: "02", title: "Participate", text: "Join IELS Circle: online sessions every Wednesday at 19:00 and Saturday at 13:00 WIB, each with a new topic to talk about.", href: "/circle", cta: "Meet the Circle" },
-  { icon: Sparkles, n: "03", title: "Take the next step", text: "Apply to programs such as the Global Impact Fellowship and join events run with universities and partners.", href: "/events", cta: "See events and programs" },
+  { icon: Compass, n: "01", title: "Find", text: "A short, checked list of scholarships, fellowships and programs, each with its official link and what we've verified.", href: "/opportunities", cta: "Browse opportunities" },
+  { icon: FileText, n: "02", title: "Prepare", text: "Free guides for CVs, essays and interviews; mentor-led courses; and for members, written feedback and application clinics.", href: "/products/resources", cta: "Free resources" },
+  { icon: Users, n: "03", title: "Go together", text: "Practise every week in IELS Circle, read how members did it, and (as a member) get a study buddy with the same goal.", href: "/circle", cta: "Meet the Circle" },
 ];
 
 function HowItWorks() {
@@ -80,7 +81,7 @@ function HowItWorks() {
       <div className={container}>
         <div className="max-w-[640px]">
           <p className={eyebrow}>How IELS works</p>
-          <h2 id="how-heading" className={cn(h2, "mt-3")}>From your first conversation to your first application</h2>
+          <h2 id="how-heading" className={cn(h2, "mt-3")}>From finding an opportunity to sending the application</h2>
         </div>
         <ol className="mt-12 grid gap-6 md:grid-cols-3">
           {STEPS.map((s) => (
@@ -107,7 +108,7 @@ function CircleSessions() {
     <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="circle-heading">
       <div className={cn(container, "grid items-center gap-12 lg:grid-cols-2 lg:gap-16")}>
         <div className="relative order-last aspect-[16/11] overflow-hidden rounded-[28px] border border-[#E6E9EE] lg:order-first">
-          <Image src="/images/contents/general/iels_gathering.png" alt="IELS members smiling around a table at a meet-up" fill sizes="(min-width: 1024px) 540px, 100vw" className="object-cover" />
+          <Image src="/images/site/gathering.webp" alt="IELS members smiling together at a meet-up" fill sizes="(min-width: 1024px) 540px, 100vw" className="object-cover" />
         </div>
         <div>
           <p className={eyebrow}>IELS Circle</p>
@@ -197,7 +198,7 @@ function Opportunities() {
       <div className={container}>
         <div className="max-w-[640px]">
           <p className={eyebrow}>Programs &amp; opportunities</p>
-          <h2 id="opps-heading" className={cn(h2, "mt-3")}>Ways to go further with IELS</h2>
+          <h2 id="opps-heading" className={cn(h2, "mt-3")}>IELS programs and events</h2>
           <p className={cn(lead, "mt-4")}>Programs open and close through the year. Dates and status below come from the event pages themselves.</p>
         </div>
 
@@ -236,12 +237,12 @@ function Opportunities() {
                 <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">See all events <ArrowRight size={16} aria-hidden="true" /></span>
               </Link>
             )}
-            <a href="https://school.ielsco.com" className={cn(cardLink, "p-7")}>
+            <Link href="/school" className={cn(cardLink, "p-7")}>
               <p className="text-[14px] font-semibold text-[#577E90]">For schools</p>
               <h3 className={cn(h3, "mt-2")}>IELS for Schools</h3>
-              <p className={cn(body, "mt-2")}>A portal for partner schools to follow their students&apos; English learning.</p>
-              <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">Visit the school portal <ArrowUpRight size={16} aria-hidden="true" /></span>
-            </a>
+              <p className={cn(body, "mt-2")}>Global-opportunity sessions and application workshops, planned with your school.</p>
+              <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">For schools <ArrowRight size={16} aria-hidden="true" /></span>
+            </Link>
           </div>
         </div>
       </div>
@@ -277,6 +278,62 @@ function ElcoSection() {
   );
 }
 
+function OpportunityPreview() {
+  const [items, setItems] = useState<Pick<Opportunity, "id" | "slug" | "title" | "organizer" | "category" | "funding">[] | null>(null);
+  useEffect(() => {
+    createClient().from("opportunities").select("id, slug, title, organizer, category, funding").eq("status", "published").eq("featured", true).limit(4)
+      .then(({ data }) => setItems((data as typeof items) ?? []));
+  }, []);
+  if (items && items.length === 0) return null;
+  return (
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="opp-preview-heading" data-testid="landing-opportunity-preview">
+      <div className={container}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-[640px]">
+            <p className={eyebrow}>Opportunity board</p>
+            <h2 id="opp-preview-heading" className={cn(h2, "mt-3")}>Programs worth knowing about</h2>
+            <p className={cn(lead, "mt-4")}>Each listing links to the official page and says what we have checked.</p>
+          </div>
+          <Link href="/opportunities" className={textLink}>See all opportunities <ArrowRight size={16} aria-hidden="true" /></Link>
+        </div>
+        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {(items ?? Array.from({ length: 4 }, () => null)).map((o, i) => (
+            <li key={o?.id ?? i}>
+              {o ? (
+                <Link href={`/opportunities/${o.slug}`} className={cn(cardLink, "flex h-full flex-col p-6")}>
+                  <span className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[#577E90]">{CATEGORY_LABEL[o.category]}</span>
+                  <span className="mt-3 text-[18px] font-bold leading-snug text-[#1A2534]">{o.title}</span>
+                  <span className="mt-1 flex-1 text-[14px] text-[#2F4157]/65">{o.organizer}</span>
+                  <span className={cn(pill, "mt-5 self-start")}>{FUNDING_LABEL[o.funding]}</span>
+                </Link>
+              ) : <div className="h-[200px] animate-pulse rounded-[20px] bg-[#F1F4F8]" aria-hidden="true" />}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function MembershipTeaser() {
+  return (
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="membership-heading">
+      <div className={cn(container, "grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16")}>
+        <div>
+          <p className={eyebrow}>Free account &amp; membership</p>
+          <h2 id="membership-heading" className={cn(h2, "mt-3")}>Free to start. Membership when you want support.</h2>
+          <p className={cn(lead, "mt-4")}>
+            Your free account covers the opportunity board, tracking up to 10 applications, IELS Circle and free resources.
+            Members add live application clinics, written feedback on a CV or essay, a study buddy and a private member group.
+          </p>
+          <Link href="/membership" className={cn(btnPrimary, "mt-8")} onClick={() => track("cta_click", { cta: "home_membership" })}>What members get <ArrowRight size={18} aria-hidden="true" /></Link>
+        </div>
+        <Photo photo="discussion" ratio="wide" position="40% center" />
+      </div>
+    </section>
+  );
+}
+
 function FinalCta() {
   return (
     <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="final-heading">
@@ -284,13 +341,13 @@ function FinalCta() {
         <div className="flex items-center gap-5">
           <Image src="/images/contents/mascot/poses/happy.png" alt="" width={88} height={88} className="hidden h-[88px] w-[88px] shrink-0 object-contain sm:block" />
           <div>
-            <h2 id="final-heading" className={h2}>Start with one session</h2>
-            <p className={cn(lead, "mt-2 max-w-[560px]")}>Create a free account and join the next Circle session.</p>
+            <h2 id="final-heading" className={h2}>Start with one opportunity</h2>
+            <p className={cn(lead, "mt-2 max-w-[560px]")}>Create a free account, save what you want to apply for, and join the next Circle session.</p>
           </div>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-          <Link href="/sign-up" className={btnPrimary}>Join IELS for free <ArrowRight size={18} aria-hidden="true" /></Link>
-          <Link href="/about" className={btnSecondary}>About IELS</Link>
+          <Link href="/sign-up" className={btnPrimary} onClick={() => track("cta_click", { cta: "home_final_join" })}>Create a free account <ArrowRight size={18} aria-hidden="true" /></Link>
+          <Link href="/about" className={btnSecondary}>About IELSco</Link>
         </div>
       </div>
     </section>
@@ -302,9 +359,11 @@ export default function Home() {
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="landing-page">
       <Hero />
       <HowItWorks />
+      <OpportunityPreview />
       <CircleSessions />
       <Stories />
       <Opportunities />
+      <MembershipTeaser />
       <ElcoSection />
       <FinalCta />
       <Footer />
