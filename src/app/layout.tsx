@@ -5,6 +5,7 @@ import "./globals.css";
 
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 // 2. Setup Plus Jakarta Sans
 const jakartaSans = Plus_Jakarta_Sans({
@@ -13,6 +14,8 @@ const jakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  // Resolves relative canonical and Open Graph URLs. No canonical here: each public page sets its own (see lib/seo.ts).
+  metadataBase: new URL(SITE_URL),
   title: "IELS | English Community",
   description: "IELS (PT English Space Berkah Indonesia) is an inclusive English community empowering youths for global success through supportive mentorship. Join us today.",
   icons: {
@@ -24,6 +27,8 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/images/logos/iels_blue1.png",
   },
+  openGraph: { siteName: SITE_NAME, type: "website", locale: "en_US", images: [DEFAULT_OG_IMAGE] },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({
@@ -43,15 +48,23 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "PT English Space Berkah Indonesia",
-              "alternateName": "IELS",
-              "url": "https://ielsco.com",
-              "logo": "https://ielsco.com/images/logos/iels_blue1.png",
-              "sameAs": [
-                "https://www.instagram.com/iels_co",
-                "https://www.linkedin.com/company/iels-co",
-                "https://x.com/ielsforall"
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": `${SITE_URL}/#organization`,
+                  "name": "IELS",
+                  "legalName": "PT English Space Berkah Indonesia",
+                  "alternateName": ["IELSco", "IELS Community"],
+                  "url": `${SITE_URL}/`,
+                  "logo": `${SITE_URL}/images/logos/iels_blue1.png`,
+                  "email": "hello@ielsco.com",
+                  "sameAs": [
+                    "https://www.instagram.com/iels_co",
+                    "https://www.linkedin.com/company/iels-co",
+                    "https://x.com/ielsforall"
+                  ]
+                },
+                { "@type": "WebSite", "@id": `${SITE_URL}/#website`, "name": "IELS", "url": `${SITE_URL}/`, "publisher": { "@id": `${SITE_URL}/#organization` } }
               ]
             })
           }}

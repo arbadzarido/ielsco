@@ -90,21 +90,21 @@ export default function PartnersPage() {
       emoji: "🌍",
       desc: "Exposure programs, mentoring, and international collaboration initiatives.",
       cta: "I'm from University",
-      link: "/partners/global-universities",
+      link: "mailto:partnership@ielsco.com?subject=University%20partnership",
     },
     {
       title: "Corporate",
       emoji: "💼",
       desc: "English upskilling, career readiness programs, and access to emerging talent.",
       cta: "I'm from Company",
-      link: "/partners/companies",
+      link: "mailto:partnership@ielsco.com?subject=Company%20partnership",
     },
     {
       title: "Media & Community",
       emoji: "📢",
       desc: "Campaigns, events, and storytelling to expand access and awareness.",
       cta: "I'm from Community",
-      link: "/partners/media-community",
+      link: "mailto:partnership@ielsco.com?subject=Media%20%26%20community%20partnership",
     },
   ].map((item, i) => (
     <Link

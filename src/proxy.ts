@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
   // ===========================================================================
   // Preview deployments stay reachable on their own URL so changes can be checked before they reach production.
   if (host.includes('.vercel.app') && process.env.VERCEL_ENV !== 'preview') {
-    url.host     = 'ielsco.com';
+    url.host     = 'www.ielsco.com'; // the primary host: one redirect, not two (ielsco.com itself redirects to www)
     url.protocol = 'https:';
     url.port     = '';
     return NextResponse.redirect(url, 301);
@@ -254,10 +254,12 @@ export async function proxy(request: NextRequest) {
 
 // ===========================================================================
 // MATCHER CONFIG
-// Jangan jalankan middleware di file statis, gambar, dan favicon
+// Jangan jalankan middleware di file statis, gambar, dan favicon.
+// robots.txt and sitemap.xml skip it too: the same files must answer on every host (no circle./school. rewrite) and
+// for every crawler (no user-agent block).
 // ===========================================================================
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

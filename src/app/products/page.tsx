@@ -5,11 +5,13 @@ import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, GraduationCap, Librar
 import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, section, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "What IELS offers | Community & Opportunities",
   description: "IELS connects Southeast Asian learners with people, free resources, the weekly IELS Circle, and programs such as the Global Impact Fellowship.",
-};
+  path: "/products",
+});
 
 // Product page = IELS strategy: Community & Opportunities. Each offering links to a page that exists today.
 const JOURNEY = [
