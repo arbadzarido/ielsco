@@ -66,7 +66,7 @@ export default function ProductsPage() {
             </div>
           </div>
           <div className="relative mx-auto aspect-square w-full max-w-[360px]">
-            <Image src="/images/contents/mascot/excited.svg" alt="" fill sizes="360px" className="object-contain" priority />
+            <Image src="/images/contents/mascot/poses/wink-jump.png" alt="" fill sizes="360px" className="object-contain" priority />
           </div>
         </div>
       </section>

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 const STEPS = ["origin", "destination", "direction", "interests"];
 // Original IELSco mascot poses (public/images/contents/mascot), one per step. Kept small so the form stays above the
 // fold on phones.
-const MASCOT = ["/images/contents/mascot/hi.svg", "/images/contents/mascot/excited.svg", "/images/contents/mascot/happy.svg", "/images/contents/mascot/proud.svg"];
+const MASCOT = ["/images/contents/mascot/hi.svg", "/images/contents/mascot/poses/wink-jump.png", "/images/contents/mascot/poses/happy.png", "/images/contents/mascot/poses/proud.png"];
 
 interface Props {
   profile: MemberProfile;
@@ -75,7 +75,7 @@ export function OnboardingFlow({ profile, isEdit: isEditProp, onSave, onLater }:
     return (
       <div data-testid="onboarding-done" className={cn(cardGloss, "overflow-hidden rounded-[28px] text-center")}>
         <div className="bg-gradient-to-b from-[#EAF1F6] to-white px-6 pb-2 pt-10">
-          <Image src="/images/contents/mascot/celebrating.svg" alt="" width={140} height={140} className="mx-auto h-28 w-auto md:h-32" priority />
+          <Image src="/images/contents/mascot/poses/cheer.png" alt="" width={140} height={140} className="mx-auto h-28 w-auto md:h-32" priority />
         </div>
         <div className="px-6 pb-10 md:px-12">
           <h1 className="mb-2 text-[28px] font-bold text-[#1A2534] md:text-[32px]">{isEdit ? t("onboarding.doneTitleEdit") : t("onboarding.doneTitle")}</h1>

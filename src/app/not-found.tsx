@@ -19,8 +19,8 @@ export default function NotFound() {
           {/* Mascot Image (No bounce, just sitting there) */}
           <div className="w-53 h-53 md:w-72 md:h-72 relative z-10">
             <Image 
-              src="/images/contents/mascot/sleepy.svg" 
-              alt="Sleepy IELS Mascot"
+              src="/images/contents/mascot/poses/relaxed.png" 
+              alt="Elco, relaxed"
               fill
               className="object-contain drop-shadow-xl"
             />
