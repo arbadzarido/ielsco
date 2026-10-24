@@ -31,7 +31,7 @@ function PlanSummary({ profile, dirty }: { profile: MemberProfile; dirty: boolea
   const empty = !profile.direction && !profile.destination_countries.length && !profile.destination_other;
   return (
     <section aria-labelledby="plan-heading" data-testid="my-goals-summary" className="relative mb-8 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#2F4157] via-[#34495f] to-[#577E90] p-6 text-white shadow-[0_18px_40px_rgba(47,65,87,0.2)] md:p-8">
-      <Image src="/images/contents/mascot/proud.svg" alt="" width={120} height={120} className="pointer-events-none absolute -bottom-3 right-3 hidden h-28 w-auto opacity-95 sm:block" aria-hidden="true" />
+      <Image src="/images/contents/mascot/poses/proud.png" alt="" width={120} height={120} className="pointer-events-none absolute -bottom-3 right-3 hidden h-28 w-auto opacity-95 sm:block" aria-hidden="true" />
       <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/70">{dirty ? t("myGoals.planDraft") : t("myGoals.planTitle")}</p>
       <h2 id="plan-heading" className="mt-1 text-[24px] font-bold leading-tight sm:pr-32 md:text-[28px]">
         {empty ? t("myGoals.planEmpty") : profile.direction ? t(`directions.${profile.direction}`) : t("myGoals.planNoDirection")}

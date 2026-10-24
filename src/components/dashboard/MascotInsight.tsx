@@ -20,16 +20,16 @@ interface MascotInsightProps {
 // 🎭 MASCOT MOOD CONFIGURATION
 // ==========================================
 const MASCOT_MOODS = {
-  happy: "/images/contents/mascot/happy.svg",
-  excited: "/images/contents/mascot/excited.svg", 
-  concerned: "/images/contents/mascot/concerned.svg",
-  strict: "/images/contents/mascot/strict.svg",
-  shocked: "/images/contents/mascot/shocked.svg",
-  sleepy: "/images/contents/mascot/sleepy.svg",
-  proud: "/images/contents/mascot/proud.svg",
-  thinking: "/images/contents/mascot/coffee.svg",
-  celebrating: "/images/contents/mascot/celebrating.svg",
-  coffee: "/images/contents/mascot/coffee.svg"
+  happy: "/images/contents/mascot/poses/happy.png",
+  excited: "/images/contents/mascot/poses/wink-jump.png", 
+  concerned: "/images/contents/mascot/poses/stressed.png",
+  strict: "/images/contents/mascot/poses/neutral.png",
+  shocked: "/images/contents/mascot/poses/tumble.png",
+  sleepy: "/images/contents/mascot/poses/relaxed.png",
+  proud: "/images/contents/mascot/poses/proud.png",
+  thinking: "/images/contents/mascot/poses/relaxed.png",
+  celebrating: "/images/contents/mascot/poses/cheer.png",
+  coffee: "/images/contents/mascot/poses/relaxed.png"
 };
 
 interface InsightData {

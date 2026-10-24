@@ -282,7 +282,7 @@ function FinalCta() {
     <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="final-heading">
       <div className={cn(container, "flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between")}>
         <div className="flex items-center gap-5">
-          <Image src="/images/contents/mascot/happy.svg" alt="" width={88} height={88} className="hidden h-[88px] w-[88px] shrink-0 sm:block" />
+          <Image src="/images/contents/mascot/poses/happy.png" alt="" width={88} height={88} className="hidden h-[88px] w-[88px] shrink-0 object-contain sm:block" />
           <div>
             <h2 id="final-heading" className={h2}>Start with one session</h2>
             <p className={cn(lead, "mt-2 max-w-[560px]")}>Create a free account and join the next Circle session.</p>
