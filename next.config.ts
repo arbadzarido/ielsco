@@ -20,6 +20,18 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Short, guessable paths for pages whose routes are nested. Permanent (308) so links and search engines settle on the
+  // real URL. Main site only: on circle./school. the proxy rewrites paths into those sections.
+  async redirects() {
+    const main = [{ type: "host" as const, value: "^(?:www\\.)?ielsco\\.com$|^localhost$" }];
+    return [
+      { source: "/schools", destination: "/school", permanent: true, has: main },
+      { source: "/programs", destination: "/products", permanent: true, has: main },
+      { source: "/courses", destination: "/products/courses", permanent: true, has: main },
+      { source: "/resources", destination: "/products/resources", permanent: true, has: main },
+    ];
+  },
+
   // 3. OPTIMASI RAM (Penting buat RAM 8GB lo)
   // swcMinify Dihapus karena sudah default di Next.js 15/16
   experimental: {
