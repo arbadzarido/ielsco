@@ -19,7 +19,7 @@ export function ElcoHomeSection() {
           <div className="relative flex aspect-square max-h-[420px] w-full items-center justify-center overflow-hidden rounded-[2rem] border border-[#E3E7ED] bg-[#F7F8FA] shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_44px_rgba(47,65,87,0.10)]">
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#E56668]/10" aria-hidden="true" />
             <div className="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-[#2F4157]/[0.06]" aria-hidden="true" />
-            <Image src={ELCO_MASCOT} alt="Elco, the IELS mascot" width={240} height={235} className="relative h-48 w-auto sm:h-60" />
+            <Image src={ELCO_MASCOT} alt="Elco, the Elco AI mascot" width={240} height={235} className="relative h-48 w-auto sm:h-60" />
           </div>
         </div>
         <div className="lg:col-span-7">

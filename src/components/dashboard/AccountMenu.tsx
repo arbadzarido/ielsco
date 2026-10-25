@@ -26,12 +26,12 @@ export function AccountMenu({ userName, userAvatar, placement = "down" }: { user
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  // Same structure as Elco's sidebar profile: avatar, short name, one line of member detail (role, else "IELSco Member").
+  // Same structure as Elco's sidebar profile: avatar, short name, one line of detail (role, else "IELSco account"; "member" means a paid membership).
   const summary = useAccountSummary();
   const fullName = summary?.display_name?.trim() || userName;
   const name = shortName(fullName);
   const avatar = summary?.hasProfile ? summary.avatar_url : userAvatar;
-  const detail = summary?.role_status?.trim() || "IELSco Member";
+  const detail = summary?.role_status?.trim() || "IELSco account";
 
   useEffect(() => {
     if (!open) return;
@@ -126,7 +126,7 @@ export function AccountSheet({ userName, userAvatar }: { userName: string; userA
   const fullName = summary?.display_name?.trim() || userName;
   const name = shortName(fullName);
   const avatar = summary?.hasProfile ? summary.avatar_url : userAvatar;
-  const detail = summary?.role_status?.trim() || "IELSco Member";
+  const detail = summary?.role_status?.trim() || "IELSco account";
 
   const signOut = async () => {
     await createClient().auth.signOut();

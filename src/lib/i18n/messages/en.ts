@@ -14,6 +14,8 @@ export const en = {
   nav: {
     adminGroup: "Admin",
     memberStories: "Member Stories",
+    adminOperations: "Operations",
+    adminOpportunities: "Opportunity board",
     resources: "Resources",
     events: "Events",
     exploreGroup: "Explore",

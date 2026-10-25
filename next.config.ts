@@ -3,9 +3,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // 1. LOGIC LAMA: Env Variables
+  // Production project (public anon key). IELSCO_LOCAL_SUPABASE_* points a local run at a disposable database instead;
+  // those names exist only on developer machines, so production builds are unaffected.
   env: {
-    NEXT_PUBLIC_SUPABASE_URL: "https://hkubzamchahvdpvojepc.supabase.co",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrdWJ6YW1jaGFodmRwdm9qZXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjU4MTgsImV4cCI6MjA4ODMyNTgxOH0.fYIyGlDuGk4vCE4eus1W0u2LhaMg_aKG0ZUbK7F3AsA",
+    NEXT_PUBLIC_SUPABASE_URL: process.env.IELSCO_LOCAL_SUPABASE_URL || "https://hkubzamchahvdpvojepc.supabase.co",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.IELSCO_LOCAL_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrdWJ6YW1jaGFodmRwdm9qZXBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjU4MTgsImV4cCI6MjA4ODMyNTgxOH0.fYIyGlDuGk4vCE4eus1W0u2LhaMg_aKG0ZUbK7F3AsA",
   },
 
   // 2. LOGIC LAMA: Remote Patterns

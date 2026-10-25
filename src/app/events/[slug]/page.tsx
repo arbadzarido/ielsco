@@ -25,12 +25,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   const event = findEventBySlug(slug);
-  if (!event) return { title: "Event Not Found - IELS", description: "The requested event could not be found." };
+  if (!event) return { title: "Event Not Found - IELS", description: "The requested event could not be found.", robots: { index: false } };
   return {
     title: event.seo.meta_title,
     description: event.seo.meta_description,
     keywords: event.seo.meta_keywords,
-    openGraph: { title: event.seo.meta_title, description: event.seo.meta_description, images: [event.poster], type: "article" },
+    alternates: { canonical: `/events/${slug}` },
+    openGraph: { title: event.seo.meta_title, description: event.seo.meta_description, images: [event.poster], type: "article", url: `/events/${slug}`, siteName: "IELS" },
     twitter: { card: "summary_large_image", title: event.seo.meta_title, description: event.seo.meta_description, images: [event.poster] },
   };
 }

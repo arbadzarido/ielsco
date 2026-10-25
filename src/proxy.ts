@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
   // ===========================================================================
   // Preview deployments stay reachable on their own URL so changes can be checked before they reach production.
   if (host.includes('.vercel.app') && process.env.VERCEL_ENV !== 'preview') {
-    url.host     = 'ielsco.com';
+    url.host     = 'www.ielsco.com'; // the primary host: one redirect, not two (ielsco.com itself redirects to www)
     url.protocol = 'https:';
     url.port     = '';
     return NextResponse.redirect(url, 301);
@@ -134,10 +134,12 @@ export async function proxy(request: NextRequest) {
     // bucket (still limited) instead of sharing the 20/10s browser limit. Being in this bucket grants nothing:
     // every one of these routes verifies the HMAC signature itself (src/lib/integrations/signature.ts).
     const isElcoServerCall = /^\/api\/integrations\/elco\/(exchange|goals|summary|revoke)$/.test(request.nextUrl.pathname);
+    // Midtrans sends every merchant's notifications from a few shared IPs; the route verifies each signature itself.
+    const isPaymentNotification = request.nextUrl.pathname === '/api/payments/midtrans/notification';
     const now        = Date.now();
     const WINDOW_MS  = 10_000;
-    const MAX_REQ    = isElcoServerCall ? 60 : 20;
-    const bucket     = isElcoServerCall ? `elco-int-${ip}` : ip;
+    const MAX_REQ    = isElcoServerCall || isPaymentNotification ? 60 : 20;
+    const bucket     = isElcoServerCall ? `elco-int-${ip}` : isPaymentNotification ? `midtrans-${ip}` : ip;
     const record     = requestTracker.get(bucket) || { count: 0, timestamp: now };
 
     if (now - record.timestamp > WINDOW_MS) {
@@ -254,10 +256,12 @@ export async function proxy(request: NextRequest) {
 
 // ===========================================================================
 // MATCHER CONFIG
-// Jangan jalankan middleware di file statis, gambar, dan favicon
+// Jangan jalankan middleware di file statis, gambar, dan favicon.
+// robots.txt and sitemap.xml skip it too: the same files must answer on every host (no circle./school. rewrite) and
+// for every crawler (no user-agent block).
 // ===========================================================================
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

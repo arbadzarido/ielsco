@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import LegalDoc, { COMPANY, CONTACT_EMAIL, WHATSAPP, type LegalSection } from "@/components/legal/LegalDoc";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy | IELSco",
   description: "How IELSco (PT English Space Berkah Indonesia) collects, uses, shares and protects member information.",
-};
+  path: "/privacy-policy",
+});
 
 const mail = <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-[#E56668] hover:underline">{CONTACT_EMAIL}</a>;
 

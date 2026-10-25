@@ -2,11 +2,11 @@
 
 import Footer from "@/components/footer";
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { VALID_CODES } from "@/data/test/codes";
 import { Button } from "@/components/ui/button";
 import { ElcoCallout } from "@/components/elco/ElcoCallout";
+import { Photo } from "@/components/site/Photo";
 
 type CodeEntry = {
   code: string;
@@ -63,18 +63,9 @@ export default function TestSelectionPage() {
       <div className="max-w-6xl mx-auto px-6 py-16 space-y-20">
         {/* ================= HERO ================= */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* RIGHT: MASCOT */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <div className="w-[300px] sm:w-[400px] lg:w-[520px]">
-              <Image
-                src="/images/contents/general/ielstest.svg"
-                alt="IELS Mascot"
-                width={800}
-                height={800}
-                priority
-                className="w-full h-auto object-contain"
-              />
-            </div>
+          {/* RIGHT: PHOTO (IELSco uses real community photos, not mascots) */}
+          <div className="lg:col-span-5">
+            <Photo photo="discussion" ratio="landscape" priority position="40% center" />
           </div>
 
           {/* LEFT: TEXT */}

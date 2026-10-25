@@ -210,7 +210,6 @@ export const SCENES: Scene[] = [
   {
     id: 1,
     title: "The Dream ☀️",
-    image: "/images/contents/quiz/scene1.png",
     prompt:
       "You wake up to a new day feeling inspired — today you decide to take your English to the next level. What do you dream of the most?",
     options: [
@@ -235,7 +234,6 @@ export const SCENES: Scene[] = [
   {
     id: 2,
     title: "Destination Map",
-    image: "/images/contents/quiz/scene2.png",
     prompt: "You imagine yourself abroad — where does your heart take you? 🗺️",
     options: [
       { label: "🇬🇧 UK", score: { british: 3 } },
@@ -251,7 +249,6 @@ export const SCENES: Scene[] = [
   {
     id: 3,
     title: "Your First Step",
-    image: "/images/contents/quiz/scene3.png",
     prompt:
       "🚶 You’re standing at the starting line of your journey. What’s the first thing you’d do?",
     options: [
@@ -264,7 +261,6 @@ export const SCENES: Scene[] = [
   {
     id: 4,
     title: "Learning Style",
-    image: "/images/contents/quiz/scene4.png",
     prompt:
       "When learning something new, you prefer to...",
     options: [
@@ -277,7 +273,6 @@ export const SCENES: Scene[] = [
   {
     id: 5,
     title: "Your Motivation 🔥",
-    image: "/images/contents/quiz/scene5.png",
     prompt:
       "You picture your future self fluent in English. What keeps you going?",
     options: [
@@ -290,7 +285,6 @@ export const SCENES: Scene[] = [
   {
     id: 6,
     title: "Challenge Mode",
-    image: "/images/contents/quiz/scene6.png",
     prompt:
       "🧗 On this journey, you hit challenges. How do you usually respond?",
     options: [
@@ -303,7 +297,6 @@ export const SCENES: Scene[] = [
   {
     id: 7,
     title: "Practice Habit",
-    image: "/images/contents/quiz/scene7.png",
     prompt:
       "🎧 When practicing English, you love...",
     options: [
@@ -316,7 +309,6 @@ export const SCENES: Scene[] = [
   {
     id: 8,
     title: "Consistency Hack",
-    image: "/images/contents/quiz/scene8.png",
     prompt:
       "To stay consistent with your learning, you like to...",
     options: [
@@ -329,7 +321,6 @@ export const SCENES: Scene[] = [
   {
     id: 9,
     title: "Your Hero Story 🌟",
-    image: "/images/contents/quiz/scene9.png",
     prompt:
       "Whose journey inspires you the most?",
     options: [
@@ -342,7 +333,6 @@ export const SCENES: Scene[] = [
   {
     id: 10,
     title: "Grand Finale",
-    image: "/images/contents/quiz/scene10.png",
     prompt:
       "🎉 You finally reach your dream! How do you feel?",
     options: [

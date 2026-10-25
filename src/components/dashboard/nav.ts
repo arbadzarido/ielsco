@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BookOpenText, Briefcase, CalendarDays, Compass, GraduationCap, HelpCircle, Home, MessagesSquare, Settings, Target, User, Users } from "lucide-react";
+import { BadgeCheck, BookOpenText, Briefcase, CalendarDays, ClipboardList, Compass, GraduationCap, HelpCircle, Home, ListChecks, MessagesSquare, Settings, Target, User, Users } from "lucide-react";
 
 // Dashboard information architecture (2026-10). `key` is the i18n message key; `title` is a group heading.
 //   Home, Goals
@@ -16,6 +16,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: "nav.home", path: "/dashboard", icon: Home, id: "home" },
       { key: "nav.goals", path: "/dashboard/my-goals", icon: Target, id: "my-goals" },
+      { key: "nav.membership", path: "/dashboard/membership", icon: BadgeCheck, id: "membership" },
     ],
   },
   {
@@ -39,11 +40,15 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
-// Shown only to Member Stories admins (public.staff_roles, checked with useStoryAdmin). Access is enforced by RLS.
+// Shown only to staff admins (public.staff_roles, checked with useStoryAdmin). Access is enforced by RLS / RPCs.
 export const ADMIN_NAV_GROUP: NavGroup = {
   id: "admin",
   title: "nav.adminGroup",
-  items: [{ key: "nav.memberStories", path: "/dashboard/admin/stories", icon: BookOpenText, id: "admin-stories" }],
+  items: [
+    { key: "nav.memberStories", path: "/dashboard/admin/stories", icon: BookOpenText, id: "admin-stories" },
+    { key: "nav.adminOperations", path: "/dashboard/admin/operations", icon: ClipboardList, id: "admin-operations" },
+    { key: "nav.adminOpportunities", path: "/dashboard/admin/opportunities", icon: ListChecks, id: "admin-opportunities" },
+  ],
 };
 
 // Phone bottom bar: four destinations + "More" (opens the drawer with everything).
