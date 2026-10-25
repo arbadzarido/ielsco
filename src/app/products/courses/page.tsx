@@ -6,16 +6,16 @@ import Footer from "@/components/footer";
 import { Faq } from "@/components/site/Faq";
 import { body, btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h1, h2, h3, lead, pill, section, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { idr } from "@/lib/format";
 import { COURSE_PACKAGES, GOOGLE_FORM_URL, MENTORS, TRACK_META, WHATSAPP_URL, type CourseTrack } from "@/data/courses";
 import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "IELS Courses: mentor-led scholarship essay, career and test-prep courses",
   description: "Small mentor-led courses for applications and careers abroad: scholarship essays, work-abroad communication, academic writing, IELTS/TOEFL/TOEIC, speaking and grammar. 8 or 21 sessions at Rp90,000 per session.",
-  alternates: { canonical: "https://ielsco.com/products/courses" },
-  openGraph: { title: "IELS Courses", description: "Mentor-led courses for applications and careers abroad.", url: "https://ielsco.com/products/courses", images: ["/images/site/online-session.webp"] },
-};
+  path: "/products/courses",
+});
 
 // The catalog renders from src/data/courses.ts (tracks, packages, mentors, prices, registration link): change a course
 // there, not here. Registration is still manual (Google Form, then the team confirms schedule and payment).

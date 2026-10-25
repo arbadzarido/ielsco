@@ -7,18 +7,18 @@ import { Faq } from "@/components/site/Faq";
 import { InquiryForm } from "@/components/site/InquiryForm";
 import { body, btnPrimary, btnSecondary, card, container, eyebrow, h1, h2, h3, lead, pill, section, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { idr, dateTimeWib } from "@/lib/format";
 import { publicSupabase } from "@/lib/supabase/public";
 import { COMPARISON, FREE_FEATURES, MEMBER_BENEFITS, MEMBERSHIP_FAQ, NOT_INCLUDED, PRICES_PUBLIC } from "@/data/membership";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "IELS Membership: sessions, feedback and a study buddy for your applications | IELSco",
   description: "Start free with the opportunity board, IELS Circle and free resources. Members add live application clinics, written feedback on a CV or essay, a study buddy and a private member group.",
-  alternates: { canonical: "https://ielsco.com/membership" },
-  openGraph: { title: "IELS Membership", description: "What you get for free, what members add, and how it works.", url: "https://ielsco.com/membership", images: ["/images/site/discussion.webp"] },
-};
+  path: "/membership",
+});
 
 type Plan = { code: string; name: string; months: number; price_idr: number; billing_enabled: boolean };
 type Session = { id: string; title: string; kind: string; starts_at: string; host_name: string | null; members_only: boolean };

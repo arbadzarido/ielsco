@@ -6,15 +6,15 @@ import { Photo } from "@/components/site/Photo";
 import { InquiryForm } from "@/components/site/InquiryForm";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { eventsData } from "@/data/events";
 import { generateSlug } from "@/utils/slug";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Partner with IELSco: run programs with young people preparing to study and work abroad",
   description: "Universities, organizations and youth communities work with IELSco on info sessions, workshops, application clinics and sponsored seats for young people in Southeast Asia. Tell us what you have in mind.",
-  alternates: { canonical: "https://ielsco.com/partners" },
-  openGraph: { title: "Partner with IELSco", description: "Programs we run together with universities, organizations and communities.", url: "https://ielsco.com/partners", images: ["/images/site/team-campus-visit.webp"] },
-};
+  path: "/partners",
+});
 
 // Partners shown here are only organizations named on IELSco's own published event pages (src/data/events.ts) or event
 // posters. No logos are used: we don't have written permission on file to display them.

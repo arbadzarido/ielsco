@@ -5,16 +5,16 @@ import Footer from "@/components/footer";
 import OpportunityBoard from "@/components/opportunities/OpportunityBoard";
 import { body, btnPrimary, card, container, eyebrow, h1, h2, lead, section, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { listPublishedOpportunities } from "@/lib/opportunities";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "International scholarships, fellowships and programs for Southeast Asian youth | IELSco",
   description: "A short, checked list of international scholarships, fellowships and youth programs, each with its official link and what we have and haven't verified. Save and track your applications for free.",
-  alternates: { canonical: "https://ielsco.com/opportunities" },
-  openGraph: { title: "Opportunities | IELSco", description: "Scholarships, fellowships and programs with official links and honest verification labels.", url: "https://ielsco.com/opportunities", images: ["/images/site/speaker.webp"] },
-};
+  path: "/opportunities",
+});
 
 export default async function OpportunitiesPage() {
   const items = await listPublishedOpportunities();

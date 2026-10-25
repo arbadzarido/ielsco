@@ -1,10 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import LegalDoc, { COMPANY, CONTACT_EMAIL, type LegalSection } from "@/components/legal/LegalDoc";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms of Service | IELSco",
   description: "The terms for using IELSco: membership, community conduct, events and programmes, content and member stories.",
-};
+  path: "/terms-of-service",
+});
 
 const mail = <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-[#E56668] hover:underline">{CONTACT_EMAIL}</a>;
 

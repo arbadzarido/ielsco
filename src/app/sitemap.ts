@@ -1,38 +1,30 @@
 import type { MetadataRoute } from "next";
-import { divisions } from "@/data/careers/divisions";
 import { eventsData } from "@/data/events";
-import { generateSlug } from "@/utils/slug";
+import { divisions } from "@/data/careers/divisions";
+import { getPublishedStories } from "@/lib/stories/public";
 import { listPublishedOpportunities } from "@/lib/opportunities";
+import { generateSlug } from "@/utils/slug";
+import { CIRCLE_URL, SCHOOL_URL, SITE_URL } from "@/lib/seo";
 
-const BASE = "https://ielsco.com";
+// Public pages meant for search results, at their canonical URLs. Sign-in pages, the dashboard, tests behind access
+// codes and internal demos are left out (they are noindex). Rebuilt hourly so newly published member stories and
+// opportunities appear. Circle and Schools are listed on their own subdomains, which are their canonical hosts.
 export const revalidate = 3600;
 
-// Public pages only. Opportunities come from the database (published rows), events and careers from repo data.
+const PAGES = ["/", "/opportunities", "/membership", "/about", "/products", "/products/courses", "/products/resources", "/events",
+  "/events/gif", "/events/launchpad", "/partners", "/careers", "/privacy-policy", "/terms-of-service"];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-  const page = (path: string, priority = 0.7, changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] = "monthly") =>
-    ({ url: `${BASE}${path}`, lastModified: now, changeFrequency, priority });
-  const opportunities = await listPublishedOpportunities();
+  const [{ stories }, opportunities] = await Promise.all([getPublishedStories(), listPublishedOpportunities()]);
   return [
-    page("/", 1, "weekly"),
-    page("/opportunities", 0.9, "weekly"),
-    page("/membership", 0.9),
-    page("/products", 0.7),
-    page("/products/courses", 0.8),
-    page("/products/resources", 0.8),
-    page("/school", 0.7),
-    page("/partners", 0.6),
-    page("/careers", 0.5),
-    page("/about", 0.5),
-    page("/events", 0.7, "weekly"),
-    page("/events/gif", 0.6),
-    page("/circle", 0.7, "weekly"),
-    page("/circle/stories", 0.6, "weekly"),
-    page("/circle/agenda", 0.5),
-    page("/privacy-policy", 0.2, "yearly"),
-    page("/terms-of-service", 0.2, "yearly"),
-    ...divisions.map((d) => page(`/careers/${d.slug}`, 0.4)),
-    ...eventsData.map((e) => page(`/events/${generateSlug(e.title)}`, 0.4)),
-    ...opportunities.map((o) => ({ url: `${BASE}/opportunities/${o.slug}`, lastModified: new Date(o.updated_at), changeFrequency: "weekly" as const, priority: 0.6 })),
+    ...PAGES.map((p) => ({ url: `${SITE_URL}${p === "/" ? "/" : p}` })),
+    ...opportunities.map((o) => ({ url: `${SITE_URL}/opportunities/${o.slug}`, lastModified: new Date(o.updated_at) })),
+    ...eventsData.map((e) => ({ url: `${SITE_URL}/events/${generateSlug(e.title)}` })),
+    ...divisions.map((d) => ({ url: `${SITE_URL}/careers/${d.slug}` })),
+    { url: `${CIRCLE_URL}/` },
+    { url: `${CIRCLE_URL}/agenda` },
+    { url: `${CIRCLE_URL}/stories` },
+    ...stories.map((s) => ({ url: `${CIRCLE_URL}/stories/${s.slug}` })),
+    { url: `${SCHOOL_URL}/` },
   ];
 }

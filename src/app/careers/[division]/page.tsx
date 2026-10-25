@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
 import Footer from "@/components/footer";
 import { body, btnPrimary, card, container, eyebrow, focusRing, h1, h2, lead, pill, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { divisions } from "@/data/careers/divisions";
 import { RECRUITMENT } from "@/data/careers/recruitment";
 
@@ -17,11 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ division:
   const { division } = await params;
   const d = divisions.find((x) => x.slug === division);
   if (!d) return { title: "Division not found | IELSco" };
-  return {
-    title: `${d.title} division: Associate roles at IELSco`,
-    description: d.description,
-    alternates: { canonical: `https://ielsco.com/careers/${d.slug}` },
-  };
+  return pageMetadata({ title: `${d.title} division: Associate roles at IELSco`, description: d.description, path: `/careers/${d.slug}` });
 }
 
 // Role descriptions in src/data/careers/divisions.ts are trusted, repo-authored HTML lists.

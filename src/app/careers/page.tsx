@@ -7,15 +7,15 @@ import { InquiryForm } from "@/components/site/InquiryForm";
 import { Faq } from "@/components/site/Faq";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { divisions } from "@/data/careers/divisions";
 import { RECRUITMENT } from "@/data/careers/recruitment";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Careers and volunteering at IELSco: the Associate Program",
   description: "IELSco is run by a small core team and a cohort of part-time, remote Associates. See the divisions, what the work involves, how selection works, and register your interest for the next intake.",
-  alternates: { canonical: "https://ielsco.com/careers" },
-  openGraph: { title: "Careers at IELSco", description: "Work on real programs as an IELS Associate.", url: "https://ielsco.com/careers", images: ["/images/site/team-portrait.webp"] },
-};
+  path: "/careers",
+});
 
 const CULTURE = [
   ["Real work, not simulations", "Associates run live programs, talk to partners and ship things members use."],

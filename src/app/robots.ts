@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/seo";
 
-// Member areas, admin and APIs are never indexed (they are also behind sign-in / RLS).
+// Served on every host of this deployment (www, circle., school.: see the matcher in src/proxy.ts), so the Circle and
+// Schools URLs in the www sitemap are covered too. Robots rules are not access control: /dashboard and /api protect
+// themselves. AI crawlers fall under "*"; to opt out of model training only, add a group for GPTBot or Google-Extended.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/dashboard", "/school/dashboard", "/admin", "/api/", "/sign-in", "/sign-up", "/welcome", "/auth/", "/sentry-example-page"] }],
-    sitemap: "https://ielsco.com/sitemap.xml",
-    host: "https://ielsco.com",
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/dashboard", "/school/dashboard", "/monitoring"] }],
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

@@ -7,14 +7,14 @@ import { InquiryForm } from "@/components/site/InquiryForm";
 import { Faq } from "@/components/site/Faq";
 import { body, btnPrimary, btnSecondary, card, container, eyebrow, h1, h2, h3, lead, pill, section, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata, SCHOOL_URL } from "@/lib/seo";
 import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "IELS for Schools: global opportunity sessions and application workshops for students",
   description: "IELSco runs sessions for senior high schools and universities: international scholarships and study-abroad pathways, CV and interview workshops, facilitated speaking sessions and leadership programs. Tell us about your students.",
-  alternates: { canonical: "https://ielsco.com/school" },
-  openGraph: { title: "IELS for Schools", description: "Sessions and workshops that open students' eyes to international opportunities.", url: "https://ielsco.com/school", images: ["/images/site/community-in-person.webp"] },
-};
+  path: `${SCHOOL_URL}/`,
+});
 
 // Offers are formats IELSco already runs for its own community (info sessions, application clinics, Circle speaking
 // sessions, the Global Impact Fellowship), adapted for a school. Prices are quoted per school; nothing is listed here.

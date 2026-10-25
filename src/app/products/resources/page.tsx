@@ -5,15 +5,15 @@ import Footer from "@/components/footer";
 import ResourceLibrary from "@/components/resources/ResourceLibrary";
 import { body, btnPrimary, card, cardLink, container, eyebrow, h1, h2, h3, lead, section, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { IELS_GUIDES, PUBLIC_RESOURCES, TOPICS } from "@/data/public-resources";
 import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Free resources for scholarship, study-abroad and job applications | IELSco",
   description: "A checked list of free guides and official sites for scholarships, CVs and motivation letters, interviews and studying abroad, plus member stories and the IELS opportunity board.",
-  alternates: { canonical: "https://ielsco.com/products/resources" },
-  openGraph: { title: "Free resources | IELSco", description: "Checked guides and official sites for applications and going abroad.", url: "https://ielsco.com/products/resources" },
-};
+  path: "/products/resources",
+});
 
 export default function ResourcesPage() {
   return (

@@ -5,13 +5,14 @@ import Footer from "@/components/footer";
 import { Photo } from "@/components/site/Photo";
 import { body, btnPrimary, btnSecondary, cardLink, container, eyebrow, h1, h2, lead, section, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Programs at IELSco: opportunities, community, courses and fellowships",
   description: "Everything IELSco offers in one place: the opportunity board, IELS Circle, member stories, IELS Courses, events, the Global Impact Fellowship, membership and IELS for Schools.",
-  alternates: { canonical: "https://ielsco.com/products" },
-};
+  path: "/products",
+});
 
 type Item = { icon: typeof Compass; name: string; text: string; href: string; cost: string; external?: boolean };
 const GROUPS: { title: string; intro: string; items: Item[] }[] = [

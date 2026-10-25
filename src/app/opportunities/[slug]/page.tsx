@@ -7,6 +7,7 @@ import OpportunityActions from "@/components/opportunities/OpportunityActions";
 import { DeadlinePill } from "@/components/opportunities/OpportunityBoard";
 import { body, card, container, eyebrow, h1, h3, lead, pill, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 import { CATEGORY_LABEL, FUNDING_LABEL, getOpportunity, LEVEL_LABEL, regionLabel, verificationText } from "@/lib/opportunities";
 
 export const revalidate = 300;
@@ -14,12 +15,7 @@ export const revalidate = 300;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const o = await getOpportunity((await params).slug);
   if (!o) return { title: "Opportunity not found | IELSco", robots: { index: false } };
-  return {
-    title: `${o.title}: overview and official link | IELSco`,
-    description: o.summary.slice(0, 160),
-    alternates: { canonical: `https://ielsco.com/opportunities/${o.slug}` },
-    openGraph: { title: o.title, description: o.summary.slice(0, 200), url: `https://ielsco.com/opportunities/${o.slug}` },
-  };
+  return pageMetadata({ title: `${o.title}: overview and official link | IELSco`, description: o.summary.slice(0, 160), path: `/opportunities/${o.slug}` });
 }
 
 export default async function OpportunityPage({ params }: { params: Promise<{ slug: string }> }) {

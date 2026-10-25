@@ -5,11 +5,13 @@ import { ArrowRight, Award, BookOpen, Compass, Instagram, Linkedin } from "lucid
 import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h1, h2, h3, lead, section, textLink, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About IELS | Community & Opportunities for Southeast Asian learners",
   description: "IELS (PT English Space Berkah Indonesia) is a community that connects Southeast Asian youth with people, resources, programs and international opportunities.",
-};
+  path: "/about",
+});
 
 type Leader = { name: string; role: string; image: string; instagram: string; linkedin: string; background: string; experience: string };
 
