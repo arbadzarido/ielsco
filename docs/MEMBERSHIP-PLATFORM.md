@@ -1,7 +1,7 @@
 # IELSco membership platform (October 2026)
 
 What changed, why, and what still needs a decision or an operator action before it goes live.
-Branch: `feat/membership-platform`. Nothing here is deployed, and no migration has been applied to production.
+Branch: `feat/membership-platform` (PR #8, includes the SEO work from PR #7).
 
 ## 1. Positioning
 
@@ -105,16 +105,26 @@ server-side price, bad JSON/unknown order/forged signature rejected, re-read sta
 single activation, idempotent duplicate, return page. **Not tested against the real Midtrans Sandbox** (no Sandbox keys
 are available to this workspace).
 
-## 7. Operator checklist before launch
+## 7. Production database record
 
-1. Apply both migrations to production Supabase (SQL editor or `supabase db push`), after a backup.
-2. Set the Sandbox env vars on a Vercel preview, run one Sandbox payment with Midtrans's simulator, check the order turns
+- **2026-10-25:** `20261026000000_membership_platform` and `20261026010000_opportunities_seed` applied to the production
+  project `hkubzamchahvdpvojepc` with `supabase db push` (dry run first; it listed exactly these two). Recorded in
+  `supabase_migrations.schema_migrations`, so the GitHub integration treats them as applied on merge.
+- Verified afterwards: a catalog diff of `public` shows 79 added objects and **no existing object changed**; all 12 new
+  tables have RLS on; anonymous REST calls can read plans (billing off) and the 12 published opportunities, and are
+  denied on inquiries, member links, orders, sessions and the privileged functions.
+- Rollback (emergency only; deletes everything these migrations created): `supabase/manual/ROLLBACK-20261026-membership-platform.sql`,
+  tested by `tests/db/membership-rollback.pglite.mjs`.
+
+## 8. Operator checklist before charging anyone
+
+1. Set the Sandbox env vars on a Vercel preview, run one Sandbox payment with Midtrans's simulator, check the order turns
    `paid` and the dashboard shows member tools.
-3. Add the private group link (Admin → Operations → Member links) and the first member sessions.
-4. Approve prices (§4), set `billing_enabled`, then production keys + `MIDTRANS_PRODUCTION_ENABLED=true`.
-5. When a membership ends, remove the person from the external group (roster lists "expired").
+2. Add the private group link (Admin → Operations → Member links) and the first member sessions.
+3. Approve prices (§4), set `billing_enabled`, then production keys + `MIDTRANS_PRODUCTION_ENABLED=true`.
+4. When a membership ends, remove the person from the external group (roster lists "expired").
 
-## 8. Analytics
+## 9. Analytics
 
 `src/lib/analytics.ts` sends Vercel Web Analytics custom events (CTA clicks, inquiry submitted, opportunity saved /
 status changed, checkout started, payment returned, session registered, feedback and buddy requested) only when
