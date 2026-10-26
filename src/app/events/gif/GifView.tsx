@@ -112,14 +112,16 @@ export default function SGITPage() {
             <div className="relative">
               {/* Glow effect matching the new Red */}
               <div className="absolute inset-0 bg-[#914D4D] blur-[30px] opacity-30 rounded-full"></div>
-              <Image
-                src="/images/logos/events/gifsgp.png"
-                alt="Global Impact Fellowship in Singapore"
-                width={200}
-                height={80}
-                className="relative h-auto w-[240px] md:w-[400px] drop-shadow-xl"
-                priority
-              />
+              <div className="relative rounded-2xl bg-white px-5 py-3 shadow-xl md:px-7 md:py-4">
+                <Image
+                  src="/images/logos/events/gif.png"
+                  alt="Global Impact Fellowship in Singapore"
+                  width={238}
+                  height={87}
+                  className="h-auto w-[200px] md:w-[320px]"
+                  priority
+                />
+              </div>
             </div>
           </div>
 

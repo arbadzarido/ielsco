@@ -159,13 +159,15 @@ export default function GIFEventPage() {
           <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-[#914D4D] blur-[40px] opacity-40 rounded-full" />
-              <Image
-                src="/images/logos/events/gifsgp.png"
-                alt="Global Impact Fellowship Singapore"
-                width={200} height={80}
-                className="relative h-auto w-[240px] md:w-[380px] drop-shadow-2xl"
-                priority
-              />
+              <div className="relative rounded-2xl bg-white px-5 py-3 shadow-xl md:px-7 md:py-4">
+                <Image
+                  src="/images/logos/events/gif.png"
+                  alt="Global Impact Fellowship Singapore"
+                  width={238} height={87}
+                  className="h-auto w-[200px] md:w-[300px]"
+                  priority
+                />
+              </div>
             </div>
           </div>
 

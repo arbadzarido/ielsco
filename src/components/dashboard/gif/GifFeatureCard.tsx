@@ -8,7 +8,7 @@ import { focusRing } from "../ui";
 import { cn } from "@/lib/utils";
 
 // Global Impact Fellowship card for dashboard pages (Home, Events). GIF identity: navy #304156 → maroon #914D4D,
-// GIF Singapore logo. Delegates go to their portal; everyone else to the public program page. It states no program
+// navy GIF logo on a white plate. Delegates go to their portal; everyone else to the public program page. It states no program
 // status, deadlines or results: those live on the GIF pages themselves.
 export function GifFeatureCard({ className }: { className?: string }) {
   const { gifDelegate } = useNavAccess();
@@ -21,8 +21,8 @@ export function GifFeatureCard({ className }: { className?: string }) {
       <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-[#914D4D]/40 blur-3xl" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/25" aria-hidden="true" />
       <div className="relative grid gap-6 p-6 sm:grid-cols-[auto_1fr] sm:items-center md:p-8 lg:grid-cols-[auto_1fr_auto]">
-        <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/10 p-3 ring-1 ring-white/20 md:h-28 md:w-28">
-          <Image src="/images/logos/events/gifsgp.png" alt="GIF Singapore" width={96} height={96} className="h-auto max-h-full w-auto object-contain" />
+        <div className="flex h-24 items-center justify-center justify-self-start rounded-2xl bg-white px-4 shadow-[0_8px_24px_rgba(0,0,0,0.15)] md:h-28 md:px-5">
+          <Image src="/images/logos/events/gif.png" alt="GIF Singapore" width={238} height={87} className="h-12 w-auto object-contain md:h-14" />
         </div>
         <div className="max-w-2xl">
           <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#FFD1D1]">Global Impact Fellowship · Singapore</p>

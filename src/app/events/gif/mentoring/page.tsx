@@ -110,14 +110,16 @@ export default function SGTripMentoringPage() {
         <div className="relative max-w-6xl mx-auto px-6 pt-8 pb-12 lg:pt-18 lg:pb-18 text-white text-center">
           
           <div className="flex items-center justify-center">
-            <Image
-              src="/images/logos/events/gifsgp.png"
-              alt="Global Impact Fellowship in Singapore"
-              width={270}
-              height={72}
-              className="relative h-auto w-[240px] md:w-[400px] drop-shadow-xl"
-              priority
-            />
+            <div className="relative rounded-2xl bg-white px-5 py-3 shadow-xl md:px-7 md:py-4">
+              <Image
+                src="/images/logos/events/gif.png"
+                alt="Global Impact Fellowship in Singapore"
+                width={238}
+                height={87}
+                className="h-auto w-[200px] md:w-[320px]"
+                priority
+              />
+            </div>
           </div>
           
           <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight">

@@ -62,7 +62,7 @@ export default function EventsPage() {
           <Link href={GIF_BATCH.overviewPage} className={cn(cardLink, "grid overflow-hidden md:grid-cols-[1fr_280px]")} data-testid="events-gif">
             <div className="p-7 sm:p-9">
               <div className="flex items-center gap-3">
-                <Image src="/images/logos/events/gifsgp.png" alt="" width={44} height={44} className="h-11 w-auto" />
+                <Image src="/images/logos/events/gif.png" alt="" width={120} height={44} className="h-[44px] w-auto" />
                 <p className="text-[14px] font-semibold text-[#914D4D]">Flagship program · Global Impact Fellowship</p>
               </div>
               <h2 className={cn(h3, "mt-5 text-[24px]")}>Lead a project with youth from across Southeast Asia</h2>

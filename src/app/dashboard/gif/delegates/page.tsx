@@ -748,7 +748,9 @@ export default function GIFDelegatePortalPage() {
                 <span className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full"><Users className="w-4 h-4" /> 20 Delegates</span>
               </div>
             </div>
-            <Image src="/images/logos/events/gifsgp.png" alt="GIF Singapore" width={180} height={60} priority className="hidden md:block h-28 w-auto drop-shadow-2xl object-contain" />
+            <div className="hidden shrink-0 md:block rounded-2xl bg-white px-5 py-3 shadow-xl md:px-7 md:py-4">
+              <Image src="/images/logos/events/gif.png" alt="GIF Singapore" width={238} height={87} priority className="h-16 w-auto object-contain" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-white/10">

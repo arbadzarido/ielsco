@@ -87,14 +87,16 @@ export default function GIFClosedPage() {
           </div>
 
           <div className="relative z-10 p-8 md:p-14 flex flex-col items-center text-center space-y-8">
-            <Image
-              src="/images/logos/events/gifsgp.png"
-              alt="GIF Singapore"
-              width={180}
-              height={60}
-              priority
-              className="h-28 w-auto drop-shadow-2xl object-contain"
-            />
+            <div className="rounded-2xl bg-white px-5 py-3 shadow-xl md:px-7 md:py-4">
+              <Image
+                src="/images/logos/events/gif.png"
+                alt="GIF Singapore"
+                width={238}
+                height={87}
+                priority
+                className="h-16 w-auto object-contain md:h-20"
+              />
+            </div>
 
             <div className="space-y-3">
               <p className="text-[#FFD1D1] text-xs md:text-sm font-bold uppercase tracking-[0.3em]">Global Impact Fellowship</p>
