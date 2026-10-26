@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 // Global Impact Fellowship banner in the dashboard navigation, in the GIF identity (navy #304156 → maroon #914D4D,
-// GIF Singapore logo). Delegates go to their dashboard; everyone else to the public program page. No program status,
+// navy GIF logo on a white plate). Delegates go to their dashboard; everyone else to the public program page. No program status,
 // deadlines or eligibility are claimed here.
 export function GifBanner({ onNavigate, className }: { onNavigate?: () => void; className?: string }) {
   const { t } = useI18n();
@@ -26,8 +26,9 @@ export function GifBanner({ onNavigate, className }: { onNavigate?: () => void; 
     >
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/30" aria-hidden="true" />
       <span className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/12 p-1.5 ring-1 ring-white/20">
-          <Image src="/images/logos/events/gifsgp.png" alt="" width={40} height={40} className="h-auto max-h-full w-auto object-contain" />
+        <span className="flex h-11 w-11 shrink-0 items-center justify-start overflow-hidden rounded-xl bg-white px-1.5">
+          {/* The navy GIF mark (left part of the logo); the program name is spelled out next to it. */}
+          <Image src="/images/logos/events/gif.png" alt="" width={238} height={87} className="h-8 w-auto max-w-none" />
         </span>
         <span className="min-w-0">
           <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[#FFD1D1]">GIF Singapore</span>

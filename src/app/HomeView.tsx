@@ -206,7 +206,7 @@ function Opportunities() {
           <Link href={GIF_BATCH.overviewPage} className={cn(cardLink, "grid overflow-hidden sm:grid-cols-[1fr_200px]")} data-testid="landing-gif">
             <div className="flex flex-col p-7">
               <div className="flex items-center gap-3">
-                <Image src="/images/logos/events/gifsgp.png" alt="" width={40} height={40} className="h-10 w-auto" />
+                <Image src="/images/logos/events/gif.png" alt="" width={110} height={40} className="h-[40px] w-auto" />
                 <p className="text-[14px] font-semibold text-[#914D4D]">Global Impact Fellowship</p>
               </div>
               <h3 className={cn(h3, "mt-5")}>Lead a project with youth from across Southeast Asia</h3>

@@ -1178,11 +1178,13 @@ const handleResetStatus = async () => {
             className="h-10 w-auto object-contain" 
           />
           <div className="w-px h-10 bg-white/20"></div>
-          <img 
-            src="/images/logos/events/gifsgp.png" 
-            alt="GIF SGP" 
-            className="h-10 w-auto object-contain"
-          />
+          <span className="rounded-lg bg-white px-2.5 py-1">
+            <img
+              src="/images/logos/events/gif.png"
+              alt="GIF SGP"
+              className="h-[28px] w-auto object-contain"
+            />
+          </span>
         </div>
 
         {/* Kanan: Nama & Judul Project */}
