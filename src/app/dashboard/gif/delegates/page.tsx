@@ -58,8 +58,8 @@ import { cn } from "@/lib/utils";
 const BUCKET = "gif-2026-documents";
 const MAX_FILE_MB = 10;
 
-// 20 Oct 2026 23:59:59 WIB == 21 Oct 2026 00:00 WIB. Keep in sync with gif_edit_deadline() in SQL.
-const EDIT_DEADLINE = new Date("2026-10-21T00:00:00+07:00");
+// 8 Nov 2026 23:59:59 WIB == 9 Nov 2026 00:00 WIB. Keep in sync with gif_edit_deadline() in SQL.
+const EDIT_DEADLINE = new Date("2026-11-09T00:00:00+07:00");
 
 const CONTACT_EMAIL = "arbadza@ielsco.com";
 const CONTACT_WA_DISPLAY = "+62 882-9725-3491";
@@ -777,7 +777,7 @@ export default function GIFDelegatePortalPage() {
           <div className="space-y-1">
             <p className="font-bold text-[#914D4D]">Participant information editing closed</p>
             <p className="text-sm text-[#914D4D]/80 leading-relaxed">
-              Your information was locked after the 20 October 2026 deadline. You can still view everything below.
+              Your information was locked after the 8 November 2026 deadline. You can still view everything below.
               If you need to make a correction after this deadline, please contact: <strong>{CONTACT_EMAIL}</strong>
             </p>
           </div>
@@ -787,7 +787,7 @@ export default function GIFDelegatePortalPage() {
           <div className="bg-[#2F4055]/5 border border-[#2F4055]/10 rounded-2xl p-4 flex items-start gap-3">
             <Clock className="w-5 h-5 text-[#2F4055] mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-bold text-[#2F4055]">Complete your information by 20 October 2026</p>
+              <p className="text-sm font-bold text-[#2F4055]">Complete your information by 8 November 2026</p>
               <p className="text-xs text-[#2F4055]/70 mt-0.5">23:59 WIB (Asia/Jakarta) · {daysLeft} day{daysLeft === 1 ? "" : "s"} left. After this, the portal becomes read-only.</p>
             </div>
           </div>
