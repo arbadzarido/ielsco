@@ -4,18 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { Menu } from "lucide-react";
-import { MOBILE_ITEMS, NAV_ITEMS, isNavActive } from "./nav";
+import { MOBILE_ITEMS, isItemActive, moreActive as onMorePage } from "./nav";
 import { MobileMenu } from "./sidebar/MobileMenu";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 // Phone/tablet bottom bar, same look and behaviour as Elco's: a floating navy bar inset 12px from the edges and above
-// the home indicator (safe-area). Four primary destinations plus "More", which opens a bottom sheet with the rest.
+// the home indicator (safe-area). The five top-level menus: Home, Discover, Social, Connect, and "More" (a bottom sheet).
 // DashboardLayout reserves matching bottom padding so the bar never covers content or controls.
 const BAR_NAVY =
   "border border-white/10 bg-[#2F4157]/[0.96] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_12px_30px_rgba(26,37,52,0.25)] supports-[backdrop-filter]:backdrop-blur-xl";
 
-const SHORT: Record<string, string> = { "my-goals": "nav.myGoalsShort" };
 
 export function MobileTabBar() {
   const pathname = usePathname();
@@ -23,8 +22,7 @@ export function MobileTabBar() {
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  const inBar = MOBILE_ITEMS.some((i) => isNavActive(i.path, pathname));
-  const moreActive = !inBar && NAV_ITEMS.some((i) => isNavActive(i.path, pathname));
+  const moreActive = onMorePage(pathname);
   const cell = "flex min-h-[56px] flex-col items-center justify-center gap-[3px] rounded-[18px] px-0 text-[11px] tracking-[-0.01em] min-[380px]:px-1 min-[380px]:text-[12px] min-[380px]:tracking-normal font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
   return (
     <>
@@ -35,14 +33,15 @@ export function MobileTabBar() {
         style={{ bottom: "calc(12px + env(safe-area-inset-bottom))", left: "calc(12px + env(safe-area-inset-left))", right: "calc(12px + env(safe-area-inset-right))" }}
       >
         <ul className="grid grid-cols-5 gap-[2px]">
-          {MOBILE_ITEMS.map(({ key, path, icon: Icon, id }) => {
-            const active = isNavActive(path, pathname);
+          {MOBILE_ITEMS.map((item) => {
+            const { key, path, icon: Icon, id } = item;
+            const active = isItemActive(item, pathname);
             return (
               <li key={path}>
                 <Link href={path} data-testid={`mobile-nav-${id}`} aria-current={active ? "page" : undefined}
                   className={cn(cell, active ? "bg-white/[0.14] text-white" : "text-white/65 hover:bg-white/[0.08] hover:text-white")}>
                   <Icon size={21} strokeWidth={active ? 2.3 : 1.8} aria-hidden="true" />
-                  <span className="max-w-full truncate">{t(SHORT[id] ?? key)}</span>
+                  <span className="max-w-full truncate">{t(key)}</span>
                 </Link>
               </li>
             );

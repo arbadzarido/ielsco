@@ -38,6 +38,6 @@ export const cardLink = `${card} block transition-[border-color,box-shadow,trans
 
 export const pill = "inline-flex items-center gap-1.5 rounded-full border border-[#E6E9EE] bg-white px-3 py-1 text-[13px] font-semibold text-[#2F4157]";
 
-// globals.css gives every heading a Garamond stack, which falls back to Times on most phones. Public pages opt their
-// headings into the brand sans (Plus Jakarta Sans) with this class on the page root.
-export const siteRoot = "[&_:is(h1,h2,h3,h4,h5,h6)]:font-sans";
+// Public pages put this class on the page root so their headings use the heading font (Poppins, globals.css
+// --font-heading), the same as the dashboard. (It used to switch them from the old Garamond stack to Plus Jakarta Sans.)
+export const siteRoot = "[&_:is(h1,h2,h3,h4,h5,h6)]:[font-family:var(--font-heading)]";

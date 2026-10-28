@@ -3,7 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingRelation } from "@/lib/dashboard/profile";
 import type {
-  CallInfo, CallMode, CallStyle, ConnectionRow, ConnectSummary, DiscoverFilters, DiscoverRow, IntroRequest, MeetingDetails,
+  CallInfo, CallMode, CallStyle, Circle, CirclePost, ConnectionRow, ConnectSummary, DiscoverFilters, DiscoverRow, IntroRequest, MeetingDetails,
   Message, Passport, Person, QuickMatchState, Room, RoomInput,
 } from "./types";
 
@@ -52,6 +52,9 @@ const MESSAGES: Record<string, string> = {
   call_not_found: "This call isn't available.",
   call_not_active: "This call has ended.",
   call_not_ended: "The call is still running.",
+  not_a_member: "Join this Circle to read and post in its discussion.",
+  circle_not_found: "This Circle isn't available.",
+  post_not_found: "This post was removed or can't be replied to.",
 };
 
 function friendly(message: string) {
@@ -128,6 +131,16 @@ export const connectApi = {
   qmEnd: (s: SupabaseClient, id: string, reason: "left" | "skipped" | "failed" | "reported" | "blocked") => call<null>(s, "quick_match_end", { p_call: id, p_reason: reason }),
   qmFeedback: (s: SupabaseClient, id: string, connect: boolean, enjoyed: boolean) =>
     call<"connected" | "saved">(s, "quick_match_feedback", { p_call: id, p_connect: connect, p_enjoyed: enjoyed }),
+};
+
+export const circlesApi = {
+  list: (s: SupabaseClient) => call<Circle[]>(s, "list_circles"),
+  join: (s: SupabaseClient, id: string) => call<string>(s, "join_circle", { p_circle: id }),
+  leave: (s: SupabaseClient, id: string) => call<string>(s, "leave_circle", { p_circle: id }),
+  posts: (s: SupabaseClient, id: string, before: string | null = null) => call<CirclePost[]>(s, "list_circle_posts", { p_circle: id, p_before: before, p_limit: 20 }),
+  // p_prompt is honoured for staff only (checked in post_circle()).
+  post: (s: SupabaseClient, id: string, body: string, parent: string | null = null, prompt = false) => call<string>(s, "post_circle", { p_circle: id, p_body: body, p_parent: parent, p_prompt: prompt }),
+  remove: (s: SupabaseClient, postId: string) => call<string>(s, "remove_circle_post", { p_id: postId }),
 };
 
 export const isUnavailable = (e: unknown) => e instanceof ConnectUnavailableError;

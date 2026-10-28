@@ -21,6 +21,9 @@ export function useCall(supabase: SupabaseClient, info: CallInfo, onEnded: () =>
   const [camera, setCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  // The remote video track exists from the start (pre-created transceiver) but carries frames only while the other
+  // side's camera is on: WebRTC signals that with the track's mute/unmute events.
+  const [remoteVideo, setRemoteVideo] = useState(false);
   const [localVideo, setLocalVideo] = useState<MediaStream | null>(null);
   const [remaining, setRemaining] = useState(() => Math.max(0, new Date(info.expires_at).getTime() - new Date(info.server_now).getTime()));
   const pc = useRef<RTCPeerConnection | null>(null);
@@ -88,10 +91,22 @@ export function useCall(supabase: SupabaseClient, info: CallInfo, onEnded: () =>
       const peer = new RTCPeerConnection(ice);
       pc.current = peer;
       mic.current.getAudioTracks().forEach((t) => peer.addTrack(t, mic.current!));
-      if (info.mode === "video") videoTx.current = peer.addTransceiver("video", { direction: "sendrecv" });
+      // Only the caller creates the video transceiver; the callee adopts the one the offer creates (below). A transceiver
+      // made with addTransceiver() before the offer would not be matched to the offer's video line and would never send.
+      if (info.mode === "video" && info.role === "caller") videoTx.current = peer.addTransceiver("video", { direction: "sendrecv" });
       const remote = new MediaStream();
       setRemoteStream(remote);
-      peer.ontrack = (ev) => { remote.addTrack(ev.track); setRemoteStream(new MediaStream(remote.getTracks())); };
+      peer.ontrack = (ev) => {
+        remote.addTrack(ev.track);
+        setRemoteStream(new MediaStream(remote.getTracks()));
+        if (ev.track.kind === "video") {
+          const sync = () => setRemoteVideo(ev.track.readyState === "live" && !ev.track.muted);
+          ev.track.addEventListener("unmute", sync);
+          ev.track.addEventListener("mute", sync);
+          ev.track.addEventListener("ended", sync);
+          sync();
+        }
+      };
       peer.onicecandidate = (ev) => { if (ev.candidate) send("ice", ev.candidate.toJSON()); };
       peer.onconnectionstatechange = async () => {
         const s = peer.connectionState;
@@ -127,6 +142,10 @@ export function useCall(supabase: SupabaseClient, info: CallInfo, onEnded: () =>
             if (s.kind === "bye") return finish();
             if (s.kind === "offer") {
               await peer.setRemoteDescription(s.payload as RTCSessionDescriptionInit);
+              if (info.mode === "video" && !videoTx.current) {
+                const tx = peer.getTransceivers().find((t) => t.receiver.track.kind === "video");
+                if (tx) { tx.direction = "sendrecv"; videoTx.current = tx; }
+              }
               const answer = await peer.createAnswer();
               await peer.setLocalDescription(answer);
               await send("answer", answer);
@@ -180,5 +199,5 @@ export function useCall(supabase: SupabaseClient, info: CallInfo, onEnded: () =>
     }
   };
 
-  return { media, link, muted, camera, cameraError, remoteStream, localVideo, remaining, toggleMute, toggleCamera, hangUp };
+  return { media, link, muted, camera, cameraError, remoteStream, remoteVideo, localVideo, remaining, toggleMute, toggleCamera, hangUp };
 }

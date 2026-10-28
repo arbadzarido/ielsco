@@ -83,7 +83,7 @@ function Stories() {
         </div>
         <Link href="/circle/stories" data-testid="circle-all-stories" className={btnSecondary}>All stories <ArrowRight size={16} /></Link>
       </div>
-      <ul className="grid gap-5 md:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {stories.map((s) => (
           <li key={s.slug}>
             <Link href={`/circle/stories/${s.slug}`} className={cn("group block overflow-hidden rounded-3xl bg-white", cardGloss, focusRing)}>

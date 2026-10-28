@@ -18,7 +18,7 @@ export function ConnectionsView(ctx: DashboardCtx) {
     <ConnectFrame title="My connections" description="People you're mutually connected with.">
       <LoadGate state={data.state} onRetry={data.reload} />
       {data.state.s === "ready" && (data.state.data.length === 0 ? NONE : (
-        <div data-testid="connections-grid" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div data-testid="connections-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {data.state.data.map((c) => (
             <PersonCard key={c.person.id} person={c.person}
               reasons={[`Connected ${when(c.connected_at)} via ${c.source === "intro" ? "Letter Intro" : "Quick Match"}`,

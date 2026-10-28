@@ -32,7 +32,7 @@ export default function AuthLayout({
           <span className="mb-[32px] flex h-[160px] w-[160px] items-center justify-center rounded-[32px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
             <Image src="/images/contents/mascot/hi.svg" alt="" width={112} height={112} className="h-[112px] w-auto" />
           </span>
-          <p className="font-serif text-[36px] leading-tight">Unlock global opportunities, together.</p>
+          <p className="font-heading text-[36px] font-semibold leading-tight">Unlock global opportunities, together.</p>
           <ul className="mt-[24px] space-y-[12px]">
             {POINTS.map((p) => (
               <li key={p} className="flex items-start gap-[12px] text-[15px] text-white/85">
@@ -54,7 +54,7 @@ export default function AuthLayout({
           <Link href="/" className="text-[14px] font-semibold text-[#2F4157]/70 hover:text-[#2F4157]" data-testid="auth-back-home">Back to home</Link>
         </div>
         <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-[40px]">
-          <h1 className="font-serif text-[32px] font-medium leading-tight text-[#2F4157] sm:text-[36px]">{title}</h1>
+          <h1 className="font-heading text-[32px] font-semibold leading-tight text-[#2F4157] sm:text-[36px]">{title}</h1>
           {subtitle && <p className="mt-[8px] text-[15px] text-[#5A6A7E]">{subtitle}</p>}
           <div className="mt-[32px]">{children}</div>
         </div>

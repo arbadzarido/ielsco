@@ -30,7 +30,7 @@ function RequestCard({ ctx, r, onChange }: { ctx: DashboardCtx; r: IntroRequest;
         <div className="w-full space-y-3">
           <blockquote className="whitespace-pre-line rounded-xl bg-[#F7F8FA] p-3 text-base">{r.message}</blockquote>
           {(r.reason || r.common || r.topic) && (
-            <dl className="grid gap-1 text-sm">
+            <dl className="grid grid-cols-1 gap-1 text-sm">
               {r.reason && <div><dt className="inline font-semibold">Why: </dt><dd className="inline">{r.reason}</dd></div>}
               {r.common && <div><dt className="inline font-semibold">In common: </dt><dd className="inline">{r.common}</dd></div>}
               {r.topic && <div><dt className="inline font-semibold">Would like to talk about: </dt><dd className="inline">{r.topic}</dd></div>}
@@ -82,7 +82,7 @@ export function RequestsView(ctx: DashboardCtx) {
           action={<Link href="/dashboard/connect/discover" className={btnPrimary}>Discover people</Link>} />
       )}
       {data.state.s === "ready" && data.state.data.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">{data.state.data.map((r) => <RequestCard key={r.id} ctx={ctx} r={r} onChange={data.reload} />)}</div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{data.state.data.map((r) => <RequestCard key={r.id} ctx={ctx} r={r} onChange={data.reload} />)}</div>
       )}
     </ConnectFrame>
   );

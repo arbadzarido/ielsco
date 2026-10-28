@@ -39,9 +39,9 @@ function Select({ id, label: text, value, onChange, options }: { id: string; lab
   );
 }
 
-export function DiscoverView({ supabase }: DashboardCtx) {
+export function DiscoverView({ supabase, initial }: DashboardCtx & { initial?: Partial<DiscoverFilters> }) {
   const passport = useLoad(() => connectApi.myPassport(supabase), [supabase]);
-  const [filters, setFilters] = useState<DiscoverFilters>(EMPTY);
+  const [filters, setFilters] = useState<DiscoverFilters>({ ...EMPTY, ...initial });
   const [rows, setRows] = useState<DiscoverRow[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "unavailable">("loading");
   const [error, setError] = useState("");
@@ -78,7 +78,7 @@ export function DiscoverView({ supabase }: DashboardCtx) {
           You&apos;re hidden from Discover, so others can&apos;t find you or send you intros. <Link href="/dashboard/connect/passport" className="font-semibold underline">Update your Passport</Link> to appear.
         </Notice>
       )}
-      <section aria-label="Filters" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Filters" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label htmlFor="f-search" className={labelClass}>Name</label>
           <input id="f-search" type="search" value={filters.search} onChange={(e) => set("search")(e.target.value)} className={inputClass} placeholder="Search by name" />
@@ -105,7 +105,7 @@ export function DiscoverView({ supabase }: DashboardCtx) {
         />
       )}
       {rows.length > 0 && (
-        <div data-testid="discover-grid" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div data-testid="discover-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((r) => (
             <PersonCard key={r.person.id} person={r.person} reasons={reasonsFor(r)} footer={
               <>

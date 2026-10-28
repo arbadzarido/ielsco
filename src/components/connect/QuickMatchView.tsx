@@ -13,6 +13,7 @@ import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { Chips, ConnectFrame, LoadGate, SafetyMenu, useLoad } from "./shared";
 import { useCall } from "./useCall";
+import { ElcoMascot } from "@/components/elco/ElcoMascot";
 
 const mmss = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`;
 
@@ -26,7 +27,7 @@ function MediaEl({ stream, kind, muted, className }: { stream: MediaStream | nul
 
 function CallScreen({ ctx, info, onEnded }: { ctx: DashboardCtx; info: CallInfo; onEnded: () => void }) {
   const c = useCall(ctx.supabase, info, onEnded);
-  const hasRemoteVideo = !!c.remoteStream?.getVideoTracks().some((t) => t.readyState === "live" && !t.muted);
+  const hasRemoteVideo = c.remoteVideo;
   const ctrl = cn("inline-flex h-12 w-12 items-center justify-center rounded-full border", focusRing);
 
   if (c.media === "mic_denied" || c.media === "no_device") {
@@ -180,9 +181,12 @@ export function QuickMatchView(ctx: DashboardCtx) {
     <ConnectFrame title="Quick Match" description="A short one-to-one conversation with another member: voice or video, up to 8 minutes. Connect afterwards only if you both want to.">
       <LoadGate state={status.state} onRetry={status.reload} />
       {status.state.s === "ready" && !status.state.data.enabled && (
-        <section data-testid="qm-disabled" className={cn(cardGloss, "space-y-3 p-6")}>
+        <section data-testid="qm-disabled" className={cn(cardGloss, "flex flex-col gap-4 p-6 sm:flex-row sm:items-center")}>
+          <ElcoMascot mood="neutral" size={88} />
+          <div className="space-y-3">
           <h2 className="text-xl font-bold">Quick Match isn&apos;t switched on yet</h2>
           <p className="text-base text-[#2F4157]/70">Live voice and video calls are being prepared and tested. Until then, you can meet people through <Link href="/dashboard/connect/discover" className="font-semibold underline">Discover</Link> and <Link href="/dashboard/connect/rooms" className="font-semibold underline">community rooms</Link>.</p>
+          </div>
         </section>
       )}
       {status.state.s === "ready" && status.state.data.enabled && !status.state.data.ready && (
@@ -201,6 +205,8 @@ export function QuickMatchView(ctx: DashboardCtx) {
           )}
           {phase.p === "waiting" && (
             <section className={cn(cardGloss, "space-y-4 p-6 text-center")} data-testid="qm-waiting">
+              {/* Idle Elco while waiting: decorative only. The text below is the actual status (no match yet). */}
+              <ElcoMascot mood="relaxed" size={96} className="mx-auto" />
               <p className="text-xl font-bold" role="status">Looking for someone to talk to…</p>
               <p className="text-base text-[#2F4157]/65">You&apos;ll be matched with the next member who starts a {mode} Quick Match. If nobody is online, nothing happens. You can cancel anytime.</p>
               <button type="button" onClick={cancel} className={btnSecondary}>Cancel</button>

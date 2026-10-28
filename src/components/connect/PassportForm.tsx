@@ -73,7 +73,7 @@ function PassportEditor({ ctx, initial }: { ctx: DashboardCtx; initial: Passport
     <form onSubmit={submit} className="space-y-6" data-testid="passport-form" noValidate>
       <Section title="About you" description="Your name, photo and short introduction.">
         <AvatarField profile={{ ...ctx.profile, display_name: p.display_name }} onChange={(url) => set("avatar_url", url)} />
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
             <label htmlFor="pp-name" className={labelClass}>Display name *</label>
             <input id="pp-name" required minLength={2} maxLength={80} value={p.display_name} onChange={(e) => set("display_name", e.target.value)} className={inputClass} />
@@ -106,7 +106,7 @@ function PassportEditor({ ctx, initial }: { ctx: DashboardCtx; initial: Passport
       <Section title="Languages" description="Used to suggest language-exchange partners.">
         <Chips legend="Languages you speak" hint="Up to 8" options={LANGUAGES} value={p.languages_spoken} onChange={(v) => set("languages_spoken", v)} max={8} />
         <Chips legend="Languages you want to practise" hint="Up to 5" options={LANGUAGES} value={p.languages_learning} onChange={(v) => set("languages_learning", v)} max={5} />
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
             <label htmlFor="pp-level" className={labelClass}>English level (self-reported)</label>
             <select id="pp-level" value={p.english_level ?? ""} onChange={(e) => set("english_level", e.target.value || null)} className={inputClass}>
@@ -130,7 +130,7 @@ function PassportEditor({ ctx, initial }: { ctx: DashboardCtx; initial: Passport
       <Section title="Availability" description="Roughly when you like to chat. Times are in your own time zone.">
         <Chips legend="Days" options={DAYS} value={p.availability_days} onChange={(v) => set("availability_days", v)} />
         <Chips legend="Times" options={TIMES} value={p.availability_times} onChange={(v) => set("availability_times", v)} />
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
             <label htmlFor="pp-tz" className={labelClass}>Time zone</label>
             <select id="pp-tz" value={p.timezone ?? ""} onChange={(e) => set("timezone", e.target.value || null)} className={inputClass}>
@@ -167,7 +167,7 @@ function PassportEditor({ ctx, initial }: { ctx: DashboardCtx; initial: Passport
         </label>
       </Section>
 
-      <div className="sticky bottom-20 z-10 flex flex-col gap-3 rounded-2xl border border-[#E3E7ED] bg-white/95 p-4 shadow-lg md:bottom-4 md:flex-row md:items-center md:justify-between">
+      <div className="sticky bottom-20 mr-[80px] lg:mr-[88px] z-10 flex flex-col gap-3 rounded-2xl border border-[#E3E7ED] bg-white/95 p-4 shadow-lg md:bottom-4 md:flex-row md:items-center md:justify-between">
         <p role="status" data-testid="passport-status" className={cn("text-base", msg && !msg.ok && "text-[#B4383A]")}>{msg?.text ?? "Changes are saved when you press Save."}</p>
         <button type="submit" disabled={busy} data-testid="passport-save" className={btnPrimary}>{busy ? "Saving…" : "Save Passport"}</button>
       </div>
