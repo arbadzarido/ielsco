@@ -24,6 +24,7 @@ export const en = {
     home: "Home",
     explore: "Explore",
     people: "People",
+    connect: "Connect",
     programs: "Programs",
     circle: "IELS Circle",
     circleShort: "Circle",

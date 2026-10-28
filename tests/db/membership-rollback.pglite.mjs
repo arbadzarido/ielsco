@@ -24,7 +24,7 @@ await db.exec(`
   alter table storage.objects enable row level security; grant usage on schema storage to anon, authenticated;
   create schema supabase_migrations; create table supabase_migrations.schema_migrations (version text primary key, statements text[], name text);`);
 const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
-const release = files.filter((f) => f >= "20261026");
+const release = files.filter((f) => f >= "20261026" && f < "20261027"); // the two membership-platform files only
 for (const f of files.filter((f) => f < "20261026")) await db.exec(readFileSync(join(dir, f), "utf8"));
 const snap = async () => (await db.query(`select string_agg(x, ',' order by x) s from (
   select 'rel:' || c.relname x from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public'
