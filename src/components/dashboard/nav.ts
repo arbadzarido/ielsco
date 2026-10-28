@@ -1,9 +1,9 @@
 import type { LucideIcon } from "lucide-react";
-import { BadgeCheck, BookOpenText, Briefcase, CalendarDays, ClipboardList, Compass, GraduationCap, HelpCircle, Home, ListChecks, MessagesSquare, Settings, Target, User, Users } from "lucide-react";
+import { BadgeCheck, BookOpenText, Earth, Briefcase, CalendarDays, ClipboardList, Compass, GraduationCap, HelpCircle, Home, ListChecks, MessagesSquare, Settings, Target, User, Users } from "lucide-react";
 
 // Dashboard information architecture (2026-10). `key` is the i18n message key; `title` is a group heading.
 //   Home, Goals
-//   Community: People, Circle
+//   Community: Connect, People, Circle
 //   Explore:   Resources (the existing /dashboard/explore route), Opportunities, Events
 // Settings, Help, My Learning and the profile live in the account menu. Older routes stay reachable by URL.
 export type NavItem = { key: string; path: string; icon: LucideIcon; id: string };
@@ -23,6 +23,7 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "community",
     title: "nav.community",
     items: [
+      { key: "nav.connect", path: "/dashboard/connect", icon: Earth, id: "connect" },
       { key: "nav.people", path: "/dashboard/people", icon: Users, id: "people" },
       { key: "nav.circleShort", path: "/dashboard/circle", icon: MessagesSquare, id: "circle" },
     ],

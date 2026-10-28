@@ -8,7 +8,8 @@ export const ANALYTICS_ENABLED = process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "
 export type EventName =
   | "cta_click" | "inquiry_submitted" | "opportunity_saved" | "opportunity_status_changed"
   | "membership_checkout_started" | "membership_payment_returned" | "member_session_registered" | "feedback_requested"
-  | "buddy_requested";
+  | "buddy_requested" | "connect_passport_saved" | "connect_intro_sent" | "connect_intro_answered" | "connect_message_sent"
+  | "connect_room_saved" | "connect_room_registered" | "connect_quick_match_matched" | "connect_call_feedback" | "connect_report_sent";
 
 export function track(name: EventName, props: Record<string, string | number | boolean | null> = {}) {
   if (!ANALYTICS_ENABLED) return;

@@ -27,6 +27,7 @@ export const id: DeepPartial<Messages> = {
     home: "Beranda",
     explore: "Jelajahi",
     people: "Orang",
+    connect: "Connect",
     programs: "Program",
     circle: "IELS Circle",
     circleShort: "Circle",

@@ -37,7 +37,8 @@ await db.exec(`
     ('${ADMIN}', 'ArbadZarido03@gmail.com', now()), ('${MEMBER}', 'member@example.test', now()), ('${UNCONF}', 'x@example.test', null);
   insert into public.users (id, full_name, role, email) values ('${MEMBER}', 'Member', 'member', 'member@example.test');`);
 
-const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+// This suite covers the Member Stories release and what preceded it (later releases have their own suites).
+const files = readdirSync(dir).filter((f) => f.endsWith(".sql") && f < "20261028").sort();
 const storyFiles = files.filter((f) => f >= "20261019");
 for (const f of files.filter((f) => f >= "20261018")) await db.exec(readFileSync(join(dir, f), "utf8")); // avatar migration needs member_profiles only
 const snap = async () => (await db.query(`select md5(string_agg(t::text, ',' order by slug)) h, count(*)::int n from public.member_stories t`)).rows[0];

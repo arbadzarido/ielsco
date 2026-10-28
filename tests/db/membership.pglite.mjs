@@ -27,7 +27,7 @@ await db.exec(`
   insert into public.users values ('${MEMBER}', 'Paid Member'), ('${FREE}', 'Free Person');
   insert into public.staff_roles (user_id, role) values ('${ADMIN}', 'admin');`);
 
-const files = readdirSync(dir).filter((f) => f >= "20261026" && f.endsWith(".sql")).sort();
+const files = readdirSync(dir).filter((f) => f >= "20261026" && f < "20261028" && f.endsWith(".sql")).sort();
 for (const f of files) await db.exec(readFileSync(join(dir, f), "utf8"));
 await db.exec(`grant all on all tables in schema public to service_role;`);
 const count = async (t) => (await db.query(`select count(*)::int n from public.${t}`)).rows[0].n;
