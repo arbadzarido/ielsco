@@ -39,6 +39,17 @@ for (const f of release) {
   await db.query("insert into supabase_migrations.schema_migrations (version, name) values ($1, $2)", [f.slice(0, 14), f.slice(15, -4)]);
 }
 const during = await snap();
+// Circles on top of Connect: its own rollback must bring back exactly the Connect catalog.
+for (const f of files.filter((f) => f >= "20261029000000" && f < "20261030")) {
+  await db.exec(readFileSync(join(dir, f), "utf8"));
+  await db.query("insert into supabase_migrations.schema_migrations (version, name) values ($1, $2)", [f.slice(0, 14), f.slice(15, -4)]);
+}
+const withCircles = await snap();
+await db.exec(readFileSync(join(repo, "supabase", "manual", "ROLLBACK-20261029-circles.sql"), "utf8"));
+const circlesOk = withCircles !== during && (await snap()) === during;
+console.log(circlesOk ? "PASS Circles rollback restores the Connect catalog exactly" : "FAIL Circles rollback");
+if (!circlesOk) process.exitCode = 1;
+
 await db.exec(readFileSync(join(repo, "supabase", "manual", "ROLLBACK-20261028-connect.sql"), "utf8"));
 const after = await snap();
 const hist = (await db.query("select count(*)::int n from supabase_migrations.schema_migrations where version >= '20261028'")).rows[0].n;
@@ -48,4 +59,4 @@ if (!ok && before !== after) {
   console.log("left over:", [...b].filter((x) => !a.has(x)), "missing:", [...a].filter((x) => !b.has(x)));
 }
 console.log(ok ? "PASS Connect rollback restores the pre-Connect catalog exactly (and removes the history rows)" : "FAIL", { files: release.length, changed: during !== before, restored: before === after, hist });
-process.exit(ok ? 0 : 1);
+process.exit(ok && !process.exitCode ? 0 : 1);

@@ -263,5 +263,38 @@ await t("blocking ends a live call", async () => {
   return one(C, `select public.quick_match_call($1)`, [r.call_id]);
 }, (c) => (c.ended && c.end_reason === "blocked" ? null : JSON.stringify(c)));
 
+// ── Circles ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+await t("three starting Circles, visible to signed-in members", () => as(B, `select * from public.list_circles()`), (r) => (r.rows.map((x) => x.id).join() === "global-growth,opportunities,cross-cultural" ? null : JSON.stringify(r.rows)));
+await sql(`update public.circles set tagline = 'Edited by staff' where id = 'global-growth'`);
+for (const f of all.filter((f) => f >= "20261029")) await db.exec(readFileSync(join(dir, f), "utf8"));
+await t("re-running the migration keeps staff edits", () => db.query(`select tagline from public.circles where id = 'global-growth'`), (r) => (r.rows[0].tagline === "Edited by staff" ? null : r.rows[0].tagline));
+await te("anon cannot list Circles", () => as(null, `select * from public.list_circles()`), /permission denied/);
+await te("members cannot create Circles", () => as(B, `insert into public.circles (id, name) values ('spam-circle', 'Spam') returning id`).then((r) => { if (!r.rows.length) throw new Error("denied"); }), /denied|row-level security/);
+await te("joining needs a ready Passport", () => as(ADMIN, `select public.join_circle('cross-cultural')`), /passport_required/);
+await te("non-members cannot read posts", () => as(B, `select * from public.list_circle_posts('cross-cultural')`), /not_a_member/);
+for (const u of [A, B, C]) await as(u, `select public.join_circle('cross-cultural')`);
+await t("join is idempotent and counted", async () => { await as(B, `select public.join_circle('cross-cultural')`); return one(B, `select members from public.list_circles() where id = 'cross-cultural'`); }, (n) => (n === 3 ? null : n));
+const post = await one(B, `select public.post_circle('cross-cultural', 'In Japan we take our shoes off indoors. What about you?')`);
+await t("member posts; others see it with the author's name", () => as(A, `select * from public.list_circle_posts('cross-cultural')`), (r) => (r.rows[0]?.body.startsWith("In Japan") && r.rows[0].author.display_name === "Ben" ? null : JSON.stringify(r.rows)));
+await t("replies are nested under the post", async () => { await as(A, `select public.post_circle('cross-cultural', 'Same in Indonesia!', $1)`, [post]); return as(B, `select replies from public.list_circle_posts('cross-cultural')`); },
+  (r) => (r.rows[0].replies.length === 1 && r.rows[0].replies[0].body === "Same in Indonesia!" ? null : JSON.stringify(r.rows[0].replies)));
+await te("no replies to replies", async () => { const reply = (await as(B, `select replies from public.list_circle_posts('cross-cultural')`)).rows[0].replies[0].id; await as(B, `select public.post_circle('cross-cultural', 'nested', $1)`, [reply]); }, /post_not_found/);
+await t("blocked pairs don't see each other's posts", async () => { await as(C, `select public.post_circle('cross-cultural', 'Hello from Thailand')`); return [(await as(A, `select body from public.list_circle_posts('cross-cultural')`)).rows, (await as(B, `select body from public.list_circle_posts('cross-cultural')`)).rows]; },
+  ([a, b]) => (!a.some((x) => x.body === "Hello from Thailand") && b.some((x) => x.body === "Hello from Thailand") ? null : JSON.stringify([a, b])));
+await te("blocked member cannot reply to the blocker's post", async () => { const mine = await one(A, `select public.post_circle('cross-cultural', 'A post by Ayu')`); await as(C, `select public.post_circle('cross-cultural', 'reply', $1)`, [mine]); }, /not_available/);
+await t("prompt flag is ignored for members", async () => { await as(B, `select public.post_circle('cross-cultural', 'I am not staff', null, true)`); return db.query(`select is_prompt from public.circle_posts where body = 'I am not staff'`); }, (r) => (r.rows[0].is_prompt === false ? null : "member made a prompt"));
+await t("staff can post a prompt without joining; it is listed first", async () => {
+  await db.query(`insert into public.member_profiles (user_id, display_name, connect_guidelines_at, adult_confirmed_at) values ('${ADMIN}', 'Staff', now(), now()) on conflict (user_id) do update set connect_guidelines_at = now(), adult_confirmed_at = now(), display_name = 'Staff'`);
+  await as(ADMIN, `select public.post_circle('cross-cultural', 'What is one tradition from your country?', null, true)`);
+  return as(B, `select body, is_prompt from public.list_circle_posts('cross-cultural')`); }, (r) => (r.rows[0].is_prompt && r.rows[0].body.startsWith("What is one tradition") ? null : JSON.stringify(r.rows[0])));
+await te("others cannot remove my post", () => as(A, `select public.remove_circle_post($1)`, [post]), /post_not_found/);
+await t("author removes a post; it disappears", async () => { await as(B, `select public.remove_circle_post($1)`, [post]); return as(A, `select id from public.list_circle_posts('cross-cultural')`); }, (r) => (r.rows.some((x) => x.id === post) ? "still listed" : null));
+await t("leaving removes access", async () => { await as(D, `select public.join_circle('opportunities')`); await as(D, `select public.leave_circle('opportunities')`);
+  try { await as(D, `select * from public.list_circle_posts('opportunities')`); return "still readable"; } catch (e) { return /not_a_member/.test(e.message) ? null : e.message; } });
+await t("a Circle post can be reported", () => one(A, `select public.report_member($1, 'circle', 'cross-cultural', 'spam', null, false)`, [B]), (r) => (r === "reported" ? null : r));
+await sql(`insert into public.circle_posts (circle_id, author_id, body, created_at) select 'opportunities', '${D}', 'filler', now() from generate_series(1, 10)`);
+await as(D, `select public.join_circle('opportunities')`);
+await te("10 posts per hour", () => as(D, `select public.post_circle('opportunities', 'one more')`), /rate_limited/);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

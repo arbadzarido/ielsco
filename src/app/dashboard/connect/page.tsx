@@ -1,8 +1,8 @@
 "use client";
 
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { ConnectHome } from "@/components/connect/ConnectHome";
+import { ConnectHub } from "@/components/connect/HubViews";
 
 export default function Page() {
-  return <DashboardPage>{(ctx) => <ConnectHome {...ctx} />}</DashboardPage>;
+  return <DashboardPage>{(ctx) => <ConnectHub {...ctx} />}</DashboardPage>;
 }

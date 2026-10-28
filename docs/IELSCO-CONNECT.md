@@ -85,3 +85,51 @@ text, names or ids. Rates (acceptance, mutual connections, completed calls, time
    membership (`is_active_member()`).
 5. Discord: rooms use the existing public invite (`LINKS.circleDiscord`). OAuth linking, bot announcements, role sync and event
    sync are not built; the room data (`delivery`, `meeting_url`) is ready for them.
+
+## 7. Five-menu dashboard, Circles, Pulse, SEA Cultural Exchange, Elco Copilot (2026-10-29)
+
+**Navigation** (`components/dashboard/nav.ts`): exactly five menus — Home, Discover, Social, Connect, More. Each menu owns
+URL prefixes (`match`), so every older URL keeps working and highlights the right menu; `SectionTabs` (rendered once by
+`DashboardLayout`) shows the menu's sub-navigation on every page, including older ones.
+
+| Menu | Tabs / pages |
+|---|---|
+| Discover `/dashboard/discover` | People (`/connect/discover`, Passport, older `/people`), Circles (`/circles`, IELS Circle `/circle`), Opportunities (`/discover/opportunities`, the public board), IELSco Pulse (`/pulse`, Resources `/explore`), SEA Cultural Exchange (`/sea-exchange`) |
+| Social `/dashboard/social` | Intro requests, Messages, Connections, Safety |
+| Connect `/dashboard/connect` | Quick Match, Rooms & Events (rooms + `/dashboard/events`), Connect with Elco (`/connect/elco`) |
+| More | Goals, Membership, Saved, My Learning, Profile, Settings, Help (sidebar disclosure / phone sheet) |
+
+**Circles** (`20261029000000_circles.sql`, rollback `supabase/manual/ROLLBACK-20261029-circles.sql`): staff-managed groups
+(three starting themes, inserted once), join/leave, members-only discussion with one level of replies, staff prompts
+pinned first, block-aware, authors/staff remove posts, reportable (`connect_reports.context = 'circle'`), 10 posts/hour.
+Staff edit Circles with SQL for now (no admin screen): `update public.circles set ... where id = '...';`. Weekly prompts:
+a staff member opens the Circle in the app and ticks "Pin as the Circle's discussion prompt" (shown to staff only; the
+database ignores the flag for everyone else). Staff can read and post in a Circle without joining it.
+
+**IELSco Pulse** (`lib/pulse.ts`): one feed over existing curated content only — published opportunities (verification and
+checked date), published Member Stories, and the curated external resources (placeholders excluded). External items open
+the original source. There is no news CMS: adding Pulse items today = publishing an opportunity or a member story, or adding
+a resource in `data/dashboard/resources.ts`.
+
+**SEA Cultural Exchange** (`components/connect/SeaExchangeView.tsx`): conversation prompts (members' own perspectives, no
+country claims), a deterministic prompt of the week, and actions: answer in the Cross-Cultural Connections Circle (composer
+pre-filled, nothing posted until the member presses Post), host a room (form pre-filled), find exchange partners.
+
+**Elco Copilot** (`components/elco/ElcoCopilot.tsx`, answers in `lib/copilot.ts`): floating Elco on dashboard pages (hidden
+in conversations), "Take a tour" (the existing `ProductTour`, now the five menus, tour version 2 so everyone sees it once),
+contextual help for the current page/section, keyword search with an honest "no answer" state. No AI call. Quick Match's
+answer reads whether it is switched on. Keep `lib/copilot.ts` in step with the product (`tests/copilot.test.mjs` checks every
+answer links to a page that exists).
+
+**Visuals**: headings use Poppins (`next/font`, 500/600/700, `--font-heading`; public pages via `siteRoot`), body stays Plus
+Jakarta Sans. Accent palette `ACCENTS` in `components/dashboard/ui.ts` (AA contrast). `ElcoMascot`: the waving Elco is an inline
+SVG of the existing `hi2.svg` with blink/wave/float idle motion; other moods are the existing pose PNGs with a float. Paused
+offscreen, off under prefers-reduced-motion, aria-hidden. Missing artwork (not invented): thinking, pointing, reading.
+
+**Quick Match fixes found by the two-user test**: (1) the callee's camera never reached the other side (its pre-created video
+transceiver wasn't matched to the offer); (2) the "camera is off" overlay never cleared (remote track unmute wasn't observed);
+(3) a member whose microphone was blocked never saw the call end. All fixed.
+
+**End-to-end tests** (`tests/e2e/*.e2e.mjs`, local stack only, need playwright-core + a Chromium build):
+`quick-match` (two isolated browsers, real WebRTC with fake camera/mic: 17 checks), `routes` (30 routes × desktop/phone:
+menu, tabs, Poppins, overflow, console errors), `copilot` (tour, Copilot, mascot motion, reduced motion, phone More sheet).

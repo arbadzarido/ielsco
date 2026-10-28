@@ -7,6 +7,8 @@ import { Ban, Flag, MoreHorizontal } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Avatar } from "@/components/dashboard/Avatar";
 import { ErrorState, LoadingState, Notice } from "@/components/dashboard/PageStates";
+import { sectionFor } from "@/components/dashboard/nav";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { btnPrimary, btnSecondary, card, focusRing, glassMenu, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { connectApi, isUnavailable } from "@/lib/connect/api";
 import { label, labels, REPORT_REASONS } from "@/lib/connect/options";
@@ -52,41 +54,14 @@ export function LoadGate<T>({ state, onRetry, label: loadingLabel }: { state: Lo
   return null;
 }
 
-const TABS = [
-  { href: "/dashboard/connect", label: "Home", exact: true },
-  { href: "/dashboard/connect/passport", label: "Passport" },
-  { href: "/dashboard/connect/discover", label: "Discover" },
-  { href: "/dashboard/connect/requests", label: "Requests" },
-  { href: "/dashboard/connect/messages", label: "Messages" },
-  { href: "/dashboard/connect/connections", label: "Connections" },
-  { href: "/dashboard/connect/quick-match", label: "Quick Match" },
-  { href: "/dashboard/connect/rooms", label: "Rooms & events" },
-  { href: "/dashboard/connect/safety", label: "Safety" },
-];
-
 export function ConnectFrame({ title, description, actions, children }: { title: string; description?: string; actions?: ReactNode; children: ReactNode }) {
-  const pathname = usePathname() ?? "";
+  const section = sectionFor(usePathname());
+  const { t } = useI18n();
   return (
-    <div className="mx-auto max-w-[110rem] space-y-8 px-4 py-8 md:px-6 md:py-12 lg:px-10">
-      <nav aria-label="Connect sections" className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
-        <ul className="flex w-max gap-1.5 md:w-auto md:flex-wrap">
-          {TABS.map((t) => {
-            const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
-            return (
-              <li key={t.href}>
-                <Link href={t.href} aria-current={active ? "page" : undefined}
-                  className={cn("inline-flex rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors", focusRing,
-                    active ? "bg-[#2F4157] text-white" : "border border-[#E3E7ED] bg-white text-[#2F4157]/80 hover:border-[#577E90]")}>
-                  {t.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+    <div className="mx-auto max-w-[110rem] space-y-8 px-4 py-8 md:px-6 md:py-10 lg:px-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-[#577E90]">IELSco Connect</p>
+          {section && <p className="text-sm font-semibold uppercase tracking-wide text-[#577E90]">{t(section.key)}</p>}
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{title}</h1>
           {description && <p className="mt-2 max-w-2xl text-lg text-[#2F4157]/70">{description}</p>}
         </div>
@@ -171,7 +146,7 @@ export function PersonCard({ person, reasons, footer, compact }: { person: Perso
 
 // "…" menu with Report and Block. The dialog is a native <dialog> (focus trap + Esc built in).
 export function SafetyMenu({ supabase, person, context, contextId, onBlocked }: {
-  supabase: SupabaseClient; person: { id: string; display_name: string }; context: "profile" | "request" | "message" | "call" | "room";
+  supabase: SupabaseClient; person: { id: string; display_name: string }; context: "profile" | "request" | "message" | "call" | "room" | "circle";
   contextId?: string | null; onBlocked?: () => void;
 }) {
   const [open, setOpen] = useState(false);

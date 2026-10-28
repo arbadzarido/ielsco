@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 // 1. Import Plus Jakarta Sans
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Poppins } from "next/font/google";
 import "./globals.css";
 
 import LayoutWrapper from "@/components/LayoutWrapper";
@@ -12,6 +12,15 @@ import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
 const jakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
+});
+
+// Headings and titles (globals.css: h1-h6 and .font-heading). Only the three weights the type scale uses; next/font
+// self-hosts them and sizes the fallback to match, so headings don't shift when the font arrives.
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" style={{ fontSize: '75%' }}>
+    <html lang="en" className={poppins.variable} style={{ fontSize: '75%' }}>
       <body
         // 3. Masukkan variable Jakarta Sans dan set font-sans sebagai default
         className={`${jakartaSans.variable} antialiased bg-white text-[#1A2534] font-sans`}

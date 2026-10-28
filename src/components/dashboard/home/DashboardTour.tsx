@@ -7,8 +7,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ProductTour, type TourStep } from "@/components/tour/ProductTour";
 import { IELSCO_DASHBOARD_TOUR, loadTourStatus, saveTourStatus, type TourStatus } from "@/lib/tours";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { track } from "@/lib/analytics";
 
-// First-visit tour of the member dashboard. Shown once per user (completed or skipped), replayable from the
+// First-visit tour of the member dashboard (the five menus and Elco Copilot). Shown once per user (completed or skipped), replayable from the
 // account menu ("Take a tour" → /dashboard?tour=1). Independent of Elco's own tour.
 export function DashboardTour({ supabase, userId }: { supabase: SupabaseClient; userId: string }) {
   const { t } = useI18n();
@@ -28,17 +29,24 @@ export function DashboardTour({ supabase, userId }: { supabase: SupabaseClient; 
     return () => { cancelled = true; };
   }, [supabase, userId, replay]);
 
+  useEffect(() => { if (open) track("tour_started", { replay }); }, [open, replay]);
+
   const close = (status: TourStatus) => {
     setOpen(false);
+    track("tour_completed", { status });
     void saveTourStatus(supabase, userId, IELSCO_DASHBOARD_TOUR.key, IELSCO_DASHBOARD_TOUR.version, status);
     if (replay) router.replace(pathname);
   };
 
+  // The five menus, then the Copilot button. Desktop targets the sidebar, phones the bottom bar; a step whose target
+  // isn't on screen is skipped by ProductTour.
   const steps: TourStep[] = [
-    { id: "home", targets: ['[data-tour="ielsco-home"]'], title: t("tour.homeTitle"), body: t("tour.homeBody") },
-    { id: "resources", targets: ['[data-testid="nav-resources"]', '[data-testid="mobile-nav-resources"]'], title: t("tour.resourcesTitle"), body: t("tour.resourcesBody") },
-    { id: "people", targets: ['[data-testid="nav-people"]', '[data-testid="mobile-nav-more"]'], title: t("tour.peopleTitle"), body: t("tour.peopleBody") },
-    { id: "goals", targets: ['[data-testid="nav-my-goals"]', '[data-testid="mobile-nav-my-goals"]'], title: t("tour.goalsTitle"), body: t("tour.goalsBody") },
+    { id: "home", targets: ['[data-testid="nav-home"]', '[data-testid="mobile-nav-home"]'], title: t("tour.homeTitle"), body: t("tour.homeBody") },
+    { id: "discover", targets: ['[data-testid="nav-discover"]', '[data-testid="mobile-nav-discover"]'], title: t("tour.discoverTitle"), body: t("tour.discoverBody") },
+    { id: "social", targets: ['[data-testid="nav-social"]', '[data-testid="mobile-nav-social"]'], title: t("tour.socialTitle"), body: t("tour.socialBody") },
+    { id: "connect", targets: ['[data-testid="nav-connect"]', '[data-testid="mobile-nav-connect"]'], title: t("tour.connectTitle"), body: t("tour.connectBody") },
+    { id: "more", targets: ['[data-testid="nav-more"]', '[data-testid="mobile-nav-more"]'], title: t("tour.moreTitle"), body: t("tour.moreBody") },
+    { id: "copilot", targets: ['[data-testid="copilot-button"]'], title: t("tour.copilotTitle"), body: t("tour.copilotBody") },
     ...(ELCO_ENABLED ? [{ id: "elco", targets: ['[data-tour="ielsco-elco"]'], title: t("tour.elcoTitle"), body: t("tour.elcoBody") }] : []),
   ];
 

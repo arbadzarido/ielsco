@@ -4,6 +4,8 @@ import { ReactNode } from "react";
 import DashboardHeader from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { MobileTabBar } from "./MobileTabBar";
+import { SectionTabs } from "./SectionTabs";
+import { ElcoCopilot } from "@/components/elco/ElcoCopilot";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 
 interface DashboardLayoutProps {
@@ -28,6 +30,7 @@ export default function DashboardLayout({ children, userName = "Learner", userAv
       <div className="flex min-h-screen flex-col lg:pl-[336px]">
         <DashboardHeader userName={userName} userAvatar={userAvatar} />
         <div id="dashboard-main" className="relative z-0 w-full flex-1 pb-[calc(104px+env(safe-area-inset-bottom))] lg:pb-0">
+          <SectionTabs />
           {children}
         </div>
         <footer className="hidden border-t border-[#E3E7ED]/60 py-6 text-center text-sm text-[#2F4157]/50 lg:block">
@@ -35,6 +38,7 @@ export default function DashboardLayout({ children, userName = "Learner", userAv
         </footer>
       </div>
       <MobileTabBar />
+      <ElcoCopilot />
     </div>
   );
 }

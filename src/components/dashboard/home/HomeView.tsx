@@ -14,6 +14,7 @@ import { SimilarPeople } from "./SimilarPeople";
 import { GifFeatureCard } from "../gif/GifFeatureCard";
 import { DashboardTour } from "./DashboardTour";
 import { ElcoCallout } from "@/components/elco/ElcoCallout";
+import { HomeCommunity } from "@/components/connect/HomeCommunity";
 import { CollectionFeature } from "../collections/CollectionViews";
 import { ResourceRow } from "../resources/ResourceRow";
 import { btnLink } from "../ui";
@@ -48,6 +49,7 @@ export function HomeView({ user, profile, storage, supabase }: DashboardCtx) {
       {storage === "unavailable" && <ProfilePendingNotice />}
       <div data-tour="ielsco-home"><HomeHero profile={profile} needsOnboarding={needsOnboarding} /></div>
       <NextStepsCard supabase={supabase} userId={user.id} />
+      <HomeCommunity supabase={supabase} />
       <GifFeatureCard />
 
       {!needsOnboarding && !profile.origin_country && (

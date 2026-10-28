@@ -192,3 +192,32 @@ export interface CallInfo {
   my_enjoyed: boolean | null;
   connected: boolean;
 }
+
+export type CircleColor = "teal" | "coral" | "violet" | "amber" | "navy" | "green";
+
+export interface Circle {
+  id: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  color: CircleColor;
+  room_categories: string[];
+  members: number;
+  posts_7d: number;
+  last_post_at: string | null;
+  is_member: boolean;
+}
+
+export interface CircleAuthor { id: string; display_name: string; avatar_url: string | null }
+
+export interface CircleReply { id: string; body: string; created_at: string; mine: boolean; author: CircleAuthor }
+
+export interface CirclePost {
+  id: string;
+  author: CircleAuthor;
+  body: string;
+  is_prompt: boolean;
+  created_at: string;
+  mine: boolean;
+  replies: CircleReply[];
+}

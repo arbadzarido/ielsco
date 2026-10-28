@@ -15,9 +15,9 @@ import { ConnectFrame, LoadGate, useLoad } from "./shared";
 
 type Draft = Omit<RoomInput, "starts_at" | "registration_deadline"> & { localStart: string; localDeadline: string };
 
-function blank(): Draft {
+function blank(prefill: { topic?: string; category?: string } = {}): Draft {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Jakarta";
-  return { title: "", description: "", topic: "", category: "english_practice", localStart: "", localDeadline: "", timezone: tz, duration_min: 60,
+  return { title: "", description: "", topic: (prefill.topic ?? "").slice(0, 120), category: ROOM_CATEGORIES.some((c) => c.value === prefill.category) ? prefill.category! : "english_practice", localStart: "", localDeadline: "", timezone: tz, duration_min: 60,
     capacity: 10, language: "en", visibility: "members", delivery: "discord", meeting_url: "", meeting_notes: "" };
 }
 
@@ -59,7 +59,7 @@ function Editor({ ctx, roomId, initial, published }: { ctx: DashboardCtx; roomId
 
   return (
     <form onSubmit={(e) => save(e, published)} data-testid="room-form" className={cn(cardGloss, "space-y-5 p-6")} noValidate>
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div className="md:col-span-2">
           <label htmlFor="rf-title" className={labelClass}>Title *</label>
           <input id="rf-title" required minLength={3} maxLength={120} value={d.title} onChange={(e) => set("title", e.target.value)} className={inputClass} placeholder="Saturday English speaking hour" />
@@ -147,9 +147,9 @@ function Editor({ ctx, roomId, initial, published }: { ctx: DashboardCtx; roomId
   );
 }
 
-export function RoomFormView(ctx: DashboardCtx & { id?: string }) {
+export function RoomFormView(ctx: DashboardCtx & { id?: string; prefill?: { topic?: string; category?: string } }) {
   const data = useLoad(async () => {
-    if (!ctx.id) return { draft: blank(), published: false, editable: true };
+    if (!ctx.id) return { draft: blank(ctx.prefill), published: false, editable: true };
     const [room, meeting] = await Promise.all([connectApi.room(ctx.supabase, ctx.id), connectApi.meeting(ctx.supabase, ctx.id)]);
     return { draft: fromRoom(room, meeting), published: room.status === "published", editable: room.is_host && !["cancelled", "completed"].includes(room.state) };
   }, [ctx.supabase, ctx.id]);

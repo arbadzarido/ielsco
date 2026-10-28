@@ -91,14 +91,14 @@ export function RoomDetail(ctx: DashboardCtx & { id: string }) {
         const s = STATE_LABEL[r.state];
         const canRegister = !r.is_host && !r.is_registered && r.state === "open";
         return (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <section className={cn(cardGloss, "space-y-4 p-6")} data-testid="room-detail">
               <div className="flex flex-wrap gap-2">
                 <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", s.cls)} data-testid="room-state">{s.text}</span>
                 <span className={tag}>{label("category", r.category)}</span>
                 <span className={tag}>Community room</span>
               </div>
-              <dl className="grid gap-2 text-base sm:grid-cols-2">
+              <dl className="grid grid-cols-1 gap-2 text-base sm:grid-cols-2">
                 <div><dt className="text-sm font-semibold text-[#2F4157]/55">When</dt><dd>{formatInZone(r.starts_at, r.timezone)}</dd></div>
                 <div><dt className="text-sm font-semibold text-[#2F4157]/55">Your time</dt><dd>{when(r.starts_at)}</dd></div>
                 <div><dt className="text-sm font-semibold text-[#2F4157]/55">Duration</dt><dd>{r.duration_min} minutes</dd></div>

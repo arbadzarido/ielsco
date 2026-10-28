@@ -135,7 +135,7 @@ export function MyGoalsView({ profile: initial, storage, save }: DashboardCtx) {
           </select>
         </Section>
 
-        <div className="sticky bottom-20 z-20 flex flex-col gap-3 rounded-2xl border border-[#E3E7ED] bg-white/95 p-4 shadow-[0_10px_30px_rgba(47,65,87,0.1)] sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
+        <div className="sticky bottom-20 mr-[80px] lg:mr-[88px] z-20 flex flex-col gap-3 rounded-2xl border border-[#E3E7ED] bg-white/95 p-4 shadow-[0_10px_30px_rgba(47,65,87,0.1)] sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
           <p
             role={message && !message.ok ? "alert" : "status"}
             data-testid="my-goals-message"

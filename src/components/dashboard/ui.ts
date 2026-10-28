@@ -31,3 +31,15 @@ export const glass =
 
 export const glassMenu =
   "border border-[#E3E7ED] bg-white shadow-[0_16px_40px_rgba(47,65,87,0.14)] supports-[backdrop-filter]:bg-white/90 supports-[backdrop-filter]:backdrop-blur-xl";
+
+// Accent palette for categories (Circles, IELSco Pulse types, SEA Cultural Exchange, sections). Each accent has a soft
+// surface, an icon/text colour and a strong fill; `text` and `strong` meet WCAG AA (4.5:1) on white / with white text.
+export type Accent = "teal" | "coral" | "violet" | "amber" | "navy" | "green";
+export const ACCENTS: Record<Accent, { soft: string; text: string; strong: string; ring: string; gradient: string }> = {
+  teal: { soft: "bg-[#E6F4F2]", text: "text-[#0B6E64]", strong: "bg-[#0B6E64] text-white", ring: "border-[#0B6E64]/25", gradient: "from-[#E6F4F2] via-white to-white" },
+  coral: { soft: "bg-[#FDEDED]", text: "text-[#B4383A]", strong: "bg-[#B4383A] text-white", ring: "border-[#B4383A]/25", gradient: "from-[#FDEDED] via-white to-white" },
+  violet: { soft: "bg-[#F0ECFD]", text: "text-[#5A3DC4]", strong: "bg-[#5A3DC4] text-white", ring: "border-[#5A3DC4]/25", gradient: "from-[#F0ECFD] via-white to-white" },
+  amber: { soft: "bg-[#FDF3E3]", text: "text-[#8A5A00]", strong: "bg-[#8A5A00] text-white", ring: "border-[#8A5A00]/25", gradient: "from-[#FDF3E3] via-white to-white" },
+  navy: { soft: "bg-[#EAEFF5]", text: "text-[#2F4157]", strong: "bg-[#2F4157] text-white", ring: "border-[#2F4157]/20", gradient: "from-[#EAEFF5] via-white to-white" },
+  green: { soft: "bg-[#E8F3EE]", text: "text-[#2E6B4F]", strong: "bg-[#2E6B4F] text-white", ring: "border-[#2E6B4F]/25", gradient: "from-[#E8F3EE] via-white to-white" },
+};

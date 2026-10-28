@@ -83,7 +83,7 @@ export function RoomsView({ supabase }: DashboardCtx) {
             action={<Link href="/dashboard/connect/rooms/new" className={btnPrimary}>Host a room</Link>} />
         )}
         {data.state.s === "ready" && data.state.data.length > 0 && (
-          <div data-testid="rooms-grid" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{data.state.data.map((r) => <RoomCard key={r.id} room={r} />)}</div>
+          <div data-testid="rooms-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{data.state.data.map((r) => <RoomCard key={r.id} room={r} />)}</div>
         )}
       </section>
 
@@ -95,7 +95,7 @@ export function RoomsView({ supabase }: DashboardCtx) {
         {events.length === 0 ? (
           <p data-testid="rooms-no-events" className="text-base text-[#2F4157]/60">No upcoming official events right now. <Link href="/dashboard/events" className="font-semibold underline">See past events</Link></p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {events.map((e) => (
               <Link key={e.id} href={e.href} className={cn(cardGloss, "overflow-hidden hover:border-[#577E90]", focusRing)}>
                 <div className="relative aspect-[4/3] bg-[#F1F4F8]"><Image src={e.poster} alt="" fill sizes="(max-width: 640px) 100vw, 25vw" className="object-cover" /></div>

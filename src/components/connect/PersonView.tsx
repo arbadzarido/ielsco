@@ -59,7 +59,7 @@ function IntroForm({ ctx, person, onSent }: { ctx: DashboardCtx; person: Person;
           placeholder={`Hi ${person.display_name}! I'm…`} />
         <p className="mt-1 text-sm text-[#2F4157]/60">{message.trim().length}/1000 · at least 20 characters</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
           <label htmlFor="intro-reason" className={labelClass}>Why would you like to connect?</label>
           <input id="intro-reason" maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} className={inputClass} />
@@ -94,7 +94,7 @@ export function PersonView(ctx: DashboardCtx & { id: string }) {
         const p = data.state.data;
         const relation = sent ? "request_sent" : p.relation;
         return (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
             <section className={cn(cardGloss, "space-y-5 p-6")} data-testid="person-detail">
               <div className="flex items-start gap-4">
                 <Avatar name={p.display_name} url={p.avatar_url} size={72} />
