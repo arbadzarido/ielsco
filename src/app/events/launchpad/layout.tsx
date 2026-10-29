@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "English Student Launchpad | IELS",
+  title: "English Student Launchpad | IELSco",
   description: "English Student Launchpad is a career incubation program from IELS for English Education and English Literature students who want to turn their major into global opportunities.",
   path: "/events/launchpad",
 });

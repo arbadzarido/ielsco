@@ -250,7 +250,7 @@ export const en = {
     goalsTitle: "My Goals",
     goalsBody: "Tell us whether you want to study, work or explore, and where in the world. Explore and People use it to suggest what fits.",
     elcoTitle: "Elco AI, your practice companion",
-    elcoBody: "Optional: Elco (ai.ielsco.com) gives you daily English practice with feedback. It's a separate app with its own free account.",
+    elcoBody: "Optional: Elco AI (elcoai.com) gives you English games and daily practice with feedback. It's a separate app with its own free account.",
   },
 };
 

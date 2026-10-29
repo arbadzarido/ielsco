@@ -23,7 +23,7 @@ export default function ProgramsPage() {
             <div className="mt-2">
               {PROGRAMS.filter((p) => p.id !== "iels-course").map((p) => <ProgramCard key={p.id} program={p} />)}
             </div>
-            <ElcoCallout className="mt-6" refId="programs" title="Elco AI: practise every day" body="Guided Learning and Free Practice with feedback, at ai.ielsco.com. Separate from IELS programs and free to start." />
+            <ElcoCallout className="mt-6" refId="programs" title="Elco AI: practise every day" body="English games, guided lessons and AI practice at elcoai.com. A separate app from IELSco programs, free to start." />
           </section>
         </div>
       )}

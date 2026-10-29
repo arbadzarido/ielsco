@@ -5,16 +5,17 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://www.ielsco.com";
 export const CIRCLE_URL = "https://circle.ielsco.com";
 export const SCHOOL_URL = "https://school.ielsco.com";
-export const SITE_NAME = "IELS";
+export const SITE_NAME = "IELSco";
 export const DEFAULT_OG_IMAGE = "/images/contents/general/iels_gathering.png";
 
 // Title, description, canonical URL and Open Graph for a public page. `path` is relative to SITE_URL or absolute.
 // Only use it on a leaf route: Next.js passes a layout's canonical down to child pages that don't set their own.
-export function pageMetadata({ title, description, path }: { title: string; description: string; path: string }): Metadata {
+// `languages` lists the same page in each language (hreflang), including this one, e.g. { en: "/articles/x", id: "/id/artikel/y" }.
+export function pageMetadata({ title, description, path, languages }: { title: string; description: string; path: string; languages?: Record<string, string> }): Metadata {
   return {
     title,
     description,
-    alternates: { canonical: path },
+    alternates: { canonical: path, ...(languages ? { languages } : {}) },
     openGraph: { title, description, url: path, siteName: SITE_NAME, type: "website", images: [DEFAULT_OG_IMAGE] },
     twitter: { card: "summary_large_image", title, description },
   };

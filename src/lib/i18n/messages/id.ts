@@ -253,6 +253,6 @@ export const id: DeepPartial<Messages> = {
     goalsTitle: "Tujuan Saya",
     goalsBody: "Ceritakan apakah kamu ingin kuliah, bekerja, atau masih menjelajah, dan ke mana di dunia. Jelajahi dan Orang memakainya untuk saran yang cocok.",
     elcoTitle: "Elco AI, teman latihanmu",
-    elcoBody: "Opsional: Elco (ai.ielsco.com) memberi latihan bahasa Inggris harian dengan masukan. Ini aplikasi terpisah dengan akun gratis sendiri.",
+    elcoBody: "Opsional: Elco AI (elcoai.com) memberi game bahasa Inggris dan latihan harian dengan masukan. Ini aplikasi terpisah dengan akun gratis sendiri.",
   },
 };

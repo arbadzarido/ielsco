@@ -2,7 +2,7 @@ import Image from "next/image";
 import { ArrowUpRight, Compass, MessageCircleHeart, Repeat, LineChart } from "lucide-react";
 import { ELCO_ENABLED, ELCO_MASCOT, elcoHref } from "@/lib/elco";
 
-// Homepage introduction to Elco AI (ai.ielsco.com). Describes only what Elco actually does today.
+// Homepage introduction to Elco AI (www.elcoai.com). Describes only what Elco actually does today.
 const POINTS = [
   { icon: Compass, title: "Guided Learning", body: "A personal plan from your goals and a short baseline check. Elco picks today's activity and tells you why." },
   { icon: MessageCircleHeart, title: "Free Practice", body: "Chat with Elco: daily conversation, interview preparation, academic English, roleplay or writing review." },
@@ -55,7 +55,7 @@ export function ElcoHomeSection() {
             >
               Try Elco AI <ArrowUpRight size={20} />
             </a>
-            <p className="text-sm text-[#2F4157]/60">Free to start at ai.ielsco.com · separate Elco account</p>
+            <p className="text-sm text-[#2F4157]/60">Free to start at elcoai.com · separate Elco account</p>
           </div>
         </div>
       </div>

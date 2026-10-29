@@ -62,9 +62,9 @@ export default function RootLayout({
                 {
                   "@type": "Organization",
                   "@id": `${SITE_URL}/#organization`,
-                  "name": "IELS",
+                  "name": "IELSco",
                   "legalName": "PT English Space Berkah Indonesia",
-                  "alternateName": ["IELSco", "IELS Community"],
+                  "alternateName": ["IELS", "Inclusive English Learning Space"],
                   "url": `${SITE_URL}/`,
                   "logo": `${SITE_URL}/images/logos/iels_blue1.png`,
                   "email": "hello@ielsco.com",
@@ -74,7 +74,7 @@ export default function RootLayout({
                     "https://x.com/ielsforall"
                   ]
                 },
-                { "@type": "WebSite", "@id": `${SITE_URL}/#website`, "name": "IELS", "url": `${SITE_URL}/`, "publisher": { "@id": `${SITE_URL}/#organization` } }
+                { "@type": "WebSite", "@id": `${SITE_URL}/#website`, "name": "IELSco", "url": `${SITE_URL}/`, "publisher": { "@id": `${SITE_URL}/#organization` } }
               ]
             })
           }}
