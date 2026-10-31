@@ -38,7 +38,7 @@ export const STEPS: QuestionStep[] = [
       { key: "email", label: "Email", help: "Only used to contact you about your story. Never published.", required: true, max: 254 },
       { key: "city", label: "City or region", max: 120 },
       { key: "role", label: "What do you do now?", help: "For example: Accounting student at …, Marketing intern at …", max: 200 },
-      { key: "iels_connection", label: "How are you connected to IELS?", help: "IELS Circle sessions, a program, an event, the team…", max: 300 },
+      { key: "iels.connection", label: "How are you connected to IELS?", help: "IELS Circle sessions, a program, an event, the team…", max: 300 },
       { key: "instagram", label: "Instagram (optional)", help: "Handle or link, if you'd like readers to find you.", max: 200 },
       { key: "linkedin", label: "LinkedIn (optional)", max: 300 },
     ],

@@ -14,7 +14,7 @@ import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 
 const ACCOUNT_LINK = "https://ielsco.com/sign-up";
 const DISCORD_LINK = CIRCLE_DISCORD_LINK;
-const INSTAGRAM_LINK = "https://instagram.com/iels_co";
+const INSTAGRAM_LINK = "https://instagram.com/iels.co";
 
 
 function Flag({ code, className = "" }: { code: string; className?: string }) {

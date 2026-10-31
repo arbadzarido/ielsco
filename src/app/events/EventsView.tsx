@@ -85,7 +85,7 @@ export default function EventsPage() {
           <h2 id="open-heading" className={h2}>Open for registration</h2>
           {now !== null && open.length === 0 && (
             <p className={cn(body, "mt-4")} data-testid="events-none-open">
-              {q ? "No open events match your search." : "Nothing is open right now. New events are announced on Instagram (@iels_co) and here."}
+              {q ? "No open events match your search." : "Nothing is open right now. New events are announced on Instagram (@iels.co) and here."}
             </p>
           )}
           <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

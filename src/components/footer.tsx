@@ -51,7 +51,7 @@ export default function Footer() {
           <p className="mt-2 text-[13px] font-medium text-[#2F4157]/55">PT English Space Berkah Indonesia</p>
           <div className="mt-5 flex gap-2">
             {[
-              { href: "https://www.instagram.com/iels_co", label: "IELS on Instagram", icon: Instagram },
+              { href: "https://www.instagram.com/iels.co", label: "IELS on Instagram", icon: Instagram },
               { href: "https://www.linkedin.com/company/iels-co", label: "IELS on LinkedIn", icon: Linkedin },
               { href: "https://x.com/ielsforall", label: "IELS on X", icon: null },
             ].map((s) => (

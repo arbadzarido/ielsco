@@ -69,7 +69,7 @@ export default function RootLayout({
                   "logo": `${SITE_URL}/images/logos/iels_blue1.png`,
                   "email": "hello@ielsco.com",
                   "sameAs": [
-                    "https://www.instagram.com/iels_co",
+                    "https://www.instagram.com/iels.co",
                     "https://www.linkedin.com/company/iels-co",
                     "https://x.com/ielsforall"
                   ]

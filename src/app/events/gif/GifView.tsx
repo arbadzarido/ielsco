@@ -704,7 +704,7 @@ export default function SGITPage() {
               {/* SOCIAL */}
               <div className="pt-5 border-t border-[#914D4D]/20 text-sm font-medium mt-4">
                 Follow official updates on Instagram{" "}
-                <a href="https://instagram.com/iels_co" target="_blank" rel="noopener noreferrer" className="font-bold text-[#914D4D] hover:underline">@iels_co</a>{" "}
+                <a href="https://instagram.com/iels.co" target="_blank" rel="noopener noreferrer" className="font-bold text-[#914D4D] hover:underline">@iels.co</a>{" "}
                 or revisit this page regularly.
               </div>
             </div>

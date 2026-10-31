@@ -219,7 +219,7 @@ export default function SubmitStoryForm() {
               {[
                 { k: "review" as const, required: true, text: "I agree that IELSco may review my story and edit it for publication on circle.ielsco.com. Submitting doesn't guarantee publication." },
                 { k: "identity" as const, required: false, text: "If my story is published, IELSco may show my name, role, country and the photos I sent." },
-                { k: "instagram" as const, required: false, text: "IELSco may contact me about featuring my story on Instagram (@iels_co). Nothing is posted without asking me first." },
+                { k: "instagram" as const, required: false, text: "IELSco may contact me about featuring my story on Instagram (@iels.co). Nothing is posted without asking me first." },
               ].map(({ k, required, text }) => (
                 <label key={k} className="flex items-start gap-[12px] text-[15px] leading-relaxed">
                   <input type="checkbox" checked={consent[k]} onChange={(e) => setConsent((c) => ({ ...c, [k]: e.target.checked }))} className="mt-[4px] h-[18px] w-[18px] shrink-0 accent-[#2F4157]" data-testid={`consent-${k}`} />
