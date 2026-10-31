@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
       { source: "/programs", destination: "/products", permanent: true, has: main },
       { source: "/courses", destination: "/products/courses", permanent: true, has: main },
       { source: "/resources", destination: "/products/resources", permanent: true, has: main },
+      // 2026 cohort divisions that the 2027 structure renamed or retired.
+      { source: "/careers/business", destination: "/careers/partnerships", permanent: true, has: main },
+      { source: "/careers/talent", destination: "/careers/people", permanent: true, has: main },
+      { source: "/careers/finance", destination: "/careers", permanent: true, has: main },
     ];
   },
 

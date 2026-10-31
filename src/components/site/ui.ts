@@ -41,3 +41,8 @@ export const pill = "inline-flex items-center gap-1.5 rounded-full border border
 // Public pages put this class on the page root so their headings use the heading font (Poppins, globals.css
 // --font-heading), the same as the dashboard. (It used to switch them from the old Garamond stack to Plus Jakarta Sans.)
 export const siteRoot = "[&_:is(h1,h2,h3,h4,h5,h6)]:[font-family:var(--font-heading)]";
+
+// Form fields on public pages (InquiryForm, careers application).
+export const fieldInput = `mt-2 block w-full rounded-[14px] border border-[#D5DBE3] bg-white px-4 py-3 text-[16px] font-normal text-[#1A2534] placeholder:text-[#2F4157]/40 hover:border-[#B8C2CF] ${focusRing}`;
+
+export const fieldLabel = "block text-[15px] font-semibold text-[#1A2534]";

@@ -6,10 +6,11 @@ import { PageHeader } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, card, focusRing, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 import { dateTimeWib, dateWib } from "@/lib/format";
+import { CareerApplications } from "./CareerApplicationsAdmin";
 
 // Staff operations for the membership platform. Every query below is restricted by RLS / security-definer functions to
 // public.staff_roles admins; this screen only arranges them.
-const TABS = ["Inquiries", "Members", "Feedback", "Buddies", "Sessions", "Member links"] as const;
+const TABS = ["Inquiries", "Applications", "Members", "Feedback", "Buddies", "Sessions", "Member links"] as const;
 type Tab = (typeof TABS)[number];
 
 function useRows<T>(load: () => PromiseLike<{ data: unknown; error: { message: string } | null }>) {
@@ -219,7 +220,7 @@ export function OperationsAdmin({ supabase }: { supabase: SupabaseClient }) {
   const [tab, setTab] = useState<Tab>("Inquiries");
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14" data-testid="admin-operations">
-      <PageHeader title="Operations" description="Inquiries, members and member services." />
+      <PageHeader title="Operations" description="Inquiries, careers applications, members and member services." />
       <div className="mb-6 flex flex-wrap gap-2" role="tablist">
         {TABS.map((t) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
@@ -227,6 +228,7 @@ export function OperationsAdmin({ supabase }: { supabase: SupabaseClient }) {
         ))}
       </div>
       {tab === "Inquiries" && <Inquiries supabase={supabase} />}
+      {tab === "Applications" && <CareerApplications supabase={supabase} />}
       {tab === "Members" && <Members supabase={supabase} />}
       {tab === "Feedback" && <Feedback supabase={supabase} />}
       {tab === "Buddies" && <Buddies supabase={supabase} />}

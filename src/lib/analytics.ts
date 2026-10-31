@@ -11,7 +11,7 @@ export type EventName =
   | "buddy_requested" | "connect_passport_saved" | "connect_intro_sent" | "connect_intro_answered" | "connect_message_sent"
   | "connect_room_saved" | "connect_room_registered" | "connect_quick_match_matched" | "connect_call_feedback" | "connect_report_sent"
   | "circle_joined" | "circle_posted" | "pulse_item_opened" | "sea_prompt_used" | "tour_started" | "tour_completed" | "copilot_opened"
-  | "copilot_help_opened";
+  | "copilot_help_opened" | "career_application_submitted";
 
 export function track(name: EventName, props: Record<string, string | number | boolean | null> = {}) {
   if (!ANALYTICS_ENABLED) return;

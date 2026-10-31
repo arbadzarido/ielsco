@@ -13,7 +13,7 @@ export const metadata: Metadata = pageMetadata({
   path: "/about",
 });
 
-type Leader = { name: string; role: string; image: string; instagram: string; linkedin: string; background: string; experience: string };
+type Leader = { name: string; role: string; image: string; instagram?: string; linkedin?: string; background: string; experience: string; inactive?: boolean };
 
 const ADVISORS: Leader[] = [
   {
@@ -32,16 +32,35 @@ const ADVISORS: Leader[] = [
 
 const DIRECTORS: Leader[] = [
   {
-    name: "Fadhila Qurotul Aini", role: "Co-Founder, CEO", image: "/images/people/directors/dhila2.png",
+    name: "Arbadza Rido", role: "Co-Founder & CEO, IELSco & Elco AI", image: "/images/people/leadership/arbadza.png",
+    instagram: "https://instagram.com/arbadzarido", linkedin: "https://linkedin.com/in/arbadzarido",
+    background: "Professional EFL & ESL Teacher with over 3 years of experience teaching across various countries in Southeast Asia.",
+    experience: "Former Project Manager at Pertamina Training & Consulting and Tech in Asia, leading cross-functional teams in high-impact corporate projects.",
+  },
+  {
+    name: "Fadhila Qurotul Aini", role: "Co-Founder of IELSco", image: "/images/people/directors/dhila2.png", inactive: true,
     instagram: "https://www.instagram.com/fadhilaqa._/", linkedin: "https://linkedin.com/in/fadhilaqa/",
     background: "Successfully streamlined international outreach and digital operations to connect local talent with high-tier global aesthetic science networks.",
     experience: "Former Marketing and Operations Intern at IFAAS (International Fellowship In Advanced Aesthetic Science), managing remote global projects for 7 months.",
   },
+];
+
+// Elco AI is operated by PT Elco Edukasi Berkah Indonesia, a subsidiary of PT English Space Berkah Indonesia.
+const ELCO_LEADERS: Leader[] = [
   {
-    name: "Arbadza Rido", role: "Co-Founder, COO", image: "/images/people/directors/arba.png",
-    instagram: "https://instagram.com/arbadzarido", linkedin: "https://linkedin.com/in/arbadzarido",
-    background: "Professional EFL & ESL Teacher with over 3 years of experience teaching across various countries in Southeast Asia.",
-    experience: "Former Project Manager at Pertamina Training & Consulting and Tech in Asia, leading cross-functional teams in high-impact corporate projects.",
+    name: "Muhammad Farrel Alrezky", role: "Co-Founder & COO, Elco AI", image: "/images/people/leadership/farrel.png",
+    instagram: "https://www.instagram.com/farelalres/", linkedin: "https://www.linkedin.com/in/muhammadfarrelalrezky/",
+    background: "Business development and B2B enterprise sales, driving revenue and high-value strategic partnerships.",
+    experience: "A top national sales performer who has closed enterprise AI and asset projects worth IDR 100 million to more than IDR 10 billion.",
+  },
+];
+
+const STRATEGIC_PARTNERS: Leader[] = [
+  {
+    name: "Andrew Pandu Sembiring", role: "Strategic Partner", image: "/images/people/leadership/andrew.png",
+    linkedin: "https://www.linkedin.com/in/andrew-pandu-sembiring-07a627138/",
+    background: "President Director of PT Ficotama Bina Trampil since July 1998.",
+    experience: "More than 20 years of experience in recruitment services for international labour supply, based in Indonesia.",
   },
 ];
 
@@ -61,10 +80,11 @@ function LeaderCard({ p }: { p: Leader }) {
         <div className="min-w-0">
           <p className="text-[18px] font-bold text-[#1A2534]">{p.name}</p>
           <p className="text-[15px] font-semibold text-[#577E90]">{p.role}</p>
-          <div className="mt-3 flex gap-2">
-            <a href={p.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on Instagram`} className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]", focusRing)}><Instagram size={16} aria-hidden="true" /></a>
-            <a href={p.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on LinkedIn`} className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]", focusRing)}><Linkedin size={16} aria-hidden="true" /></a>
-          </div>
+          {p.inactive && <span className="mt-1.5 inline-flex rounded-full bg-[#F1F4F8] px-2.5 py-0.5 text-[13px] font-semibold text-[#2F4157]/70">Inactive</span>}
+          {(p.instagram || p.linkedin) && <div className="mt-3 flex gap-2">
+            {p.instagram && <a href={p.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on Instagram`} className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]", focusRing)}><Instagram size={16} aria-hidden="true" /></a>}
+            {p.linkedin && <a href={p.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on LinkedIn`} className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]", focusRing)}><Linkedin size={16} aria-hidden="true" /></a>}
+          </div>}
         </div>
       </div>
       <details className="group border-t border-[#E6E9EE]">
@@ -191,6 +211,17 @@ export default function About() {
             <div>
               <h3 className="text-[18px] font-bold text-[#2F4157]">Board of Directors</h3>
               <ul className="mt-5 space-y-5">{DIRECTORS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
+            </div>
+            <div>
+              <h3 className="text-[18px] font-bold text-[#2F4157]">Elco AI</h3>
+              <p className="mt-1 text-[15px] text-[#2F4157]/70">
+                <a href="https://www.elcoai.com/about" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Elco AI</a> is operated by PT Elco Edukasi Berkah Indonesia, a subsidiary of PT English Space Berkah Indonesia.
+              </p>
+              <ul className="mt-5 space-y-5">{ELCO_LEADERS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
+            </div>
+            <div>
+              <h3 className="text-[18px] font-bold text-[#2F4157]">Strategic Partner</h3>
+              <ul className="mt-5 space-y-5">{STRATEGIC_PARTNERS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
             </div>
           </div>
         </div>

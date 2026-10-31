@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { btnPrimary, focusRing } from "./ui";
+import { btnPrimary, fieldInput, fieldLabel } from "./ui";
 import { track } from "@/lib/analytics";
 
 type Kind = "partner" | "school" | "careers" | "membership_waitlist";
@@ -19,8 +19,8 @@ export interface InquiryFormProps {
   successText: string;
 }
 
-const input = cn("mt-2 block w-full rounded-[14px] border border-[#D5DBE3] bg-white px-4 py-3 text-[16px] font-normal text-[#1A2534] placeholder:text-[#2F4157]/40 hover:border-[#B8C2CF]", focusRing);
-const label = "block text-[15px] font-semibold text-[#1A2534]";
+const input = fieldInput;
+const label = fieldLabel;
 
 // Real submission: POST /api/inquiries → public.submit_inquiry() (validated, rate-limited). Staff read them in
 // Dashboard → Admin → Operations. Nothing here pretends to send.
