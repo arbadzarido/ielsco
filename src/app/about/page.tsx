@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "About IELS | Community & Opportunities for Southeast Asian learners",
+  title: "About IELSco | English community & global opportunities in Southeast Asia",
   description: "IELS (PT English Space Berkah Indonesia) is a community that connects Southeast Asian youth with people, resources, programs and international opportunities.",
   path: "/about",
 });

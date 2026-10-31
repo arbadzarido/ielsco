@@ -88,8 +88,8 @@ export default function ProgramsPage() {
         <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="elco">
           <div className={cn(container, "flex flex-col gap-6 md:flex-row md:items-center md:justify-between")}>
             <div className="max-w-[640px]">
-              <h2 id="elco" className={h2}>Daily English practice? That&apos;s Elco AI</h2>
-              <p className={cn(lead, "mt-3")}>Elco AI is our separate English-learning app, with its own free and paid plans. IELSco stays your place for opportunities and people.</p>
+              <h2 id="elco" className={h2}>English practice that feels like play: Elco AI</h2>
+              <p className={cn(lead, "mt-3")}>Elco AI is a separate English learning app with English games, guided lessons and AI practice, run by PT Elco Edukasi Berkah Indonesia (a company that shares IELSco&apos;s founder), with its own free and paid plans. IELSco stays your place for opportunities and people.</p>
             </div>
             <a href={elcoHref("programs")} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Open Elco AI <ArrowUpRight size={18} aria-hidden="true" /></a>
           </div>

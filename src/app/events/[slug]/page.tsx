@@ -25,7 +25,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
   const event = findEventBySlug(slug);
-  if (!event) return { title: "Event Not Found - IELS", description: "The requested event could not be found.", robots: { index: false } };
+  if (!event) return { title: "Event not found | IELSco", description: "The requested event could not be found.", robots: { index: false } };
   return {
     title: event.seo.meta_title,
     description: event.seo.meta_description,

@@ -30,9 +30,11 @@ const COLUMNS: { title: string; links: { name: string; url: string; external?: b
     links: [
       { name: "Opportunities", url: "/opportunities" },
       { name: "Free resources", url: "/products/resources" },
+      { name: "Articles", url: "/articles" },
+      { name: "Artikel (Bahasa Indonesia)", url: "/id/artikel" },
       { name: "IELS Courses", url: "/products/courses" },
       { name: "IELS for Schools", url: "/school" },
-      ...(ELCO_ENABLED ? [{ name: "Elco AI: English practice", url: elcoHref("footer"), external: true }] : []),
+      ...(ELCO_ENABLED ? [{ name: "Elco AI: English games & practice", url: elcoHref("footer"), external: true }] : []),
     ],
   },
 ];

@@ -250,7 +250,8 @@ function Opportunities() {
   );
 }
 
-// Elco AI, IELSco's English-learning companion (separate app at ai.ielsco.com). Shown only when NEXT_PUBLIC_ELCO_ENABLED
+// Elco AI: a separate English learning app (www.elcoai.com) run by PT Elco Edukasi Berkah Indonesia, which shares IELSco's
+// founder. Shown only when NEXT_PUBLIC_ELCO_ENABLED
 // is "true", i.e. after the Elco deployment has been verified, so the landing page never links to a missing site.
 function ElcoSection() {
   if (!ELCO_ENABLED) return null;
@@ -259,18 +260,19 @@ function ElcoSection() {
       <div className={cn(container, "grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-14")}>
         <Image src={ELCO_MASCOT} alt="" width={160} height={157} className="mx-auto h-[140px] w-auto lg:h-[160px]" />
         <div>
-          <p className={eyebrow}>Elco AI · by IELS</p>
-          <h2 id="elco-heading" className={cn(h2, "mt-3")}>Learn English with Elco AI</h2>
+          <p className={eyebrow}>Elco AI · English learning app</p>
+          <h2 id="elco-heading" className={cn(h2, "mt-3")}>Practise English through games with Elco AI</h2>
           <p className={cn(lead, "mt-4 max-w-[640px]")}>
-            Elco is IELS&apos;s English-learning companion: guided practice planned around your goals, conversations with
-            Elco Chat, feedback on your speaking and writing, and a vocabulary notebook. IELS stays your home for people,
+            Elco AI makes English practice feel like play: short English games you can play against Elco Bot, another
+            learner or a friend, plus guided lessons, AI chat and voice practice. It&apos;s developed and operated by PT Elco
+            Edukasi Berkah Indonesia, a separate company that shares IELSco&apos;s founder. IELSco stays your home for people,
             Circle and opportunities.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a href={elcoHref("landing")} target="_blank" rel="noopener noreferrer" className={btnPrimary} data-testid="landing-elco-cta">
-              Start learning with Elco <ArrowUpRight size={18} aria-hidden="true" />
+              Try Elco AI <ArrowUpRight size={18} aria-hidden="true" />
             </a>
-            <p className="text-[14px] text-[#2F4157]/60">Free to start · separate Elco account</p>
+            <p className="text-[14px] text-[#2F4157]/60">Free to start at elcoai.com · separate Elco account</p>
           </div>
         </div>
       </div>

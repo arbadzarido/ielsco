@@ -1,0 +1,98 @@
+import type { Article } from "./types";
+
+// Facts about IELS Circle come from src/lib/circle/sessions.ts (schedule) and the live circle.ielsco.com page.
+export const englishSpeakingCommunity: Article = {
+  key: "english-speaking-community",
+  pillar: "connection",
+  published: "2026-10-30",
+  updated: "2026-10-30",
+  sources: [
+    { label: "IELS Circle: weekly sessions and how to join", url: "https://circle.ielsco.com/", accessed: "2026-10-30" },
+  ],
+  en: {
+    slug: "how-to-find-an-english-speaking-community-in-indonesia",
+    title: "How to find an English-speaking community in Indonesia (and make it stick)",
+    description: "What to look for in an English-speaking community in Indonesia, the warning signs to avoid, and a four-week plan to turn joining into a speaking habit.",
+    excerpt: "Most learners don't lack grammar; they lack a place to use English every week. Here's how to choose a community that actually gets you speaking.",
+    body: [
+      { p: "Many learners in Indonesia study English for years at school and still freeze in a real conversation. The missing piece is rarely another grammar book. It's a regular place where you have to use English with other people, make mistakes, and come back the next week. That's what a good English-speaking community gives you." },
+      { p: "This guide explains what to look for, what to avoid, and how to stay long enough for it to make a difference." },
+      { h2: "What a good English-speaking community looks like" },
+      { ul: [
+        "**A fixed schedule.** Weekly sessions at the same time beat occasional big events. Consistency is what turns practice into a habit.",
+        "**Real speaking time for you.** Look for small groups, breakout rooms or structured turns. If one host talks for an hour, you're watching a webinar, not practising.",
+        "**A topic every session.** A clear topic (introducing yourself, a job interview question, life in your city) gives quieter members something concrete to say.",
+        "**Mixed levels and a friendly norm.** Beginners need patience; stronger speakers need to be challenged. The best groups say clearly that mistakes are expected.",
+        "**A reason beyond English.** Communities connected to goals, such as scholarships, study abroad, careers or cross-cultural exchange, keep members motivated after the first month.",
+      ] },
+      { h2: "Where to look" },
+      { ul: [
+        "**Your campus or school.** English clubs, debate societies and international offices often run conversation groups.",
+        "**Online communities.** Online sessions remove travel time and let you meet learners from other cities and countries. Check that they run on a regular schedule and that you can turn your microphone on.",
+        "**Language exchanges.** Pairing with someone learning Bahasa Indonesia can work well once you can hold a basic conversation.",
+        "**Opportunity-focused communities.** Groups organised around scholarships, programs and careers combine English practice with information you'd otherwise have to find alone.",
+      ] },
+      { h2: "Warning signs" },
+      { ul: [
+        "You must pay before you can try a single session.",
+        "Sessions are mostly announcements or product promotion.",
+        "No one speaks except the host, or cameras and microphones are discouraged.",
+        "Big claims about guaranteed fluency, scores or scholarships. No community can promise those.",
+      ] },
+      { h2: "A four-week plan to make it stick" },
+      { ol: [
+        "**Week 1:** join one session and only listen if you need to. Write down three phrases other members used.",
+        "**Week 2:** prepare a 60-second self-introduction before the session and say it.",
+        "**Week 3:** ask one question to another member. Questions are easier than speeches and keep conversations going.",
+        "**Week 4:** set one small goal you can share with the group, such as a test date, an application or a speaking target, and tell them how it went next week.",
+      ] },
+      { p: "After a month, the session is part of your week rather than something you have to remember." },
+      { h2: "How IELS Circle works" },
+      { p: "IELS Circle is IELSco's free English community for young people across Southeast Asia. Sessions run online every **Wednesday at 19:00 WIB** and every **Saturday at 13:00 WIB** (Jakarta time), with a new topic each time: everyday English, scholarships, careers and life across the region. You can register and see the next sessions on the [IELS Circle page](https://circle.ielsco.com/), and read [member stories](https://circle.ielsco.com/stories) from people who studied, interned or volunteered abroad." },
+      { note: "Between sessions, a little daily practice helps. You can find free resources on the [IELSco resources page](/products/resources), and international programs on the [opportunity board](/opportunities)." },
+    ],
+  },
+  id: {
+    slug: "cara-menemukan-komunitas-bahasa-inggris-di-indonesia",
+    title: "Cara menemukan komunitas bahasa Inggris di Indonesia (dan bertahan di dalamnya)",
+    description: "Ciri komunitas berbahasa Inggris yang baik di Indonesia, tanda-tanda yang perlu dihindari, dan rencana empat minggu agar ikut komunitas menjadi kebiasaan berbicara.",
+    excerpt: "Kebanyakan pelajar bukan kurang tata bahasa, melainkan kurang tempat untuk memakai bahasa Inggris setiap minggu. Begini cara memilih komunitas yang benar-benar membuatmu berbicara.",
+    body: [
+      { p: "Banyak pelajar di Indonesia belajar bahasa Inggris bertahun-tahun di sekolah, tetapi tetap kaku saat percakapan sungguhan. Yang kurang jarang sekali buku tata bahasa lagi. Yang kurang adalah tempat rutin untuk memakai bahasa Inggris bersama orang lain, berani salah, lalu kembali lagi minggu depannya. Itulah yang diberikan komunitas berbahasa Inggris yang baik." },
+      { p: "Panduan ini menjelaskan apa yang perlu dicari, apa yang perlu dihindari, dan cara bertahan cukup lama sampai terasa hasilnya." },
+      { h2: "Ciri komunitas berbahasa Inggris yang baik" },
+      { ul: [
+        "**Jadwal tetap.** Sesi mingguan di jam yang sama lebih efektif daripada acara besar yang sesekali. Konsistensi mengubah latihan menjadi kebiasaan.",
+        "**Waktu bicara untukmu.** Cari kelompok kecil, breakout room, atau giliran bicara yang terstruktur. Kalau hanya satu pembawa acara yang bicara selama satu jam, itu webinar, bukan latihan.",
+        "**Topik di setiap sesi.** Topik yang jelas (memperkenalkan diri, pertanyaan wawancara kerja, kehidupan di kotamu) membantu anggota yang pendiam punya bahan bicara.",
+        "**Level campuran dan suasana ramah.** Pemula butuh kesabaran; yang sudah lancar butuh tantangan. Kelompok terbaik menyatakan dengan jelas bahwa salah itu wajar.",
+        "**Alasan di luar bahasa Inggris.** Komunitas yang terhubung dengan tujuan seperti beasiswa, kuliah di luar negeri, karier, atau pertukaran budaya membuat anggota tetap termotivasi setelah bulan pertama.",
+      ] },
+      { h2: "Di mana mencarinya" },
+      { ul: [
+        "**Kampus atau sekolahmu.** Klub bahasa Inggris, klub debat, dan kantor urusan internasional sering mengadakan kelompok percakapan.",
+        "**Komunitas online.** Sesi online menghemat waktu perjalanan dan mempertemukanmu dengan pelajar dari kota dan negara lain. Pastikan jadwalnya rutin dan kamu boleh menyalakan mikrofon.",
+        "**Pertukaran bahasa.** Berpasangan dengan orang yang belajar bahasa Indonesia bisa berhasil setelah kamu mampu bercakap-cakap dasar.",
+        "**Komunitas yang fokus pada peluang.** Kelompok yang membahas beasiswa, program, dan karier menggabungkan latihan bahasa Inggris dengan informasi yang biasanya harus kamu cari sendiri.",
+      ] },
+      { h2: "Tanda-tanda yang perlu diwaspadai" },
+      { ul: [
+        "Kamu harus membayar sebelum boleh mencoba satu sesi pun.",
+        "Sesinya kebanyakan berisi pengumuman atau promosi produk.",
+        "Tidak ada yang bicara selain pembawa acara, atau kamera dan mikrofon tidak dianjurkan.",
+        "Klaim besar tentang jaminan lancar, skor, atau beasiswa. Tidak ada komunitas yang bisa menjanjikan itu.",
+      ] },
+      { h2: "Rencana empat minggu agar bertahan" },
+      { ol: [
+        "**Minggu 1:** ikuti satu sesi dan cukup mendengarkan jika perlu. Catat tiga frasa yang dipakai anggota lain.",
+        "**Minggu 2:** siapkan perkenalan diri 60 detik sebelum sesi, lalu ucapkan.",
+        "**Minggu 3:** ajukan satu pertanyaan kepada anggota lain. Bertanya lebih mudah daripada berpidato dan membuat percakapan tetap berjalan.",
+        "**Minggu 4:** tetapkan satu target kecil yang bisa kamu bagikan, misalnya tanggal tes, satu pendaftaran, atau target bicara, lalu ceritakan hasilnya minggu berikutnya.",
+      ] },
+      { p: "Setelah sebulan, sesi itu sudah menjadi bagian dari minggumu, bukan sesuatu yang harus kamu ingat-ingat." },
+      { h2: "Cara kerja IELS Circle" },
+      { p: "IELS Circle adalah komunitas bahasa Inggris gratis dari IELSco untuk anak muda di seluruh Asia Tenggara. Sesi online berlangsung setiap **Rabu pukul 19.00 WIB** dan setiap **Sabtu pukul 13.00 WIB**, dengan topik baru setiap kali: bahasa Inggris sehari-hari, beasiswa, karier, dan kehidupan di kawasan ini. Kamu bisa mendaftar dan melihat sesi berikutnya di [halaman IELS Circle](https://circle.ielsco.com/), serta membaca [kisah anggota](https://circle.ielsco.com/stories) yang pernah kuliah, magang, atau menjadi relawan di luar negeri." },
+      { note: "Di antara sesi, latihan singkat setiap hari sangat membantu. Kamu bisa menemukan sumber belajar gratis di [halaman sumber belajar IELSco](/products/resources), dan program internasional di [papan peluang](/opportunities)." },
+    ],
+  },
+};
