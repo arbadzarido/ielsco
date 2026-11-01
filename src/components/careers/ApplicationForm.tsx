@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { btnPrimary, fieldInput, fieldLabel, focusRing } from "@/components/site/ui";
-import { divisions } from "@/data/careers/divisions";
+import { LEADS, ROLE_COUNT, divisions, divisionsLedBy, type LeadKey } from "@/data/careers/divisions";
 
 // Careers application (2027 cohort). Files go straight from the browser to the private bucket career-applications
 // (visitors can upload but never read them back); the answers go through public.submit_career_application(), which
@@ -176,7 +176,11 @@ export function ApplicationForm() {
           <label className={fieldLabel}>Preferred division
             <select name="division" required value={division} onChange={(e) => pickDivision(e.target.value)} className={fieldInput}>
               <option value="" disabled>Choose a division</option>
-              {divisions.map((d) => <option key={d.slug} value={d.slug}>{d.title}</option>)}
+              {(["arbadza", "farrel"] as LeadKey[]).map((k) => (
+                <optgroup key={k} label={`Led by ${LEADS[k].name} (${LEADS[k].title.replace("Co-Founder & ", "")})`}>
+                  {divisionsLedBy(k).map((d) => <option key={d.slug} value={d.slug}>{d.title}</option>)}
+                </optgroup>
+              ))}
             </select>
           </label>
           <label className={fieldLabel}>Preferred role <span className="font-normal text-[#2F4157]/60">(optional)</span>
@@ -188,7 +192,7 @@ export function ApplicationForm() {
                 </optgroup>
               ))}
             </select>
-            <span className={hint}>{division ? "Roles in this division. " : "All 20 roles, grouped by division. "}Choosing a role fills in its division.</span>
+            <span className={hint}>{division ? "Roles in this division. " : `All ${ROLE_COUNT} roles, grouped by division. `}Choosing a role fills in its division.</span>
           </label>
         </div>
       </fieldset>

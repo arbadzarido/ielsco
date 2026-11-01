@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, Mail } from "lucide-react";
 import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h1, h2, lead, pill, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
-import { divisions } from "@/data/careers/divisions";
+import { LEADS, divisions } from "@/data/careers/divisions";
 import { RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
 
 export const revalidate = 600;
@@ -52,7 +53,7 @@ export default async function DivisionPage({ params }: { params: Promise<{ divis
                     <summary className={cn("flex cursor-pointer list-none items-start justify-between gap-4 [&::-webkit-details-marker]:hidden", focusRing)}>
                       <span>
                         <span className="block text-[18px] font-bold text-[#1A2534]">{r.title}</span>
-                        <span className="mt-1 block text-[14px] text-[#2F4157]/65">{r.scope} · Remote</span>
+                        <span className="mt-1 block text-[14px] text-[#2F4157]/65">{r.scope} · Remote · {r.places === 1 ? "1 place" : `Up to ${r.places} places`}</span>
                         <span className={cn(body, "mt-2 block text-[15px]")}>{r.summary}</span>
                       </span>
                       <ChevronDown size={18} className="mt-1 shrink-0 text-[#577E90] transition-transform group-open:rotate-180" aria-hidden="true" />
@@ -74,6 +75,14 @@ export default async function DivisionPage({ params }: { params: Promise<{ divis
           </section>
 
           <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+            <div className={cn(card, "p-6")} data-testid="division-lead">
+              <p className="text-[14px] font-semibold text-[#577E90]">Division lead</p>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[14px] bg-[#F1F4F8]"><Image src={LEADS[d.lead].image} alt={LEADS[d.lead].name} fill sizes="64px" className="object-cover" /></div>
+                <div className="min-w-0"><p className="text-[17px] font-bold text-[#1A2534]">{LEADS[d.lead].name}</p><p className="text-[14px] text-[#2F4157]/70">{LEADS[d.lead].title}</p></div>
+              </div>
+              <a href={`mailto:${LEADS[d.lead].email}`} className={cn(textLink, "mt-4 text-[15px]")}><Mail size={16} aria-hidden="true" />{LEADS[d.lead].email}</a>
+            </div>
             <div className={cn(card, "p-6")}>
               <p className="text-[17px] font-bold text-[#1A2534]">The program</p>
               <ul className="mt-3 space-y-2 text-[15px] text-[#2F4157]/80">

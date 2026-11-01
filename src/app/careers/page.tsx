@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Banknote, Briefcase, CalendarDays, Clock, Globe2, Instagram, Languages, Laptop, Mail, Plane, Users } from "lucide-react";
 import Footer from "@/components/footer";
@@ -9,7 +10,7 @@ import { ApplicationForm } from "@/components/careers/ApplicationForm";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
-import { divisions } from "@/data/careers/divisions";
+import { LEADS, ROLE_COUNT, divisions, divisionsLedBy, type LeadKey } from "@/data/careers/divisions";
 import { RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
 
 export const metadata: Metadata = pageMetadata({
@@ -39,6 +40,15 @@ const BENEFITS = [
     icon: Banknote, title: "Performance-based incentives",
     points: ["Performance-based allowance and profit-sharing opportunities.", "Referral incentives and sponsorship-related incentives.", "Paid UGC and content creation work for members who take part in content production."],
   },
+];
+
+// IELS Circle meetups (the community moments on circle.ielsco.com), toned with scripts/tone-photos.py.
+const MOMENTS = [
+  { src: "/images/site/community-in-person.webp", place: "Surabaya", alt: "A large group of IELSco members at Hello Sydney! IELSco × Western Sydney University in Surabaya" },
+  { src: "/images/site/circle-bangkok.webp", place: "Bangkok", alt: "IELSco members taking a group selfie at an IELSco Hangout in Bangkok" },
+  { src: "/images/site/circle-kuala-lumpur.webp", place: "Kuala Lumpur", alt: "IELSco members at an IELSco Hangout in Kuala Lumpur" },
+  { src: "/images/site/circle-phnom-penh.webp", place: "Phnom Penh", alt: "Students and the IELSco team at IELSco Goes to School in Phnom Penh" },
+  { src: "/images/site/circle-ho-chi-minh.webp", place: "Ho Chi Minh City", alt: "IELSco members holding certificates at an IELSco Hangout in Ho Chi Minh City" },
 ];
 
 const ELIGIBILITY = [
@@ -157,25 +167,64 @@ export default function CareersPage() {
         </div>
       </section>
 
-      <section id="divisions" className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="div-h">
+      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="life-h">
         <div className={container}>
           <div className="max-w-[640px]">
-            <p className={eyebrow}>Divisions</p>
-            <h2 id="div-h" className={cn(h2, "mt-3")}>Seven divisions, {divisions.reduce((n, d) => n + d.roles.length, 0)} roles</h2>
-            <p className={cn(lead, "mt-4")}>Choose one division when you apply. Each division page explains what the roles do and what we look for.</p>
+            <p className={eyebrow}>Life at IELSco</p>
+            <h2 id="life-h" className={cn(h2, "mt-3")}>Online every week, together across Southeast Asia</h2>
+            <p className={cn(lead, "mt-4")}>The team runs IELS Circle meetups, campus visits and programs with members from Indonesia to Vietnam. You&apos;ll be part of the next ones.</p>
           </div>
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {divisions.map((d) => (
-              <li key={d.slug}>
-                <Link href={`/careers/${d.slug}`} className={cn(cardLink, "flex h-full flex-col p-7")} data-testid={`division-${d.slug}`}>
-                  <h3 className={h3}>{d.title}</h3>
-                  <p className={cn(body, "mt-2 text-[15px]")}>{d.description}</p>
-                  <ul className="mt-4 flex flex-1 flex-wrap content-start gap-2">{d.roles.map((r) => <li key={r.id} className={cn(pill, "font-medium")}>{r.title}</li>)}</ul>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#2F4157]">See roles <ArrowRight size={16} aria-hidden="true" /></span>
-                </Link>
+          <ul className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="careers-gallery">
+            {MOMENTS.map((m, i) => (
+              <li key={m.src} className={cn("relative overflow-hidden rounded-[20px] border border-[#E6E9EE] bg-[#F1F4F8]", i === 0 ? "col-span-2 aspect-[16/9] md:row-span-2 md:aspect-auto" : "aspect-square")}>
+                <Image src={m.src} alt={m.alt} fill sizes={i === 0 ? "(min-width: 768px) 580px, 100vw" : "(min-width: 768px) 290px, 50vw"} className="object-cover" />
+                <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-[13px] font-semibold text-[#1A2534]">{m.place}</span>
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section id="divisions" className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="div-h">
+        <div className={container}>
+          <div className="max-w-[680px]">
+            <p className={eyebrow}>Divisions</p>
+            <h2 id="div-h" className={cn(h2, "mt-3")}>Seven divisions, {ROLE_COUNT} roles</h2>
+            <p className={cn(lead, "mt-4")}>Each division is led by one of our co-founders. Choose one division when you apply; each division page explains what the roles do and what we look for.</p>
+          </div>
+          <div className="mt-12 space-y-14">
+            {(["arbadza", "farrel"] as LeadKey[]).map((key) => {
+              const l = LEADS[key];
+              const ds = divisionsLedBy(key);
+              return (
+                <div key={key} data-testid={`lead-${key}`}>
+                  <div className="flex flex-col gap-5 border-b border-[#E6E9EE] pb-6 sm:flex-row sm:items-center">
+                    <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[16px] bg-[#F1F4F8]">
+                      <Image src={l.image} alt={l.name} fill sizes="88px" className="object-cover" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-semibold uppercase tracking-[0.12em] text-[#577E90]">Led by our {l.title.replace("Co-Founder & ", "")}</p>
+                      <h3 className={cn(h3, "mt-1")}>{l.name}, {l.title}</h3>
+                      <p className={cn(body, "mt-1 text-[15px]")}>{ds.map((d) => d.title).join(", ").replace(/, ([^,]*)$/, " and $1")}</p>
+                      <a href={`mailto:${l.email}`} className={cn(textLink, "mt-2 text-[15px]")}><Mail size={16} aria-hidden="true" />{l.email}</a>
+                    </div>
+                  </div>
+                  <ul className={cn("mt-6 grid gap-5 sm:grid-cols-2", ds.length > 3 ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
+                    {ds.map((d) => (
+                      <li key={d.slug}>
+                        <Link href={`/careers/${d.slug}`} className={cn(cardLink, "flex h-full flex-col p-6")} data-testid={`division-${d.slug}`}>
+                          <h4 className="text-[19px] font-bold text-[#1A2534]">{d.title}</h4>
+                          <p className={cn(body, "mt-2 text-[15px]")}>{d.description}</p>
+                          <ul className="mt-4 flex flex-1 flex-wrap content-start gap-2">{d.roles.map((r) => <li key={r.id} className={cn(pill, "font-medium")}>{r.title}</li>)}</ul>
+                          <span className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#2F4157]">See roles <ArrowRight size={16} aria-hidden="true" /></span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

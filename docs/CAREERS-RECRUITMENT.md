@@ -3,10 +3,12 @@
 Public page `/careers` (+ `/careers/<division>`), application form, and the recruitment team's review screen.
 
 ## Sources of truth
-- Roles and divisions: the official structure of 20 roles (founder correction, 1 Nov 2026); descriptions from DOC-0055
-  Volunteer Staffing & Recruitment Workbook (Role_Matrix). Timeline: its Recruitment_Timeline. Data lives in
-  `src/data/careers/divisions.ts` and `src/data/careers/recruitment.ts`. Media Partnerships (X1) and Community
-  Partnerships (X2) have no detailed description in the workbook yet; add one there and here when it exists.
+- Roles and divisions: the 16 roles of DOC-0055 Volunteer Staffing & Recruitment Workbook, Role_Matrix (founder update,
+  1 Nov 2026), with each role's maximum places. Divisions are grouped by lead: Growth, Creative, Community and Courses &
+  Learning under Arbadza (CEO, arbadza@ielsco.com); Partnerships, Operations and People under Farrel (COO,
+  farrel@ielsco.com). Timeline: the workbook's Recruitment_Timeline. Data: `src/data/careers/divisions.ts` (roles, leads)
+  and `src/data/careers/recruitment.ts`. KOL & UGC Manager (G3) and Media Partnerships (R2, deferred in the workbook)
+  have only short descriptions; extend them there and here.
 - Program structure, benefits, eligibility, campaign tasks: founder brief of 1 Nov 2026.
 
 ## How an application is stored
