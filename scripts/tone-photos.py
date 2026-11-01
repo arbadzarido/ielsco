@@ -12,6 +12,11 @@ JOBS = {
   "contents/careers/iels_team_3.png": "team-portrait.webp",
   "contents/general/landing_page_1.png": "speaker.webp",
   "contents/general/landing_page_2.png": "discussion.webp",
+  # IELS Circle meetups (circle.ielsco.com community moments), used on /careers.
+  "people/circle/iels-thailand.png": "circle-bangkok.webp",
+  "people/circle/iels-malaysia.png": "circle-kuala-lumpur.webp",
+  "people/circle/iels-cambodia.png": "circle-phnom-penh.webp",
+  "people/circle/iels-vietnam.png": "circle-ho-chi-minh.webp",
 }
 for src, out in JOBS.items():
     im = Image.open(src).convert("RGB")
