@@ -3,6 +3,7 @@ import { eventsData } from "@/data/events";
 import { divisions } from "@/data/careers/divisions";
 import { getPublishedStories } from "@/lib/stories/public";
 import { listPublishedOpportunities } from "@/lib/opportunities";
+import { listPublishedProfessional } from "@/lib/professional/queries";
 import { generateSlug } from "@/utils/slug";
 import { CIRCLE_URL, SCHOOL_URL, SITE_URL } from "@/lib/seo";
 import { ARTICLES, articlePath } from "@/content/articles";
@@ -13,14 +14,15 @@ import { ARTICLES_PATH } from "@/content/articles/types";
 // opportunities appear. Circle and Schools are listed on their own subdomains, which are their canonical hosts.
 export const revalidate = 3600;
 
-const PAGES = ["/", "/opportunities", "/membership", "/about", "/products", "/products/courses", "/products/resources", "/events",
+const PAGES = ["/", "/opportunities", "/opportunities/professional", "/membership", "/about", "/products", "/products/courses", "/products/resources", "/events",
   "/events/gif", "/events/launchpad", "/partners", "/careers", "/privacy-policy", "/terms-of-service"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [{ stories }, opportunities] = await Promise.all([getPublishedStories(), listPublishedOpportunities()]);
+  const [{ stories }, opportunities, jobs] = await Promise.all([getPublishedStories(), listPublishedOpportunities(), listPublishedProfessional()]);
   return [
     ...PAGES.map((p) => ({ url: `${SITE_URL}${p === "/" ? "/" : p}` })),
     ...opportunities.map((o) => ({ url: `${SITE_URL}/opportunities/${o.slug}`, lastModified: new Date(o.updated_at) })),
+    ...jobs.map((o) => ({ url: `${SITE_URL}/opportunities/professional/${o.slug}`, lastModified: new Date(o.updated_at) })),
     ...eventsData.map((e) => ({ url: `${SITE_URL}/events/${generateSlug(e.title)}` })),
     ...divisions.map((d) => ({ url: `${SITE_URL}/careers/${d.slug}` })),
     { url: `${SITE_URL}${ARTICLES_PATH.en}` },

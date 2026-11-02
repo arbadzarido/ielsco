@@ -7,10 +7,11 @@ import { btnPrimary, btnSecondary, card, focusRing, inputClass, labelClass, tag 
 import { cn } from "@/lib/utils";
 import { dateTimeWib, dateWib } from "@/lib/format";
 import { CareerApplications } from "./CareerApplicationsAdmin";
+import { OpportunityInterests } from "./OpportunityInterestsAdmin";
 
 // Staff operations for the membership platform. Every query below is restricted by RLS / security-definer functions to
 // public.staff_roles admins; this screen only arranges them.
-const TABS = ["Inquiries", "Applications", "Members", "Feedback", "Buddies", "Sessions", "Member links"] as const;
+const TABS = ["Inquiries", "Applications", "Work abroad", "Members", "Feedback", "Buddies", "Sessions", "Member links"] as const;
 type Tab = (typeof TABS)[number];
 
 function useRows<T>(load: () => PromiseLike<{ data: unknown; error: { message: string } | null }>) {
@@ -229,6 +230,7 @@ export function OperationsAdmin({ supabase }: { supabase: SupabaseClient }) {
       </div>
       {tab === "Inquiries" && <Inquiries supabase={supabase} />}
       {tab === "Applications" && <CareerApplications supabase={supabase} />}
+      {tab === "Work abroad" && <OpportunityInterests supabase={supabase} />}
       {tab === "Members" && <Members supabase={supabase} />}
       {tab === "Feedback" && <Feedback supabase={supabase} />}
       {tab === "Buddies" && <Buddies supabase={supabase} />}

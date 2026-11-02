@@ -9,12 +9,13 @@ import { EmptyState, Notice } from "@/components/dashboard/PageStates";
 import { ConnectedApps } from "@/components/dashboard/settings/ConnectedApps";
 import { ACCENTS, btnPrimary, btnSecondary, card, cardGloss, focusRing, type Accent } from "@/components/dashboard/ui";
 import { ElcoMascot } from "@/components/elco/ElcoMascot";
-import OpportunityBoard from "@/components/opportunities/OpportunityBoard";
+import { OpportunitiesExplorer } from "@/components/opportunities/OpportunitiesExplorer";
 import { circlesApi, connectApi } from "@/lib/connect/api";
 import { eventDay, upcomingOfficialEvents } from "@/lib/connect/events";
 import type { Passport } from "@/lib/connect/types";
 import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
 import { loadOpportunities } from "@/lib/pulse";
+import { loadProfessional } from "@/lib/professional/queries";
 import { cn } from "@/lib/utils";
 import { CircleCard } from "./CirclesView";
 import { reasonsFor } from "./DiscoverView";
@@ -93,7 +94,7 @@ export function DiscoverHome(ctx: DashboardCtx) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <AreaTile testId="area-people" href="/dashboard/connect/discover" icon={Users} accent="navy" title="People" body="Language partners and members with your goals." />
         <AreaTile testId="area-circles" href="/dashboard/circles" icon={Compass} accent="teal" title="Circles" body="Small groups around shared goals." />
-        <AreaTile testId="area-opportunities" href="/dashboard/discover/opportunities" icon={ShieldCheck} accent="amber" title="Opportunities" body="Scholarships, exchanges and programs, source-checked." />
+        <AreaTile testId="area-opportunities" href="/dashboard/discover/opportunities" icon={ShieldCheck} accent="amber" title="Opportunities" body="Scholarships and programs, plus jobs abroad with official recruitment partners." />
         <AreaTile testId="area-pulse" href="/dashboard/pulse" icon={Inbox} accent="violet" title="IELSco Pulse" body="Stories, guides and videos." />
         <AreaTile testId="area-sea" href="/dashboard/sea-exchange" icon={MessageCircle} accent="coral" title="SEA Cultural Exchange" body="Prompts to talk across borders." />
       </div>
@@ -138,14 +139,21 @@ export function DiscoverHome(ctx: DashboardCtx) {
 
 // ── Discover → Opportunities (the public board, inside the dashboard) ──────────────────────────────────────────────
 export function DiscoverOpportunities({ supabase }: DashboardCtx) {
-  const data = useLoad(() => loadOpportunities(supabase), [supabase]);
+  // Same data and components as /opportunities. Listings open inside the dashboard; a missing professional table
+  // (migration not applied yet) must not hide the academic board.
+  const data = useLoad(async () => {
+    const [academic, professional] = await Promise.all([loadOpportunities(supabase), loadProfessional(supabase).catch(() => [])]);
+    return { academic, professional };
+  }, [supabase]);
+  const ready = data.state.s === "ready" ? data.state.data : null;
   return (
-    <ConnectFrame title="Opportunities" description="Scholarships, exchanges, fellowships, internships and programs. Each one links to its official page and says when IELS last checked it."
+    <ConnectFrame title="Opportunities" description="Study, scholarships and work abroad. Academic listings link to their official pages; international jobs come with their official recruitment partner."
       actions={<Link href="/dashboard/opportunities" className={btnSecondary}>My saved opportunities</Link>}>
-      <LoadGate state={data.state} onRetry={data.reload} label="Loading opportunities…" />
-      {data.state.s === "ready" && (data.state.data.length > 0 ? <OpportunityBoard items={data.state.data} /> : (
-        <EmptyState title="No opportunities published right now" body="The IELS team checks new programs every week." />
-      ))}
+      {(data.state.s === "error" || data.state.s === "unavailable") && <LoadGate state={data.state} onRetry={data.reload} />}
+      {data.state.s !== "error" && data.state.s !== "unavailable" && (
+        <OpportunitiesExplorer academic={ready?.academic ?? null} professional={ready?.professional ?? null} jobBasePath="/dashboard/discover/opportunities/professional"
+          academicEmpty={<EmptyState title="No opportunities published right now" body="The IELS team checks new programs every week." />} />
+      )}
     </ConnectFrame>
   );
 }
