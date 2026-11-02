@@ -16,9 +16,13 @@ import {
   type StoryStatus,
   type StoryType,
 } from "@/lib/stories/types";
+import { rowToIelscoStory, type IelscoCategory, type IelscoStory, type StoryLang } from "@/lib/stories/ielsco";
 
-// Admin-side data access for the Member Stories CMS. Every call runs with the admin's own session, so RLS
-// (public.is_story_admin()) is the real gate.
+// Admin-side data access for the stories CMS: Member Stories (section 'member') and IELSco Stories (section 'ielsco')
+// share one table and one editor. Every call runs with the admin's own session, so RLS (public.is_story_admin()) is
+// the real gate.
+
+export type StorySection = "member" | "ielsco";
 
 export interface AdminStory {
   id: string;
@@ -28,7 +32,13 @@ export interface AdminStory {
   slug: string;
   title: string;
   summary: string | null;
-  category: StoryCategory;
+  category: StoryCategory | IelscoCategory;
+  section: StorySection;
+  lang: StoryLang;
+  translation_of: string | null;
+  tags: string[];
+  banner_alt: string | null;
+  banner_caption: string | null;
   legacy_subcategory: string | null;
   story_type: StoryType;
   author_name: string;
@@ -86,21 +96,24 @@ export interface AdminSubmission {
 }
 
 export const STORY_LIST_COLUMNS =
-  "id, legacy_id, kind, status, slug, title, category, story_type, author_name, author_country, sort_date, story_date, publication_authorized, submission_id, target_country, issues, updated_at, created_at, published_at";
-export type StoryListRow = Pick<AdminStory, "id" | "legacy_id" | "kind" | "status" | "slug" | "title" | "category" | "story_type" | "author_name" | "author_country" | "sort_date" | "story_date" | "publication_authorized" | "submission_id" | "target_country" | "issues" | "updated_at" | "created_at" | "published_at">;
+  "id, legacy_id, kind, status, slug, title, category, story_type, author_name, author_country, sort_date, story_date, publication_authorized, submission_id, target_country, issues, updated_at, created_at, published_at, section, lang, translation_of, tags";
+export type StoryListRow = Pick<AdminStory, "id" | "legacy_id" | "kind" | "status" | "slug" | "title" | "category" | "story_type" | "author_name" | "author_country" | "sort_date" | "story_date" | "publication_authorized" | "submission_id" | "target_country" | "issues" | "updated_at" | "created_at" | "published_at" | "section" | "lang" | "translation_of" | "tags">;
 export const SUBMISSION_LIST_COLUMNS = "id, created_at, source, status, name, country, consent_review, consent_identity, consent_instagram, ai_status, story_id";
 export type SubmissionListRow = Pick<AdminSubmission, "id" | "created_at" | "source" | "status" | "name" | "country" | "consent_review" | "consent_identity" | "consent_instagram" | "ai_status" | "story_id">;
 
 export const EDITABLE_FIELDS = [
   "status", "slug", "title", "summary", "category", "story_type", "author_name", "author_country", "author_location", "author_role",
   "author_bio", "author_avatar", "social", "banner_image", "sections", "quotes", "highlights", "gallery", "credits", "seo", "story_date",
-  "sort_date", "location", "publication_authorized", "issues", "editor_notes",
+  "sort_date", "location", "publication_authorized", "issues", "editor_notes", "lang", "translation_of", "tags", "banner_alt", "banner_caption",
+  "published_at",
 ] as const;
 
-export function emptyStory(): AdminStory {
+export function emptyStory(section: StorySection = "member"): AdminStory {
+  const ielsco = section === "ielsco";
   return {
-    id: "", legacy_id: null, kind: "story", status: "draft", slug: "", title: "", summary: "", category: "circle", legacy_subcategory: null,
-    story_type: "other", author_name: "", author_country: null, author_location: null, author_role: null, author_bio: null, author_avatar: null,
+    id: "", legacy_id: null, kind: "story", status: "draft", slug: "", title: "", summary: "", category: ielsco ? "achievements" : "circle",
+    section, lang: "en", translation_of: null, tags: [], banner_alt: null, banner_caption: null, legacy_subcategory: null,
+    story_type: "other", author_name: ielsco ? "IELSco Editorial Team" : "", author_country: null, author_location: null, author_role: null, author_bio: null, author_avatar: null,
     social: {}, banner_image: null, legacy_content: null, sections: [], quotes: [], highlights: [], gallery: [], credits: {}, seo: {},
     story_date: null, sort_date: null, location: null, publication_authorized: false, submission_id: null, target_country: null,
     editorial_brief: {}, issues: [], editor_notes: null, published_at: null, created_at: "", updated_at: "",
@@ -189,12 +202,26 @@ export function toPreview(s: AdminStory, signed: Record<string, string>): Public
   const row: StoryRow = {
     ...s,
     slug: s.slug || "preview",
+    category: s.category as StoryCategory,
     banner_image: r(s.banner_image),
     author_avatar: r(s.author_avatar),
     sections: s.sections.map((x) => ({ ...x, image: r(x.image) ?? undefined })),
     gallery: s.gallery.map((g) => ({ ...g, image: r(g.image) ?? "" })).filter((g) => g.image),
   };
   return rowToStory(row);
+}
+
+// IELSco story -> public shape for the preview (no private submission images in this section).
+export function toIelscoPreview(s: AdminStory): IelscoStory {
+  const now = new Date().toISOString();
+  return rowToIelscoStory({
+    ...s,
+    slug: s.slug || "preview",
+    category: s.category as IelscoCategory,
+    published_at: s.published_at ?? now,
+    updated_at: s.updated_at || now,
+    translation_slug: null,
+  });
 }
 
 export const STATUS_LABELS: Record<StoryStatus, string> = {

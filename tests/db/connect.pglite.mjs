@@ -31,7 +31,7 @@ await db.exec(`
 
 const all = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
 const base = all.filter((f) => /^(20261013|20261016000000|20261017000000|20261026000000)/.test(f));
-const connect = all.filter((f) => f >= "20261028");
+const connect = all.filter((f) => f >= "20261028" && !f.includes("ielsco_stories")); // Stories needs the Member Stories base
 for (const f of [...base, ...connect]) await db.exec(readFileSync(join(dir, f), "utf8"));
 for (const f of connect) await db.exec(readFileSync(join(dir, f), "utf8"));
 ok(`migrations apply and re-run cleanly (${connect.join(", ")})`);
@@ -266,7 +266,7 @@ await t("blocking ends a live call", async () => {
 // ── Circles ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 await t("three starting Circles, visible to signed-in members", () => as(B, `select * from public.list_circles()`), (r) => (r.rows.map((x) => x.id).join() === "global-growth,opportunities,cross-cultural" ? null : JSON.stringify(r.rows)));
 await sql(`update public.circles set tagline = 'Edited by staff' where id = 'global-growth'`);
-for (const f of all.filter((f) => f >= "20261029")) await db.exec(readFileSync(join(dir, f), "utf8"));
+for (const f of connect.filter((f) => f >= "20261029")) await db.exec(readFileSync(join(dir, f), "utf8"));
 await t("re-running the migration keeps staff edits", () => db.query(`select tagline from public.circles where id = 'global-growth'`), (r) => (r.rows[0].tagline === "Edited by staff" ? null : r.rows[0].tagline));
 await te("anon cannot list Circles", () => as(null, `select * from public.list_circles()`), /permission denied/);
 await te("members cannot create Circles", () => as(B, `insert into public.circles (id, name) values ('spam-circle', 'Spam') returning id`).then((r) => { if (!r.rows.length) throw new Error("denied"); }), /denied|row-level security/);

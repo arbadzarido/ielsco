@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Footer from "@/components/footer";
 import StoriesBrowser from "@/components/stories/StoriesBrowser";
+import StoriesSectionTabs from "@/components/stories/StoriesSectionTabs";
 import { getPublishedStories } from "@/lib/stories/public";
 
 // Listing of published member stories (Supabase, cached; refreshed every 5 minutes and on admin saves).
@@ -22,6 +23,7 @@ export default async function StoriesPage() {
   const { stories } = await getPublishedStories();
   return (
     <div className="bg-white [&_:is(h1,h2,h3,h4,h5,h6)]:font-sans">
+      <StoriesSectionTabs active="member" />
       <StoriesBrowser stories={stories} />
       <Footer />
     </div>
