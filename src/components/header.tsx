@@ -108,18 +108,18 @@ export default function Header() {
   const signInHref = host.circle ? `${host.main}/sign-in` : host.local && pathname?.startsWith("/school") ? "/school/sign-in" : "/sign-in";
   const onCircle = host.circle || !!pathname?.startsWith("/circle");
 
-  // Main navigation answers: what can I find (Opportunities, Resources), who do I meet (Community), what can I join
-  // (Programs, Membership), and the institutional path (For Schools). About, Partners and Careers live in the footer.
+  // Main navigation answers: what can I find (Opportunities, Resources), who do I meet (Circle: Member Stories, Agenda),
+  // what can I join (Programs, Membership), what IELSco is doing (Stories: official IELSco Stories), and the
+  // institutional path (For Schools). About, Partners and Careers live in the footer.
   const navItems: NavItem[] = [
     { name: "Opportunities", path: main("/opportunities"), active: !offMain && !!pathname?.startsWith("/opportunities") },
     {
-      name: "Community",
+      name: "Circle",
       path: circleBase || "/",
       active: onCircle,
       children: [
-        { name: "IELS Circle: weekly sessions", path: circleBase || "/" },
-        { name: "Member stories", path: `${circleBase}/stories` },
-        { name: "Cohort agenda", path: `${circleBase}/agenda` },
+        { name: "Member Stories", path: `${circleBase}/stories` },
+        { name: "Agenda", path: `${circleBase}/agenda` },
       ],
     },
     {
@@ -134,6 +134,7 @@ export default function Header() {
       ],
     },
     { name: "Resources", path: main("/products/resources"), active: !offMain && !!pathname?.startsWith("/products/resources") },
+    { name: "Stories", path: main("/stories"), active: !offMain && (!!pathname?.startsWith("/stories") || !!pathname?.startsWith("/id/stories")) },
     { name: "For Schools", path: main("/school"), active: host.school || (!offMain && pathname === "/school") },
     { name: "Membership", path: main("/membership"), active: !offMain && !!pathname?.startsWith("/membership") },
   ];
@@ -285,7 +286,7 @@ export default function Header() {
                   </Link>
                   {item.children && (
                     <ul className="mb-2 ml-4 mt-1 border-l border-[#E6E9EE] pl-3">
-                      {item.children.slice(1).map((c) => (
+                      {item.children.filter((c) => c.path !== item.path).map((c) => (
                         <li key={c.path}>
                           <Link href={c.path} className={cn("block rounded-xl px-3 py-2.5 text-[15px] font-medium text-[#2F4157]/80 hover:bg-[#F1F4F8]", focusRing)}>
                             {c.name}

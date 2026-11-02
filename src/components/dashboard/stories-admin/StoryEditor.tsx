@@ -9,14 +9,16 @@ import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, Check, Eye, Loader2, Plus
 import { ErrorState, LoadingState, Notice } from "../PageStates";
 import { btnPrimary, btnSecondary, cardGloss, focusRing, inputClass, labelClass, tag } from "../ui";
 import StoryArticle from "@/components/stories/StoryArticle";
+import IelscoStoryArticle from "@/components/stories/IelscoStoryArticle";
 import { COUNTRY_CODES, countryName } from "@/lib/dashboard/countries";
 import { SUPPORT_EMAIL, answerList } from "@/lib/stories/questionnaire";
 import { CATEGORIES, CATEGORY_LABELS, STORY_TYPES, type GalleryItemData, type StoryStatus, type StoryType } from "@/lib/stories/types";
+import { IELSCO_CATEGORIES, IELSCO_CATEGORY_LABELS, ielscoStoryPath } from "@/lib/stories/ielsco";
 import { cn } from "@/lib/utils";
 import { MediaField } from "./MediaField";
 import {
   EDITABLE_FIELDS, PRIVATE_PREFIX, STATUS_LABELS, approveSubmissionImage, emptyStory, privateRefs, revalidatePublicPages,
-  signedUrls, slugAvailable, slugify, toPreview, type AdminStory, type AdminSubmission,
+  signedUrls, slugAvailable, slugify, toIelscoPreview, toPreview, type AdminStory, type AdminSubmission, type StorySection,
 } from "./data";
 
 const input = cn(inputClass, "py-2 text-[16px]");
@@ -29,6 +31,14 @@ function toHtml(text: string) {
   if (/<[a-z][\s\S]*>/i.test(text)) return text;
   return text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
 }
+
+// <input type="datetime-local"> works in local time without a zone; the database stores timestamptz.
+const toLocalInput = (iso: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
 
 function move<T>(list: T[], i: number, d: -1 | 1): T[] {
   const j = i + d;
@@ -68,12 +78,16 @@ function RowTools({ onUp, onDown, onRemove, label }: { onUp: () => void; onDown:
   );
 }
 
-export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: string }) {
+// One editor for both sections. IELSco Stories (section 'ielsco') hide the member-only parts (submission, avatar,
+// country, socials, story type) and add language, translation link, tags, featured-image alt/caption and a
+// publication date (a future date schedules the article).
+export function StoryEditor({ supabase, id, newSection = "member", translateFrom = null }: { supabase: SupabaseClient; id: string; newSection?: StorySection; translateFrom?: string | null }) {
   const router = useRouter();
   const isNew = id === "new";
   const draftKey = useMemo(() => (isNew ? `new-${crypto.randomUUID().slice(0, 8)}` : id), [id, isNew]);
   const [load, setLoad] = useState<{ status: "loading" } | { status: "error"; message: string } | { status: "ready" }>({ status: "loading" });
-  const [story, setStory] = useState<AdminStory>(emptyStory);
+  const [story, setStory] = useState<AdminStory>(() => emptyStory(newSection));
+  const [enStories, setEnStories] = useState<{ id: string; title: string }[]>([]);
   const [saved, setSaved] = useState<AdminStory | null>(null);
   const [sub, setSub] = useState<AdminSubmission | null>(null);
   const [signed, setSigned] = useState<Record<string, string>>({});
@@ -84,7 +98,20 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async () => {
-    if (isNew) return setLoad({ status: "ready" });
+    if (isNew) {
+      // "Create Indonesian version": start from the English article (same category, tags and images), linked to it.
+      if (translateFrom) {
+        const { data } = await supabase.from("member_stories").select("*").eq("id", translateFrom).maybeSingle();
+        if (data && data.section === "ielsco") {
+          const en = { ...emptyStory("ielsco"), ...data } as AdminStory;
+          setStory({ ...emptyStory("ielsco"), category: en.category, tags: en.tags, banner_image: en.banner_image, banner_alt: en.banner_alt,
+            banner_caption: en.banner_caption, author_name: en.author_name, author_role: en.author_role, location: en.location,
+            story_date: en.story_date, sections: en.sections.map((x) => ({ ...x, title: "", content: "" })), gallery: en.gallery,
+            title: "", lang: "id", translation_of: en.id, issues: ["Translate every section from the English article"] });
+        }
+      }
+      return setLoad({ status: "ready" });
+    }
     setLoad({ status: "loading" });
     const { data, error } = await supabase.from("member_stories").select("*").eq("id", id).maybeSingle();
     if (error || !data) return setLoad({ status: "error", message: error?.message ?? "Story not found." });
@@ -99,7 +126,7 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
     setSub(subRow);
     setSigned(await signedUrls(supabase, [...(subRow?.images ?? []).map((im) => im.path), ...privateRefs(s).map((r) => r.slice(PRIVATE_PREFIX.length))]));
     setLoad({ status: "ready" });
-  }, [id, isNew, supabase]);
+  }, [id, isNew, supabase, translateFrom]);
 
   useEffect(() => {
     reload();
@@ -108,6 +135,15 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
   const set = <K extends keyof AdminStory>(k: K, v: AdminStory[K]) => setStory((s) => ({ ...s, [k]: v }));
   const dirty = useMemo(() => JSON.stringify(story) !== JSON.stringify(saved), [story, saved]);
   const isPlaceholder = story.kind === "placeholder";
+  const isIelsco = story.section === "ielsco";
+  const livePath = isIelsco ? `https://www.ielsco.com${ielscoStoryPath(story.lang, story.slug)}` : `https://circle.ielsco.com/stories/${story.slug}`;
+
+  // English IELSco stories, for the "Indonesian version of" link.
+  useEffect(() => {
+    if (!isIelsco) return;
+    supabase.from("member_stories").select("id, title").eq("section", "ielsco").eq("lang", "en").order("updated_at", { ascending: false })
+      .then(({ data }) => setEnStories((data ?? []).filter((r) => r.id !== id) as { id: string; title: string }[]));
+  }, [isIelsco, supabase, id]);
   const priv = privateRefs(story);
 
   // Slug availability (debounced).
@@ -130,9 +166,11 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
     }
     if (status === "published") {
       if (isPlaceholder) return setMsg({ ok: false, text: "Editorial placeholders can't be published." });
-      if (!story.publication_authorized) return setMsg({ ok: false, text: "Tick “Authorization for public use confirmed” before publishing." });
+      if (!story.publication_authorized) return setMsg({ ok: false, text: isIelsco ? "Tick “Editorial review done” before publishing." : "Tick “Authorization for public use confirmed” before publishing." });
       if (priv.length) return setMsg({ ok: false, text: `Approve the ${priv.length} submitted image(s) first (they are still private).` });
       if (!story.author_name.trim()) return setMsg({ ok: false, text: "Add the author's name." });
+      if (isIelsco && story.banner_image && !story.banner_alt?.trim()) return setMsg({ ok: false, text: "Add alt text for the featured image." });
+      if (isIelsco && story.lang === "id" && !story.translation_of) return setMsg({ ok: false, text: "Link this Indonesian article to its English original first." });
     }
     const payload: Record<string, unknown> = {};
     for (const k of EDITABLE_FIELDS) payload[k] = story[k as keyof AdminStory];
@@ -145,10 +183,13 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
     payload.issues = story.issues.map((i) => i.trim()).filter(Boolean);
     payload.author_country = story.author_country || null;
     payload.sort_date = story.sort_date || null;
+    payload.tags = [...new Set(story.tags.map((t) => t.trim().toLowerCase()).filter(Boolean))].slice(0, 12);
+    payload.translation_of = isIelsco && story.lang === "id" ? story.translation_of : null;
+    payload.published_at = story.published_at || null;
 
     setBusy("save");
     const res = isNew
-      ? await supabase.from("member_stories").insert({ ...payload, kind: "story" }).select("*").single()
+      ? await supabase.from("member_stories").insert({ ...payload, kind: "story", section: story.section }).select("*").single()
       : await supabase.from("member_stories").update(payload).eq("id", id).select("*").single();
     setBusy(null);
     if (res.error) return setMsg({ ok: false, text: res.error.message });
@@ -160,8 +201,20 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
       await supabase.from("member_story_submissions").update({ status: subStatus }).eq("id", sub.id);
     }
     await revalidatePublicPages();
-    setMsg({ ok: true, text: status === "published" ? "Published. The public page refreshes now." : `Saved (${STATUS_LABELS[status]}).` });
+    const scheduled = status === "published" && s.published_at && Date.parse(s.published_at) > Date.now();
+    setMsg({ ok: true, text: scheduled ? `Scheduled. It goes live on ${new Date(s.published_at!).toLocaleString("en-GB")}.` : status === "published" ? "Published. The public page refreshes now." : `Saved (${STATUS_LABELS[status]}).` });
     if (isNew) router.replace(`/dashboard/admin/stories/${s.id}`);
+  }
+
+  async function remove() {
+    if (story.status === "published") return setMsg({ ok: false, text: "Unpublish or archive the article before deleting it." });
+    if (!window.confirm(`Delete “${story.title || "this article"}” permanently? This can't be undone. (Archive instead if you may need it again.)`)) return;
+    setBusy("delete");
+    const { error } = await supabase.from("member_stories").delete().eq("id", id);
+    setBusy(null);
+    if (error) return setMsg({ ok: false, text: error.message });
+    await revalidatePublicPages();
+    router.replace(`/dashboard/admin/stories${isIelsco ? "?section=ielsco" : ""}`);
   }
 
   async function generateDraft() {
@@ -251,14 +304,16 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
     <div data-testid="story-editor">
       <div className="mb-[18px] flex flex-wrap items-center justify-between gap-[12px]">
         <div className="min-w-0">
-          <Link href="/dashboard/admin/stories" className="inline-flex items-center gap-1 text-[15px] font-semibold text-[#577E90] hover:underline"><ArrowLeft size={16} /> All stories</Link>
-          <h1 className="mt-[6px] text-[26px] font-bold leading-tight md:text-[30px]">{isNew ? "Create story" : story.title || "Untitled story"}</h1>
+          <Link href={`/dashboard/admin/stories${isIelsco ? "?section=ielsco" : ""}`} className="inline-flex items-center gap-1 text-[15px] font-semibold text-[#577E90] hover:underline"><ArrowLeft size={16} /> {isIelsco ? "All IELSco Stories" : "All stories"}</Link>
+          <h1 className="mt-[6px] text-[26px] font-bold leading-tight md:text-[30px]">{isNew ? (isIelsco ? (story.lang === "id" ? "New IELSco story (Bahasa Indonesia)" : "New IELSco story") : "Create story") : story.title || "Untitled story"}</h1>
           <div className="mt-[6px] flex flex-wrap items-center gap-[8px] text-[14px]">
             <span className={tag}>{isPlaceholder ? "Editorial placeholder" : STATUS_LABELS[story.status]}</span>
+            {isIelsco && <span className={tag}>IELSco Stories · {story.lang === "id" ? "Bahasa Indonesia" : "English"}</span>}
             {story.legacy_id && <span className={tag}>Migrated story #{story.legacy_id}</span>}
             {sub && <span className={tag}>{sub.source === "form" ? "Submitted via questionnaire" : "Editorial import"}</span>}
             {dirty && <span className="font-semibold text-[#9A4A2E]">Unsaved changes</span>}
-            {story.status === "published" && story.slug && <a href={`https://circle.ielsco.com/stories/${story.slug}`} target="_blank" rel="noreferrer" className="font-semibold text-[#577E90] underline">View live</a>}
+            {story.status === "published" && story.slug && <a href={livePath} target="_blank" rel="noreferrer" className="font-semibold text-[#577E90] underline">View live</a>}
+            {isIelsco && !isNew && story.lang === "en" && <Link href={`/dashboard/admin/stories/new?section=ielsco&translate=${story.id}`} className="font-semibold text-[#577E90] underline" data-testid="create-translation">Create Indonesian version</Link>}
           </div>
         </div>
         <div className="flex flex-wrap gap-[8px]">
@@ -268,7 +323,9 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
             <button type="button" className={cn(btnSecondary, "px-4 py-2")} disabled={!!busy} onClick={() => save("draft", story.status === "published" ? { confirm: "Unpublish this story and move it to Drafts? It disappears from the public site." } : {})}>Save as draft</button>
           )}
           {!isPlaceholder && story.status !== "published" && (
-            <button type="button" className={cn(btnPrimary, "px-4 py-2")} disabled={!!busy} data-testid="publish-story" onClick={() => save("published", { confirm: `Publish “${story.title}” on circle.ielsco.com/stories now?` })}>Publish</button>
+            <button type="button" className={cn(btnPrimary, "px-4 py-2")} disabled={!!busy} data-testid="publish-story" onClick={() => save("published", { confirm: isIelsco
+                ? (story.published_at && Date.parse(story.published_at) > Date.now() ? `Schedule “${story.title}” for ${new Date(story.published_at).toLocaleString("en-GB")}?` : `Publish “${story.title}” on www.ielsco.com${ielscoStoryPath(story.lang, "")} now?`)
+                : `Publish “${story.title}” on circle.ielsco.com/stories now?` })}>{isIelsco && story.published_at && Date.parse(story.published_at) > Date.now() ? "Schedule" : "Publish"}</button>
           )}
         </div>
       </div>
@@ -392,17 +449,44 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
             <Field label="Summary" help="1–2 sentences shown on the story card."><textarea className={area} rows={2} value={story.summary ?? ""} onChange={(e) => set("summary", e.target.value)} maxLength={400} /></Field>
             <div className="grid gap-[12px] sm:grid-cols-2">
               <Field label="Category">
-                <select className={input} value={story.category} onChange={(e) => set("category", e.target.value as AdminStory["category"])}>{CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}</select>
+                <select className={input} value={story.category} onChange={(e) => set("category", e.target.value as AdminStory["category"])} data-testid="field-category">
+                  {isIelsco ? IELSCO_CATEGORIES.map((c) => <option key={c} value={c}>{IELSCO_CATEGORY_LABELS[c].en}</option>) : CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                </select>
               </Field>
-              <Field label="Story type">
+              {!isIelsco && <Field label="Story type">
                 <select className={input} value={story.story_type} onChange={(e) => set("story_type", e.target.value as StoryType)}>{Object.entries(STORY_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-              </Field>
-              <Field label="Date shown" help="e.g. October 3, 2025"><input className={input} value={story.story_date ?? ""} onChange={(e) => set("story_date", e.target.value)} /></Field>
-              <Field label="Sort date"><input type="date" className={input} value={story.sort_date ?? ""} onChange={(e) => set("sort_date", e.target.value)} /></Field>
+              </Field>}
+              {isIelsco && <Field label="Language">
+                <select className={input} value={story.lang} onChange={(e) => set("lang", e.target.value as AdminStory["lang"])} data-testid="field-lang"><option value="en">English</option><option value="id">Bahasa Indonesia</option></select>
+              </Field>}
+              {!isIelsco && <Field label="Date shown" help="e.g. October 3, 2025"><input className={input} value={story.story_date ?? ""} onChange={(e) => set("story_date", e.target.value)} /></Field>}
+              {!isIelsco && <Field label="Sort date"><input type="date" className={input} value={story.sort_date ?? ""} onChange={(e) => set("sort_date", e.target.value)} /></Field>}
+              {isIelsco && <Field label="Publication date" help="Shown on the article. Empty = when you click Publish. A future date schedules it.">
+                <input type="datetime-local" className={input} value={toLocalInput(story.published_at)} onChange={(e) => set("published_at", fromLocalInput(e.target.value))} data-testid="field-published-at" /></Field>}
               <Field label="Location shown"><input className={input} value={story.location ?? ""} onChange={(e) => set("location", e.target.value)} /></Field>
             </div>
+            {isIelsco && story.lang === "id" && (
+              <Field label="Indonesian version of" help="Links the two articles (hreflang and the language switch on both pages).">
+                <select className={input} value={story.translation_of ?? ""} onChange={(e) => set("translation_of", e.target.value || null)} data-testid="field-translation-of">
+                  <option value="">— choose the English article —</option>{enStories.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
+                </select>
+              </Field>
+            )}
+            {isIelsco && <Field label="Tags" help="Comma-separated, e.g. award, cambodia, startup (max 12)."><input className={input} value={story.tags.join(", ")} onChange={(e) => set("tags", e.target.value.split(",").map((t) => t.trimStart()))} data-testid="field-tags" /></Field>}
           </Panel>
 
+          {isIelsco ? (
+            <Panel title="Attribution & featured image">
+              <div className="grid gap-[12px] sm:grid-cols-2">
+                <Field label="Author or editorial attribution"><input className={input} value={story.author_name} onChange={(e) => set("author_name", e.target.value)} data-testid="field-author" /></Field>
+                <Field label="Role (optional)"><input className={input} value={story.author_role ?? ""} onChange={(e) => set("author_role", e.target.value || null)} /></Field>
+              </div>
+              <MediaField {...media} label="Featured image" value={story.banner_image} onChange={(v) => set("banner_image", v)} />
+              <Field label="Featured image alt text" help="Describe what the photo shows, for screen readers and search. Required to publish when there's an image.">
+                <input className={input} value={story.banner_alt ?? ""} onChange={(e) => set("banner_alt", e.target.value || null)} data-testid="field-banner-alt" /></Field>
+              <Field label="Featured image caption"><input className={input} value={story.banner_caption ?? ""} onChange={(e) => set("banner_caption", e.target.value || null)} /></Field>
+            </Panel>
+          ) : (
           <Panel title="Author">
             <div className="grid gap-[12px] sm:grid-cols-2">
               <Field label="Name"><input className={input} value={story.author_name} onChange={(e) => set("author_name", e.target.value)} data-testid="field-author" /></Field>
@@ -425,6 +509,7 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
               <MediaField {...media} label="Banner" value={story.banner_image} onChange={(v) => set("banner_image", v)} />
             </div>
           </Panel>
+          )}
 
           <Panel title="Story sections">
             <p className={small}>Separate paragraphs with a blank line, or use &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;. Other HTML is removed when the story is shown.</p>
@@ -436,8 +521,12 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
                 <div className="space-y-[10px]">
                   <Field label="Heading"><input className={input} value={s.title} onChange={(e) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} /></Field>
                   <Field label="Text"><textarea className={area} rows={5} value={s.content} onChange={(e) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, content: e.target.value } : x)))} /></Field>
-                  <Field label="Pull quote under this section (optional, member's own words)"><input className={input} value={s.quote ?? ""} onChange={(e) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, quote: e.target.value || undefined } : x)))} /></Field>
+                  <Field label={isIelsco ? "Pull quote under this section (optional, verified words only)" : "Pull quote under this section (optional, member's own words)"}><input className={input} value={s.quote ?? ""} onChange={(e) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, quote: e.target.value || undefined } : x)))} /></Field>
                   <MediaField {...media} label="Section image" value={s.image} onChange={(v) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, image: v ?? undefined } : x)))} />
+                  {s.image && <div className="grid gap-[8px] sm:grid-cols-2">
+                    <input className={input} value={s.imageAlt ?? ""} placeholder="Image alt text" aria-label={`Section ${i + 1} image alt text`} onChange={(e) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, imageAlt: e.target.value || undefined } : x)))} />
+                    <input className={input} value={s.imageCaption ?? ""} placeholder="Image caption" aria-label={`Section ${i + 1} image caption`} onChange={(e) => set("sections", story.sections.map((x, j) => (j === i ? { ...x, imageCaption: e.target.value || undefined } : x)))} />
+                  </div>}
                 </div>
               </div>
             ))}
@@ -445,7 +534,7 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
           </Panel>
 
           <Panel title="Quotes & highlights">
-            <p className={small}>Quotes must be the member&apos;s actual words. Highlights are short facts already in the story.</p>
+            <p className={small}>{isIelsco ? "Quotes must be verified, word for word, with the speaker named. Highlights are short facts already in the article." : "Quotes must be the member's actual words. Highlights are short facts already in the story."}</p>
             {story.quotes.map((q, i) => (
               <div key={i} className="flex flex-col gap-[8px] sm:flex-row sm:items-start">
                 <textarea className={cn(area, "flex-1")} rows={2} value={q.text} placeholder="Quote" onChange={(e) => set("quotes", story.quotes.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))} />
@@ -502,7 +591,9 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
             )}
             <label className="flex items-start gap-[10px] text-[15px]">
               <input type="checkbox" className="mt-[4px] h-[18px] w-[18px] accent-[#2F4157]" disabled={isPlaceholder} checked={story.publication_authorized} onChange={(e) => set("publication_authorized", e.target.checked)} data-testid="field-authorized" />
-              <span><strong>Authorization for public use confirmed.</strong> The member agreed to this story, their name, role, country and these photos being published. Required to publish.</span>
+              {isIelsco
+                ? <span><strong>Editorial review done.</strong> Facts are checked against sources, everyone named or pictured is OK with it, and IELSco may publish these photos. Required to publish.</span>
+                : <span><strong>Authorization for public use confirmed.</strong> The member agreed to this story, their name, role, country and these photos being published. Required to publish.</span>}
             </label>
             <Field label="Open issues (one per line)"><textarea className={area} rows={3} value={story.issues.join("\n")} onChange={(e) => set("issues", e.target.value.split("\n").map((l) => l.trimStart()).filter((l, i, a) => l || i < a.length - 1))} /></Field>
             <Field label="Editor notes (internal)"><textarea className={area} rows={3} value={story.editor_notes ?? ""} onChange={(e) => set("editor_notes", e.target.value || null)} /></Field>
@@ -522,6 +613,9 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
               {story.status === "published" && (
                 <button type="button" className={cn(btnSecondary, "px-3 py-1.5 text-[14px]")} disabled={!!busy} onClick={() => save("draft", { confirm: "Unpublish this story? It disappears from the public site." })}>Unpublish</button>
               )}
+              {isIelsco && !isNew && story.status !== "published" && (
+                <button type="button" className={cn(btnSecondary, "px-3 py-1.5 text-[14px] text-[#B23F41]")} disabled={!!busy} onClick={remove} data-testid="delete-story"><Trash2 size={14} /> Delete</button>
+              )}
             </div>
             {mailto && story.status === "needs_info" && <Notice>Waiting for the member. <a className="font-semibold underline" href={mailto}>Email them</a> with what you need.</Notice>}
           </Panel>
@@ -535,7 +629,9 @@ export function StoryEditor({ supabase, id }: { supabase: SupabaseClient; id: st
             <button type="button" className={cn(btnSecondary, "px-3 py-1.5 text-[14px]")} onClick={() => setPreview(false)} autoFocus><X size={14} /> Close preview</button>
           </div>
           <div className="flex-1 overflow-y-auto" data-testid="story-preview">
-            <StoryArticle story={toPreview({ ...story, sections: story.sections.map((s) => ({ ...s, content: toHtml(s.content) })) }, signed)} preview />
+            {isIelsco
+              ? <IelscoStoryArticle story={toIelscoPreview({ ...story, sections: story.sections.map((s) => ({ ...s, content: toHtml(s.content) })) })} preview />
+              : <StoryArticle story={toPreview({ ...story, sections: story.sections.map((s) => ({ ...s, content: toHtml(s.content) })) }, signed)} preview />}
           </div>
         </div>,
         document.body

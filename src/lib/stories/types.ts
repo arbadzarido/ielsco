@@ -30,7 +30,8 @@ export const STORY_TYPES = {
 } as const;
 export type StoryType = keyof typeof STORY_TYPES;
 
-export interface StorySectionData { title: string; content: string; image?: string; quote?: string }
+// imageAlt / imageCaption: optional (used by IELSco Stories; Member Stories may set them too).
+export interface StorySectionData { title: string; content: string; image?: string; quote?: string; imageAlt?: string; imageCaption?: string }
 export interface StoryQuoteData { text: string; attribution?: string }
 export interface StoryHighlightData { value: string; label: string }
 export interface GalleryItemData { image: string; caption?: string; type?: "activity" | "travel" | "event" | "people" | "campus" | "other" }

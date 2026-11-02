@@ -7,9 +7,10 @@ import { AlertTriangle, Check, Minus, Plus, RefreshCw } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState, PageHeader } from "../PageStates";
 import { btnPrimary, btnSecondary, cardGloss, focusRing, tag } from "../ui";
 import { countryName, flagEmoji } from "@/lib/dashboard/countries";
-import { CATEGORY_LABELS, STORY_TYPES, type StoryType } from "@/lib/stories/types";
+import { CATEGORY_LABELS, STORY_TYPES, type StoryCategory, type StoryType } from "@/lib/stories/types";
+import { IELSCO_CATEGORIES, IELSCO_CATEGORY_LABELS, ielscoStoryPath, type IelscoCategory } from "@/lib/stories/ielsco";
 import { cn } from "@/lib/utils";
-import { STATUS_LABELS, STORY_LIST_COLUMNS, SUBMISSION_LIST_COLUMNS, type StoryListRow, type SubmissionListRow } from "./data";
+import { STATUS_LABELS, STORY_LIST_COLUMNS, SUBMISSION_LIST_COLUMNS, type StoryListRow, type StorySection, type SubmissionListRow } from "./data";
 
 type Row = StoryListRow & { banner_image: string | null; author_avatar: string | null };
 type TabId = "pending" | "published" | "drafts" | "archived" | "placeholders" | "coverage";
@@ -52,7 +53,18 @@ function Consent({ v, known }: { v?: boolean; known: boolean }) {
   return v ? <Check size={18} className="text-[#2E7D5B]" aria-label="Yes" /> : <Minus size={18} className="text-[#E56668]" aria-label="No" />;
 }
 
-export function StoriesAdmin({ supabase }: { supabase: SupabaseClient }) {
+// Member Stories / IELSco Stories switch (same CMS, two sections).
+function SectionSwitch({ section }: { section: StorySection }) {
+  const cls = (on: boolean) => cn("rounded-full px-[16px] py-[8px] text-[15px] font-semibold", focusRing, on ? "bg-[#2F4157] text-white" : "text-[#2F4157]/75 hover:bg-[#F1F4F8]");
+  return (
+    <div className="mb-[18px] inline-flex rounded-full border border-[#E3E7ED] bg-white p-[4px]" role="tablist" aria-label="Story section" data-testid="section-switch">
+      <Link role="tab" aria-selected={section === "member"} href="/dashboard/admin/stories" className={cls(section === "member")}>Member Stories</Link>
+      <Link role="tab" aria-selected={section === "ielsco"} href="/dashboard/admin/stories?section=ielsco" className={cls(section === "ielsco")} data-testid="section-ielsco">IELSco Stories</Link>
+    </div>
+  );
+}
+
+export function StoriesAdmin({ supabase, section = "member" }: { supabase: SupabaseClient; section?: StorySection }) {
   const [tab, setTab] = useState<TabId>("pending");
   const [state, setState] = useState<{ status: "loading" } | { status: "error"; message: string } | { status: "ready"; rows: Row[]; subs: SubmissionListRow[] }>({ status: "loading" });
 
@@ -75,11 +87,14 @@ export function StoriesAdmin({ supabase }: { supabase: SupabaseClient }) {
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") return <ErrorState message={state.message} onRetry={load} />;
 
-  const counts = Object.fromEntries(TABS.map((t) => [t.id, state.rows.filter((r) => inTab(r, t.id)).length]));
-  const rows = state.rows.filter((r) => inTab(r, tab));
+  if (section === "ielsco") return <><SectionSwitch section={section} /><IelscoAdmin rows={state.rows.filter((r) => r.section === "ielsco")} onRefresh={load} /></>;
+  const memberRows = state.rows.filter((r) => r.section !== "ielsco");
+  const counts = Object.fromEntries(TABS.map((t) => [t.id, memberRows.filter((r) => inTab(r, t.id)).length]));
+  const rows = memberRows.filter((r) => inTab(r, tab));
 
   return (
     <div data-testid="stories-admin">
+      <SectionSwitch section={section} />
       <PageHeader title="Member Stories" description="Review submissions, edit drafts and publish stories to circle.ielsco.com/stories.">
         <div className="flex flex-wrap gap-[8px]">
           <button type="button" onClick={load} className={cn(btnSecondary, "px-4 py-2")}><RefreshCw size={16} aria-hidden="true" /> Refresh</button>
@@ -104,7 +119,7 @@ export function StoriesAdmin({ supabase }: { supabase: SupabaseClient }) {
       </div>
 
       {tab === "coverage" ? (
-        <Coverage rows={state.rows} />
+        <Coverage rows={memberRows} />
       ) : rows.length === 0 ? (
         <EmptyState title="Nothing here" body={tab === "pending" ? "No submissions are waiting for review." : "No stories in this list."} />
       ) : (
@@ -139,7 +154,7 @@ export function StoriesAdmin({ supabase }: { supabase: SupabaseClient }) {
                     <td className="px-[12px] py-[12px] whitespace-nowrap text-[#2F4157]/70">{date ? new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
                     <td className="px-[12px] py-[12px] max-w-[280px]">
                       <Link href={`/dashboard/admin/stories/${r.id}`} className="line-clamp-2 hover:underline">{r.title}</Link>
-                      <span className="text-[13px] text-[#2F4157]/50">{CATEGORY_LABELS[r.category]} · {STORY_TYPES[r.story_type]}</span>
+                      <span className="text-[13px] text-[#2F4157]/50">{CATEGORY_LABELS[r.category as StoryCategory]} · {STORY_TYPES[r.story_type]}</span>
                     </td>
                     <td className="px-[12px] py-[12px]"><span className={tag}>{STATUS_LABELS[r.status]}</span></td>
                     <td className="px-[12px] py-[12px]"><Consent v={s?.consent_review} known={!!s} /></td>
@@ -215,6 +230,108 @@ function Coverage({ rows }: { rows: Row[] }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ── IELSco Stories list ─────────────────────────────────────────────────────────────────────────────────────────
+type IelscoTab = "all" | "published" | "scheduled" | "drafts" | "archived";
+const IELSCO_TABS: { id: IelscoTab; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "published", label: "Published" },
+  { id: "scheduled", label: "Scheduled" },
+  { id: "drafts", label: "Drafts" },
+  { id: "archived", label: "Archived" },
+];
+const isScheduled = (r: Row) => r.status === "published" && !!r.published_at && Date.parse(r.published_at) > Date.now();
+const inIelscoTab = (r: Row, t: IelscoTab) =>
+  t === "all" ? true
+    : t === "published" ? r.status === "published" && !isScheduled(r)
+    : t === "scheduled" ? isScheduled(r)
+    : t === "drafts" ? ["draft", "pending_review", "needs_info"].includes(r.status)
+    : r.status === "archived" || r.status === "rejected";
+
+function ielscoIssues(r: Row, rows: Row[]): string[] {
+  const out = [...(Array.isArray(r.issues) ? r.issues : [])];
+  if (!r.banner_image) out.push("No featured image");
+  if (r.lang === "id" && !r.translation_of) out.push("Not linked to its English original");
+  if (r.lang === "en" && !rows.some((x) => x.translation_of === r.id)) out.push("No Indonesian version yet");
+  if (r.status !== "published" && !r.publication_authorized) out.push("Editorial review not confirmed");
+  return [...new Set(out)];
+}
+
+function IelscoAdmin({ rows, onRefresh }: { rows: Row[]; onRefresh: () => void }) {
+  const [tab, setTab] = useState<IelscoTab>("all");
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState<IelscoCategory | "">("");
+  const [lang, setLang] = useState<"" | "en" | "id">("");
+  const query = q.trim().toLowerCase();
+  const shown = rows
+    .filter((r) => inIelscoTab(r, tab))
+    .filter((r) => !cat || r.category === cat)
+    .filter((r) => !lang || r.lang === lang)
+    .filter((r) => !query || r.title.toLowerCase().includes(query) || r.slug.includes(query) || (r.tags ?? []).some((t) => t.toLowerCase().includes(query)));
+  const titleOf = (id: string | null) => rows.find((r) => r.id === id)?.title;
+  const input = "rounded-full border border-[#E3E7ED] bg-white px-[14px] py-[8px] text-[15px]";
+  return (
+    <div data-testid="ielsco-admin">
+      <PageHeader title="IELSco Stories" description="Official IELSco articles for www.ielsco.com/stories (English) and /id/stories (Bahasa Indonesia). Drafts stay private until you publish.">
+        <div className="flex flex-wrap gap-[8px]">
+          <button type="button" onClick={onRefresh} className={cn(btnSecondary, "px-4 py-2")}><RefreshCw size={16} aria-hidden="true" /> Refresh</button>
+          <Link href="/dashboard/admin/stories/new?section=ielsco" className={cn(btnPrimary, "px-4 py-2")} data-testid="create-ielsco-story"><Plus size={16} aria-hidden="true" /> New article</Link>
+        </div>
+      </PageHeader>
+      <div role="tablist" aria-label="Article status" className="mb-[14px] flex gap-[8px] overflow-x-auto pb-[4px]">
+        {IELSCO_TABS.map((t) => (
+          <button key={t.id} role="tab" type="button" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
+            className={cn("shrink-0 rounded-full px-[16px] py-[8px] text-[15px] font-semibold", focusRing, tab === t.id ? "bg-[#2F4157] text-white" : "border border-[#E3E7ED] bg-white text-[#2F4157]/80 hover:bg-[#F7F8FA]")}>
+            {t.label}<span className="ml-[6px] opacity-70">{rows.filter((r) => inIelscoTab(r, t.id)).length}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mb-[18px] flex flex-wrap gap-[8px]">
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, slug or tag" aria-label="Search articles" className={cn(input, "min-w-[240px] flex-1")} data-testid="ielsco-search" />
+        <select value={cat} onChange={(e) => setCat(e.target.value as IelscoCategory | "")} aria-label="Category" className={input}>
+          <option value="">All categories</option>{IELSCO_CATEGORIES.map((c) => <option key={c} value={c}>{IELSCO_CATEGORY_LABELS[c].en}</option>)}
+        </select>
+        <select value={lang} onChange={(e) => setLang(e.target.value as "" | "en" | "id")} aria-label="Language" className={input}>
+          <option value="">Both languages</option><option value="en">English</option><option value="id">Bahasa Indonesia</option>
+        </select>
+      </div>
+      {shown.length === 0 ? (
+        <EmptyState title="No articles here" body={rows.length ? "Nothing matches these filters." : "Create the first IELSco story, or import the prepared drafts."} />
+      ) : (
+        <div className={cn(cardGloss, "overflow-x-auto")}>
+          <table className="w-full min-w-[900px] text-left text-[15px]">
+            <thead className="border-b border-[#E3E7ED] text-[13px] uppercase tracking-[0.06em] text-[#2F4157]/55">
+              <tr><th className="px-[16px] py-[12px]">Title</th><th className="px-[12px]">Category</th><th className="px-[12px]">Language</th><th className="px-[12px]">Status</th><th className="px-[12px]">Date</th><th className="px-[12px]">Needs attention</th></tr>
+            </thead>
+            <tbody>
+              {shown.map((r) => {
+                const issues = ielscoIssues(r, rows);
+                const date = r.published_at ?? r.updated_at;
+                return (
+                  <tr key={r.id} className="border-b border-[#E3E7ED]/70 last:border-0 hover:bg-[#F7F8FA]" data-testid="ielsco-row">
+                    <td className="max-w-[360px] px-[16px] py-[12px]">
+                      <Link href={`/dashboard/admin/stories/${r.id}`} className={cn("line-clamp-2 font-semibold hover:underline", focusRing)}>{r.title}</Link>
+                      <span className="text-[13px] text-[#2F4157]/50">/{r.lang === "id" ? "id/" : ""}stories/{r.slug}</span>
+                    </td>
+                    <td className="px-[12px] py-[12px] text-[14px]">{IELSCO_CATEGORY_LABELS[r.category as IelscoCategory]?.en ?? r.category}</td>
+                    <td className="px-[12px] py-[12px] text-[14px]">{r.lang === "id" ? "ID" : "EN"}{r.translation_of && <span className="block text-[12px] text-[#2F4157]/55">of “{titleOf(r.translation_of) ?? "…"}”</span>}</td>
+                    <td className="px-[12px] py-[12px]"><span className={tag}>{isScheduled(r) ? "Scheduled" : STATUS_LABELS[r.status]}</span>
+                      {r.status === "published" && !isScheduled(r) && <a href={`https://www.ielsco.com${ielscoStoryPath(r.lang, r.slug)}`} target="_blank" rel="noreferrer" className="ml-[6px] text-[13px] font-semibold text-[#577E90] underline">View</a>}</td>
+                    <td className="whitespace-nowrap px-[12px] py-[12px] text-[#2F4157]/70">{date ? new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                    <td className="px-[12px] py-[12px] text-[14px]">
+                      {issues.length ? <ul className="space-y-[2px]">{issues.slice(0, 3).map((i) => <li key={i} className="flex gap-[6px] text-[#9A4A2E]"><AlertTriangle size={14} className="mt-[3px] shrink-0" aria-hidden="true" />{i}</li>)}</ul>
+                        : <span className="text-[#2F4157]/45">—</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
