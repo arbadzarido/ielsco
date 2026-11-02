@@ -68,6 +68,11 @@ export default function RootLayout({
                   "url": `${SITE_URL}/`,
                   "logo": `${SITE_URL}/images/logos/iels_blue1.png`,
                   "email": "hello@ielsco.com",
+                  "description": "IELSco is an English learning community and opportunity platform connecting young people in Indonesia and Southeast Asia with English practice, scholarships, study and work abroad, and global programs.",
+                  "areaServed": ["Indonesia", "Southeast Asia"],
+                  "knowsAbout": ["English language learning", "Scholarships", "Study abroad", "Work abroad", "International programs"],
+                  // Elco AI's own JSON-LD names IELSco as parentOrganization (www.elcoai.com/about).
+                  "subOrganization": { "@type": "Organization", "name": "Elco AI", "legalName": "PT Elco Edukasi Berkah Indonesia", "url": "https://www.elcoai.com/" },
                   "sameAs": [
                     "https://www.instagram.com/iels.co",
                     "https://www.linkedin.com/company/iels-co",

@@ -1,12 +1,13 @@
-// Elco AI: a separate English learning app, developed and operated by PT Elco Edukasi Berkah Indonesia (IELSco is
-// PT English Space Berkah Indonesia; the companies share a founder). IELSco only links to it; no Elco UI lives here.
+// Elco AI: a separate English learning app, developed and operated by PT Elco Edukasi Berkah Indonesia, a subsidiary of
+// PT English Space Berkah Indonesia (IELSco). IELSco only links to it; no Elco UI lives here.
 // Elco entry points (callouts, sidebar promo, tour step, Connected apps) stay hidden until Elco is deployed.
 // Turn on per environment with NEXT_PUBLIC_ELCO_ENABLED=true.
 export const ELCO_ENABLED = process.env.NEXT_PUBLIC_ELCO_ENABLED === "true";
 
 // The Elco app host for signed-in integration flows (account-linking callback, Elco settings/progress links). Sessions
 // are per host, so this moves only together with Elco's auth redirect URLs. Override with NEXT_PUBLIC_ELCO_URL.
-export const ELCO_URL = (process.env.NEXT_PUBLIC_ELCO_URL || "https://ai.ielsco.com").replace(/\/+$/, "");
+// The old host ai.ielsco.com no longer serves Elco, so the default is the app on www.elcoai.com.
+export const ELCO_URL = (process.env.NEXT_PUBLIC_ELCO_URL || "https://www.elcoai.com").replace(/\/+$/, "");
 // Elco's official public website: every marketing link (home, footer, programs, callouts) goes here.
 export const ELCO_SITE_URL = "https://www.elcoai.com";
 

@@ -67,5 +67,5 @@ const sections: LegalSection[] = [
 
 export default function PrivacyPolicyPage() {
   return <LegalDoc title="Privacy Policy" sections={sections} other={{ href: "/terms-of-service", label: "Terms of Service" }}
-    intro={<p>This policy explains how <strong>{COMPANY}</strong> (“IELSco”, “we”, “us”) handles personal information when you use ielsco.com and its community, dashboard, events and programmes. Elco AI is a separate product with its own privacy policy at ai.ielsco.com/privacy.</p>} />;
+    intro={<p>This policy explains how <strong>{COMPANY}</strong> (“IELSco”, “we”, “us”) handles personal information when you use ielsco.com and its community, dashboard, events and programmes. Elco AI is a separate product, operated by PT Elco Edukasi Berkah Indonesia, with its own privacy policy at www.elcoai.com/privacy.</p>} />;
 }

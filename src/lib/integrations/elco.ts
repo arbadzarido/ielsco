@@ -15,7 +15,7 @@ export const MAX_BODY_BYTES = 16 * 1024;
 export const newToken = () => randomBytes(32).toString("base64url");
 
 export function elcoAppUrl(): string {
-  return (process.env.NEXT_PUBLIC_ELCO_URL || "https://ai.ielsco.com").replace(/\/+$/, "");
+  return (process.env.NEXT_PUBLIC_ELCO_URL || "https://www.elcoai.com").replace(/\/+$/, "");
 }
 
 // Fixed callback on the Elco frontend (docs/INTEGRATION-ARCHITECTURE.md §4). Never taken from the request.
