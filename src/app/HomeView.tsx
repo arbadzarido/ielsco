@@ -15,8 +15,7 @@ import { generateSlug } from "@/utils/slug";
 import { wibDeadline } from "@/lib/events/deadline";
 import { ELCO_ENABLED, ELCO_MASCOT, ELCO_MASCOT_WAVE, elcoHref } from "@/lib/elco";
 import { Photo } from "@/components/site/Photo";
-import { createClient } from "@/lib/supabase/client";
-import { CATEGORY_LABEL, FUNDING_LABEL, type Opportunity } from "@/lib/opportunities";
+import { LandingOpportunities } from "@/components/opportunities/LandingOpportunities";
 import { track } from "@/lib/analytics";
 
 // Public landing page. Positioning: IELSco = international opportunities + the community and preparation to go after them.
@@ -70,7 +69,7 @@ function Hero() {
 }
 
 const STEPS = [
-  { icon: Compass, n: "01", title: "Find", text: "A short, checked list of scholarships, fellowships and programs, each with its official link and what we've verified.", href: "/opportunities", cta: "Browse opportunities" },
+  { icon: Compass, n: "01", title: "Find", text: "A checked list of scholarships, fellowships and programs, plus jobs abroad shared with official recruitment partners.", href: "/opportunities", cta: "Browse opportunities" },
   { icon: FileText, n: "02", title: "Prepare", text: "Free guides for CVs, essays and interviews; mentor-led courses; and for members, written feedback and application clinics.", href: "/products/resources", cta: "Free resources" },
   { icon: Users, n: "03", title: "Go together", text: "Practise every week in IELS Circle, read how members did it, and (as a member) get a study buddy with the same goal.", href: "/circle", cta: "Meet the Circle" },
 ];
@@ -280,43 +279,6 @@ function ElcoSection() {
   );
 }
 
-function OpportunityPreview() {
-  const [items, setItems] = useState<Pick<Opportunity, "id" | "slug" | "title" | "organizer" | "category" | "funding">[] | null>(null);
-  useEffect(() => {
-    createClient().from("opportunities").select("id, slug, title, organizer, category, funding").eq("status", "published").eq("featured", true).limit(4)
-      .then(({ data }) => setItems((data as typeof items) ?? []));
-  }, []);
-  if (items && items.length === 0) return null;
-  return (
-    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="opp-preview-heading" data-testid="landing-opportunity-preview">
-      <div className={container}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-[640px]">
-            <p className={eyebrow}>Opportunity board</p>
-            <h2 id="opp-preview-heading" className={cn(h2, "mt-3")}>Programs worth knowing about</h2>
-            <p className={cn(lead, "mt-4")}>Each listing links to the official page and says what we have checked.</p>
-          </div>
-          <Link href="/opportunities" className={textLink}>See all opportunities <ArrowRight size={16} aria-hidden="true" /></Link>
-        </div>
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {(items ?? Array.from({ length: 4 }, () => null)).map((o, i) => (
-            <li key={o?.id ?? i}>
-              {o ? (
-                <Link href={`/opportunities/${o.slug}`} className={cn(cardLink, "flex h-full flex-col p-6")}>
-                  <span className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[#577E90]">{CATEGORY_LABEL[o.category]}</span>
-                  <span className="mt-3 text-[18px] font-bold leading-snug text-[#1A2534]">{o.title}</span>
-                  <span className="mt-1 flex-1 text-[14px] text-[#2F4157]/65">{o.organizer}</span>
-                  <span className={cn(pill, "mt-5 self-start")}>{FUNDING_LABEL[o.funding]}</span>
-                </Link>
-              ) : <div className="h-[200px] animate-pulse rounded-[20px] bg-[#F1F4F8]" aria-hidden="true" />}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
 function MembershipTeaser() {
   return (
     <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="membership-heading">
@@ -361,7 +323,7 @@ export default function Home() {
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="landing-page">
       <Hero />
       <HowItWorks />
-      <OpportunityPreview />
+      <LandingOpportunities />
       <CircleSessions />
       <Stories />
       <Opportunities />
