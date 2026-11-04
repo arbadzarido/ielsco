@@ -39,9 +39,9 @@ await db.exec(`create table if not exists public.elco_account_links (id uuid pri
   created_at timestamptz not null default now(), revoked_at timestamptz);
   create unique index if not exists elco_account_links_one_active_ielsco on public.elco_account_links (ielsco_user_id) where revoked_at is null;
   create unique index if not exists elco_account_links_one_active_elco on public.elco_account_links (elco_user_id) where revoked_at is null;`);
-const mig = readFileSync(join(dir, "20261105000000_elco_benefits.sql"), "utf8");
+const mig = [readFileSync(join(dir, "20261105000000_elco_benefits.sql"), "utf8"), readFileSync(join(dir, "20261105010000_elco_identity_exam_access.sql"), "utf8")].join(";\n");
 await db.exec(mig);
-await db.exec(mig);  // re-runnable
+await db.exec(mig);  // re-runnable (both migrations, in order)
 ok("migration applies and re-runs cleanly");
 await db.exec(`grant all on all tables in schema public to service_role;`);
 
@@ -119,11 +119,24 @@ await t("after refund the member has no live benefit", () => as("authenticated",
 await t("expired grant (ends in the past) gives no access", () => apply({ ...ev({ grant_id: G_S, elco_user_id: E_STARTER, link_id: L_S, tier: "starter", sc: 12 }), starts_at: new Date(Date.now() - 40 * 86400e3).toISOString(), ends_at: new Date(Date.now() - 86400e3).toISOString() })
   .then(() => as("authenticated", STARTER, `select public.my_elco_benefits() b`)), (r) => r.rows[0].b.active === false ? null : JSON.stringify(r.rows[0].b));
 
+// exam passes (migration 20261105010000): shown on IELSco, never a session quota
+const G_X = randomUUID();
+const exam = (o) => svc(`select public.apply_elco_benefit($1,$2,$3,$4,$5,'exam','purchase',$6,now() - interval '1 hour', now() + interval '180 days',null,0,'ELCO-X',$7) r`,
+  [randomUUID(), G_X, ++ver, E_STARTER, L_S, o.status || "active", o.modes]).then((r) => r.rows[0].r);
+await t("exam pass grant (all three exams) -> active", () => exam({ modes: ["toefl", "ielts", "toeic"] }), (r) => r === "active" ? null : r);
+await t("exam grant without modes -> invalid", () => svc(`select public.apply_elco_benefit($1,$2,1,$3,null,'exam','purchase','active',now(),now()+interval '1 day',null,0,null,'{}') r`, [randomUUID(), randomUUID(), E_STARTER]), (r) => r.rows[0].r === "invalid" ? null : r.rows[0].r);
+await t("my_elco_benefits lists exam access and the link", () => as("authenticated", STARTER, `select public.my_elco_benefits() b`),
+  (r) => r.rows[0].b.linked === true && r.rows[0].b.exams.length === 1 && r.rows[0].b.exams[0].modes.length === 3 ? null : JSON.stringify(r.rows[0].b));
+await t("an exam pass alone never opens Speaking Club (quota stays Starter/Pro)", () => svc(`select count(*)::int n from public.elco_benefit_now($1)`, [STARTER]), (r) => r.rows[0].n === 0 ? null : r.rows[0].n);
+await svc(`update public.elco_account_links set elco_display_name = 'Nadia (Elco)' where id = $1`, [L_S]);
+await t("member reads the Elco display name of their link", () => as("authenticated", STARTER, `select elco_display_name from public.elco_account_links where revoked_at is null`), (r) => r.rows[0]?.elco_display_name === "Nadia (Elco)" ? null : JSON.stringify(r.rows));
+
 // regression: an IELS member still registers for any members-only session
 await svc(`insert into public.membership_periods (user_id, source, starts_at, ends_at, note) values ($1, 'staff_grant', now() - interval '1 day', now() + interval '30 days', 'test')`, [MEMBER]);
 await t("regression: IELS members register for members-only workshops", () => reg(MEMBER, ws[0]), (r) => r === "registered" ? null : r);
 
 if (rollback) {
+  await db.exec(readFileSync(rollback.replace("ROLLBACK-20261105-elco-benefits.sql", "ROLLBACK-20261105010000-elco-identity-exam-access.sql"), "utf8"));
   await db.exec(readFileSync(rollback, "utf8"));
   await t("rollback removes the tables and restores the session functions", () => db.query(`select to_regclass('public.elco_benefit_grants') g, pg_get_functiondef('public.register_member_session(uuid)'::regprocedure) f`),
     (r) => r.rows[0].g === null && !/elco_benefit/.test(r.rows[0].f) ? null : "still there");

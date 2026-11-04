@@ -32,6 +32,7 @@ export async function POST(request: Request) {
     p_speaking_club: e.speaking_club_per_month,
     p_mentoring: e.mentoring_per_month,
     p_order_ref: e.order_ref,
+    p_modes: e.modes,
   });
   if (error) return fail(500, "server_error");
   if (data === "invalid") return fail(400, "invalid_event");

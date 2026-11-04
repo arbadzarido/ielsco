@@ -13,7 +13,8 @@ import { OpportunitiesExplorer } from "@/components/opportunities/OpportunitiesE
 import { circlesApi, connectApi } from "@/lib/connect/api";
 import { eventDay, upcomingOfficialEvents } from "@/lib/connect/events";
 import type { Passport } from "@/lib/connect/types";
-import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
+import { ELCO_ENABLED } from "@/lib/elco";
+import { elcoNextStep, useElcoState } from "@/lib/elco-state";
 import { loadOpportunities } from "@/lib/pulse";
 import { loadProfessional } from "@/lib/professional/queries";
 import { cn } from "@/lib/utils";
@@ -279,6 +280,8 @@ export function ConnectHub({ supabase }: DashboardCtx) {
 
 // ── Connect with Elco ───────────────────────────────────────────────────────────────────────────────────────────────
 export function ElcoConnectView({ supabase }: DashboardCtx) {
+  const { elco } = useElcoState(supabase);
+  const next = elcoNextStep(elco);
   return (
     <ConnectFrame title="Connect with Elco" description="Elco AI is IELS's English practice app. It is a separate product with its own account and data.">
       <section className={cn(cardGloss, "flex flex-col gap-6 bg-gradient-to-br p-6 md:flex-row md:items-center md:p-8", ACCENTS.navy.gradient)}>
@@ -291,9 +294,9 @@ export function ElcoConnectView({ supabase }: DashboardCtx) {
             <li>Free to start. Elco has its own sign-in and keeps its own learning records.</li>
           </ul>
           {ELCO_ENABLED ? (
-            <a href={elcoHref("connect")} target="_blank" rel="noopener noreferrer" className={btnPrimary} data-testid="elco-open">
-              Open Elco AI <ArrowUpRight size={16} aria-hidden="true" /><span className="sr-only">(opens in a new tab)</span>
-            </a>
+            next ? <a href={next.href} className={btnPrimary} data-testid="elco-open" data-step={next.id}>
+              {next.label} <ArrowUpRight size={16} aria-hidden="true" />
+            </a> : <p className="text-base text-[#2F4157]/60">Loading…</p>
           ) : (
             <p className="text-base font-semibold text-[#8A5A00]" data-testid="elco-not-enabled">Elco AI isn&apos;t available from here yet.</p>
           )}
