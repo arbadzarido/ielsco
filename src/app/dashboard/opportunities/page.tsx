@@ -11,14 +11,17 @@ import { dateWib } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import { CATEGORY_LABEL, deadlineState, type Category } from "@/lib/opportunities";
 import { FREE_TRACKER_LIMIT } from "@/data/membership";
+import { invalidateMyRecords } from "@/components/dashboard/useMyRecords";
+import { ElcoPractice } from "@/components/elco/ElcoCallout";
+import { OPPORTUNITY_ELCO_CONTEXT } from "@/lib/elco";
 
-// Application tracker: the member's saved opportunities (public.opportunity_tracker, owner-only RLS) with a status,
+// Opportunity Tracker (Interested → Applying → Applied, then the result): the member's saved opportunities (public.opportunity_tracker, owner-only RLS) with a status,
 // their own deadline and notes. The free limit is enforced by a database trigger; this page only shows the count.
 type Row = { opportunity_id: string; status: string; personal_deadline: string | null; notes: string | null; updated_at: string };
 type Opp = { id: string; slug: string; title: string; organizer: string; category: Category; deadline: string | null; official_url: string };
 
 const STATUSES: [string, string][] = [
-  ["saved", "Saved"], ["preparing", "Preparing"], ["applied", "Applied"], ["accepted", "Accepted"], ["not_selected", "Not selected"], ["withdrawn", "Withdrawn"],
+  ["saved", "Interested"], ["preparing", "Applying"], ["applied", "Applied"], ["accepted", "Accepted"], ["not_selected", "Not selected"], ["withdrawn", "Withdrawn"],
 ];
 
 function Tracker({ supabase, user }: DashboardCtx) {
@@ -48,10 +51,12 @@ function Tracker({ supabase, user }: DashboardCtx) {
     const { error: e } = await supabase.from("opportunity_tracker").update({ ...patch, updated_at: new Date().toISOString() }).eq("user_id", user.id).eq("opportunity_id", id);
     if (e) setError("Couldn't save that change. Please try again.");
     else if (patch.status) track("opportunity_status_changed", { status: patch.status });
+    invalidateMyRecords();
   };
   const remove = async (id: string) => {
     setRows((rs) => rs?.filter((r) => r.opportunity_id !== id) ?? null);
     await supabase.from("opportunity_tracker").delete().eq("user_id", user.id).eq("opportunity_id", id);
+    invalidateMyRecords();
   };
 
   const dueSoon = useMemo(() => (rows ?? []).filter((r) => {
@@ -59,12 +64,27 @@ function Tracker({ supabase, user }: DashboardCtx) {
     return ["saved", "preparing"].includes(r.status) && deadlineState(d) === "soon";
   }), [rows, opps]);
 
+  const [filter, setFilter] = useState<string | null>(null);
   if (rows === null) return <LoadingState />;
+  const shown = filter ? rows.filter((r) => r.status === filter) : rows;
+  // Practice suggestion for what the member is working on now (the first opportunity they're applying to).
+  const active = rows.find((r) => r.status === "preparing") ?? rows.find((r) => r.status === "saved");
+  const practice = active && opps[active.opportunity_id] ? OPPORTUNITY_ELCO_CONTEXT[opps[active.opportunity_id].category] : undefined;
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 md:px-6 md:py-14" data-testid="opportunity-tracker">
-      <PageHeader title="My opportunities" description="Everything you've saved, where each application stands, and your own deadlines.">
-        <Link href="/opportunities" className={btnSecondary}>Browse the board <ArrowRight size={16} aria-hidden="true" /></Link>
+      <PageHeader title="My opportunity tracker" description="What you're interested in, what you're applying to and what you've sent, with your own deadlines.">
+        <Link href="/dashboard/discover/opportunities" className={btnSecondary}>Browse opportunities <ArrowRight size={16} aria-hidden="true" /></Link>
       </PageHeader>
+      {rows.length > 0 && (
+        <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter by status" data-testid="tracker-status-filter">
+          {[[null, "All", rows.length] as const, ...STATUSES.slice(0, 3).map(([v, l]) => [v, l, rows.filter((r) => r.status === v).length] as const)].map(([v, l, n]) => (
+            <button key={l} type="button" aria-pressed={filter === v} onClick={() => setFilter(v)}
+              className={cn("rounded-full border px-4 py-2 text-[14px] font-semibold", focusRing, filter === v ? "border-[#2F4157] bg-[#2F4157] text-white" : "border-[#E3E7ED] bg-white text-[#2F4157] hover:border-[#577E90]")}>
+              {l} <span className="opacity-70">{n}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <p className="mb-6 text-base text-[#2F4157]/70" data-testid="tracker-count">
         {isMember ? `${rows.length} tracked (members: no limit).` : `${rows.length} of ${FREE_TRACKER_LIMIT} on a free account.`}
         {!isMember && rows.length >= FREE_TRACKER_LIMIT - 2 && <> <Link href="/dashboard/membership" className="font-semibold text-[#577E90] underline">Members track without a limit.</Link></>}
@@ -77,10 +97,10 @@ function Tracker({ supabase, user }: DashboardCtx) {
       )}
       {rows.length === 0 ? (
         <EmptyState title="Nothing saved yet" body="Save opportunities from the board to track your applications and deadlines here."
-          action={<Link href="/opportunities" className={btnPrimary}>Browse opportunities</Link>} />
+          action={<Link href="/dashboard/discover/opportunities" className={btnPrimary}>Browse opportunities</Link>} />
       ) : (
         <ul className="space-y-4">
-          {rows.map((r) => {
+          {shown.map((r) => {
             const o = opps[r.opportunity_id];
             const d = r.personal_deadline ?? o?.deadline ?? null;
             return (
@@ -115,6 +135,7 @@ function Tracker({ supabase, user }: DashboardCtx) {
           })}
         </ul>
       )}
+      {practice && <ElcoPractice context={practice} refId="tracker" className="mt-8" />}
     </div>
   );
 }

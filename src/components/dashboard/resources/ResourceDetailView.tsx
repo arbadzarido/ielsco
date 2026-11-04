@@ -10,6 +10,7 @@ import { OpenResourceLink } from "./ResourceRow";
 import { originLabel } from "../ResourceCard";
 import { SaveButton } from "../bookmarks/SaveButton";
 import { CoursePromo } from "../home/HomePromos";
+import { ElcoPractice } from "@/components/elco/ElcoCallout";
 import { btnLink, btnPrimary } from "../ui";
 import { getResource } from "@/data/dashboard/resources";
 import { COLLECTIONS } from "@/data/dashboard/collections";
@@ -73,6 +74,7 @@ export function ResourceDetailView({ user, id }: DashboardCtx & { id: string }) 
           ))}
         </dl>
       </div>
+      <ElcoPractice context={resource.type === "Podcast" ? "podcast" : resource.type === "Video" ? "video" : "article"} refId={`material-${resource.type.toLowerCase()}`} className="mt-12" />
       {track && <div className="mt-12"><CoursePromo track={track} reason={`Related to ${resource.category}`} /></div>}
     </article>
   );

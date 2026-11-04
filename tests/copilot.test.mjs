@@ -11,11 +11,17 @@ test("every help answer links to a page that exists", () => {
 });
 
 test("contextual order: the page's own topic first, then its section", () => {
-  assert.equal(topicsFor("/dashboard/connect/quick-match", "connect")[0].id, "quickmatch");
-  assert.equal(topicsFor("/dashboard/circles/cross-cultural", "discover")[0].id, "circles");
-  assert.deepEqual(topicsFor("/dashboard/social", "social").slice(0, 3).map((t) => t.id), ["intro", "messages", "safety"]);
+  assert.equal(topicsFor("/dashboard/connect/quick-match", "social")[0].id, "quickmatch");
+  assert.equal(topicsFor("/dashboard/circles/cross-cultural", "social")[0].id, "circles");
+  assert.deepEqual(topicsFor("/dashboard/social", "social").slice(0, 3).map((t) => t.id), ["people", "intro", "messages"]);
+  assert.equal(topicsFor("/dashboard/passport", "passport")[0].id, "passport");
   assert.equal(topicsFor("/dashboard", null)[0].id, "how");
-  assert.equal(topicsFor("/dashboard", null).length, HELP_TOPICS.length);
+});
+
+test("Quick Match is out of the journey: offered only on its own page while it's off the navigation", () => {
+  assert.ok(!topicsFor("/dashboard", null).some((t) => t.id === "quickmatch"));
+  assert.equal(topicsFor("/dashboard", null).length, HELP_TOPICS.length - 1);
+  assert.ok(!searchTopics("quick match call").some((t) => t.id === "quickmatch"));
 });
 
 test("search finds the right answer and nothing for nonsense", () => {

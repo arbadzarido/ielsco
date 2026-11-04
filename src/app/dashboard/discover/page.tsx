@@ -1,8 +1,8 @@
 "use client";
 
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { DiscoverHome } from "@/components/connect/HubViews";
+import { DiscoverOverview } from "@/components/dashboard/discover/DiscoverOverview";
 
 export default function Page() {
-  return <DashboardPage>{(ctx) => <DiscoverHome {...ctx} />}</DashboardPage>;
+  return <DashboardPage>{(ctx) => <DiscoverOverview {...ctx} />}</DashboardPage>;
 }

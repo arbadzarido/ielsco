@@ -1,160 +1,185 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, CalendarPlus, CheckCircle2, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, CalendarDays, Lock, Mic, Plus, Users } from "lucide-react";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/dashboard/PageStates";
-import { GifFeatureCard } from "@/components/dashboard/gif/GifFeatureCard";
-import { btnSecondary, cardGloss, focusRing, tag } from "@/components/dashboard/ui";
-import { RegisterButton } from "@/components/events/RegisterButton";
-import { eventsData, type EventData } from "@/data/events";
-import { wibDeadline } from "@/lib/events/registration";
-import { generateSlug } from "@/utils/slug";
+import { EmptyState, PageHeader } from "@/components/dashboard/PageStates";
+import { ActivityList } from "@/components/dashboard/me/ActivityList";
+import { useMyRecords } from "@/components/dashboard/useMyRecords";
+import { ACCENTS, btnLink, btnPrimary, btnSecondary, cardGloss, focusRing, tag } from "@/components/dashboard/ui";
+import { ElcoPractice } from "@/components/elco/ElcoCallout";
+import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
+import { connectApi } from "@/lib/connect/api";
+import { formatInZone } from "@/lib/connect/time";
+import type { Room } from "@/lib/connect/types";
+import { eventDayLabel, officialEvents } from "@/lib/events/catalog";
+import { pastActivities, upcoming } from "@/lib/me/records";
 import { cn } from "@/lib/utils";
 
-type Status = "registered" | "attended" | null;
-type Item = EventData & { status: Status; isPast: boolean; date: Date };
-type Filter = "upcoming" | "past" | "all";
+// Events hub (docs/IELSCO-PRODUCT-ARCHITECTURE.md §4): "My upcoming events" first (every registration the member
+// has, from all four event sources), then Explore Events in three tabs: IELSco Events, IELS Circle, Other Events.
+type Tab = "ielsco" | "circle" | "other";
+type MemberSession = { id: string; title: string; kind: string; starts_at: string; members_only: boolean; seats_left: number | null; registered: boolean };
 
-// Event dates in data are YYYY-M-D (not always zero-padded) and have no time: treat them as all-day WIB dates.
-function parseDay(d: string) {
-  const [y, m, day] = d.split("-").map(Number);
-  return new Date(Date.UTC(y, (m || 1) - 1, day || 1));
-}
-const fmt = (d: Date, opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", ...opts }).format(d);
-const excerpt = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-
-// All-day calendar entry: the event data has a date but no start time, so none is invented.
-function calendarLink(e: Item) {
-  const ymd = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
-  const next = new Date(e.date.getTime() + 86_400_000);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(e.title)}&dates=${ymd(e.date)}/${ymd(next)}&details=${encodeURIComponent("IELS event. Details: https://ielsco.com/events/" + generateSlug(e.title))}`;
+function TabButton({ id, tab, setTab, children }: { id: Tab; tab: Tab; setTab: (t: Tab) => void; children: React.ReactNode }) {
+  return (
+    <button type="button" role="tab" id={`events-tab-${id}`} aria-selected={tab === id} aria-controls={`events-panel-${id}`} onClick={() => setTab(id)}
+      data-testid={`explore-tab-${id}`}
+      className={cn("-mb-px border-b-2 px-4 py-3 text-[15px] font-semibold transition-colors", focusRing, tab === id ? "border-[#2F4157] text-[#1A2534]" : "border-transparent text-[#2F4157]/55 hover:text-[#2F4157]")}>
+      {children}
+    </button>
+  );
 }
 
-function EventsView({ user, supabase }: { user: User; supabase: SupabaseClient }) {
-  const [state, setState] = useState<{ s: "loading" } | { s: "error"; message: string } | { s: "ready"; regs: Map<string, Status> }>({ s: "loading" });
-  const [filter, setFilter] = useState<Filter>("upcoming");
-
-  const load = useCallback(async () => {
-    const { data, error } = await supabase.from("event_registrations").select("event_id, attended").eq("user_id", user.id);
-    if (error) return setState({ s: "error", message: `Couldn't load your registrations: ${error.message}` });
-    setState({ s: "ready", regs: new Map((data ?? []).map((r) => [r.event_id, r.attended ? "attended" : "registered"])) });
-  }, [supabase, user.id]);
-
+function Explore({ supabase }: { supabase: SupabaseClient }) {
+  const [tab, setTab] = useState<Tab>("ielsco");
+  const [rooms, setRooms] = useState<Room[] | null>(null);
+  const [sessions, setSessions] = useState<MemberSession[] | null>(null);
   useEffect(() => {
-    load();
-  }, [load]);
-
-  const items: Item[] = useMemo(() => {
-    const today = parseDay(new Date().toISOString().slice(0, 10));
-    const regs = state.s === "ready" ? state.regs : new Map<string, Status>();
-    return eventsData
-      .map((e) => ({ ...e, date: parseDay(e.startDate), status: regs.get(e.id) ?? null, isPast: parseDay(e.startDate) < today }))
-      .sort((a, b) => (filter === "past" ? b.date.getTime() - a.date.getTime() : a.date.getTime() - b.date.getTime()));
-  }, [state, filter]);
-
-  const markAttended = async (eventId: string) => {
-    if (!window.confirm("Mark this event as attended?")) return;
-    const { error } = await supabase
-      .from("event_registrations")
-      .upsert({ user_id: user.id, event_id: eventId, attended: true, updated_at: new Date().toISOString() }, { onConflict: "user_id,event_id" });
-    if (error) return window.alert(`Couldn't save: ${error.message}`);
-    load();
-  };
-
-  const shown = items.filter((e) => (filter === "upcoming" ? !e.isPast : filter === "past" ? e.isPast : true));
-  const counts = { registered: items.filter((e) => e.status).length, attended: items.filter((e) => e.status === "attended").length };
+    connectApi.rooms(supabase, "discover", { limit: 6 }).then(setRooms).catch(() => setRooms([]));
+    supabase.rpc("list_member_sessions", { p_limit: 6 }).then(({ data, error }) => setSessions(error ? [] : ((data ?? []) as MemberSession[])));
+  }, [supabase]);
+  const nextOfficial = officialEvents().filter((e) => !e.isPast).sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 3);
+  const circle = upcomingSessions(4);
 
   return (
-    <div className="mx-auto max-w-[110rem] space-y-10 px-4 py-10 md:px-6 md:py-12 lg:px-10">
-      <PageHeader title="Events" description="IELS workshops, bootcamps and programs. Register in one click; your account details are shared with the organisers.">
-        {state.s === "ready" && (
-          <p className="text-[15px] text-[#2F4157]/65" data-testid="events-counts">
-            {counts.registered} registered · {counts.attended} attended
-          </p>
-        )}
-      </PageHeader>
-
-      <div role="tablist" aria-label="Event filter" className="flex gap-1 border-b border-[#E3E7ED]">
-        {(["upcoming", "past", "all"] as const).map((f) => (
-          <button
-            key={f}
-            role="tab"
-            type="button"
-            aria-selected={filter === f}
-            data-testid={`events-tab-${f}`}
-            onClick={() => setFilter(f)}
-            className={cn("-mb-px border-b-2 px-4 py-3 text-[15px] font-semibold capitalize transition-colors", focusRing, filter === f ? "border-[#2F4157] text-[#1A2534]" : "border-transparent text-[#2F4157]/55 hover:text-[#2F4157]")}
-          >
-            {f}
-          </button>
-        ))}
+    <section aria-labelledby="explore-heading" className="space-y-4">
+      <h2 id="explore-heading" className="text-[24px] font-bold">Explore events</h2>
+      <div role="tablist" aria-label="Event types" className="flex gap-1 overflow-x-auto border-b border-[#E3E7ED]">
+        <TabButton id="ielsco" tab={tab} setTab={setTab}>IELSco Events</TabButton>
+        <TabButton id="circle" tab={tab} setTab={setTab}>IELS Circle</TabButton>
+        <TabButton id="other" tab={tab} setTab={setTab}>Other Events</TabButton>
       </div>
 
-      {state.s === "loading" && <LoadingState label="Loading events…" />}
-      {state.s === "error" && <ErrorState message={state.message} onRetry={load} />}
-      {state.s === "ready" && shown.length === 0 && (
-        <EmptyState
-          title={filter === "upcoming" ? "No upcoming events right now" : "Nothing here yet"}
-          body={filter === "upcoming" ? "New IELS events are announced here first. Meanwhile, join a weekly Circle session." : "Events you could join appear here."}
-          action={filter === "upcoming" ? <Link href="/dashboard/circle" className={btnSecondary}>See Circle sessions</Link> : undefined}
-        />
-      )}
-      {state.s === "ready" && shown.length > 0 && (
-        <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3" data-testid="events-list">
-          {shown.map((e) => (
-            <li key={e.id} data-testid="event-card" className={cn(cardGloss, "flex flex-col overflow-hidden rounded-3xl")}>
-              <Link href={`/events/${generateSlug(e.title)}`} className={cn("relative block aspect-[16/10] bg-[#2F4157]", focusRing)}>
-                {e.poster && <Image src={e.poster} alt="" fill sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw" className={cn("object-cover", e.isPast && "saturate-[0.6]")} />}
-                <span className="absolute left-4 top-4 rounded-2xl bg-white/95 px-3 py-1.5 text-center shadow-sm">
-                  <span className="block text-[12px] font-bold uppercase tracking-wide text-[#C04C4E]">{fmt(e.date, { month: "short" })}</span>
-                  <span className="block text-[22px] font-bold leading-none text-[#1A2534]">{fmt(e.date, { day: "numeric" })}</span>
-                </span>
-                {e.status && (
-                  <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 text-[13px] font-semibold text-[#2F4157]">
-                    <CheckCircle2 size={14} className="text-[#577E90]" aria-hidden="true" /> {e.status === "attended" ? "Attended" : "Registered"}
-                  </span>
-                )}
-              </Link>
-              <div className="flex flex-1 flex-col gap-3 p-6">
-                <p className="flex items-center gap-2 text-[14px] font-semibold text-[#577E90]">
-                  <CalendarDays size={15} aria-hidden="true" /> {fmt(e.date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-                  {e.isPast && <span className={tag}>Past</span>}
-                </p>
-                <h2 className="text-[19px] font-bold leading-snug text-[#1A2534]">
-                  <Link href={`/events/${generateSlug(e.title)}`} className="hover:underline">{e.title}</Link>
-                </h2>
-                <p className="line-clamp-3 text-[15px] leading-relaxed text-[#2F4157]/70">{excerpt(e.description)}</p>
-                <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-[#E3E7ED]/70 pt-4">
-                  {!e.isPast && (
-                    <>
-                      <RegisterButton eventId={e.id} closesAt={wibDeadline(e.registrationDateDeadline, e.registrationTimeDeadline)} whatsappUrl={e.whatsappGroup} onRegistered={load} />
-                      <a href={calendarLink(e)} target="_blank" rel="noopener noreferrer" className={cn(btnSecondary, "px-4")}>
-                        <CalendarPlus size={16} aria-hidden="true" /> Add to calendar
-                      </a>
-                    </>
-                  )}
-                  {e.isPast && e.status === "registered" && (
-                    <button type="button" onClick={() => markAttended(e.id)} className={btnSecondary} data-testid="event-mark-attended">I attended this</button>
-                  )}
-                  <Link href={`/events/${generateSlug(e.title)}`} className="ml-auto inline-flex items-center gap-1 text-[15px] font-semibold text-[#577E90] hover:underline">
-                    Details <ExternalLink size={14} aria-hidden="true" />
+      {tab === "ielsco" && (
+        <div role="tabpanel" id="events-panel-ielsco" aria-labelledby="events-tab-ielsco" className="space-y-4">
+          {nextOfficial.length === 0 ? (
+            <EmptyState title="No upcoming IELSco events right now" body="New events are announced here first. Past events and talks are in IELSco Events."
+              action={<Link href="/dashboard/events/ielsco" className={btnSecondary}>See all IELSco Events</Link>} />
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-3">
+              {nextOfficial.map((e) => (
+                <li key={e.id}>
+                  <Link href={e.href} className={cn(cardGloss, "flex h-full flex-col gap-2 p-5 hover:border-[#577E90]", focusRing)}>
+                    <span className="flex items-center gap-2 text-[14px] font-semibold text-[#C04C4E]"><CalendarDays size={15} aria-hidden="true" />{eventDayLabel(e.date)}</span>
+                    <span className="text-[17px] font-semibold leading-snug text-[#1A2534]">{e.title}</span>
+                    {e.format === "talk" && <span className={cn(tag, "w-fit")}>IELSco Talk</span>}
                   </Link>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap gap-4">
+            <Link href="/dashboard/events/ielsco" className={btnLink}>All IELSco Events <ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href="/dashboard/events/talks" className={btnLink}>IELSco Talks <ArrowRight size={16} aria-hidden="true" /></Link>
+          </div>
+        </div>
       )}
 
-      <GifFeatureCard />
+      {tab === "circle" && (
+        <div role="tabpanel" id="events-panel-circle" aria-labelledby="events-tab-circle" className="space-y-4">
+          <p className="max-w-2xl text-[16px] text-[#2F4157]/70">Open speaking sessions every Wednesday 19:00 and Saturday 13:00 WIB, each with a theme. Check in so the hosts know you&apos;re coming.</p>
+          <ul className="grid gap-3 md:grid-cols-2">
+            {circle.map((s) => {
+              const { day, time } = formatSessionWib(s.start);
+              return (
+                <li key={s.id} className={cn(cardGloss, "flex gap-3 p-4")}>
+                  <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", ACCENTS.teal.soft, ACCENTS.teal.text)}><Mic size={20} aria-hidden="true" /></span>
+                  <span className="min-w-0">
+                    <span className="block text-[14px] font-semibold text-[#0B6E64]">{day} · {time}</span>
+                    <span className="block text-[16px] font-semibold text-[#1A2534]">{s.topic.title}</span>
+                    <span className="mt-1 flex flex-wrap gap-2"><span className={tag}>{s.topic.theme}</span><span className={tag}>Open session</span></span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {sessions && sessions.length > 0 && (
+            <div className="space-y-2" data-testid="events-member-sessions">
+              <h3 className="text-[18px] font-bold">Member sessions</h3>
+              <ul className="space-y-2">
+                {sessions.map((s) => (
+                  <li key={s.id} className={cn(cardGloss, "flex flex-wrap items-center gap-3 p-4")}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{s.title}</span>
+                      <span className="text-[14px] text-[#2F4157]/65">{formatInZone(s.starts_at, "Asia/Jakarta")}{s.seats_left !== null ? ` · ${s.seats_left} seats left` : ""}</span>
+                    </span>
+                    {s.members_only && <span className={cn(tag, "gap-1")}><Lock size={12} aria-hidden="true" /> Members only</span>}
+                    {s.registered && <span className={tag}>Registered</span>}
+                    <Link href="/dashboard/membership" className={btnLink}>{s.registered ? "Manage" : "Details"}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <Link href="/dashboard/circle" className={btnPrimary} data-testid="events-circle-checkin">Check in to a session <ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href="/dashboard/circles" className={btnSecondary}>Circle groups (discussions)</Link>
+          </div>
+          <ElcoPractice context="circle_before" refId="events-circle" />
+        </div>
+      )}
+
+      {tab === "other" && (
+        <div role="tabpanel" id="events-panel-other" aria-labelledby="events-tab-other" className="space-y-4">
+          <p className="max-w-2xl text-[16px] text-[#2F4157]/70">Sessions hosted by members and partners. Partner listings from outside IELSco will appear here too once partners publish them.</p>
+          {rooms === null ? <div className="h-24 animate-pulse rounded-2xl bg-white/70" aria-hidden="true" /> : rooms.length === 0 ? (
+            <EmptyState title="No community events scheduled" body="Host a practice session on a topic you care about. Members can register and you share the meeting link."
+              action={<Link href="/dashboard/connect/rooms/new" className={btnPrimary}><Plus size={16} aria-hidden="true" /> Host an event</Link>} />
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-3">
+              {rooms.slice(0, 6).map((r) => (
+                <li key={r.id}>
+                  <Link href={`/dashboard/connect/rooms/${r.id}`} className={cn(cardGloss, "flex h-full flex-col gap-2 p-5 hover:border-[#577E90]", focusRing)}>
+                    <span className="flex items-center gap-2 text-[14px] font-semibold text-[#5A3DC4]"><Users size={15} aria-hidden="true" />{formatInZone(r.starts_at, r.timezone)}</span>
+                    <span className="text-[17px] font-semibold leading-snug">{r.title}</span>
+                    <span className="text-[14px] text-[#2F4157]/65">Hosted by {r.host.display_name} · {r.registered_count}/{r.capacity}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href="/dashboard/connect/rooms" className={btnLink}>All community events <ArrowRight size={16} aria-hidden="true" /></Link>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function EventsHub({ user, supabase }: { user: User; supabase: SupabaseClient }) {
+  const { state, reload } = useMyRecords(user.id);
+  const records = state.s === "ready" ? state.data : null;
+  const mine = records ? upcoming(records) : [];
+  const past = records ? pastActivities(records).slice(0, 10) : [];
+  return (
+    <div className="mx-auto max-w-[110rem] space-y-10 px-4 py-8 md:px-6 md:py-10 lg:px-10">
+      <PageHeader title="Events" description="Everything you've registered for, then IELSco Events, IELS Circle sessions and community events to explore." />
+
+      <section aria-labelledby="my-events-heading" className="space-y-3" data-testid="my-upcoming-events">
+        <h2 id="my-events-heading" className="text-[24px] font-bold">My upcoming events</h2>
+        {state.s === "loading" && <div className="h-24 animate-pulse rounded-2xl bg-white/70" aria-hidden="true" />}
+        {state.s === "error" && <p role="alert" className="text-[15px] text-[#B4383A]">Couldn&apos;t load your events: {state.message}</p>}
+        {records && (mine.length === 0 ? (
+          <EmptyState title="You haven't registered for anything yet" body="Pick an IELSco event, check in to an IELS Circle session or join a community event below. It will show up here with a calendar link."
+            action={<a href="#explore-heading" className={btnSecondary}>Explore events</a>} />
+        ) : <ActivityList items={mine} userId={user.id} onChanged={reload} />)}
+        {records && records.gaps.length > 0 && <p className="text-[13px] text-[#2F4157]/55" title={records.gaps.join("; ")}>Some of your records couldn&apos;t be loaded right now, so this list may be incomplete. Reload the page to try again.</p>}
+      </section>
+
+      <Explore supabase={supabase} />
+
+      {past.length > 0 && (
+        <details className="group" data-testid="events-history">
+          <summary className={cn("cursor-pointer list-none text-[18px] font-bold", focusRing)}>Past events ({past.length}) <span className="text-[14px] font-normal text-[#2F4157]/60">· also in your EL-Passport</span></summary>
+          <div className="mt-3"><ActivityList items={past} userId={user.id} compact /></div>
+        </details>
+      )}
     </div>
   );
 }
 
 export default function EventsPage() {
-  return <DashboardPage>{({ user, supabase }) => <EventsView user={user} supabase={supabase} />}</DashboardPage>;
+  return <DashboardPage>{({ user, supabase }) => <EventsHub user={user} supabase={supabase} />}</DashboardPage>;
 }

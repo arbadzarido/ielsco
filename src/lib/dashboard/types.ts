@@ -112,4 +112,6 @@ export interface Collection {
   courseTrack: string | null;
 }
 
-export type BookmarkType = "resource" | "collection";
+// story = IELSco Story or Member Story ("ielsco:<slug>" / "member:<slug>"), event = an official event id.
+// story/event need migration 20261104000000_platform_saved_and_cancel.sql.
+export type BookmarkType = "resource" | "collection" | "story" | "event";

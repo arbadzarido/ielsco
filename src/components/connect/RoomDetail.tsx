@@ -13,6 +13,7 @@ import type { Room } from "@/lib/connect/types";
 import { LINKS } from "@/data/dashboard/config";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { invalidateMyRecords } from "@/components/dashboard/useMyRecords";
 import { STATE_LABEL } from "./RoomsView";
 import { ConnectFrame, LoadGate, SafetyMenu, useLoad, when } from "./shared";
 
@@ -79,7 +80,7 @@ export function RoomDetail(ctx: DashboardCtx & { id: string }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const act = async (fn: () => Promise<string>, text: string | null) => {
     setBusy(true); setMsg(null);
-    try { await fn(); if (text) setMsg({ ok: true, text }); await data.reload(); } catch (e) { setMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
+    try { await fn(); invalidateMyRecords(); if (text) setMsg({ ok: true, text }); await data.reload(); } catch (e) { setMsg({ ok: false, text: (e as Error).message }); } finally { setBusy(false); }
   };
 
   return (

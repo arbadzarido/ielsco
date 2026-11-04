@@ -88,6 +88,9 @@ text, names or ids. Rates (acceptance, mutual connections, completed calls, time
 
 ## 7. Five-menu dashboard, Circles, Pulse, SEA Cultural Exchange, Elco Copilot (2026-10-29)
 
+> Superseded on 2026-11-04 by the Elco-style sidebar (Home, Social, Discover, Events, EL-Passport, More): see
+> `docs/IELSCO-PRODUCT-ARCHITECTURE.md` §2. Quick Match is no longer in the navigation (§10 there).
+
 **Navigation** (`components/dashboard/nav.ts`): exactly five menus — Home, Discover, Social, Connect, More. Each menu owns
 URL prefixes (`match`), so every older URL keeps working and highlights the right menu; `SectionTabs` (rendered once by
 `DashboardLayout`) shows the menu's sub-navigation on every page, including older ones.

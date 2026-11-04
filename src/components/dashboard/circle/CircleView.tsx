@@ -15,6 +15,8 @@ import { formatSessionWib, upcomingSessions, type CircleSession } from "@/lib/ci
 import { cancelCheckIn, checkIn, loadCheckins, type CheckinState } from "@/lib/circle/checkins";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
+import { ElcoPractice } from "@/components/elco/ElcoCallout";
+import { invalidateMyRecords } from "../useMyRecords";
 
 const SESSIONS_SHOWN = 4;
 
@@ -132,6 +134,7 @@ export function CircleView({ supabase }: { supabase: SupabaseClient }) {
     try {
       if (checked) await cancelCheckIn(supabase, session.id);
       else await checkIn(supabase, session.id);
+      invalidateMyRecords();
       await reload();
       const { day, time } = formatSessionWib(session.start);
       setMessage({ ok: true, text: checked ? `Check-in cancelled for ${day}.` : `You're checked in for ${day}, ${time}.` });
@@ -198,6 +201,10 @@ export function CircleView({ supabase }: { supabase: SupabaseClient }) {
           </div>
         </div>
       </section>
+      <div className="grid gap-4 md:grid-cols-2">
+        <ElcoPractice context="circle_before" refId="circle-before" />
+        <ElcoPractice context="circle_after" refId="circle-after" />
+      </div>
     </div>
   );
 }

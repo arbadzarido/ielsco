@@ -38,3 +38,12 @@ export async function registerForEvent(supabase: SupabaseClient, eventId: string
   if (error) throw new Error(`Couldn't register you: ${error.message}`);
   return "registered";
 }
+
+// Cancel a registration for an upcoming official event (own row only, never one marked attended; RLS policy in
+// 20261104000000_platform_saved_and_cancel.sql). Before that migration the delete matches no row, and we say so.
+export async function cancelEventRegistration(supabase: SupabaseClient, userId: string, eventId: string) {
+  const { error, count } = await supabase.from("event_registrations").delete({ count: "exact" })
+    .eq("user_id", userId).eq("event_id", eventId).eq("attended", false);
+  if (error) throw new Error(`Couldn't cancel your registration: ${error.message}`);
+  if (!count) throw new Error("Couldn't cancel this registration here yet. Contact the IELS team and we'll remove it for you.");
+}

@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.argv[2] || "playwright-core");
-const APP = "http://localhost:3300", DB = "http://127.0.0.1:54322";
+const APP = process.env.APP_URL || "http://localhost:3300", DB = process.env.DB_URL || "http://127.0.0.1:54322";
 const MEMBER = "bbbbbbbb-0000-4000-8000-000000000002";
 const sql = async (q) => (await fetch(`${DB}/__sql`, { method: "POST", body: JSON.stringify({ sql: q }) })).json();
 let pass = 0, fail = 0;
@@ -120,11 +120,11 @@ await check("phone: Copilot button sits above the bottom bar, not on it", async 
   const [btn, bar] = await Promise.all([reduced.page.getByTestId("copilot-button").boundingBox(), reduced.page.getByTestId("mobile-tab-bar").boundingBox()]);
   return btn.y + btn.height <= bar.y ? null : JSON.stringify({ btn, bar });
 });
-await check("phone: More opens the sheet with the supporting pages", async () => {
-  await reduced.page.getByTestId("mobile-nav-more").click();
-  const sheet = reduced.page.getByTestId("mobile-menu");
+await check("phone: the avatar drawer has the personal tools", async () => {
+  await reduced.page.locator('[data-testid="account-menu-button"]:visible').click();
+  const sheet = reduced.page.getByTestId("account-sheet");
   await sheet.waitFor();
-  for (const id of ["my-goals", "membership", "shelf", "settings", "help"]) if (!(await sheet.getByTestId(`drawer-${id}`).count())) return `missing ${id}`;
+  for (const id of ["my-profile", "shelf", "tracker", "milestones", "my-goals", "membership", "notifications", "settings", "help"]) if (!(await sheet.getByTestId(`account-menu-${id}`).count())) return `missing ${id}`;
 });
 await reduced.ctx.close();
 await browser.close();

@@ -7,8 +7,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingRelation } from "@/lib/dashboard/profile";
 
 export type TourStatus = "completed" | "skipped";
-// v2 (2026-10-29): the five-menu navigation. Members who finished v1 see the new tour once.
-export const IELSCO_DASHBOARD_TOUR = { key: "ielsco-dashboard", version: 2 } as const;
+// v2 (2026-10-29): the five-menu navigation. v3 (2026-11-04): top bar with Social, Discover, Events, EL-Passport.
+// Members who finished an older version see the new tour once.
+export const IELSCO_DASHBOARD_TOUR = { key: "ielsco-dashboard", version: 3 } as const;
 
 const localKey = (userId: string, key: string) => `iels:tour:${key}:${userId}`;
 

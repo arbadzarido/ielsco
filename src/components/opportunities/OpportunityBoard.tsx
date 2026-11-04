@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Bookmark, BookmarkCheck, Search, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { card, focusRing, pill } from "@/components/site/ui";
 import {
-  CATEGORY_LABEL, deadlineState, FUNDING_LABEL, regionLabel, type Category, type Funding, type Opportunity,
+  CATEGORY_LABEL, deadlineState, FUNDING_LABEL, LEVEL_LABEL, regionLabel, type Category, type Funding, type Opportunity,
 } from "@/lib/opportunities";
 import { useTracker } from "./useTracker";
 
@@ -44,18 +44,32 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
   const tracker = useTracker();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "all">("all");
+  // ?category= preselects a type (links from Discover). Read after mount so the server render matches.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("category");
+    if (c && c in CATEGORY_LABEL) setCat(c as Category);
+  }, []);
   const [funding, setFunding] = useState<Funding | "all">("all");
+  const [region, setRegion] = useState("all");
+  const [level, setLevel] = useState("all");
+  const [closingSoon, setClosingSoon] = useState(false);
   const [hideClosed, setHideClosed] = useState(true);
 
   const cats = useMemo(() => [...new Set(items.map((i) => i.category))], [items]);
   const fundings = useMemo(() => [...new Set(items.map((i) => i.funding))], [items]);
+  // Country and eligibility (study level) filters only list values that exist in the data.
+  const regions = useMemo(() => [...new Set(items.flatMap((i) => i.regions))].sort((a, b) => regionLabel(a).localeCompare(regionLabel(b))), [items]);
+  const levels = useMemo(() => [...new Set(items.map((i) => i.study_level).filter(Boolean) as string[])], [items]);
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     return items.filter((o) =>
       (cat === "all" || o.category === cat) && (funding === "all" || o.funding === funding)
+      && (region === "all" || o.regions.includes(region)) && (level === "all" || o.study_level === level)
+      && (!closingSoon || deadlineState(o.deadline) === "soon")
       && (!hideClosed || deadlineState(o.deadline) !== "closed")
-      && (!s || [o.title, o.organizer, o.summary, o.open_to ?? "", ...o.regions.map(regionLabel)].join(" ").toLowerCase().includes(s)));
-  }, [items, q, cat, funding, hideClosed]);
+      && (!s || [o.title, o.organizer, o.summary, o.open_to ?? "", o.eligibility ?? "", ...o.regions.map(regionLabel)].join(" ").toLowerCase().includes(s)));
+  }, [items, q, cat, funding, region, level, closingSoon, hideClosed]);
+  const select = cn("rounded-full border border-[#D5DBE3] bg-white px-4 py-2 text-[14px] font-semibold text-[#2F4157]", focusRing);
 
   return (
     <div>
@@ -73,7 +87,30 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Funding">
           <button type="button" className={chip(funding === "all")} aria-pressed={funding === "all"} onClick={() => setFunding("all")}>Any funding</button>
           {fundings.map((f) => <button key={f} type="button" className={chip(funding === f)} aria-pressed={funding === f} onClick={() => setFunding(f)}>{FUNDING_LABEL[f]}</button>)}
-          <label className="ml-1 inline-flex items-center gap-2 text-[14px] font-medium text-[#2F4157]">
+        </div>
+        <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Country, eligibility and deadline">
+          {regions.length > 1 && (
+            <label className="inline-flex items-center gap-2 text-[14px] font-medium">
+              <span className="sr-only">Country</span>
+              <select value={region} onChange={(e) => setRegion(e.target.value)} className={select} data-testid="opp-filter-country">
+                <option value="all">Any country</option>
+                {regions.map((r) => <option key={r} value={r}>{regionLabel(r)}</option>)}
+              </select>
+            </label>
+          )}
+          {levels.length > 1 && (
+            <label className="inline-flex items-center gap-2 text-[14px] font-medium">
+              <span className="sr-only">Eligibility (study level)</span>
+              <select value={level} onChange={(e) => setLevel(e.target.value)} className={select} data-testid="opp-filter-level">
+                <option value="all">Any study level</option>
+                {levels.map((l) => <option key={l} value={l}>{LEVEL_LABEL[l] ?? l}</option>)}
+              </select>
+            </label>
+          )}
+          <label className="inline-flex items-center gap-2 text-[14px] font-medium text-[#2F4157]">
+            <input type="checkbox" checked={closingSoon} onChange={(e) => setClosingSoon(e.target.checked)} className="h-4 w-4 accent-[#2F4157]" /> Closing within 3 weeks
+          </label>
+          <label className="inline-flex items-center gap-2 text-[14px] font-medium text-[#2F4157]">
             <input type="checkbox" checked={hideClosed} onChange={(e) => setHideClosed(e.target.checked)} className="h-4 w-4 accent-[#2F4157]" /> Hide closed
           </label>
         </div>

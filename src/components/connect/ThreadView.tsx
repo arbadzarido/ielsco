@@ -11,13 +11,15 @@ import { connectApi, isUnavailable } from "@/lib/connect/api";
 import type { ConnectionRow, Message } from "@/lib/connect/types";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { invalidateMyRecords } from "@/components/dashboard/useMyRecords";
 import { ConnectFrame, SafetyMenu, UnavailableNotice, when } from "./shared";
 
 const POLL_MS = 5000;
 
 // Conversation with one connection. New messages arrive by polling every 5 s while the tab is visible (no realtime
 // service needed); older messages load page by page.
-export function ThreadView(ctx: DashboardCtx & { id: string }) {
+// `embedded`: rendered inside the Inbox split view (InboxView), which supplies the page frame and conversation list.
+export function ThreadView(ctx: DashboardCtx & { id: string; embedded?: boolean }) {
   const { supabase, id } = ctx;
   const [conn, setConn] = useState<ConnectionRow | null | undefined>(undefined);
   const [messages, setMessages] = useState<Message[]>([]); // oldest first
@@ -41,6 +43,7 @@ export function ThreadView(ctx: DashboardCtx & { id: string }) {
       merge(page);
       if (first) setHasOlder(page.length === 30);
       await connectApi.markRead(supabase, id);
+      invalidateMyRecords();
       setState("ready");
     } catch (e) {
       if (isUnavailable(e)) return setState("unavailable");
@@ -82,9 +85,9 @@ export function ThreadView(ctx: DashboardCtx & { id: string }) {
   };
 
   const name = conn?.person.display_name ?? "Conversation";
-  return (
-    <ConnectFrame title={name}>
-      <Link href="/dashboard/connect/messages" className={cn(btnSecondary, "w-max px-4 py-2 text-sm")}><ArrowLeft size={16} /> All messages</Link>
+  const body = (
+    <>
+      <Link href="/dashboard/connect/messages" className={cn(btnSecondary, "w-max px-4 py-2 text-sm", ctx.embedded && "lg:hidden")}><ArrowLeft size={16} /> All messages</Link>
       {state === "unavailable" && <UnavailableNotice />}
       {state === "loading" && <LoadingState label="Loading conversation…" />}
       {state === "error" && <ErrorState message={error} onRetry={() => loadLatest(true)} />}
@@ -92,7 +95,7 @@ export function ThreadView(ctx: DashboardCtx & { id: string }) {
         <EmptyState title="You're not connected with this member" body="Messages are only for mutual connections. Send a Letter Intro first." action={<Link href={`/dashboard/connect/people/${id}`} className={btnPrimary}>View Passport</Link>} />
       )}
       {state === "ready" && (
-        <section className={cn(card, "flex h-[min(70vh,44rem)] flex-col")} aria-label={`Conversation with ${name}`}>
+        <section className={cn(card, "flex flex-col", ctx.embedded ? "h-[min(72vh,46rem)]" : "h-[min(70vh,44rem)]")} aria-label={`Conversation with ${name}`}>
           <header className="flex items-center gap-3 border-b border-[#E3E7ED] p-4">
             <Avatar name={name} url={conn?.person.avatar_url} size={40} />
             <Link href={`/dashboard/connect/people/${id}`} className={cn("flex-1 font-bold hover:underline", focusRing)}>{name}</Link>
@@ -126,6 +129,7 @@ export function ThreadView(ctx: DashboardCtx & { id: string }) {
           {sendError && <p role="alert" className="px-4 pb-3 text-sm text-[#B4383A]">{sendError}</p>}
         </section>
       )}
-    </ConnectFrame>
+    </>
   );
+  return ctx.embedded ? <div className="space-y-4">{body}</div> : <ConnectFrame title={name}>{body}</ConnectFrame>;
 }

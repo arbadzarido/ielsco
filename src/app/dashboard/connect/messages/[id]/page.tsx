@@ -2,9 +2,9 @@
 
 import { useParams } from "next/navigation";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { ThreadView } from "@/components/connect/ThreadView";
+import { InboxView } from "@/components/connect/ConnectionsView";
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
-  return <DashboardPage>{(ctx) => <ThreadView {...ctx} id={id} />}</DashboardPage>;
+  return <DashboardPage>{(ctx) => <InboxView {...ctx} id={id} />}</DashboardPage>;
 }
