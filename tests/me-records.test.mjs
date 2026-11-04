@@ -1,10 +1,10 @@
 // Run: npm test   (Node >= 22.6 with type stripping; Node 23.6+ needs no flag)
-// Notifications Center and EL-Passport badges are derived from the member's own records, never stored. These tests pin
+// Notifications Center and Elco-Pass badges are derived from the member's own records, never stored. These tests pin
 // the rules: what becomes a notification, what counts towards the badge, and when a badge is earned.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { badgeCount, buildNotifications } from "../src/lib/me/notifications.ts";
-import { BADGES, badgeStates } from "../src/lib/me/badges.ts";
+import { BADGES, badgeStates, buildStamps } from "../src/lib/me/badges.ts";
 
 const NOW = new Date("2026-11-04T03:00:00Z");
 const day = (n) => new Date(NOW.getTime() + n * 86_400_000);
@@ -98,4 +98,23 @@ test("badges are earned exactly at their targets, from real records", () => {
     "first-voice": true, "circle-regular": true, "consistency-star": true, "fearless-speaker": true, "word-collector": true,
     "rising-star": true, "community-builder": false, "global-connector": false,
   });
+});
+
+test("stamps exist only for real, past records and carry the same rules as the badges", () => {
+  assert.deepEqual(buildStamps(empty()), []);
+  const r = { ...empty(),
+    activities: [
+      activity({ id: "circle-old", kind: "circle_session", status: "checked_in", start: day(-9), past: true }),
+      activity({ id: "circle-next", kind: "circle_session", start: day(2), past: false }),
+      activity({ id: "ev-attended", kind: "ielsco_event", status: "attended", start: day(-5), past: true }),
+      activity({ id: "ev-noshow", kind: "ielsco_event", status: "registered", start: day(-6), past: true }),
+      activity({ id: "cohort", kind: "circle_cohort", start: day(-30), past: true }),
+      activity({ id: "room-hosted", kind: "room", status: "hosting", start: day(-1), past: true }),
+    ],
+    tracked: [tracked({ opportunity_id: "s", status: "saved" }), tracked({ opportunity_id: "a", status: "applied" })],
+    elco: { linked: true, linked_at: day(-20).toISOString(), level_estimate: null, focus_skills: [], practice_count_30d: 0, last_active_at: null, generated_at: null } };
+  const stamps = buildStamps(r);
+  assert.deepEqual(stamps.map((s) => s.id).sort(), ["circle-old", "elco-linked", "ev-attended", "room-hosted", "tracker-a"]);
+  assert.equal(stamps.find((s) => s.id === "room-hosted").label, "Hosted");
+  assert.equal(buildStamps({ ...r, elco: { ...r.elco, linked_at: null } }).some((s) => s.group === "elco"), false);
 });

@@ -1,5 +1,9 @@
 // The Programs catalogue. Edit text/links here. Internal hrefs point to existing routes in this repo.
+// Business model: Elco AI (www.elcoai.com) is the primary place to learn English and prepare for tests. IELSco adds private
+// human tutoring (Rp90,000 per session, requested per session), the IELS Circle community and fellowships.
 import { LINKS } from "./config";
+import { elcoHref } from "@/lib/elco";
+import { ELCO_TEST_PREP_TEXT, TUTOR_PRICE_LABEL, tutorRequestUrl } from "@/components/tutoring/links";
 
 export interface ProgramAction {
   label: string;
@@ -15,43 +19,47 @@ export interface Program {
   points: string[];
   actions: ProgramAction[];
   note?: string;
+  // Cover image: an existing IELSco poster or photo in public/images. No image = the card shows no cover.
+  image?: string;
 }
 
 export const PROGRAMS: Program[] = [
   {
+    // Kept as "iels-course" because Home looks this id up for its highlight card.
     id: "iels-course",
-    name: "IELS Course",
-    status: "Available · Paid",
-    summary: "Paid English courses and learning resources, with options to book sessions with mentors.",
-    points: ["Structured English courses", "Mentor sessions", "Learning materials"],
+    image: "/images/contents/events/courses.png",
+    name: "Private tutoring",
+    status: TUTOR_PRICE_LABEL,
+    summary: "One-to-one sessions with an IELSco tutor, on top of learning with Elco AI. Request a session when you need one; there is no course subscription.",
+    points: ["Pick a focus area, such as speaking, writing or test skills", "Requested per session on WhatsApp", "Separate from your Elco AI plan"],
     actions: [
-      { label: "Browse courses", href: "/products/courses" },
-      { label: "My courses", href: "/dashboard/learning/courses" },
+      { label: "Request a private tutor", href: tutorRequestUrl(), external: true },
+      { label: "Tutoring focus areas", href: "/dashboard/programs#tutoring" },
     ],
   },
   {
-    id: "iels-test-tofly",
-    name: "IELS Test × Tofly",
-    status: "Partner program",
-    summary: "English proficiency test preparation and test-taking in partnership with Tofly.",
-    points: ["Practice and official test info", "Results in your test dashboard"],
+    id: "elco-ai",
+    name: "Elco AI",
+    status: "Learning and test preparation",
+    summary: "The primary place to learn and practise English: courses, learning tools and test preparation, with progress you can see.",
+    points: [`Test prep, live now: ${ELCO_TEST_PREP_TEXT}`, "Starter and Pro plans carry IELS Circle benefits to IELSco"],
     actions: [
-      { label: "How it works", href: "/test" },
-      { label: "My tests", href: "/dashboard/test" },
-      ...(LINKS.tofly ? [{ label: "Visit Tofly", href: LINKS.tofly, external: true }] : []),
+      { label: "Access Elco AI", href: elcoHref("programs"), external: true },
+      { label: "Membership and Elco benefits", href: "/dashboard/membership" },
     ],
-    note: LINKS.tofly ? undefined : "Partner website link coming soon.",
   },
   {
     id: "iels-circle",
+    image: "/images/site/online-session.webp",
     name: "IELS Circle",
-    status: "Free",
-    summary: "Our free community with weekly activities. Join through Discord or WhatsApp.",
+    status: "Free community · speaking club with Elco plans",
+    summary: "Our English learning community with weekly speaking activities. Elco Starter and Pro add the speaking club on your IELSco account.",
     points: ["Weekly activities", "Meet learners with similar goals"],
     actions: [{ label: "Open IELS Circle", href: "/dashboard/circle" }],
   },
   {
     id: "gif",
+    image: "/images/contents/events/gif2.png",
     name: "Global Impact Fellowship (GIF)",
     status: "Seasonal program — updates coming",
     summary:
@@ -65,6 +73,7 @@ export const PROGRAMS: Program[] = [
   },
   {
     id: "stepup-skilio",
+    image: "/images/contents/events/step-up! iels x skilio.png",
     name: "StepUp × Skilio",
     status: "Next cohort to be announced",
     summary: "English and career preparation with a pathway towards internship opportunities from Skilio.",
@@ -77,6 +86,7 @@ export const PROGRAMS: Program[] = [
   },
   {
     id: "global-pathways",
+    image: "/images/dashboard/stock/program-global-pathways.jpg",
     name: "IELS Global Pathways",
     status: "Coming soon",
     summary:

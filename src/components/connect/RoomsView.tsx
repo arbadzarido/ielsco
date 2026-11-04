@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { COMMUNITY_EVENT_COVER } from "@/lib/covers";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import type { DashboardCtx } from "@/components/dashboard/DashboardPage";
-import { EmptyState } from "@/components/dashboard/PageStates";
+import { EmptyState, Notice } from "@/components/dashboard/PageStates";
 import { btnPrimary, cardGloss, focusRing, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { connectApi } from "@/lib/connect/api";
 import { eventDay, upcomingOfficialEvents } from "@/lib/connect/events";
@@ -28,7 +29,10 @@ export const STATE_LABEL: Record<RoomState, { text: string; cls: string }> = {
 export function RoomCard({ room }: { room: Room }) {
   const s = STATE_LABEL[room.state];
   return (
-    <Link href={`/dashboard/connect/rooms/${room.id}`} data-testid={`room-card-${room.id}`} className={cn(cardGloss, "flex h-full flex-col gap-2 p-5 hover:border-[#577E90]", focusRing)}>
+    <Link href={`/dashboard/connect/rooms/${room.id}`} data-testid={`room-card-${room.id}`} className={cn(cardGloss, "flex h-full flex-col gap-2 overflow-hidden p-5 hover:border-[#577E90]", focusRing)}>
+      <div className="relative -mx-5 -mt-5 mb-2 aspect-[16/7] bg-[#F1F4F8]">
+        <Image src={COMMUNITY_EVENT_COVER} alt="" fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover" />
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", s.cls)}>{s.text}</span>
         <span className={tag}>{label("category", room.category)}</span>
@@ -53,8 +57,9 @@ export function RoomsView({ supabase }: DashboardCtx) {
   const events = upcomingOfficialEvents(4);
 
   return (
-    <ConnectFrame title="Rooms & events" description="Community rooms are hosted by members. Official IELS events are run by the IELS team and keep their own registration."
+    <ConnectFrame title="Other Events" description="Sessions hosted by IELSco members. Official IELSco events, IELS Circle and IELSco Talks are in IELSco Events."
       actions={<Link href="/dashboard/connect/rooms/new" className={btnPrimary} data-testid="room-new"><Plus size={18} /> Host a room</Link>}>
+      <Notice testId="other-events-partners">Partner and external events (webinars, conferences, competitions) will be listed here once partners publish them with IELSco.</Notice>
       <section className="space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div role="tablist" aria-label="Rooms" className="flex flex-wrap gap-2">

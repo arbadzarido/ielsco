@@ -14,13 +14,14 @@ test("contextual order: the page's own topic first, then its section", () => {
   assert.equal(topicsFor("/dashboard/connect/quick-match", "social")[0].id, "quickmatch");
   assert.equal(topicsFor("/dashboard/circles/cross-cultural", "social")[0].id, "circles");
   assert.deepEqual(topicsFor("/dashboard/social", "social").slice(0, 3).map((t) => t.id), ["people", "intro", "messages"]);
-  assert.equal(topicsFor("/dashboard/passport", "passport")[0].id, "passport");
+  assert.equal(topicsFor("/dashboard/passport", "social")[0].id, "passport");
   assert.equal(topicsFor("/dashboard", null)[0].id, "how");
 });
 
-test("Quick Match is out of the journey: offered only on its own page while it's off the navigation", () => {
-  assert.ok(!topicsFor("/dashboard", null).some((t) => t.id === "quickmatch"));
-  assert.equal(topicsFor("/dashboard", null).length, HELP_TOPICS.length - 1);
+test("hidden features (Quick Match, Cultural exchange) are offered only on their own pages", () => {
+  assert.ok(!topicsFor("/dashboard", null).some((t) => t.id === "quickmatch" || t.id === "sea"));
+  assert.equal(topicsFor("/dashboard", null).length, HELP_TOPICS.length - 2);
+  assert.equal(topicsFor("/dashboard/sea-exchange", "social")[0].id, "sea");
   assert.ok(!searchTopics("quick match call").some((t) => t.id === "quickmatch"));
 });
 
@@ -37,4 +38,17 @@ test("Quick Match status is stated honestly", () => {
   assert.match(quickMatchStatus(false), /isn't switched on/);
   assert.match(quickMatchStatus(true), /open now/);
   assert.equal(quickMatchStatus(null), null);
+});
+
+test("membership, tests and tutoring answers match the product (no separate IELSco membership, Elco tests, Rp90,000 tutor)", () => {
+  const by = (id) => HELP_TOPICS.find((t) => t.id === id);
+  assert.match(by("membership").a, /no separate IELSco membership/i);
+  assert.match(by("membership").a, /12 IELS Circle Speaking Club sessions/);
+  assert.match(by("membership").a, /4 mentoring sessions a month/);
+  assert.match(by("tests").a, /TOEFL ITP, IELTS and TOEIC/);
+  assert.match(by("tests").a, /SAT English is coming soon/);
+  assert.doesNotMatch(HELP_TOPICS.map((t) => t.a).join(" "), /tofly|EL-Passport|Copilot/i);
+  assert.match(by("tutor").a, /Rp90,000 per session/);
+  assert.equal(topicsFor("/dashboard/membership", "home")[0].id, "membership");
+  assert.equal(searchTopics("toefl")[0].id, "tests");
 });

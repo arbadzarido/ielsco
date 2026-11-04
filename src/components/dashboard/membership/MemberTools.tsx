@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CalendarClock, ExternalLink, Loader2, MessageCircle, PauseCircle, UserPlus, FileText } from "lucide-react";
-import { btnPrimary, btnSecondary, cardGloss, inputClass, labelClass, tag } from "@/components/dashboard/ui";
+import { AlertTriangle, CalendarClock, ExternalLink, Loader2, MessageCircle, PauseCircle, UserPlus, FileText } from "lucide-react";
+import { btnPrimary, btnSecondary, card, cardGloss, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
-import { dateTimeWib, dateWib } from "@/lib/format";
+import { dateTimeWib, dateWib, idr } from "@/lib/format";
+import { loadSnap, type Checkout, type Plan } from "./useMembership";
 import { track } from "@/lib/analytics";
 import { FEEDBACK_WINDOW_DAYS } from "@/data/membership";
 
@@ -247,5 +248,55 @@ export function BuddyMatching({ supabase, userId }: { supabase: SupabaseClient; 
         )}
       {msg && <p className="mt-4 rounded-xl bg-[#F7F8FA] px-4 py-3 text-sm text-[#2F4157]" role="status">{msg}</p>}
     </Section>
+  );
+}
+
+// RETIRED: the legacy IELS Member checkout (Midtrans, 3/12-month plans). IELSco has no independent membership; paid benefits
+// come only from Elco AI subscriptions (Starter / Pro). Nothing renders this component and no page may show it as a purchase
+// path. It stays here, with /api/membership/*, so the code is not lost and legacy periods and orders keep working.
+export function LegacyMemberPlans({ plans, checkout, renew }: { plans: Plan[]; checkout: Checkout; renew: boolean }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const buyable = plans.filter((p) => p.billing_enabled);
+  if (!checkout.enabled || buyable.length === 0) return null;
+
+  async function buy(code: string) {
+    setBusy(code); setError(null);
+    track("membership_checkout_started", { plan: code });
+    try {
+      const r = await fetch("/api/membership/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan_code: code }) });
+      const o = await r.json();
+      if (!r.ok) throw new Error(o.message || "Couldn't start the payment.");
+      const goReturn = () => { window.location.href = `/dashboard/membership/return?order_id=${o.order_id}`; };
+      try {
+        await loadSnap(o.snap_js, o.client_key);
+        window.snap!.pay(o.token, { onSuccess: goReturn, onPending: goReturn, onError: goReturn, onClose: () => setBusy(null) });
+      } catch {
+        window.location.href = o.redirect_url;
+      }
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div data-testid="membership-plans">
+      {checkout.environment === "sandbox" && (
+        <p className="mb-4 flex items-start gap-2 rounded-xl border border-[#F2D7A6] bg-[#FFF8EB] px-4 py-3 text-sm text-[#7A5310]"><AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" /> Test mode (Midtrans Sandbox).</p>
+      )}
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {buyable.map((p) => (
+          <li key={p.code} className={cn(card, "flex flex-col p-6")}>
+            <p className="text-sm font-semibold text-[#577E90]">{p.months} months</p>
+            <p className="mt-1 text-3xl font-extrabold text-[#1A2534]">{idr(p.price_idr)}</p>
+            <button type="button" onClick={() => buy(p.code)} disabled={!!busy} className={cn(btnPrimary, "mt-5")} data-testid={`buy-${p.code}`}>
+              {busy === p.code && <Loader2 size={16} className="animate-spin" aria-hidden="true" />} {renew ? "Renew" : "Become a member"}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {error && <p className="mt-4 rounded-xl bg-[#FDF1F1] px-4 py-3 text-sm text-[#A23B3D]" role="alert">{error}</p>}
+    </div>
   );
 }

@@ -81,10 +81,11 @@ const INTEREST_CATEGORIES: Record<string, Category[]> = {
   "Meet people with similar goals": ["conference", "volunteering", "exchange"],
 };
 
-export function recommendOpportunities(rows: Opportunity[], goals: { direction: string | null; interests: string[] }, n = 3, now = new Date()) {
+// `diverse`: one pick per category first (Home shows a short mix), then the next best ones.
+export function recommendOpportunities(rows: Opportunity[], goals: { direction: string | null; interests: string[] }, n = 3, now = new Date(), diverse = false) {
   const fromDirection = new Set(goals.direction ? DIRECTION_CATEGORIES[goals.direction] ?? [] : []);
   const fromInterests = new Set(goals.interests.flatMap((i) => INTEREST_CATEGORIES[i] ?? []));
-  return rows
+  const ranked = rows
     .filter((o) => deadlineState(o.deadline, now) !== "closed")
     .map((o) => {
       const interest = fromInterests.has(o.category), direction = fromDirection.has(o.category);
@@ -93,6 +94,9 @@ export function recommendOpportunities(rows: Opportunity[], goals: { direction: 
       const reason = interest ? "Matches your interests" : direction ? "Fits your goal" : o.featured ? "Featured by IELS" : null;
       return { opportunity: o, score, reason };
     })
-    .sort((a, b) => b.score - a.score || (a.opportunity.deadline ?? "9999").localeCompare(b.opportunity.deadline ?? "9999"))
-    .slice(0, n);
+    .sort((a, b) => b.score - a.score || (a.opportunity.deadline ?? "9999").localeCompare(b.opportunity.deadline ?? "9999"));
+  if (!diverse) return ranked.slice(0, n);
+  const seen = new Set<string>();
+  const firsts = ranked.filter((r) => !seen.has(r.opportunity.category) && seen.add(r.opportunity.category));
+  return [...firsts, ...ranked.filter((r) => !firsts.includes(r))].slice(0, n);
 }

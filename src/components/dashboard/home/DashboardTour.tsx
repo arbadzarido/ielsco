@@ -9,7 +9,8 @@ import { IELSCO_DASHBOARD_TOUR, loadTourStatus, saveTourStatus, type TourStatus 
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { track } from "@/lib/analytics";
 
-// First-visit tour of the member dashboard (the five sections, inbox and Elco Copilot). Shown once per user (completed or skipped), replayable from the
+// First-visit tour of the member dashboard (Home, Social, Discover, Events with Circle, Elco-Pass and membership on
+// the profile card, Elco Help, and the Elco AI card). Shown once per user (completed or skipped), replayable from the
 // account menu ("Take a tour" → /dashboard?tour=1). Independent of Elco's own tour.
 export function DashboardTour({ supabase, userId }: { supabase: SupabaseClient; userId: string }) {
   const { t } = useI18n();
@@ -38,15 +39,15 @@ export function DashboardTour({ supabase, userId }: { supabase: SupabaseClient; 
     if (replay) router.replace(pathname);
   };
 
-  // The five sections, the inbox/notifications, then the Copilot button. Desktop targets the sidebar, phones the dock
-  // (EL-Passport is in its More sheet there); a step whose target isn't on screen is skipped by ProductTour.
+  // Home and the three groups, the profile card (Elco-Pass, membership), then the Elco Help button. Desktop targets the sidebar, phones the dock; a step whose
+  // target isn't on screen is skipped by ProductTour.
   const steps: TourStep[] = [
     { id: "home", targets: ['[data-testid="nav-home"]', '[data-testid="mobile-nav-home"]'], title: t("tour.homeTitle"), body: t("tour.homeBody") },
     { id: "social", targets: ['[data-testid="nav-social"]', '[data-testid="mobile-nav-social"]'], title: t("tour.socialTitle"), body: t("tour.socialBody") },
     { id: "discover", targets: ['[data-testid="nav-discover"]', '[data-testid="mobile-nav-discover"]'], title: t("tour.discoverTitle"), body: t("tour.discoverBody") },
     { id: "events", targets: ['[data-testid="nav-events"]', '[data-testid="mobile-nav-events"]'], title: t("tour.eventsTitle"), body: t("tour.eventsBody") },
-    { id: "passport", targets: ['[data-testid="nav-passport"]', '[data-testid="mobile-nav-passport"]'], title: t("tour.passportTitle"), body: t("tour.passportBody") },
-    { id: "inbox", targets: ['[data-testid="nav-item-inbox"]', '[data-testid="header-inbox"]'], title: t("tour.inboxTitle"), body: t("tour.inboxBody") },
+    { id: "passport", targets: ['[data-testid="account-menu-button"]'], title: t("tour.passportTitle"), body: t("tour.passportBody") },
+    { id: "membership", targets: ['[data-testid="account-menu-button"]'], title: t("tour.membershipTitle"), body: t("tour.membershipBody") },
     { id: "copilot", targets: ['[data-testid="copilot-button"]'], title: t("tour.copilotTitle"), body: t("tour.copilotBody") },
     ...(ELCO_ENABLED ? [{ id: "elco", targets: ['[data-tour="ielsco-elco"]'], title: t("tour.elcoTitle"), body: t("tour.elcoBody") }] : []),
   ];

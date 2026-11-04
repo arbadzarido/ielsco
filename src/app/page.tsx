@@ -3,8 +3,8 @@ import { pageMetadata } from "@/lib/seo";
 import HomeView from "./HomeView";
 
 export const metadata: Metadata = pageMetadata({
-  title: "IELSco | International opportunities and the community to go after them",
-  description: "IELSco helps young people in Southeast Asia find scholarships, fellowships and programs abroad, prepare strong applications and stay on track with a community. Free to join.",
+  title: "IELSco | English Community and Speaking Club in Southeast Asia",
+  description: "IELSco is an English learning community connecting people, English practice and global opportunities across Southeast Asia: the IELS Circle English speaking club, Elco AI, scholarships, study abroad and career opportunities. Free to join.",
   path: "/",
 });
 

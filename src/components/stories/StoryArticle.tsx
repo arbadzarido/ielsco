@@ -3,6 +3,7 @@ import Link from "next/link";
 import ReactCountryFlag from "react-country-flag";
 import { FaInstagram, FaLinkedin, FaGlobe } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import StoryAuthorLine from "@/components/stories/StoryAuthorLine";
 import StoryGallery from "@/components/StoryGallery";
 import { sanitizeStoryHtml } from "@/lib/stories/sanitize";
 import { CATEGORY_LABELS, type PublicStory } from "@/lib/stories/types";
@@ -69,25 +70,16 @@ export default function StoryArticle({
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-8 lg:px-0">
-          <div className="relative -mt-20 sm:-mt-24 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
-            <div className="w-[110px] h-[110px] sm:w-[150px] sm:h-[150px] rounded-full overflow-hidden border-4 border-white bg-[#F1F4F8] shadow-xl shrink-0">
-              {author.avatar && (
-                <Image src={author.avatar} alt={author.name} width={150} height={150} unoptimized={unoptimized} className="w-full h-full object-cover" />
-              )}
-            </div>
-
-            <div className="pb-1 sm:pb-3">
+          <div className="relative -mt-12 sm:-mt-14 inline-flex max-w-full flex-col items-start gap-3 rounded-2xl border border-[#E6E9EE] bg-white p-4 pr-6 shadow-lg">
+            <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wide text-[#E56668] bg-[#E56668]/10 rounded-full px-3 py-1">
                 {CATEGORY_LABELS[story.category]}
               </span>
-              <h2 className="mt-2 text-lg sm:text-xl font-extrabold text-[#2F4157] flex items-center gap-2 flex-wrap">
-                {author.name}
-                {author.country && (
-                  <ReactCountryFlag countryCode={author.country} svg style={{ width: "1.1em", height: "1.1em" }} title={author.country} />
-                )}
-              </h2>
-              {author.role && <p className="text-sm text-gray-500 mt-0.5">{author.role}</p>}
+              {author.country && (
+                <ReactCountryFlag countryCode={author.country} svg style={{ width: "1.1em", height: "1.1em" }} title={author.country} />
+              )}
             </div>
+            <StoryAuthorLine name={author.name} avatar={author.avatar} role={author.role} size="lg" unoptimized={unoptimized} />
           </div>
 
           <h1 className="mt-6 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#2F4157] leading-tight max-w-3xl">{story.title}</h1>

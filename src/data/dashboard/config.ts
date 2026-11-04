@@ -8,6 +8,5 @@ export const LINKS = {
   circleDiscord: "https://discord.gg/apFxnhvhWr",
   // Not found for the free Circle in the source (the existing WhatsApp link is an Insider-only group).
   circleWhatsapp: process.env.NEXT_PUBLIC_CIRCLE_WHATSAPP_URL || null,
-  tofly: process.env.NEXT_PUBLIC_TOFLY_URL || null,
   skilio: process.env.NEXT_PUBLIC_SKILIO_URL || null,
 };

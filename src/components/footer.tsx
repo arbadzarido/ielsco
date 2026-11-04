@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Instagram, Linkedin, Mail, MessageCircle } from "lucide-react";
 import { container, focusRing } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
-import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
+import { elcoHref } from "@/lib/elco";
 
 // Public footer: white, hairline top border. Links only go to pages and channels that exist.
 const COLUMNS: { title: string; links: { name: string; url: string; external?: boolean }[] }[] = [
@@ -21,6 +21,7 @@ const COLUMNS: { title: string; links: { name: string; url: string; external?: b
     links: [
       { name: "IELS Circle", url: "https://circle.ielsco.com", external: true },
       { name: "Member stories", url: "https://circle.ielsco.com/stories", external: true },
+      { name: "IELSco Stories", url: "/stories" },
       { name: "Events", url: "/events" },
       { name: "Global Impact Fellowship", url: "/events/gif" },
     ],
@@ -32,9 +33,9 @@ const COLUMNS: { title: string; links: { name: string; url: string; external?: b
       { name: "Free resources", url: "/products/resources" },
       { name: "Articles", url: "/articles" },
       { name: "Artikel (Bahasa Indonesia)", url: "/id/artikel" },
-      { name: "IELS Courses", url: "/products/courses" },
+      { name: "Private English tutoring", url: "/products/courses" },
       { name: "IELS for Schools", url: "/school" },
-      ...(ELCO_ENABLED ? [{ name: "Elco AI: English games & practice", url: elcoHref("footer"), external: true }] : []),
+      { name: "Elco AI: English learning", url: elcoHref("footer"), external: true },
     ],
   },
 ];
@@ -48,7 +49,7 @@ export default function Footer() {
         <div className="max-w-sm">
           <Image src="/images/logos/iels_horizontal_navy.png" alt="IELS" width={1564} height={409} sizes="120px" className="h-[30px] w-auto" />
           <p className="mt-5 text-[15px] leading-relaxed text-[#2F4157]/75">
-            IELSco helps young people in Southeast Asia find international opportunities, prepare strong applications and go after them with a community beside them.
+            IELSco is an English community connecting people, English learning and global opportunities across Southeast Asia, with Elco AI as its learning technology.
           </p>
           <p className="mt-2 text-[13px] font-medium text-[#2F4157]/55">PT English Space Berkah Indonesia</p>
           <div className="mt-5 flex gap-2">

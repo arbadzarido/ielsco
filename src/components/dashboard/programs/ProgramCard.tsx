@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import type { Program } from "@/data/dashboard/programs";
@@ -9,6 +10,11 @@ export function ProgramCard({ program }: { program: Program }) {
   return (
     <article data-testid={`program-card-${program.id}`} className="grid gap-4 border-t border-[#E3E7ED]/70 py-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] md:gap-10">
       <div>
+        {program.image && (
+          <div className="relative mb-4 aspect-[16/10] overflow-hidden rounded-2xl border border-[#E3E7ED] bg-[#F7F8FA]">
+            <Image src={program.image} alt="" fill sizes="(min-width: 768px) 35vw, 100vw" className="object-cover object-top" />
+          </div>
+        )}
         <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#577E90]">{program.status}</p>
         <h3 className="text-2xl font-bold">{program.name}</h3>
       </div>

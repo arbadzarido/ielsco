@@ -10,6 +10,7 @@ import { connectApi } from "@/lib/connect/api";
 import type { IntroRequest } from "@/lib/connect/types";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { PeopleTabs } from "./PeopleTabs";
 import { ConnectFrame, LoadGate, PersonCard, SafetyMenu, useLoad, when } from "./shared";
 
 const STATUS: Record<IntroRequest["status"], string> = { pending: "Waiting for an answer", accepted: "Accepted · you're connected", declined: "Declined", cancelled: "Cancelled" };
@@ -67,6 +68,7 @@ export function RequestsView(ctx: DashboardCtx) {
   const data = useLoad(() => connectApi.requests(ctx.supabase, box), [ctx.supabase, box]);
   return (
     <ConnectFrame title="Letter Intros" description="Introductions from members who'd like to connect with you. You're connected only if you accept.">
+      <PeopleTabs />
       <div role="tablist" aria-label="Intro box" className="flex gap-2">
         {(["incoming", "outgoing"] as const).map((b) => (
           <button key={b} role="tab" type="button" aria-selected={box === b} onClick={() => setBox(b)}

@@ -12,13 +12,16 @@ import { labels } from "@/lib/connect/options";
 import { cn } from "@/lib/utils";
 import { ConnectFrame, LoadGate, PersonCard, SafetyMenu, useLoad, when } from "./shared";
 import { ThreadView } from "./ThreadView";
+import { PeopleTabs } from "./PeopleTabs";
 
 const NONE = <EmptyState title="No connections yet" body="Send a Letter Intro to someone in People. Once they accept, you can message each other in your inbox." action={<Link href="/dashboard/connect/discover" className={btnPrimary}>Discover people</Link>} />;
 
 export function ConnectionsView(ctx: DashboardCtx) {
   const data = useLoad(() => connectApi.connections(ctx.supabase), [ctx.supabase]);
   return (
-    <ConnectFrame title="My connections" description="People you're mutually connected with.">
+    <ConnectFrame title="My connections" description="People you're mutually connected with."
+      actions={<Link href="/dashboard/connect/safety" className={btnSecondary}>Safety & blocked members</Link>}>
+      <PeopleTabs />
       <LoadGate state={data.state} onRetry={data.reload} />
       {data.state.s === "ready" && (data.state.data.length === 0 ? NONE : (
         <div data-testid="connections-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

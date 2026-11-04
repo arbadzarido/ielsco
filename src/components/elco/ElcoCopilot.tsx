@@ -13,9 +13,27 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { ElcoMascot } from "./ElcoMascot";
 
-// Elco Copilot: the in-product guide (not Elco AI, the English practice app). A floating Elco button on dashboard pages
-// opens a panel with the product tour and help for the page you're on. Answers are fixed text from lib/copilot.ts that
-// link to real pages; nothing is sent anywhere and nothing is changed on the member's behalf.
+// Elco's ElcoAvatar composition for the cap (head and shoulders cropped in a circle), filling the button.
+function HelpFace({ animate }: { animate: boolean }) {
+  return (
+    <span className="elco-help-face relative block h-full w-full overflow-hidden rounded-full" style={{ background: "#E7F1FC" }} data-move={animate ? "idle" : undefined} aria-hidden="true" data-accessory="cap">
+      <img src="/images/contents/mascot/kit/neutral.png" alt="" draggable="false" className="absolute max-w-none" style={{ width: "100%", left: "-1%", top: "34%" }} />
+      <img src="/images/contents/mascot/kit/cap.png" alt="" draggable="false" className="absolute max-w-none" style={{ width: "74%", left: "8%", top: "6%" }} />
+      {/* Elco's idle "breathe" (index.css elco-breathe), scoped here so no global style changes; off for reduced motion. */}
+      <style>{`.elco-help-face{transform-origin:50% 100%}.elco-help-face[data-move="idle"]{animation:elco-help-breathe 3.4s ease-in-out infinite}
+@keyframes elco-help-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.015)}}
+@media (prefers-reduced-motion: reduce){.elco-help-face{animation:none!important}}`}</style>
+    </span>
+  );
+}
+
+// Elco Help (formerly Elco Copilot): the in-product guide (not Elco AI, the English practice app). A floating Elco button on
+// dashboard pages opens a panel with the product tour and help for the page you're on. Answers are fixed text from
+// lib/copilot.ts that link to real pages; nothing is sent anywhere and nothing is changed on the member's behalf.
+// The button copies Elco's Coach companion button (elco-app frontend/src/components/ElcoCompanion.jsx): same white circle,
+// size (72px, 96px from md, 108px from lg), bottom-right position, shadow, hover/press scale and calm idle "breathe".
+// Its face is the cap-wearing Elco from the official mascot kit, composed exactly as Elco's own Elco Help avatar
+// (ElcoAvatar.jsx, accessory "cap"): public/images/contents/mascot/kit/{neutral,cap}.png.
 // Hidden on conversation pages so it never covers the message box.
 const HIDDEN_ON = [/^\/dashboard\/connect\/messages\/[^/]+/];
 
@@ -58,22 +76,20 @@ export function ElcoCopilot() {
   return (
     <>
       <button ref={button} type="button" onClick={toggle} aria-expanded={open} aria-controls="elco-copilot" data-testid="copilot-button"
-        aria-label={open ? "Close Elco Copilot" : "Open Elco Copilot: help and product tour"}
-        className={cn("fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-[#E3E7ED] bg-white shadow-[0_10px_30px_rgba(47,65,87,0.18)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none lg:bottom-6 lg:right-6 lg:h-16 lg:w-16", focusRing)}
-        style={{ bottom: "calc(96px + env(safe-area-inset-bottom))" }}>
-        <ElcoMascot mood="wave" size={40} animate={!open} />
+        aria-label={open ? "Close Elco Help" : "Open Elco Help: help and product tour"}
+        className={cn("fixed right-[calc(env(safe-area-inset-right)+10px)] z-40 flex h-[72px] w-[72px] items-end justify-center rounded-full border border-[#E3E7ED] bg-white shadow-[0_12px_30px_rgba(26,37,52,0.22)] transition-transform hover:scale-105 active:scale-95 motion-reduce:transition-none md:bottom-[20px] md:right-[20px] md:h-[96px] md:w-[96px] lg:h-[108px] lg:w-[108px]", "bottom-[calc(96px+env(safe-area-inset-bottom))]", focusRing)}>
+        <HelpFace animate={!open} />
       </button>
       {open && (
         <div ref={panel} id="elco-copilot" role="dialog" aria-modal="false" aria-labelledby="elco-copilot-title" data-testid="copilot-panel"
-          className="fixed inset-x-3 z-50 flex max-h-[min(78vh,40rem)] flex-col overflow-hidden rounded-3xl border border-[#E3E7ED] bg-white shadow-[0_24px_60px_rgba(26,37,52,0.22)] sm:left-auto sm:right-4 sm:w-[24rem] lg:bottom-24 lg:right-6"
-          style={{ bottom: "calc(170px + env(safe-area-inset-bottom))" }}>
+          className="fixed inset-x-3 bottom-[calc(180px+env(safe-area-inset-bottom))] z-50 flex max-h-[min(70vh,40rem)] flex-col overflow-hidden rounded-3xl border border-[#E3E7ED] bg-white shadow-[0_24px_60px_rgba(26,37,52,0.22)] sm:left-auto sm:right-4 sm:w-[24rem] md:bottom-[128px] md:right-[20px] lg:bottom-[140px]">
           <div className="flex items-start gap-3 bg-gradient-to-br from-[#EAEFF5] via-white to-white p-4">
             <ElcoMascot mood="happy" size={52} animate={false} />
             <div className="min-w-0 flex-1">
-              <h2 id="elco-copilot-title" className="text-lg font-semibold">Elco Copilot</h2>
-              <p className="text-sm text-[#2F4157]/70">Help with {section ? t(section.key) : pathname === "/dashboard" ? "Home" : "this page"}. For English practice, open Elco AI from Connect.</p>
+              <h2 id="elco-copilot-title" className="text-lg font-semibold">Elco Help</h2>
+              <p className="text-sm text-[#2F4157]/70">Help with {section ? t(section.key) : pathname === "/dashboard" ? "Home" : "this page"}. For English practice and test preparation, open Elco AI.</p>
             </div>
-            <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Elco Copilot" className={cn("rounded-full p-1.5 hover:bg-[#F1F4F8]", focusRing)}><X size={18} /></button>
+            <button type="button" onClick={() => { setOpen(false); button.current?.focus(); }} aria-label="Close Elco Help" className={cn("rounded-full p-1.5 hover:bg-[#F1F4F8]", focusRing)}><X size={18} /></button>
           </div>
           <div className="space-y-3 overflow-y-auto p-4">
             <button type="button" onClick={tour} className={cn(btnPrimary, "w-full")} data-testid="copilot-tour"><Compass size={18} aria-hidden="true" /> Take a tour</button>

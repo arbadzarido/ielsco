@@ -11,6 +11,7 @@ import type { Passport } from "@/lib/connect/types";
 import { ORIGIN_OPTIONS } from "@/lib/dashboard/options";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { PeopleTabs } from "./PeopleTabs";
 import { Chips, ConnectFrame, LoadGate, useLoad } from "./shared";
 
 export const GUIDELINES = [
@@ -179,6 +180,7 @@ export function PassportView(ctx: DashboardCtx) {
   const data = useLoad(() => connectApi.myPassport(ctx.supabase), [ctx.supabase]);
   return (
     <ConnectFrame title="IELSco Passport" description="Your Connect identity: who you are, the languages you speak and what you'd like to find here.">
+      <PeopleTabs />
       <LoadGate state={data.state} onRetry={data.reload} label="Loading your Passport…" />
       {data.state.s === "ready" && (
         <PassportEditor ctx={ctx} initial={{ ...data.state.data, display_name: data.state.data.display_name || ctx.profile.display_name }} />

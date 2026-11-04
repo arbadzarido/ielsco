@@ -1,10 +1,10 @@
 # IELSco Product Architecture
 
 The English Learning & Opportunity Platform for Southeast Asian youth: **IELSco** (community and opportunities),
-**Elco AI** (the AI English companion, www.elcoai.com) and **EL-Passport** (one identity and learning journey across both).
+**Elco AI** (the AI English companion, www.elcoai.com) and **Elco-Pass** (one identity and learning journey across both).
 
-Status: built on branch `feat/platform-restructure` (from `main` 41ca5e6). **Not merged, not deployed.** One migration
-(§13) is applied automatically by the Supabase GitHub integration when the branch is merged to `main`.
+Status: the restructure is live (PR #20, merged 2026-11-04, migration 20261104000000 in §14). The navigation
+simplification and images (§2, §3 Home, §12) are on branch `feat/navigation-simplification`, not merged yet.
 
 ## 1. Vision and core journey
 
@@ -15,7 +15,7 @@ Principles that shaped every change:
 - Restructure, don't rebuild: existing routes, tables, RPCs and components are reused; old URLs keep working.
 - Never fabricate: Home, Passport, notifications and badges are computed from the member's own records or published
   content. Empty sections show an actionable empty state.
-- Privacy by default: the EL-Passport page is visible only to its owner; Elco shares data only through the consented link.
+- Privacy by default: the Elco-Pass page is visible only to its owner; Elco shares data only through the consented link.
 
 ## 2. Navigation
 
@@ -29,38 +29,44 @@ component; only the items differ. Elco's rem sizes are written in px because IEL
   profile card (Elco's UserCard look) with Profile, Settings, Help, tour, language, sign out.
 - **Phones (< md)** — `DashboardHeader.tsx` (Elco's MobileTopBar: logo, notifications and inbox shortcuts with Elco's
   coral count, avatar → profile) and `MobileTabBar.tsx` (Elco's navy dock: Home, Social, **Discover** in the wide centre
-  slot, Events, More). More opens a bottom sheet with EL-Passport, the three groups, More items, Inbox/Notifications/
+  slot, Events, More). More opens a bottom sheet with Elco-Pass, the three groups, More items, Inbox/Notifications/
   Search, the Account section, sign out, GIF and Elco cards.
 - Page frame as Elco: white background, content offset to the right of the sidebar (`md:pl-[352px]` + the page's own
   padding = Elco's 376/392px).
 
-Sidebar order (from `components/dashboard/nav.ts`):
+Sidebar structure (2026-11-05, from `components/dashboard/nav.ts`). Exactly:
 
 | Row | Type | Pages |
 |---|---|---|
 | Home | PrimaryItem | `/dashboard` |
-| Social | NavGroup | Social home, People (start here), Connections, Intro requests, Circle groups, Cultural exchange |
-| Discover | NavGroup | Discover home, **Opportunities** (start here), News & Stories, Learning Materials, My opportunity tracker |
-| Events | NavGroup | My upcoming events (start here), IELSco Events, IELS Circle, IELSco Talks, Other Events |
-| EL-Passport | PrimaryItem | `/dashboard/passport` ("Your learning journey") |
-| More | NavGroup | Saved, Milestone Hall, My Goals, My Learning, Membership, Safety |
-| Inbox, Notifications, Search | NavItem | with counts for unread messages and items that need action |
+| Social | NavGroup | **People** (`/dashboard/connect/discover`), **Inbox** (`/dashboard/connect/messages`, unread count) |
+| Discover | NavGroup | **Programs** (`/dashboard/programs`), **Opportunities**, **News & Stories**, **Learning Materials** |
+| Events | NavGroup | **Circle** (`/dashboard/circle`, official C logo icon), **IELSco Events** (`/dashboard/events/ielsco`), **Other Events** (`/dashboard/connect/rooms`) |
 | Admin pages | NavItem | staff only |
 
-- IELS Circle is a page inside Events, not a top-level item; "Circle groups" (member discussions) are in Social.
-- Each section's pages also appear as tabs at the top of the page (`SectionTabs`, from `SECTIONS[].tabs`).
-- Legacy: `/dashboard/connect` (old Connect overview) redirects to `/dashboard/social`. The product tour is version 3.
-- An earlier draft of this branch replaced the sidebar with a top bar; that was reverted at the owner's request.
+- **People** includes, through one in-page link row (`components/connect/PeopleTabs.tsx`): Discover, Connections,
+  Intro requests and **My Elco-Pass** (`/dashboard/passport`, plus the Social profile editor, Elco link and My Learning).
+- **Circle** is the ongoing IELS Circle English speaking community (recurring sessions, Speaking Club for Elco Starter/Pro,
+  member stories, current cohort agenda) and has its own sidebar item. The 2025 "IELS Circle" event is historical only.
+- **IELSco Events** = official one-time events plus IELSco Talks (`components/events/IelscoEventsSections.tsx`, with a
+  link card to Circle); `/dashboard/events/talks` lights up IELSco Events. **Other Events** = external/member events.
+- **Other Events** = member-hosted sessions, with a note that partner/external events will be listed once published.
+- **Profile card menu** (sidebar bottom; Account section of the phone More sheet): Profile & Elco-Pass, Saved,
+  Membership, Settings, Help, tour, language, sign out. Goals and Milestone Hall are linked from Elco-Pass,
+  Notifications from Home, Search from Programs, Safety from Connections.
+- **Hidden, not deleted** (routes, code and data kept; no menu entry): Circle groups, Cultural exchange, Quick Match
+  (flag `NEXT_PUBLIC_QUICK_MATCH_IN_NAV`), the Social / Discover overviews, the My-events hub, Notifications, Search.
+- No navigation above page content: the section tab row (`SectionTabs`) was removed.
+- Phones: Elco dock with Home, Social (→ People), Discover (→ Programs, centre slot), Events (→ IELSco Events), More.
+- Legacy: `/dashboard/connect` redirects to `/dashboard/social`. Product tour version 4.
 
 ## 3. Feature definitions
 
-**Home — command center** (`components/dashboard/home/HomeView.tsx`). Welcome + one computed next action (set goals →
-event within 36 h → answer intros → tracked deadline soon → first opportunity → Circle session → Discover); Continue
-Learning (`me/ElcoProgressCard`: not linked / linked without data / Elco's snapshot with a suggested skill page); My
-upcoming activities (`me/ActivityList`); Opportunity Spotlight (`recommendOpportunities`: explainable scoring from the
-member's direction and interests, each pick shows its reason); My learning journey (counts + badges → EL-Passport);
-tracker shortcut; Community Spotlight (latest published Member Story, hidden when there is none); GIF card.
-Onboarding redirect, origin prompt and tour are unchanged.
+**Home** (`components/dashboard/home/HomeView.tsx`), IELSco first: 1. IELSco highlights (the GIF card, this week in IELS
+Circle, the latest IELSco news story or the IELS Course); 2. Upcoming IELSco events (official events with posters and
+registration status, topped up with the next IELS Circle sessions and check-in status); 3. Explore programs (cover
+cards → Programs); 4. Explore opportunities (goal-matched picks with category covers → Opportunities); 5. Continue
+learning (Elco progress, only real data). Onboarding redirect, origin prompt and tour are unchanged.
 
 **Discover** (`components/dashboard/discover/*`).
 - Overview: search box (→ global search), Opportunities first with category tiles (Scholarships, Internships, Jobs
@@ -96,7 +102,7 @@ thread; existing messaging RPCs (`list_connect_connections`, `list_connect_messa
 `mark_connect_read`), 5 s polling in an open thread and 15 s for the list. No read receipts or typing status (not in
 the data model).
 
-**EL-Passport** (`/dashboard/passport`, `components/dashboard/me/PassportView.tsx`): identity card (name, avatar, role,
+**Elco-Pass** (`/dashboard/passport`, `components/dashboard/me/PassportView.tsx`): identity card (name, avatar, role,
 origin, self-reported level, goals), "Private: only you can see this page", Elco progress, chronological **My Learning
 Journey**, badges, my record (Circle check-ins, Circle groups, events, opportunities tracked, saved items, connections,
 events hosted), certificates (honest empty state), Beyond the Circle story CTA, and a "what syncs, who sees it" panel.
@@ -114,7 +120,7 @@ deadlines within 3 days). No email or push.
 **Global search** (`/dashboard/search`): opportunities, jobs abroad, events, news & stories, materials, people (existing
 `list_connect_people`, opted-in members only) and help answers.
 
-## 4. EL-Passport architecture
+## 4. Elco-Pass architecture
 
 - Identity: the Supabase auth user id is the one IELSco identity; `member_profiles` holds goals, interests, privacy and
   the Social profile. No new account type, no duplicate profile table.
@@ -167,7 +173,7 @@ a real Elco route with `?ref=ielsco-<place>`:
 Placed on: opportunity detail pages (public), job detail pages, the tracker, News & Stories, material detail pages,
 IELS Circle, the Events Circle tab, IELSco Events and Talks. All hidden while `NEXT_PUBLIC_ELCO_ENABLED` isn't `true`.
 
-From Elco back into IELSco: progress → Home "Continue learning" and EL-Passport; milestones → badges (Consistency
+From Elco back into IELSco: progress → Home "Continue learning" and Elco-Pass; milestones → badges (Consistency
 Star); goals → opportunity recommendations (`goals:read` scope already serves IELSco goals to Elco). Not built (needs
 Elco changes): Elco speaking results suggesting a specific Circle session, Elco achievements on the public profile.
 
@@ -176,7 +182,7 @@ Elco changes): Elco speaking results suggesting a specific Circle session, Elco 
 1. New member: sign up → onboarding (destination, direction, interests, optional level) → Home "Set your goals" /
    "Find your first opportunity" → Discover → save to tracker → Notifications reminds before the deadline.
 2. Practice loop: Home → IELS Circle check-in (Events) → Elco warm-up CTA → session → Elco follow-up → First Voice badge
-   → EL-Passport journey.
+   → Elco-Pass journey.
 3. Social: People → Letter Intro → accepted → Inbox (count in the sidebar) → host a community event → Fearless Speaker.
 4. Growth: applied → Rising Star → share the story (Beyond the Circle, consent-based) → Community Spotlight on Home once
    an editor publishes it.
@@ -196,7 +202,7 @@ Elco changes): Elco speaking results suggesting a specific Circle session, Elco 
 
 | Phase | Item | State |
 |---|---|---|
-| 1 | Navigation, Home, Discover, Events (+ My upcoming, Circle in Events, Talks), EL-Passport, Elco CTAs, Quick Match hidden | Built |
+| 1 | Navigation, Home, Discover, Events (+ My upcoming, Circle in Events, Talks), Elco-Pass, Elco CTAs, Quick Match hidden | Built |
 | 2 | People/Connections regrouped, Inbox split view + search, tracker relabel + filter, unified Saved, Notifications Center, event cancel, story/event bookmarks | Built (cancel and new bookmark types need the migration) |
 | 3 | Community Spotlight, badges + Milestone Hall, global search, Beyond the Circle entry points, recommendations | Built; monthly recognition, leaderboard and replays not built |
 
@@ -228,7 +234,16 @@ Onboarding is the existing 3-step flow (destination, direction, interests, optio
 asked on Home. A dedicated "English objective" question was not added (the interests already include Interview English,
 Academic English, Workplace communication).
 
-## 12. Design system
+## 12. Images
+
+- Existing IELSco assets first: event posters (`data/events.ts`), program covers (`data/dashboard/programs.ts`:
+  IELS Course, IELS Circle, GIF Batch 2, StepUp × Skilio), story banners from the CMS.
+- Category covers (`lib/covers.ts`): 15 Unsplash-licensed photos in `public/images/dashboard/stock/` (credits in its
+  `CREDITS.md`), downloaded with the owner's approval on 2026-11-05: opportunity categories and jobs abroad,
+  Learning Materials types, community sessions, and the two programs without an IELSco image (Global
+  Pathways). A listing's own image always wins.
+
+## 13. Design system
 
 The shell is Elco's (§2). Pages keep IELSco's existing dashboard components and tokens unchanged: palette (navy
 `#2F4157`, teal `#577E90`, coral `#E56668`, `ACCENTS`), Poppins headings / Plus Jakarta Sans body, `cardGloss` cards,
@@ -236,7 +251,7 @@ pill buttons, focus rings, `PageHeader`, `EmptyState`, `LoadingState`, `Notice`,
 stays retired). No global CSS, fonts or tokens were changed. New pages reuse those components; the original Home hero
 (`HomeHero`) is kept, with the new sections below it.
 
-## 13. Migrations, env vars, integrations
+## 14. Migrations, env vars, integrations
 
 Migration `supabase/migrations/20261104000000_platform_saved_and_cancel.sql` (additive, idempotent; rollback
 `supabase/manual/ROLLBACK-20261104-platform.sql`):
@@ -253,9 +268,9 @@ Env vars (all optional, existing unless marked):
 - `NEXT_PUBLIC_QUICK_MATCH_IN_NAV=true` (**new**) — Quick Match back in Social's tabs as a beta.
 - Elco sync needs the existing `ELCO_TO_IELSCO_SECRET`, `IELSCO_TO_ELCO_SECRET`, `ELCO_API_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
-## 14. Limitations and roadmap
+## 15. Limitations and roadmap
 
-- Not stored, so not shareable: badges and journey are private and computed; a public EL-Passport view needs a consent
+- Not stored, so not shareable: badges and journey are private and computed; a public Elco-Pass view needs a consent
   flag and a security-definer RPC.
 - Certificates: no issuing system; the Passport shows an empty state.
 - Talks replays and clips: no data; the archive is an empty state.
@@ -267,3 +282,22 @@ Env vars (all optional, existing unless marked):
 - Inbox has no read receipts, typing indicators or realtime (polling only).
 - Elco → Circle suggestions and Elco achievements on profiles need Elco-side work.
 - `HubViews.DiscoverHome` and `HubViews.ConnectHub` are no longer routed (kept for now; safe to delete after review).
+
+## 16. Final revision (2026-11-05)
+
+- **Membership** comes only from Elco AI subscriptions: Starter = Elco AI Starter + IELS Circle Speaking Club (12/month);
+  Pro = Elco AI Pro + Speaking Club (no monthly cap) + 4 mentoring sessions a month. Benefits reach IELSco through the
+  existing signed sync and account link (`my_elco_benefits`); no IELSco checkout is offered (`/membership`,
+  `/dashboard/membership`, `data/membership.ts`). Payment infrastructure unchanged.
+- **Learning**: Elco AI is the primary platform (courses, practice, TOEFL ITP / IELTS / TOEIC prep; SAT coming soon).
+  IELSco adds private human tutoring at Rp90,000 per session, requested per session via WhatsApp
+  (`components/tutoring/links.ts`). IELS Test × Tofly removed; `/test/*` stays as hidden noindex routes, unlinked.
+- **Elco Help** (formerly Elco Copilot): same size, position and breathing motion as Elco's Coach, using the cap-wearing
+  Elco mascot (`public/images/contents/mascot/kit`). Deterministic answers in `lib/copilot.ts`.
+- **Elco-Pass** (formerly EL-Passport): passport book with cover, identity, stamps and journey pages
+  (`components/dashboard/me/passport/*`); stamps come only from real records.
+- **Landing**: English-community positioning, animated Elco (`components/brand/ElcoCharacter.tsx`, a port of Elco's rig:
+  idle, blink, wave; still under reduced motion), no top-level Stories item (IELSco Stories linked from the footer).
+- **Member Stories**: author photo/initials, name and role above the title everywhere (`components/stories/StoryAuthorLine.tsx`).
+- **GIF public page** (`/events/gif`) follows the Summer 2027 guidebook; the delegates dashboard is unchanged.
+- **Product tour** v5: Home, Social, Discover, Events, Elco-Pass, Membership, Elco Help, Elco AI.

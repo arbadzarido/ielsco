@@ -6,12 +6,13 @@ import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { MENTORS } from "@/data/courses";
 import { TRACK_META } from "@/data/courses";
-import { WHATSAPP_URL, type CourseTrack } from "@/data/dashboard/courses";
+import { type CourseTrack } from "@/data/dashboard/courses";
+import { TUTOR_PRICE_LABEL, tutorRequestUrl } from "@/components/tutoring/links";
 import { btnPrimary, btnSecondary, focusRing } from "../ui";
 import { cn } from "@/lib/utils";
 
 // Real mentors from src/data/courses.ts. Languages, session length and availability aren't in the source,
-// so they're not shown. There's no online booking calendar, so the CTA is the existing IELS WhatsApp contact.
+// so they're not shown. There's no online booking calendar, so the CTA is the official IELSco WhatsApp with a prefilled tutor request.
 export function MentorDirectory() {
   const [skill, setSkill] = useState<CourseTrack | "">("");
   const tracks = Array.from(new Set(MENTORS.flatMap((m) => m.tracks)));
@@ -20,8 +21,8 @@ export function MentorDirectory() {
   return (
     <section aria-labelledby="mentors-heading" data-testid="mentor-directory" className="space-y-6">
       <div>
-        <h2 id="mentors-heading" className="text-2xl font-bold md:text-3xl">Mentors</h2>
-        <p className="text-base text-[#2F4157]/65">The IELS team members who teach our courses. Filter by what you want to work on.</p>
+        <h2 id="mentors-heading" className="text-2xl font-bold md:text-3xl">Tutors</h2>
+        <p className="text-base text-[#2F4157]/65">The IELS team members who tutor one to one. Filter by what you want to work on.</p>
       </div>
       <div role="group" aria-label="Filter mentors by skill" className="flex flex-wrap gap-2">
         {[{ id: "" as const, label: "All skills" }, ...tracks.map((t) => ({ id: t, label: TRACK_META[t].label }))].map((t) => (
@@ -51,20 +52,20 @@ export function MentorDirectory() {
                 {m.highlights.map((h) => <li key={h.text}>{h.text}</li>)}
               </ul>
               <p className="mb-3 text-sm text-[#2F4157]/55">
-                Teaches: {m.tracks.map((t) => TRACK_META[t].label).join(", ")} · Sessions run as part of IELS courses. Length and availability are confirmed when you register.
+                Focus areas: {m.tracks.map((t) => TRACK_META[t].label).join(", ")} · {TUTOR_PRICE_LABEL}. Length and availability are confirmed when you request a session.
               </p>
               <div className="flex flex-wrap gap-2">
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" data-testid={`mentor-contact-${m.id}`} className={cn(btnPrimary, "px-4 py-2")}>
-                  Ask about a session <ExternalLink size={14} />
+                <a href={tutorRequestUrl(m.tracks.map((t) => TRACK_META[t].label).join(", "))} target="_blank" rel="noopener noreferrer" data-testid={`mentor-contact-${m.id}`} className={cn(btnPrimary, "px-4 py-2")}>
+                  Request a private tutor <ExternalLink size={14} />
                 </a>
                 <a href={m.linkedin} target="_blank" rel="noopener noreferrer" className={cn(btnSecondary, "px-4 py-2")}>LinkedIn</a>
-                <Link href={`/dashboard/programs/courses/${m.tracks[0]}`} className={cn(btnSecondary, "px-4 py-2")}>Their course</Link>
+                <Link href={`/dashboard/programs/courses/${m.tracks[0]}`} className={cn(btnSecondary, "px-4 py-2")}>Focus area</Link>
               </div>
             </div>
           </article>
         ))}
       </div>
-      <p className="text-sm text-[#2F4157]/55">There&apos;s no online booking calendar yet. &quot;Ask about a session&quot; opens the IELS WhatsApp contact.</p>
+      <p className="text-sm text-[#2F4157]/55">There&apos;s no online booking calendar yet. &quot;Request a private tutor&quot; opens the IELSco WhatsApp with your request prefilled.</p>
     </section>
   );
 }

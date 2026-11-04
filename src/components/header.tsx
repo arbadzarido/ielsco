@@ -109,8 +109,9 @@ export default function Header() {
   const onCircle = host.circle || !!pathname?.startsWith("/circle");
 
   // Main navigation answers: what can I find (Opportunities, Resources), who do I meet (Circle: Member Stories, Agenda),
-  // what can I join (Programs, Membership), what IELSco is doing (Stories: official IELSco Stories), and the
-  // institutional path (For Schools). About, Partners and Careers live in the footer.
+  // what can I join (Programs, Membership), and the institutional path (For Schools). IELSco Stories (/stories) stays
+  // live but is no longer a top-level item; the footer links to it.
+  // About, Partners and Careers live in the footer.
   const navItems: NavItem[] = [
     { name: "Opportunities", path: main("/opportunities"), active: !offMain && !!pathname?.startsWith("/opportunities") },
     {
@@ -128,13 +129,12 @@ export default function Header() {
       active: !offMain && (!!pathname?.startsWith("/products") && !pathname?.startsWith("/products/resources") || !!pathname?.startsWith("/events")),
       children: [
         { name: "All programs", path: main("/products") },
-        { name: "IELS Courses", path: main("/products/courses") },
+        { name: "Private tutoring", path: main("/products/courses") },
         { name: "Events", path: main("/events") },
         { name: "Global Impact Fellowship", path: main("/events/gif") },
       ],
     },
     { name: "Resources", path: main("/products/resources"), active: !offMain && !!pathname?.startsWith("/products/resources") },
-    { name: "Stories", path: main("/stories"), active: !offMain && (!!pathname?.startsWith("/stories") || !!pathname?.startsWith("/id/stories")) },
     { name: "For Schools", path: main("/school"), active: host.school || (!offMain && pathname === "/school") },
     { name: "Membership", path: main("/membership"), active: !offMain && !!pathname?.startsWith("/membership") },
   ];

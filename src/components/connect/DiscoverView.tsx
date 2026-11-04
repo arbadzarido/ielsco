@@ -1,5 +1,6 @@
 "use client";
 
+import { PeopleTabs } from "./PeopleTabs";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { DashboardCtx } from "@/components/dashboard/DashboardPage";
@@ -73,6 +74,7 @@ export function DiscoverView({ supabase, initial }: DashboardCtx & { initial?: P
 
   return (
     <ConnectFrame title="Discover people" description="Members who chose to appear in Connect, best language and interest matches first. You only see what each person chose to share.">
+      <PeopleTabs />
       {passport.state.s === "ready" && !passport.state.data.discoverable && (
         <Notice testId="discover-hidden-notice">
           You&apos;re hidden from Discover, so others can&apos;t find you or send you intros. <Link href="/dashboard/connect/passport" className="font-semibold underline">Update your Passport</Link> to appear.

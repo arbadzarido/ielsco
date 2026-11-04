@@ -17,7 +17,8 @@ export interface Order { order_id: string; plan_code: string; months: number; am
 
 const EMPTY: MembershipStatus = { active: false, plan_code: null, current_ends_at: null, access_until: null, member_since: null, last_ended_at: null };
 
-// Membership status comes from public.my_membership() (the database decides); plans and checkout availability from the
+// NOTE: IELSco no longer sells membership; this hook only serves legacy periods/orders (paid benefits come from Elco via
+// my_elco_benefits, see useElcoState). Membership status comes from public.my_membership() (the database decides); plans and checkout availability from the
 // server; orders from the server after it re-checks open ones with Midtrans.
 export function useMembership(supabase: SupabaseClient) {
   const [status, setStatus] = useState<MembershipStatus | null>(null);

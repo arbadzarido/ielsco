@@ -1,0 +1,52 @@
+{
+ "neutral": {
+  "source_body": "ELCO (1).png",
+  "x": 0.41935483870967744,
+  "y": 0.2043956043956044,
+  "w": 0.19462365591397848,
+  "h": 0.18571428571428572,
+  "open": true,
+  "recompose_error": 0.25,
+  "alpha_mismatch": 0.08
+ },
+ "wave": {
+  "source_body": "ELCO (2).png",
+  "x": 0.5035183737294762,
+  "y": 0.18473895582329317,
+  "w": 0.16497263487099295,
+  "h": 0.19879518072289157,
+  "open": true,
+  "recompose_error": 0.38,
+  "alpha_mismatch": 0.29
+ },
+ "happy": {
+  "source_body": "ELCO (4).png",
+  "x": 0.2600732600732601,
+  "y": 0.2573099415204678,
+  "w": 0.18681318681318682,
+  "h": 0.09844054580896686,
+  "open": false,
+  "recompose_error": 0.22,
+  "alpha_mismatch": 0.19
+ },
+ "relaxed": {
+  "source_body": "ELCO (5).png",
+  "x": 0.4047402005469462,
+  "y": 0.164969450101833,
+  "w": 0.45031905195989064,
+  "h": 0.46028513238289204,
+  "open": false,
+  "recompose_error": 0.47,
+  "alpha_mismatch": 0.47
+ },
+ "cheer": {
+  "source_body": "ELCO (9).png",
+  "x": 0.4410585404971933,
+  "y": 0.21197252208047104,
+  "w": 0.19566960705693665,
+  "h": 0.15996074582924436,
+  "open": true,
+  "recompose_error": 0.26,
+  "alpha_mismatch": 0.2
+ }
+}

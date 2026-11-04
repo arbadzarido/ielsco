@@ -8,20 +8,22 @@ import { body, btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h1
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 import { idr } from "@/lib/format";
-import { COURSE_PACKAGES, GOOGLE_FORM_URL, MENTORS, TRACK_META, WHATSAPP_URL, type CourseTrack } from "@/data/courses";
-import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
+import { COURSE_PACKAGES, MENTORS, TRACK_META, type CourseTrack } from "@/data/courses";
+import { elcoHref } from "@/lib/elco";
+import { TutoringPanel } from "@/components/tutoring/TutoringPanel";
+import { TUTOR_PRICE_IDR, TUTOR_PRICE_LABEL, tutorRequestUrl } from "@/components/tutoring/links";
 
 export const metadata: Metadata = pageMetadata({
-  title: "IELS Courses: mentor-led scholarship essay, career and test-prep courses",
-  description: "Small mentor-led courses for applications and careers abroad: scholarship essays, work-abroad communication, academic writing, IELTS/TOEFL/TOEIC, speaking and grammar. 8 or 21 sessions at Rp90,000 per session.",
+  title: "Private English tutor: one-to-one sessions at Rp90,000 | IELSco",
+  description: "Learn and practise English with Elco AI, then add a private English tutor from IELSco when you want a person: scholarship essays, work-abroad English, IELTS/TOEFL/TOEIC, speaking and grammar. Rp90,000 per session, requested per session.",
   path: "/products/courses",
 });
 
-// The catalog renders from src/data/courses.ts (tracks, packages, mentors, prices, registration link): change a course
-// there, not here. Registration is still manual (Google Form, then the team confirms schedule and payment).
+// Elco AI is the primary place to learn English. IELSco adds private human tutoring, requested per session through the
+// official WhatsApp channel (no course subscription, no enrolment flow). The focus areas come from src/data/courses.ts.
 const GROUPS: { title: string; text: string; tracks: CourseTrack[] }[] = [
-  { title: "Applications and careers", text: "For people preparing a specific application or a move abroad.", tracks: ["scholarship-essay", "work-abroad", "writing"] },
-  { title: "Tests and core skills, with a mentor", text: "For a test score or a skill you want to build with feedback from a person.", tracks: ["standardized-test", "speaking", "grammar"] },
+  { title: "Applications and careers", text: "Tutoring focus areas for people preparing a specific application or a move abroad.", tracks: ["scholarship-essay", "work-abroad", "writing"] },
+  { title: "Tests and core skills, with a tutor", text: "Tutoring focus areas for a test score or a skill you want to build with feedback from a person. For self-paced test practice, use Elco AI.", tracks: ["standardized-test", "speaking", "grammar"] },
 ];
 
 const AUDIENCE: Record<CourseTrack, string> = {
@@ -48,15 +50,7 @@ function Track({ track }: { track: CourseTrack }) {
           <li key={o} className="flex gap-2.5 text-[15px] leading-snug text-[#2F4157]/85"><Check size={17} className="mt-0.5 shrink-0 text-[#2D7A58]" aria-hidden="true" />{o}</li>
         ))}
       </ul>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {pkgs.map((p) => (
-          <div key={p.id} className="rounded-[14px] border border-[#E6E9EE] p-4">
-            <p className="text-[14px] font-semibold text-[#1A2534]">{p.type === "intensive" ? "Intensive" : "Extensive"} · {p.sessions} sessions</p>
-            <p className="mt-1 text-[20px] font-extrabold text-[#1A2534]">{idr(p.totalPrice)}</p>
-            <p className="text-[13px] text-[#2F4157]/60">{idr(p.pricePerSession)} per session</p>
-          </div>
-        ))}
-      </div>
+      <p className="mt-6 rounded-[14px] border border-[#E6E9EE] p-4 text-[15px] font-semibold text-[#1A2534]">{TUTOR_PRICE_LABEL}<span className="mt-0.5 block text-[13px] font-normal text-[#2F4157]/65">Requested per session. No package to buy.</span></p>
       <div className="mt-6 flex items-center gap-3 border-t border-[#E6E9EE] pt-5">
         {mentor ? (
           <>
@@ -64,13 +58,13 @@ function Track({ track }: { track: CourseTrack }) {
             <div className="min-w-0"><p className="text-[15px] font-semibold text-[#1A2534]">{mentor.name}</p><p className="truncate text-[13px] text-[#2F4157]/65">{mentor.tagline}</p></div>
           </>
         ) : (
-          <p className="text-[14px] text-[#2F4157]/65">Mentor to be confirmed when you register.</p>
+          <p className="text-[14px] text-[#2F4157]/65">Tutor confirmed when you request a session.</p>
         )}
       </div>
       {first && (
         <details className="group mt-5">
           <summary className={cn("cursor-pointer list-none rounded text-[15px] font-semibold text-[#2F4157] underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden", focusRing)}>
-            See the {first.sessions}-session outline
+            See a sample session outline
           </summary>
           <ol className="mt-3 list-decimal space-y-1 pl-5 text-[14px] leading-snug text-[#2F4157]/80">
             {first.curriculum.map((s) => <li key={s.session}>{s.title}</li>)}
@@ -78,7 +72,8 @@ function Track({ track }: { track: CourseTrack }) {
         </details>
       )}
       <div className="mt-6 flex flex-wrap gap-3">
-        <a href={GOOGLE_FORM_URL} target="_blank" rel="noopener noreferrer" className={cn(btnPrimary, "min-h-[42px] px-5 text-[15px]")}>Register <ArrowUpRight size={16} aria-hidden="true" /></a>
+        <a href={tutorRequestUrl(meta.label)} target="_blank" rel="noopener noreferrer" className={cn(btnPrimary, "min-h-[42px] px-5 text-[15px]")}>Request a private tutor <ArrowUpRight size={16} aria-hidden="true" /></a>
+        <a href={elcoHref(`tutoring-${track}`)} target="_blank" rel="noopener noreferrer" className={cn(btnSecondary, "min-h-[42px] px-5 text-[15px]")}>Access Elco AI <ArrowUpRight size={16} aria-hidden="true" /></a>
       </div>
     </li>
   );
@@ -89,38 +84,28 @@ export default function CoursesPage() {
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="courses-page">
       <section className="bg-white pb-[48px] pt-[40px] md:pt-[64px]" aria-labelledby="hero">
         <div className={container}>
-          <p className={eyebrow}>IELS Courses</p>
-          <h1 id="hero" className={cn(h1, "mt-4 max-w-[880px]")}>Mentor-led courses for the application or career you&apos;re working on</h1>
+          <p className={eyebrow}>Private tutoring</p>
+          <h1 id="hero" className={cn(h1, "mt-4 max-w-[880px]")}>Learn with Elco AI. Add a private English tutor when you want a person.</h1>
           <p className={cn(lead, "mt-6 max-w-[720px]")}>
-            Six courses taught by IELS mentors, each in an 8-session intensive or a 21-session extensive version. You register,
-            we confirm your schedule and payment, and you work with your mentor session by session.
+            Elco AI is where you learn and practise English every day, including test preparation. IELSco adds one-to-one
+            tutoring with a real person at {TUTOR_PRICE_LABEL}. You request a session when you need one, with no course
+            subscription and nothing to enrol in.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="#catalog" className={btnPrimary}>See the courses</a>
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Ask us on WhatsApp</a>
+            <a href={tutorRequestUrl()} target="_blank" rel="noopener noreferrer" className={btnPrimary}>Request a private tutor <ArrowUpRight size={18} aria-hidden="true" /></a>
+            <a href={elcoHref("tutoring")} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Access Elco AI <ArrowUpRight size={18} aria-hidden="true" /></a>
           </div>
         </div>
       </section>
 
       <section className="bg-white pb-[48px]" aria-labelledby="which">
         <div className={container}>
-          <div className={cn(card, "overflow-hidden")}>
-            <h2 id="which" className="border-b border-[#E6E9EE] px-6 py-5 text-[18px] font-bold text-[#1A2534]">Course, membership, event or Elco: which do you need?</h2>
-            <dl className="grid divide-y divide-[#E6E9EE] md:grid-cols-4 md:divide-x md:divide-y-0">
-              {[
-                ["IELS Courses", "A structured set of sessions with a mentor, for one goal. Paid per course."],
-                ["Membership", "Ongoing support while you apply: clinics, feedback, a buddy. Separate from courses."],
-                ["Events & workshops", "One-off sessions, often free, sometimes with partners. See Events."],
-                ["Elco AI", "Self-paced English practice with AI, any time. A separate app with its own plans."],
-              ].map(([t, d]) => (
-                <div key={t} className="p-6"><dt className="text-[16px] font-bold text-[#1A2534]">{t}</dt><dd className="mt-1.5 text-[15px] leading-relaxed text-[#2F4157]/75">{d}</dd></div>
-              ))}
-            </dl>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-[#E6E9EE] px-6 py-4 text-[15px]">
-              <Link href="/membership" className={textLink}>Membership <ArrowRight size={15} aria-hidden="true" /></Link>
-              <Link href="/events" className={textLink}>Events <ArrowRight size={15} aria-hidden="true" /></Link>
-              {ELCO_ENABLED && <a href={elcoHref("courses")} target="_blank" rel="noopener noreferrer" className={textLink}>Elco AI <ArrowUpRight size={15} aria-hidden="true" /></a>}
-            </div>
+          <h2 id="which" className="sr-only">AI learning and human tutoring</h2>
+          <TutoringPanel refId="tutoring-panel" />
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
+            <Link href="/membership" className={textLink}>Elco plans and IELSco member benefits <ArrowRight size={15} aria-hidden="true" /></Link>
+            <Link href="/circle" className={textLink}>IELS Circle speaking community <ArrowRight size={15} aria-hidden="true" /></Link>
+            <Link href="/events" className={textLink}>Events <ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
         </div>
       </section>
@@ -140,13 +125,13 @@ export default function CoursesPage() {
       <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="how">
         <div className={cn(container, "grid gap-12 lg:grid-cols-2 lg:gap-16")}>
           <div>
-            <span className={pill}>Open for registration any time</span>
-            <h2 id="how" className={cn(h2, "mt-4")}>How registration works</h2>
+            <span className={pill}>{TUTOR_PRICE_LABEL}</span>
+            <h2 id="how" className={cn(h2, "mt-4")}>How to request a private tutor</h2>
             <ol className="mt-8 space-y-6">
               {[
-                ["Fill in the registration form", "Choose the course and version, and tell us about your goal and level."],
-                ["We confirm by WhatsApp or email", "Your mentor, the schedule and the payment details (bank transfer)."],
-                ["Start your sessions", "Sessions are scheduled with your mentor. You can reschedule with notice."],
+                ["Message us on WhatsApp", "Tap Request a private tutor. The message is prefilled; add your goal, level and the times that suit you."],
+                ["We confirm tutor, time and payment", "The IELSco team replies with a tutor, a time and the payment details (bank transfer)."],
+                ["Meet your tutor", "Have your session online. Need more? Request the next one. Need to move a session? Tell us in advance."],
               ].map(([t, d], i) => (
                 <li key={t} className="flex gap-4">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2F4157] text-[14px] font-bold text-white">{i + 1}</span>
@@ -156,9 +141,10 @@ export default function CoursesPage() {
             </ol>
           </div>
           <Faq className="self-start" items={[
-            { q: "Are courses part of membership?", a: "No. Courses are paid per course. Membership is ongoing support while you apply, and is separate." },
-            { q: "Is the price per person?", a: `Yes: ${idr(90000)} per session, so ${idr(720000)} for 8 sessions and ${idr(1890000)} for 21.` },
-            { q: "Can I reschedule a session?", a: "Yes, with notice to your mentor. We'll find another time." },
+            { q: "Is a private tutor the same as Elco AI?", a: "No. Elco AI is the primary place to learn and practise English, including test preparation. A private tutor is a person who works with you one to one. Many learners use both." },
+            { q: "How much does a session cost?", a: `${idr(TUTOR_PRICE_IDR)} per session, requested one session at a time. There is no package or subscription.` },
+            { q: "Which tests can I prepare for in Elco AI?", a: "TOEFL ITP, IELTS and TOEIC are live in Elco AI, with Learn, Practice, Tryout (mock test) and Progress. SAT English is coming soon." },
+            { q: "Can I reschedule a session?", a: "Yes, with notice. We will find another time." },
             { q: "Do you guarantee a score or a scholarship?", a: "No. We teach, practise and give feedback; results depend on you and on the test or program." },
           ]} />
         </div>
