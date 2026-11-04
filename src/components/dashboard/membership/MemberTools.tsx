@@ -13,7 +13,9 @@ import { FEEDBACK_WINDOW_DAYS } from "@/data/membership";
 // (supabase/migrations/20261026000000_membership_platform.sql), so these components only present the result.
 
 const friendly = (msg: string) =>
-  /members_only/.test(msg) ? "This is for active members."
+  /elco_quota_used/.test(msg) ? "You've used this month's sessions included in your Elco plan. They renew at the start of next month."
+    : /elco_not_included/.test(msg) ? "Mentoring is included in Elco Pro. Your Elco plan includes the Daily Speaking Club."
+    : /members_only/.test(msg) ? "This is for active members."
     : /limit_reached/.test(msg) ? `You've used your review for this ${FEEDBACK_WINDOW_DAYS}-day period. You can request the next one after it ends.`
     : /full/.test(msg) ? "This session is full."
     : /not open/.test(msg) ? "Registration for this session is closed."
@@ -55,7 +57,36 @@ export function CommunityLinks({ supabase }: { supabase: SupabaseClient }) {
 
 type Session = { id: string; title: string; description: string | null; kind: string; starts_at: string; duration_min: number; host_name: string | null; members_only: boolean; seats_left: number | null; registered: boolean };
 
-export function MemberSessions({ supabase, isMember }: { supabase: SupabaseClient; isMember: boolean }) {
+// Elco plans carry IELSco benefits (supabase/migrations/20261105000000_elco_benefits.sql): Starter = 12 Daily Speaking Club
+// sessions a month; Pro = Daily Speaking Club + 4 mentoring sessions a month. The database decides; this only shows it.
+export type ElcoBenefit = { active: boolean; tier?: "starter" | "pro"; ends_at?: string; speaking_club_per_month?: number | null; speaking_club_used?: number;
+  mentoring_per_month?: number; mentoring_used?: number; upcoming?: string | null };
+
+export function useElcoBenefit(supabase: SupabaseClient) {
+  const [b, setB] = useState<ElcoBenefit | null>(null);
+  const load = useCallback(() => supabase.rpc("my_elco_benefits").then(({ data, error }) => setB(error ? { active: false } : ((data as ElcoBenefit) ?? { active: false }))), [supabase]);
+  useEffect(() => { load(); }, [load]);
+  return { benefit: b, reload: load };
+}
+
+export const elcoKinds = (b: ElcoBenefit | null) => (!b?.active ? [] : b.mentoring_per_month ? ["speaking_club", "mentoring"] : ["speaking_club"]);
+
+export function ElcoBenefitCard({ benefit }: { benefit: ElcoBenefit }) {
+  if (!benefit.active) return null;
+  const sc = benefit.speaking_club_per_month;
+  return (
+    <section className={cn(cardGloss, "p-6")} data-testid="elco-benefits">
+      <h2 className="flex items-center gap-2.5 text-lg font-bold text-[#1A2534]"><UserPlus size={20} className="text-[#577E90]" aria-hidden="true" />Included with Elco {benefit.tier === "pro" ? "Pro" : "Starter"}</h2>
+      <ul className="mt-3 space-y-1.5 text-base text-[#2F4157]">
+        <li data-testid="elco-speaking">Daily Speaking Club: {sc == null ? "every session, no monthly limit" : `${Math.max(0, sc - (benefit.speaking_club_used ?? 0))} of ${sc} sessions left this month`}</li>
+        {!!benefit.mentoring_per_month && <li data-testid="elco-mentoring">Mentoring: {Math.max(0, benefit.mentoring_per_month - (benefit.mentoring_used ?? 0))} of {benefit.mentoring_per_month} sessions left this month</li>}
+      </ul>
+      <p className="mt-3 text-sm text-[#2F4157]/65">Until {dateWib(benefit.ends_at!)}, from your linked Elco account. Monthly counts renew on the 1st (WIB). These sessions don&apos;t include other member tools.</p>
+    </section>
+  );
+}
+
+export function MemberSessions({ supabase, isMember, elco = [] }: { supabase: SupabaseClient; isMember: boolean; elco?: string[] }) {
   const [rows, setRows] = useState<Session[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -92,8 +123,8 @@ export function MemberSessions({ supabase, isMember }: { supabase: SupabaseClien
                 </div>
                 {s.registered
                   ? <button type="button" onClick={() => join(s.id)} className={btnPrimary}>Join link</button>
-                  : <button type="button" onClick={() => register(s.id)} disabled={busy === s.id || (s.members_only && !isMember) || s.seats_left === 0} className={btnSecondary}>
-                      {busy === s.id && <Loader2 size={16} className="animate-spin" aria-hidden="true" />} {s.members_only && !isMember ? "Members only" : "Register"}
+                  : <button type="button" onClick={() => register(s.id)} disabled={busy === s.id || (s.members_only && !isMember && !elco.includes(s.kind)) || s.seats_left === 0} className={btnSecondary}>
+                      {busy === s.id && <Loader2 size={16} className="animate-spin" aria-hidden="true" />} {s.members_only && !isMember && !elco.includes(s.kind) ? "Members only" : "Register"}
                     </button>}
               </li>
             ))}

@@ -36,7 +36,7 @@ async function load() {
   }
 }
 
-const KIND: Record<string, string> = { application_clinic: "Application clinic", workshop: "Workshop", speaking_club: "Speaking club", qna: "Q&A", networking: "Networking" };
+const KIND: Record<string, string> = { application_clinic: "Application clinic", workshop: "Workshop", speaking_club: "Speaking club", qna: "Q&A", networking: "Networking", mentoring: "Mentoring" };
 
 export default async function MembershipPage() {
   const { plans, sessions } = await load();
