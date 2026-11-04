@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, Compass, LogOut } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, Compass, LogOut } from "lucide-react";
 import { BottomSheet, sheetRow } from "./BottomSheet";
 import { ACCOUNT_ITEMS } from "./nav";
 import { createClient } from "@/lib/supabase/client";
@@ -65,18 +65,22 @@ export function AccountMenu({ userName, userAvatar, placement = "down" }: { user
         aria-label={t("nav.openAccountMenu")}
         onClick={() => setOpen((v) => !v)}
         title={placement === "up" ? fullName : undefined}
-        className={cn("flex items-center gap-2 rounded-xl p-1 pr-2 text-[#304156] hover:bg-[#304156]/[0.06]", placement === "up" && "w-full gap-3 p-1.5", focusRing)}
+        className={cn(placement === "up"
+          // Elco's profile card (AppShell UserCard): bordered white card, 40px avatar, name, one line of detail.
+          ? "flex w-full items-center gap-[12px] rounded-[16px] border border-[#E3E7ED] bg-white p-[12px] text-left transition-colors hover:border-[#2F4157]/30"
+          : "flex items-center gap-2 rounded-xl p-1 pr-2 text-[#304156] hover:bg-[#304156]/[0.06]", focusRing)}
       >
         <Avatar name={name} url={avatar} size={placement === "up" ? 40 : 36} className="bg-[#304156] text-white" />
         {placement === "up" ? (
           <span className="min-w-0 flex-1 text-left">
             <span data-testid="sidebar-user-name" className="block truncate text-[15px] font-semibold leading-tight text-[#1A2534]">{name}</span>
-            <span data-testid="sidebar-user-detail" className="mt-0.5 block truncate text-[13px] leading-tight text-[#2F4157]/60">{detail}</span>
+            <span data-testid="sidebar-user-detail" className="mt-[2px] block truncate text-[13px] leading-tight text-[#6B7A8F]">{detail}</span>
           </span>
         ) : (
           <span className="hidden max-w-[140px] truncate text-[15px] font-semibold sm:block">{name.split(" ")[0]}</span>
         )}
-        <ChevronDown size={16} className={cn("shrink-0 transition-transform", open !== (placement === "up") && "rotate-180")} />
+        {placement === "up" ? <ChevronsUpDown size={16} className="shrink-0 text-[#9AA5B4]" aria-hidden="true" />
+          : <ChevronDown size={16} className={cn("shrink-0 transition-transform", open && "rotate-180")} />}
       </button>
 
       {open && (

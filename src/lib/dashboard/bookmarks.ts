@@ -35,5 +35,7 @@ export async function setBookmark(
         .from("member_bookmarks")
         .upsert({ user_id: userId, item_type: type, item_id: id }, { onConflict: "user_id,item_type,item_id", ignoreDuplicates: true })
     : await supabase.from("member_bookmarks").delete().eq("user_id", userId).eq("item_type", type).eq("item_id", id);
+  // 23514 = the item type isn't allowed yet (stories/events before migration 20261104000000 is applied).
+  if (error?.code === "23514") throw new Error("Saving this kind of item isn't switched on yet (IELS database update pending). Nothing was saved.");
   if (error) throw new Error(`Could not ${saved ? "save" : "remove"} this item: ${error.message}`);
 }

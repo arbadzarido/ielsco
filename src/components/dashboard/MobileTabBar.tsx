@@ -1,61 +1,108 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
-import { Menu } from "lucide-react";
-import { MOBILE_ITEMS, isItemActive, moreActive as onMorePage } from "./nav";
-import { MobileMenu } from "./sidebar/MobileMenu";
+import { Compass, LogOut, Menu } from "lucide-react";
+import { ACCOUNT_ITEMS, ADMIN_NAV_GROUP, MORE_ITEMS, SECTIONS, UTILITY_ITEMS, isItemActive } from "./nav";
+import { BottomSheet } from "./BottomSheet";
+import { Divider, NavGroup, NavItem, SectionLabel, moreLeaves, ring, sectionLeaves, type Leaf } from "./sidebar/NavLinks";
+import { GifBanner } from "./sidebar/GifBanner";
+import { ElcoPromo } from "./sidebar/ElcoPromo";
+import { useStoryAdmin } from "./stories-admin/useStoryAdmin";
+import { useHeaderCounts } from "./useHeaderCounts";
+import { LanguageSelect } from "@/components/i18n/LanguageSelect";
+import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
-// Phone/tablet bottom bar, same look and behaviour as Elco's: a floating navy bar inset 12px from the edges and above
-// the home indicator (safe-area). The five top-level menus: Home, Discover, Social, Connect, and "More" (a bottom sheet).
-// DashboardLayout reserves matching bottom padding so the bar never covers content or controls.
-const BAR_NAVY =
-  "border border-white/10 bg-[#2F4157]/[0.96] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_12px_30px_rgba(26,37,52,0.25)] supports-[backdrop-filter]:backdrop-blur-xl";
-
+// Phone dock (< md), the same as Elco's MobileNav: a navy glass bar inset 10px above the home indicator, five cells,
+// the centre one wider with its icon in a pill. IELSco: Home, Social, Discover (centre), Events, More. "More" opens a
+// bottom sheet with every destination (EL-Passport first), the account rows and sign-out, as in Elco.
+// DashboardLayout reserves matching bottom padding so the dock never covers content.
+const GLASS_NAVY = "border border-white/10 bg-[rgba(47,65,87,0.94)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_12px_30px_rgba(26,37,52,0.25)] backdrop-blur-[16px]";
 
 export function MobileTabBar() {
-  const pathname = usePathname();
+  const path = usePathname();
+  const router = useRouter();
   const { t } = useI18n();
+  const { isAdmin } = useStoryAdmin();
+  const counts = useHeaderCounts();
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  const moreActive = onMorePage(pathname);
-  const cell = "flex min-h-[56px] flex-col items-center justify-center gap-[3px] rounded-[18px] px-0 text-[11px] tracking-[-0.01em] min-[380px]:px-1 min-[380px]:text-[12px] min-[380px]:tracking-normal font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
+  const byId = (id: string) => SECTIONS.find((s) => s.id === id)!;
+  const passport = byId("passport");
+  const more = moreLeaves(t);
+  const moreActive = isItemActive(passport, path) || [...MORE_ITEMS, ...UTILITY_ITEMS, ...ACCOUNT_ITEMS].some((i) => isItemActive(i, path));
+
+  const plain = (active: boolean) => cn("flex min-h-[46px] flex-col items-center justify-center gap-[2px] rounded-[16px] text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
+    active ? "text-white" : "text-white/65");
+  const cell = (id: string) => {
+    const s = byId(id);
+    const active = isItemActive(s, path);
+    return (
+      <Link key={id} href={s.path} data-testid={`mobile-nav-${id}`} aria-current={active ? "page" : undefined} className={plain(active)}>
+        <s.icon className="h-[20px] w-[20px]" strokeWidth={1.8} aria-hidden="true" />{t(s.key)}
+      </Link>
+    );
+  };
+  const discover = byId("discover");
+  const discoverActive = isItemActive(discover, path);
+
+  const signOut = async () => {
+    close();
+    await createClient().auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  };
+  const leaf = (i: { path: string; key: string; icon: Leaf["icon"]; id: string; match?: string[] }, count?: number): Leaf =>
+    ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id, match: i.match, count });
+
   return (
     <>
-      <nav
-        aria-label={t("nav.mainNav")}
-        data-testid="mobile-tab-bar"
-        className={cn(BAR_NAVY, "fixed inset-x-[12px] z-40 mx-auto max-w-[512px] rounded-[24px] p-[6px] lg:hidden")}
-        style={{ bottom: "calc(12px + env(safe-area-inset-bottom))", left: "calc(12px + env(safe-area-inset-left))", right: "calc(12px + env(safe-area-inset-right))" }}
-      >
-        <ul className="grid grid-cols-5 gap-[2px]">
-          {MOBILE_ITEMS.map((item) => {
-            const { key, path, icon: Icon, id } = item;
-            const active = isItemActive(item, pathname);
-            return (
-              <li key={path}>
-                <Link href={path} data-testid={`mobile-nav-${id}`} aria-current={active ? "page" : undefined}
-                  className={cn(cell, active ? "bg-white/[0.14] text-white" : "text-white/65 hover:bg-white/[0.08] hover:text-white")}>
-                  <Icon size={21} strokeWidth={active ? 2.3 : 1.8} aria-hidden="true" />
-                  <span className="max-w-full truncate">{t(key)}</span>
-                </Link>
-              </li>
-            );
-          })}
-          <li>
-            <button ref={opener} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} data-testid="mobile-nav-more"
-              className={cn(cell, "w-full", moreActive || open ? "bg-white/[0.14] text-white" : "text-white/65 hover:bg-white/[0.08] hover:text-white")}>
-              <Menu size={21} strokeWidth={moreActive ? 2.3 : 1.8} aria-hidden="true" />
-              <span>{t("nav.more")}</span>
-            </button>
-          </li>
-        </ul>
+      <nav aria-label={t("nav.mainNav")} data-testid="mobile-tab-bar"
+        className={cn(GLASS_NAVY, "fixed bottom-[calc(env(safe-area-inset-bottom)+8px)] left-[calc(env(safe-area-inset-left)+10px)] right-[calc(env(safe-area-inset-right)+10px)] z-50 mx-auto grid max-w-[512px] grid-cols-[1fr_1fr_1.3fr_1fr_1fr] items-center rounded-[24px] px-[4px] py-[4px] font-heading md:hidden")}>
+        {cell("home")}
+        {cell("social")}
+        <Link href={discover.path} data-testid="mobile-nav-discover" aria-current={discoverActive ? "page" : undefined} className={cn(plain(discoverActive), "font-semibold")}>
+          <span className={cn("flex h-[28px] w-[48px] items-center justify-center rounded-full transition-colors", discoverActive ? "bg-white text-[#2F4157]" : "bg-white/[0.12] text-white")}>
+            <discover.icon className="h-[21px] w-[21px]" strokeWidth={1.9} aria-hidden="true" />
+          </span>{t(discover.key)}
+        </Link>
+        {cell("events")}
+        <button ref={opener} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} aria-current={moreActive ? "true" : undefined} data-testid="mobile-nav-more" className={plain(moreActive || open)}>
+          <Menu className="h-[20px] w-[20px]" aria-hidden="true" />{t("nav.more")}
+        </button>
       </nav>
-      <MobileMenu open={open} onClose={close} returnFocusTo={opener} />
+      <BottomSheet open={open} onClose={close} title={t("nav.more")} returnFocusTo={opener} testId="mobile-more-sheet">
+        <div className="mt-[4px] space-y-[16px] font-heading">
+          <div className="grid gap-[2px]"><NavItem item={{ href: passport.path, label: t(passport.key), icon: passport.icon, id: "passport", sub: "Your learning journey" }} onClick={close} testPrefix="drawer" /></div>
+          <NavGroup id="social" label={t("nav.social")} icon={byId("social").icon} items={sectionLeaves(byId("social"), t)} inside={isItemActive(byId("social"), path)} onClick={close} testPrefix="drawer" />
+          <NavGroup id="discover" label={t("nav.discover")} icon={discover.icon} items={sectionLeaves(discover, t)} inside={discoverActive} onClick={close} testPrefix="drawer" />
+          <NavGroup id="events" label={t("nav.events")} icon={byId("events").icon} items={sectionLeaves(byId("events"), t)} inside={isItemActive(byId("events"), path)} onClick={close} testPrefix="drawer" />
+          <Divider />
+          <div className="grid gap-[2px]">
+            {more.map((m) => <NavItem key={m.id} item={m} onClick={close} testPrefix="drawer" />)}
+            {UTILITY_ITEMS.map((i) => <NavItem key={i.id} item={leaf(i, i.id === "inbox" ? counts.unread : i.id === "notifications" ? counts.notifications : undefined)} onClick={close} testPrefix="drawer" />)}
+          </div>
+          <div role="group" aria-labelledby="more-account">
+            <SectionLabel id="more-account">{t("nav.account")}</SectionLabel>
+            <div className="grid gap-[2px]">
+              {ACCOUNT_ITEMS.map((i) => <NavItem key={i.id} item={leaf(i)} onClick={close} testPrefix="drawer" />)}
+              <NavItem item={{ href: "/dashboard?tour=1", label: t("tour.take"), icon: Compass, id: "take-tour", exact: true }} onClick={close} testPrefix="drawer" />
+              {isAdmin && ADMIN_NAV_GROUP.items.map((i) => <NavItem key={i.id} item={leaf(i)} onClick={close} testPrefix="drawer" />)}
+              <div className="flex min-h-[44px] items-center px-[16px]"><LanguageSelect testId="account-language-select" /></div>
+              <button type="button" onClick={signOut} data-testid="account-menu-sign-out"
+                className={cn("flex min-h-[44px] items-center gap-[14px] rounded-[16px] px-[16px] py-[8px] text-[15px] text-[#C04C4E] hover:bg-[#FEF4F4]", ring)}>
+                <LogOut className="h-[20px] w-[20px]" strokeWidth={1.8} aria-hidden="true" />{t("nav.signOut")}
+              </button>
+            </div>
+          </div>
+          <GifBanner onNavigate={close} />
+          <ElcoPromo />
+        </div>
+      </BottomSheet>
     </>
   );
 }

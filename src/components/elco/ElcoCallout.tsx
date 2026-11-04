@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import { ELCO_ENABLED, ELCO_MASCOT, elcoHref } from "@/lib/elco";
+import { ELCO_ENABLED, ELCO_MASCOT, ELCO_PRACTICE, elcoHref, type ElcoContext } from "@/lib/elco";
 import { focusRing } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 
@@ -11,12 +11,14 @@ export function ElcoCallout({
   title,
   body,
   cta = "Start learning with Elco",
+  path = "",
   className,
 }: {
   refId: string;
   title: string;
   body: string;
   cta?: string;
+  path?: string;
   className?: string;
 }) {
   if (!ELCO_ENABLED) return null;
@@ -37,7 +39,7 @@ export function ElcoCallout({
         <p className="mt-1 text-base text-[#2F4157]/70">{body}</p>
       </div>
       <a
-        href={elcoHref(refId)}
+        href={elcoHref(refId, path)}
         target="_blank"
         rel="noopener noreferrer"
         className={cn(
@@ -49,4 +51,11 @@ export function ElcoCallout({
       </a>
     </aside>
   );
+}
+
+// The contextual version: copy and the Elco page come from ELCO_PRACTICE, so every place that says
+// "prepare for the interview" sends members to the same practice.
+export function ElcoPractice({ context, refId, className }: { context: ElcoContext; refId: string; className?: string }) {
+  const p = ELCO_PRACTICE[context];
+  return <ElcoCallout refId={refId} title={p.title} body={p.body} cta={p.cta} path={p.path} className={className} />;
 }

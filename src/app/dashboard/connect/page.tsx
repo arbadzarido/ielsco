@@ -1,8 +1,7 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { ConnectHub } from "@/components/connect/HubViews";
-
+// The old Connect overview. Its parts now live in Social (people, connections, inbox), Events (community events) and
+// EL-Passport (Elco AI); Quick Match is out of the navigation (docs/IELSCO-PRODUCT-ARCHITECTURE.md §10).
 export default function Page() {
-  return <DashboardPage>{(ctx) => <ConnectHub {...ctx} />}</DashboardPage>;
+  redirect("/dashboard/social");
 }

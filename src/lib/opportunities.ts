@@ -67,3 +67,32 @@ export async function getOpportunity(slug: string): Promise<Opportunity | null> 
     return null;
   }
 }
+
+// Home "Opportunity Spotlight" and Discover recommendations: plain, explainable scoring from the member's own goals
+// (direction + interests chosen in onboarding). No AI and no hidden signals; every pick carries its reason.
+const DIRECTION_CATEGORIES: Record<string, Category[]> = {
+  study: ["scholarship", "exchange", "fellowship", "program"],
+  work: ["internship", "fellowship", "volunteering", "competition", "conference"],
+  explore: ["exchange", "competition", "volunteering", "conference", "program"],
+};
+const INTEREST_CATEGORIES: Record<string, Category[]> = {
+  Scholarships: ["scholarship"], "University applications": ["scholarship", "program"], "Exchange / short programs": ["exchange", "program"],
+  Internships: ["internship"], "Job applications": ["internship", "fellowship"], "Explore global opportunities": ["exchange", "fellowship", "conference"],
+  "Meet people with similar goals": ["conference", "volunteering", "exchange"],
+};
+
+export function recommendOpportunities(rows: Opportunity[], goals: { direction: string | null; interests: string[] }, n = 3, now = new Date()) {
+  const fromDirection = new Set(goals.direction ? DIRECTION_CATEGORIES[goals.direction] ?? [] : []);
+  const fromInterests = new Set(goals.interests.flatMap((i) => INTEREST_CATEGORIES[i] ?? []));
+  return rows
+    .filter((o) => deadlineState(o.deadline, now) !== "closed")
+    .map((o) => {
+      const interest = fromInterests.has(o.category), direction = fromDirection.has(o.category);
+      const soon = deadlineState(o.deadline, now) === "soon";
+      const score = (interest ? 3 : 0) + (direction ? 2 : 0) + (o.featured ? 1 : 0) + (soon ? 1 : 0);
+      const reason = interest ? "Matches your interests" : direction ? "Fits your goal" : o.featured ? "Featured by IELS" : null;
+      return { opportunity: o, score, reason };
+    })
+    .sort((a, b) => b.score - a.score || (a.opportunity.deadline ?? "9999").localeCompare(b.opportunity.deadline ?? "9999"))
+    .slice(0, n);
+}

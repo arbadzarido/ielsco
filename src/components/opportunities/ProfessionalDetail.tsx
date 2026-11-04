@@ -1,5 +1,6 @@
 "use client";
 
+import { ElcoPractice } from "@/components/elco/ElcoCallout";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, ArrowLeft, ArrowUpRight, Send } from "lucide-react";
@@ -116,6 +117,7 @@ export function ProfessionalDetail({ o, backHref, backLabel, source, defaults }:
                   <div className="mt-2"><List items={o.documents} /></div></div>
               )}
               <div className="mt-6"><RoleSplit /></div>
+              <ElcoPractice context="job" refId="opportunity-job" className="mt-6" />
             </Section>
             <Section id="interest" n={9} title="How to express interest">
               <div className={cn(card, "p-5 sm:p-7")}>

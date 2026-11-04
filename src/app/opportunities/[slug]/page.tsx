@@ -8,7 +8,9 @@ import { DeadlinePill } from "@/components/opportunities/OpportunityBoard";
 import { body, card, container, eyebrow, h1, h3, lead, pill, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
-import { CATEGORY_LABEL, FUNDING_LABEL, getOpportunity, LEVEL_LABEL, regionLabel, verificationText } from "@/lib/opportunities";
+import { CATEGORY_LABEL, deadlineState, FUNDING_LABEL, getOpportunity, LEVEL_LABEL, listPublishedOpportunities, regionLabel, verificationText } from "@/lib/opportunities";
+import { ElcoPractice } from "@/components/elco/ElcoCallout";
+import { OPPORTUNITY_ELCO_CONTEXT } from "@/lib/elco";
 
 export const revalidate = 300;
 
@@ -21,6 +23,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function OpportunityPage({ params }: { params: Promise<{ slug: string }> }) {
   const o = await getOpportunity((await params).slug);
   if (!o) notFound();
+  // Related: other open listings of the same type, then other open listings.
+  const others = (await listPublishedOpportunities()).filter((x) => x.id !== o.id && deadlineState(x.deadline) !== "closed");
+  const related = [...others.filter((x) => x.category === o.category), ...others.filter((x) => x.category !== o.category)].slice(0, 3);
   const facts: [string, string][] = [
     ["Organizer", o.organizer],
     ["Type", CATEGORY_LABEL[o.category]],
@@ -69,8 +74,23 @@ export default async function OpportunityPage({ params }: { params: Promise<{ sl
                 <li><Link href="/products/courses" className={textLink}>Scholarship essay course <ArrowRight size={15} aria-hidden="true" /></Link></li>
               </ul>
             </div>
+            <ElcoPractice context={OPPORTUNITY_ELCO_CONTEXT[o.category] ?? "scholarship"} refId={`opportunity-${o.category}`} />
           </aside>
         </div>
+        {related.length > 0 && (
+          <section className="mt-16" aria-labelledby="related-heading" data-testid="related-opportunities">
+            <h2 id="related-heading" className={h3}>Related opportunities</h2>
+            <ul className="mt-5 grid gap-4 md:grid-cols-3">
+              {related.map((r) => (
+                <li key={r.id} className={cn(card, "p-5")}>
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[#577E90]">{CATEGORY_LABEL[r.category]}</p>
+                  <Link href={`/opportunities/${r.slug}`} className="mt-2 block text-[17px] font-bold leading-snug text-[#1A2534] hover:underline">{r.title}</Link>
+                  <p className="mt-1 text-[14px] text-[#2F4157]/65">{r.organizer}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </article>
       <Footer />
     </div>

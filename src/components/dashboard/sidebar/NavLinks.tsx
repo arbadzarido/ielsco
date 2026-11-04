@@ -3,72 +3,155 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { ADMIN_NAV_GROUP, MORE_ITEMS, MORE_SECTION, SECTIONS, isItemActive, moreActive, type NavItem } from "../nav";
+import type { LucideIcon } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
+import { ADMIN_NAV_GROUP, MORE_ITEMS, SECTIONS, UTILITY_ITEMS, isItemActive, isTabActive, type Section } from "../nav";
 import { useStoryAdmin } from "../stories-admin/useStoryAdmin";
-import { focusRing } from "../ui";
+import { useHeaderCounts } from "../useHeaderCounts";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
-// Desktop sidebar navigation: the five top-level menus (Home, Discover, Social, Connect, More). "More" is a disclosure
-// with the supporting pages; it opens by itself on those pages. Staff also see the Admin group.
-// Sizes are in px because the site's root font size is 75%: 16px labels, 22px icons, 48px rows.
-const itemBase = "group flex min-h-[48px] [@media(max-height:960px)]:min-h-[44px] w-full items-center gap-[14px] rounded-[16px] px-[16px] text-[16px] transition-colors";
-const activeCls = "bg-[#2F4157] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_6px_16px_rgba(47,65,87,0.22)]";
-const idleCls = "font-medium text-[#2F4157]/80 hover:bg-[#2F4157]/[0.06] hover:text-[#1A2534]";
+// Port of Elco's sidebar navigation (elco-app/frontend/src/components/AppShell.jsx: PrimaryItem, NavGroup, NavItem,
+// Divider, SectionLabel). Same structure, colours, radii, icon sizes and states; only the items are IELSco's.
+// Elco's rem sizes are written in px here because IELSco's root font size is 75% (1rem = 12px, Elco's is 16px).
+// Elco's .press / .panel-in classes are expressed with Tailwind (active:scale, tw-animate-css) so no global CSS changes.
+export const ring = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90] focus-visible:ring-offset-2";
+const press = "transition-[transform,background-color,border-color] duration-150 active:scale-[0.97] motion-reduce:active:scale-100";
 
-// Each section keeps a colour of its own for its icon (navy fill when active), so the menus are recognisable at a glance.
-export const SECTION_TINT: Record<string, string> = {
-  home: "text-[#2F4157]", discover: "text-[#0E8A7E]", social: "text-[#C94F51]", connect: "text-[#6C4BD8]", more: "text-[#B7791F]",
-};
+const under = (prefix: string, path: string | null) => !!path && (path === prefix || path.startsWith(`${prefix}/`));
 
-function Row({ item, active, onNavigate, testPrefix, small }: { item: NavItem; active: boolean; onNavigate?: () => void; testPrefix: string; small?: boolean }) {
-  const { t } = useI18n();
-  const Icon = item.icon;
+export type Leaf = { href: string; label: string; icon: LucideIcon; id: string; sub?: string; match?: string[]; exact?: boolean; count?: number };
+
+export function Divider() {
+  return <div role="separator" className="mx-[12px] border-t border-[#E3E7ED]" />;
+}
+
+export function SectionLabel({ children, id }: { children: React.ReactNode; id?: string }) {
+  return <p id={id} className="mb-[6px] px-[16px] text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8A97A8]">{children}</p>;
+}
+
+// Count chip: Elco's streak chip (coral on soft coral).
+function Count({ n, label }: { n: number; label: string }) {
+  if (!n) return null;
+  return <span className="ml-auto rounded-full bg-[#FDEEEE] px-[10px] py-[2px] text-[12px] font-semibold text-[#C04C4E]">{n > 99 ? "99+" : n}<span className="sr-only"> {label}</span></span>;
+}
+
+// Secondary destination: plain row, tinted when current (Elco NavItem).
+export function NavItem({ item, onClick, sub = false, testPrefix = "nav" }: { item: Leaf; onClick?: () => void; sub?: boolean; testPrefix?: string }) {
+  const path = usePathname();
+  const active = item.exact ? path === item.href : [item.href, ...(item.match ?? [])].some((m) => under(m, path));
   return (
-    <Link href={item.path} onClick={onNavigate} data-testid={`${testPrefix}-${item.id}`} aria-current={active ? "page" : undefined}
-      className={cn(itemBase, focusRing, active ? activeCls : idleCls, small && "min-h-[42px] pl-[22px] text-[15px]")}>
-      <Icon size={small ? 19 : 22} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true"
-        className={cn("shrink-0", active ? "text-white" : small ? "text-[#2F4157]/60 group-hover:text-[#2F4157]" : SECTION_TINT[item.id] ?? "text-[#2F4157]/70")} />
-      <span className="leading-tight">{t(item.key)}</span>
+    <Link href={item.href} onClick={onClick} data-testid={`${testPrefix}-item-${item.id}`} aria-current={active ? "page" : undefined}
+      className={cn("flex items-center gap-[14px] rounded-[16px] text-[15px] transition-colors", ring,
+        sub ? "min-h-[40px] px-[12px] py-[6px]" : "min-h-[44px] px-[16px] py-[8px] [@media(max-height:900px)]:min-h-[40px]",
+        active ? "bg-[#E8EEF3] font-semibold text-[#1A2534]" : "text-[#4A5B70] hover:bg-[#2F4157]/[0.06] hover:text-[#2F4157]")}>
+      <item.icon className={cn(sub ? "h-[18px] w-[18px]" : "h-[20px] w-[20px]", "shrink-0")} strokeWidth={1.8} aria-hidden="true" />
+      <span className="min-w-0 leading-tight"><span className="block">{item.label}</span>
+        {item.sub && <span className="block text-[12px] font-normal text-[#6B7A8F] [@media(max-height:900px)]:hidden">{item.sub}</span>}</span>
+      {item.count !== undefined && <Count n={item.count} label={item.id === "inbox" ? "unread" : "need your attention"} />}
     </Link>
   );
 }
 
+// A parent category: a button that opens and closes its group, never a page (Elco NavGroup). Open while one of its
+// pages is current; otherwise closed unless the member opened it before (remembered on this device).
+export function NavGroup({ id, label, icon: Icon, items, inside, onClick, testPrefix = "nav" }: {
+  id: string; label: string; icon: LucideIcon; items: Leaf[]; inside: boolean; onClick?: () => void; testPrefix?: string;
+}) {
+  const key = `iels-nav-${id}`;
+  const [open, setOpen] = useState(inside);
+  useEffect(() => {
+    if (inside) { setOpen(true); return; }
+    try { if (window.localStorage.getItem(key) === "1") setOpen(true); } catch { /* storage unavailable */ }
+  }, [inside, key]);
+  const toggle = () => setOpen((o) => { try { window.localStorage.setItem(key, o ? "0" : "1"); } catch { /* storage unavailable */ } return !o; });
+  const listId = `${testPrefix}-group-${id}`;
+  return (
+    <div data-testid={`${testPrefix}-group-${id}`}>
+      <button type="button" onClick={toggle} aria-expanded={open} aria-controls={listId} data-testid={`${testPrefix}-${id}`} aria-current={inside ? "true" : undefined}
+        className={cn(press, "group flex w-full items-center gap-[12px] rounded-[16px] px-[10px] py-[8px] text-left text-[#1A2534] hover:bg-[#2F4157]/[0.06]", ring)}>
+        <span className={cn("flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[12px] transition-colors [@media(max-height:900px)]:h-[36px] [@media(max-height:900px)]:w-[36px]",
+          inside ? "bg-[#2F4157] text-white" : "bg-[#F1F4F8] text-[#2F4157] group-hover:bg-white")}>
+          <Icon className="h-[21px] w-[21px]" strokeWidth={1.8} aria-hidden="true" />
+        </span>
+        <span className="flex-1 text-[16px] font-semibold">{label}</span>
+        <ChevronDown className={cn("h-[16px] w-[16px] text-[#8A97A8] transition-transform duration-200 motion-reduce:transition-none", open && "rotate-180")} aria-hidden="true" />
+      </button>
+      {open && (
+        <div id={listId} role="group" aria-label={label} className="ml-[29px] mt-[2px] grid gap-[2px] border-l border-[#E3E7ED] pl-[10px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-300">
+          {items.map((c) => <NavItem key={c.id} item={c} onClick={onClick} sub testPrefix={testPrefix} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Home and EL-Passport: taller rows, the icon in its own tile; navy when current (Elco PrimaryItem).
+export function PrimaryItem({ section, sub, onClick, testPrefix = "nav" }: { section: Section; sub?: string; onClick?: () => void; testPrefix?: string }) {
+  const { t } = useI18n();
+  const path = usePathname();
+  const active = isItemActive(section, path);
+  return (
+    <Link href={section.path} onClick={onClick} data-testid={`${testPrefix}-${section.id}`} aria-current={active ? "page" : undefined}
+      className={cn("group relative flex items-center gap-[12px] overflow-hidden rounded-[16px] px-[10px] py-[8px] transition-colors", ring,
+        active ? "bg-[#2F4157] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_20px_rgba(47,65,87,0.22)]" : "text-[#1A2534] hover:bg-[#2F4157]/[0.06]")}>
+      <span className={cn("flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[12px] [@media(max-height:900px)]:h-[36px] [@media(max-height:900px)]:w-[36px]",
+        active ? "bg-white/15 text-white" : "bg-[#F1F4F8] text-[#2F4157] group-hover:bg-white")}>
+        <section.icon className="h-[22px] w-[22px]" strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <span className="min-w-0 leading-tight"><span className="block text-[16px] font-semibold">{t(section.key)}</span>
+        {sub && <span className={cn("block text-[12px] [@media(max-height:900px)]:hidden", active ? "text-white/70" : "text-[#6B7A8F]")}>{sub}</span>}</span>
+    </Link>
+  );
+}
+
+// A section's pages as group rows: its overview first (unless the menu already starts with it), matched like its tabs.
+export function sectionLeaves(section: Section, t: (k: string) => string): Leaf[] {
+  const tabFor = (href: string) => section.tabs?.find((x) => x.href === href);
+  const rows = (section.menu ?? []).map((m) => {
+    const tab = tabFor(m.href);
+    return { href: m.href, label: m.label, icon: m.icon, id: m.testId, sub: m.primary ? m.description : undefined, match: tab?.match, exact: tab?.exact ?? m.href === section.path };
+  });
+  if (rows.some((r) => r.href === section.path)) return rows;
+  return [{ href: section.path, label: `${t(section.key)} home`, icon: section.icon, id: `${section.id}-overview`, exact: true }, ...rows];
+}
+
+export const moreLeaves = (t: (k: string) => string): Leaf[] =>
+  MORE_ITEMS.map((i) => ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id, match: i.match }));
+
+const PASSPORT_SUB = "Your learning journey";
+
 export function NavLinks({ onNavigate, testPrefix = "nav" }: { onNavigate?: () => void; testPrefix?: string }) {
-  const pathname = usePathname();
+  const path = usePathname();
   const { t } = useI18n();
   const { isAdmin } = useStoryAdmin();
-  const onMore = moreActive(pathname);
-  const [open, setOpen] = useState(onMore);
-  useEffect(() => { if (onMore) setOpen(true); }, [onMore]);
+  const counts = useHeaderCounts();
+  const [home, social, discover, events, passport] = ["home", "social", "discover", "events", "passport"].map((id) => SECTIONS.find((s) => s.id === id)!);
+  const group = (s: Section) => (
+    <NavGroup key={s.id} id={s.id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, t)} inside={isItemActive(s, path)} onClick={onNavigate} testPrefix={testPrefix} />
+  );
+  const more = moreLeaves(t);
+  const utility: Leaf[] = UTILITY_ITEMS.map((i) => ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id,
+    count: i.id === "inbox" ? counts.unread : i.id === "notifications" ? counts.notifications : undefined }));
 
   return (
     <>
-      <ul className="space-y-[4px]">
-        {SECTIONS.map((s) => <li key={s.id}><Row item={s} active={isItemActive(s, pathname)} onNavigate={onNavigate} testPrefix={testPrefix} /></li>)}
-        <li>
-          <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls={`${testPrefix}-more-list`} data-testid={`${testPrefix}-more`}
-            className={cn(itemBase, focusRing, onMore && !open ? activeCls : idleCls)}>
-            <MORE_SECTION.icon size={22} strokeWidth={1.8} aria-hidden="true" className={cn("shrink-0", onMore && !open ? "text-white" : SECTION_TINT.more)} />
-            <span className="flex-1 text-left leading-tight">{t(MORE_SECTION.key)}</span>
-            <ChevronDown size={18} aria-hidden="true" className={cn("transition-transform motion-reduce:transition-none", open && "rotate-180")} />
-          </button>
-          {open && (
-            <ul id={`${testPrefix}-more-list`} className="mt-[4px] space-y-[2px]">
-              {MORE_ITEMS.map((i) => <li key={i.id}><Row item={i} active={isItemActive(i, pathname)} onNavigate={onNavigate} testPrefix={testPrefix} small /></li>)}
-            </ul>
-          )}
-        </li>
-      </ul>
-      {isAdmin && (
-        <div className="mt-[18px]">
-          <p className="mb-[6px] px-[16px] text-[13px] font-semibold uppercase tracking-[0.08em] text-[#2F4157]/50" id={`${testPrefix}-group-admin`}>{t(ADMIN_NAV_GROUP.title!)}</p>
-          <ul className="space-y-[4px]" aria-labelledby={`${testPrefix}-group-admin`}>
-            {ADMIN_NAV_GROUP.items.map((i) => <li key={i.id}><Row item={i} active={isItemActive(i, pathname)} onNavigate={onNavigate} testPrefix={testPrefix} /></li>)}
-          </ul>
-        </div>
-      )}
+      <PrimaryItem section={home} onClick={onNavigate} testPrefix={testPrefix} />
+      <Divider />
+      {group(social)}
+      {group(discover)}
+      {group(events)}
+      <Divider />
+      <PrimaryItem section={passport} sub={PASSPORT_SUB} onClick={onNavigate} testPrefix={testPrefix} />
+      <Divider />
+      <NavGroup id="more" label={t("nav.more")} icon={Menu} items={more} inside={more.some((m) => [m.href, ...(m.match ?? [])].some((x) => under(x, path)))} onClick={onNavigate} testPrefix={testPrefix} />
+      <div className="flex flex-col gap-[2px]">
+        {utility.map((u) => <NavItem key={u.id} item={u} onClick={onNavigate} testPrefix={testPrefix} />)}
+        {isAdmin && ADMIN_NAV_GROUP.items.map((i) => <NavItem key={i.id} item={{ href: i.path, label: t(i.key), icon: i.icon, id: i.id }} onClick={onNavigate} testPrefix={testPrefix} />)}
+      </div>
     </>
   );
 }
+
+// Kept for the section tabs' active logic elsewhere.
+export { isTabActive };
