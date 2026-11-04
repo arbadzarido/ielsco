@@ -35,3 +35,12 @@ test("no email field is ever read", () => {
   const r = validateBenefitEvent({ ...base, email: "someone@example.test" });
   assert.equal(r.ok && "email" in r.event, false);
 });
+
+test("exam grants carry modes; learning grants carry none", () => {
+  const ok = validateBenefitEvent({ ...base, tier: "exam", modes: ["toefl", "ielts", "toeic"], benefits: {} });
+  assert.equal(ok.ok, true);
+  assert.deepEqual(ok.ok && ok.event.modes, ["toefl", "ielts", "toeic"]);
+  assert.equal(validateBenefitEvent({ ...base, tier: "exam", modes: [] }).error, "invalid_modes");
+  assert.equal(validateBenefitEvent({ ...base, tier: "exam", modes: ["gre"] }).error, "invalid_modes");
+  assert.equal(validateBenefitEvent({ ...base, tier: "starter", modes: ["toefl"] }).error, "invalid_modes");
+});

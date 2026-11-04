@@ -17,7 +17,7 @@ const MESSAGES: Record<string, [number, string]> = {
 export async function POST(request: Request) {
   const verified = await verifiedElcoRequest(request);
   if ("response" in verified) return verified.response;
-  const body = parseJson<{ code?: unknown; state?: unknown; elco_user_id?: unknown }>(verified.body);
+  const body = parseJson<{ code?: unknown; state?: unknown; elco_user_id?: unknown; elco_display_name?: unknown }>(verified.body);
   if (!body || !isTokenShape(body.code) || !isTokenShape(body.state) || !isUuid(body.elco_user_id)) return fail(400, "invalid_request");
 
   const admin = adminClient();
@@ -33,6 +33,10 @@ export async function POST(request: Request) {
     const [status, message] = MESSAGES[result.error] ?? [400, "Linking failed."];
     return fail(status, result.error, message);
   }
+
+  // The Elco display name, shown to the same member in IELSco Settings ("Connected to Elco: <name>"). Never an email.
+  const elcoName = typeof body.elco_display_name === "string" ? body.elco_display_name.trim().slice(0, 80) || null : null;
+  if (elcoName && result.link_id) await admin.from("elco_account_links").update({ elco_display_name: elcoName }).eq("id", result.link_id);
 
   // Display name only (shown back to the account owner in Elco). No email or other PII.
   const uid = result.ielsco_user_id!;
