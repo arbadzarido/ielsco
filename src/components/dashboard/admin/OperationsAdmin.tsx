@@ -162,7 +162,7 @@ function Sessions({ supabase }: { supabase: SupabaseClient }) {
     <div className="space-y-6">
       <form onSubmit={create} className={cn(card, "grid gap-3 p-4 md:grid-cols-3")}>
         <label className="block md:col-span-2"><span className={labelClass}>Title</span><input name="title" required minLength={3} maxLength={140} className={inputClass} /></label>
-        <label className="block"><span className={labelClass}>Type</span><select name="kind" className={inputClass}><option value="application_clinic">Application clinic</option><option value="workshop">Workshop</option><option value="speaking_club">Speaking club</option><option value="qna">Q&amp;A</option><option value="networking">Networking</option></select></label>
+        <label className="block"><span className={labelClass}>Type</span><select name="kind" className={inputClass}><option value="application_clinic">Application clinic</option><option value="workshop">Workshop</option><option value="speaking_club">Speaking club</option><option value="qna">Q&amp;A</option><option value="networking">Networking</option><option value="mentoring">Mentoring (Elco Pro)</option></select></label>
         <label className="block"><span className={labelClass}>Date</span><input name="date" type="date" required className={inputClass} /></label>
         <label className="block"><span className={labelClass}>Time (WIB)</span><input name="time" type="time" required className={inputClass} /></label>
         <label className="block"><span className={labelClass}>Minutes</span><input name="duration" type="number" min={15} max={480} defaultValue={60} className={inputClass} /></label>

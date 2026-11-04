@@ -133,7 +133,7 @@ export async function proxy(request: NextRequest) {
     // Elco's server calls the signed integration endpoints from one IP for all its users, so they get their own
     // bucket (still limited) instead of sharing the 20/10s browser limit. Being in this bucket grants nothing:
     // every one of these routes verifies the HMAC signature itself (src/lib/integrations/signature.ts).
-    const isElcoServerCall = /^\/api\/integrations\/elco\/(exchange|goals|summary|revoke)$/.test(request.nextUrl.pathname);
+    const isElcoServerCall = /^\/api\/integrations\/elco\/(exchange|goals|summary|revoke|benefits)$/.test(request.nextUrl.pathname);
     // Midtrans sends every merchant's notifications from a few shared IPs; the route verifies each signature itself.
     const isPaymentNotification = request.nextUrl.pathname === '/api/payments/midtrans/notification';
     const now        = Date.now();

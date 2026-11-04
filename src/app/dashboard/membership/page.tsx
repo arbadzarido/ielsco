@@ -7,7 +7,7 @@ import { AlertTriangle, BadgeCheck, Check, Loader2 } from "lucide-react";
 import { DashboardPage, type DashboardCtx } from "@/components/dashboard/DashboardPage";
 import { LoadingState, PageHeader } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, card, cardGloss, tag } from "@/components/dashboard/ui";
-import { BuddyMatching, CommunityLinks, FeedbackRequests, MemberSessions } from "@/components/dashboard/membership/MemberTools";
+import { BuddyMatching, CommunityLinks, ElcoBenefitCard, FeedbackRequests, MemberSessions, elcoKinds, useElcoBenefit } from "@/components/dashboard/membership/MemberTools";
 import { loadSnap, useMembership, type Plan } from "@/components/dashboard/membership/useMembership";
 import { MEMBER_BENEFITS } from "@/data/membership";
 import { cn } from "@/lib/utils";
@@ -82,6 +82,7 @@ function Plans({ plans, checkout, highlight, renew }: { plans: Plan[]; checkout:
 function MembershipView({ supabase, user }: DashboardCtx) {
   const params = useSearchParams();
   const { status, plans, checkout, orders, error } = useMembership(supabase);
+  const { benefit } = useElcoBenefit(supabase);
   if (!status) return <LoadingState />;
   const daysLeft = status.access_until ? Math.ceil((Date.parse(status.access_until) - Date.now()) / 864e5) : null;
   const renewSoon = status.active && daysLeft !== null && daysLeft <= 14;
@@ -108,9 +109,12 @@ function MembershipView({ supabase, user }: DashboardCtx) {
         )}
       </section>
 
+      {benefit?.active && <ElcoBenefitCard benefit={benefit} />}
+      {!status.active && benefit?.active && <MemberSessions supabase={supabase} isMember={false} elco={elcoKinds(benefit)} />}
+
       {status.active ? (
         <div className="grid gap-6">
-          <MemberSessions supabase={supabase} isMember />
+          <MemberSessions supabase={supabase} isMember elco={elcoKinds(benefit)} />
           <FeedbackRequests supabase={supabase} userId={user.id} />
           <BuddyMatching supabase={supabase} userId={user.id} />
           <CommunityLinks supabase={supabase} />
