@@ -1,5 +1,5 @@
 // The signed-in member's own records across IELSco, read with their own session (owner-only RLS / auth.uid() RPCs).
-// One loader feeds Home, Events (My upcoming events), the Notifications Center and the EL-Passport journey, so the
+// One loader feeds Home, Events (My upcoming events), the Notifications Center and the Elco-Pass journey, so the
 // same facts are shown everywhere. Every source is optional: a missing table or a failed query drops that source and
 // is reported in `gaps`, never replaced with invented data.
 
@@ -210,7 +210,7 @@ export function calendarHref(a: MyActivity, durationMin = 60) {
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(a.title)}&dates=${dates}&details=${encodeURIComponent(`IELSco: https://www.ielsco.com${a.href}`)}`;
 }
 
-// EL-Passport "My Learning Journey": a dated, newest-first timeline built only from records that carry a date.
+// Elco-Pass "My Learning Journey": a dated, newest-first timeline built only from records that carry a date.
 export interface JourneyEntry { id: string; at: Date; title: string; detail: string; href?: string; kind: "account" | "event" | "circle" | "opportunity" | "elco" | "community" }
 
 const TRACKER_VERB: Record<string, string> = {
@@ -219,7 +219,7 @@ const TRACKER_VERB: Record<string, string> = {
 
 export function buildJourney(r: MyRecords, account: { joinedAt?: string | null; goalsSetAt?: string | null }, now = new Date()): JourneyEntry[] {
   const out: JourneyEntry[] = [];
-  if (account.joinedAt) out.push({ id: "joined", at: new Date(account.joinedAt), title: "Joined IELSco", detail: "Your EL-Passport starts here.", kind: "account" });
+  if (account.joinedAt) out.push({ id: "joined", at: new Date(account.joinedAt), title: "Joined IELSco", detail: "Your Elco-Pass starts here.", kind: "account" });
   if (account.goalsSetAt) out.push({ id: "goals", at: new Date(account.goalsSetAt), title: "Set your goals", detail: "Direction, destination and interests.", href: "/dashboard/my-goals", kind: "account" });
   for (const a of r.activities) {
     if (a.start > now) continue;
@@ -231,6 +231,6 @@ export function buildJourney(r: MyRecords, account: { joinedAt?: string | null; 
     out.push({ id: `tracker-${t.opportunity_id}`, at: new Date(t.updated_at), title: `${TRACKER_VERB[t.status] ?? "Tracked"}: ${t.opportunity?.title ?? "an opportunity"}`,
       detail: t.opportunity?.organizer ?? "Opportunity tracker", href: "/dashboard/opportunities", kind: "opportunity" });
   }
-  if (r.elco?.linked_at) out.push({ id: "elco-linked", at: new Date(r.elco.linked_at), title: "Linked Elco AI", detail: "Practice progress now appears in your passport.", href: "/dashboard/connect/elco", kind: "elco" });
+  if (r.elco?.linked_at) out.push({ id: "elco-linked", at: new Date(r.elco.linked_at), title: "Linked Elco AI", detail: "Practice progress now appears in your Elco-Pass.", href: "/dashboard/connect/elco", kind: "elco" });
   return out.filter((e) => !Number.isNaN(e.at.getTime())).sort((a, b) => b.at.getTime() - a.at.getTime());
 }

@@ -1,104 +1,87 @@
-// IELS Membership: the one place that describes what free accounts and members get. The public /membership page, the
-// dashboard and the FAQ read from here, so a promise is changed in one place. Access itself is enforced in the database
-// (supabase/migrations/20261026000000_membership_platform.sql); this file only describes it.
+// IELSco membership = Elco AI membership. IELSco has NO independent membership subscription and sells no membership.
+// Paid benefits come only from an Elco AI subscription (Starter or Pro), which Elco syncs to IELSco server to server
+// (supabase/migrations/20261105000000_elco_benefits.sql, route /api/integrations/elco/benefits). A member reaches them by
+// linking their Elco account to their IELSco account (never matched by email). The database decides who has benefits
+// (public.my_elco_benefits()); this file only describes them, so a promise is changed in one place.
 //
-// Status of every commitment below: see docs/MEMBERSHIP-PLATFORM.md. In short:
-// - Prices (public.membership_plans) are PROPOSED. They are shown publicly only when NEXT_PUBLIC_MEMBERSHIP_PRICES_PUBLIC
-//   is "true", i.e. after the owner approves them; until then the page invites people to the founding-member waitlist.
-// - The feedback cap (1 review / 90 days), the 10-opportunity free limit and buddy matching are enforced in code.
-// - Member-session frequency is an operational commitment and is NOT stated as a number until approved (APPROVED_CADENCE).
+// The legacy "IELS Member" checkout (Midtrans, 3/12-month plans) is retired as a purchase path. Its code and data stay in
+// the repo, and anyone who already holds an active legacy period keeps the member tools until it ends.
+import { ELCO_URL } from "@/lib/elco";
 
-export const PRICES_PUBLIC = process.env.NEXT_PUBLIC_MEMBERSHIP_PRICES_PUBLIC === "true";
-
-// Set to e.g. "At least 2 live sessions a month" once the team commits to a schedule it can keep.
-export const APPROVED_CADENCE: string | null = null;
+/** Elco's real subscription flow (same destination the dashboard uses: see src/lib/elco-next.ts). */
+export const ELCO_PRICING_URL = `${ELCO_URL}/pricing?program=learning&from=ielsco`;
+/** Elco starts the account-linking flow; it ends on IELSco's consent screen at /connect/elco. */
+export const ELCO_LINK_URL = `${ELCO_URL}/connect/ielsco`;
 
 export const FREE_TRACKER_LIMIT = 10;
 export const FEEDBACK_WINDOW_DAYS = 90;
 
-export interface Benefit {
-  id: string;
-  title: string;
-  what: string;          // what the member receives
-  howOften: string;      // frequency / limit, stated honestly
-  howToJoin: string;     // how to use it
-  fees?: string;         // anything that costs extra
+export interface ElcoPlanBenefits {
+  id: "starter" | "pro";
+  name: string;
+  tagline: string;
+  elco: string;       // what the Elco plan itself includes (no feature list is invented here)
+  ielsco: string[];   // what reaches the member on IELSco
 }
 
-export const MEMBER_BENEFITS: Benefit[] = [
+export const ELCO_PLANS: ElcoPlanBenefits[] = [
   {
-    id: "sessions",
-    title: "Live member sessions",
-    what: "Small online sessions run by the IELS team: application clinics, interview practice and Q&As about specific programs.",
-    howOften: APPROVED_CADENCE ?? "Published in your dashboard at least two weeks ahead. Seats are limited per session.",
-    howToJoin: "Register in your dashboard. The join link appears there once you're registered.",
+    id: "starter",
+    name: "Elco Starter",
+    tagline: "Elco AI Starter features plus the IELS Circle speaking club.",
+    elco: "Elco AI Starter features",
+    ielsco: ["IELS Circle speaking club: 12 sessions per month"],
   },
   {
-    id: "feedback",
-    title: "Written feedback on one application document",
-    what: "A written review of your CV, motivation letter, scholarship essay or interview answers, with concrete suggestions.",
-    howOften: `One review every ${FEEDBACK_WINDOW_DAYS} days while you're a member. We aim to reply within 7 days.`,
-    howToJoin: "Share a Google Doc link from your dashboard and tell us what you're applying for.",
-  },
-  {
-    id: "buddy",
-    title: "A study buddy with the same goal",
-    what: "We introduce you to another member working toward a similar destination or program, so you can keep each other on track.",
-    howOften: "Matching is done by the team in rounds. If there's no good match yet, you stay in the queue and we tell you.",
-    howToJoin: "Tell us your goal in your dashboard. You can pause matching at any time.",
-  },
-  {
-    id: "community",
-    title: "Private member group",
-    what: "A members-only group for questions, accountability check-ins and sharing what you're applying to.",
-    howOften: "Always on. Moderated by the IELS team.",
-    howToJoin: "The invite link is in your dashboard while your membership is active. We remove access when it ends.",
-  },
-  {
-    id: "tracker",
-    title: "Unlimited opportunity tracking",
-    what: "Save and track as many opportunities as you like, from saved to applied to result, with your own deadlines and notes.",
-    howOften: `Free accounts can track ${FREE_TRACKER_LIMIT}.`,
-    howToJoin: "Use Save on any opportunity, then manage them in your dashboard.",
+    id: "pro",
+    name: "Elco Pro",
+    tagline: "Elco AI Pro features, the IELS Circle speaking club and monthly mentoring.",
+    elco: "Elco AI Pro features",
+    ielsco: ["IELS Circle speaking club: no monthly cap", "Mentoring: 4 sessions a month (one a week)"],
   },
 ];
 
 export const FREE_FEATURES: { title: string; text: string }[] = [
   { title: "The opportunity board", text: "Every listing, filters, and the official link for each program." },
   { title: `Track up to ${FREE_TRACKER_LIMIT} opportunities`, text: "Save, set your own deadline and note where you are in the application." },
-  { title: "IELS Circle", text: "The open weekly speaking sessions stay free, as they are today." },
+  { title: "IELS Circle open sessions", text: "The open weekly speaking sessions stay free, as they are today." },
   { title: "Free resources", text: "Guides and checked links for scholarships, CVs, interviews and studying abroad." },
   { title: "Your profile and the member directory", text: "Share your goals and find people heading the same way (you choose what's visible)." },
   { title: "Public events", text: "Register for open IELS events and info sessions." },
 ];
 
-// Rows for the comparison table.
-export const COMPARISON: { feature: string; free: string | boolean; member: string | boolean }[] = [
-  { feature: "Opportunity board and filters", free: true, member: true },
-  { feature: "Track opportunities", free: `Up to ${FREE_TRACKER_LIMIT}`, member: "Unlimited" },
-  { feature: "IELS Circle weekly sessions", free: true, member: true },
-  { feature: "Free resources", free: true, member: true },
-  { feature: "Member directory", free: true, member: true },
-  { feature: "Live member sessions (clinics, interview practice)", free: false, member: true },
-  { feature: "Written feedback on an application document", free: false, member: `1 every ${FEEDBACK_WINDOW_DAYS} days` },
-  { feature: "Study buddy matching", free: false, member: true },
-  { feature: "Private member group", free: false, member: true },
+// Rows for the comparison table: free IELSco account, Elco Starter, Elco Pro.
+export const COMPARISON: { feature: string; free: string | boolean; starter: string | boolean; pro: string | boolean }[] = [
+  { feature: "Opportunity board and filters", free: true, starter: true, pro: true },
+  { feature: "IELS Circle open weekly sessions", free: true, starter: true, pro: true },
+  { feature: "Free resources", free: true, starter: true, pro: true },
+  { feature: "Elco AI features", free: "Elco free plan", starter: "Starter features", pro: "Pro features" },
+  { feature: "IELS Circle speaking club", free: false, starter: "12 sessions a month", pro: "No monthly cap" },
+  { feature: "Mentoring sessions", free: false, starter: false, pro: "4 a month (one a week)" },
 ];
 
-// What membership does NOT include or promise. Shown on the page, word for word.
+// What this does NOT include or promise. Shown on the page, word for word.
 export const NOT_INCLUDED = [
-  "IELS Courses, the Global Impact Fellowship and other paid programs are priced separately.",
-  "Elco AI (our English-practice app) is a separate product with its own free and paid plans.",
+  "IELSco does not sell a membership of its own. Benefits come only from an active Elco Starter or Pro subscription.",
+  "Benefits reach your IELSco account only after you link your Elco account. We never match accounts by email.",
+  "Private tutoring is separate: Rp90,000 per session, requested per session. It is not part of an Elco plan.",
   "We don't guarantee scholarships, admissions, jobs, visas or selection into any program. We help you find opportunities and prepare strong applications; the decision is always the program's.",
-  "Mentoring by named experts isn't part of membership yet. When we add it, we'll say exactly who, when and how often.",
+];
+
+export const HOW_BENEFITS_REACH_IELSCO: { title: string; text: string }[] = [
+  { title: "Subscribe in Elco AI", text: "Choose Elco Starter or Elco Pro on the Elco pricing page. Payment and billing are handled by Elco." },
+  { title: "Link your Elco account", text: "Sign in to IELSco and link the same Elco account on the consent screen. It takes a minute and you can revoke it in Settings." },
+  { title: "Benefits sync automatically", text: "Elco tells IELSco about your plan. Your speaking club and mentoring sessions then appear in your IELSco dashboard." },
+  { title: "Register for sessions", text: "Open Membership in your dashboard, pick a session and register. Monthly counts renew on the 1st (WIB)." },
 ];
 
 export const MEMBERSHIP_FAQ: { q: string; a: string }[] = [
-  { q: "Does my membership renew automatically?", a: "No. You pay once for 3 or 12 months. Before it ends, we remind you in your dashboard and you choose whether to renew. Nothing is charged automatically." },
-  { q: "How do I pay?", a: "Through Midtrans, a licensed Indonesian payment gateway: bank transfer (virtual account), e-wallets and cards, depending on what Midtrans offers for your account. Your membership starts once Midtrans confirms the payment to us, usually within minutes." },
-  { q: "What happens right after I pay?", a: "Your dashboard switches to member mode: you'll see the member group link, upcoming member sessions, the feedback request form and buddy matching." },
-  { q: "If I renew early, do I lose days?", a: "No. A renewal starts when your current period ends." },
-  { q: "What if something goes wrong with my payment?", a: "Email hello@ielsco.com with your order number (it's in your dashboard). If you were charged twice, we refund the duplicate. When a payment is refunded, the access it bought ends." },
-  { q: "Is IELS Circle still free?", a: "Yes. The weekly Circle sessions stay open to everyone with a free account. Membership adds smaller, more focused sessions and personal support." },
-  { q: "Is Elco AI included?", a: "No. Elco AI is a separate English-practice product with its own plans. Many members use both: IELS for opportunities and people, Elco for daily English practice." },
+  { q: "Does IELSco have its own membership?", a: "No. IELSco has no independent membership subscription. Paid benefits on IELSco come from an Elco AI subscription (Starter or Pro), which is synced to your IELSco account." },
+  { q: "What does Elco Starter include on IELSco?", a: "Elco AI Starter features plus the IELS Circle speaking club, 12 sessions per month." },
+  { q: "What does Elco Pro include on IELSco?", a: "Elco AI Pro features plus the IELS Circle speaking club with no monthly cap, and 4 mentoring sessions a month (one a week)." },
+  { q: "How do I get my benefits on IELSco?", a: "Subscribe in Elco AI, then link your Elco account with your IELSco account. Benefits sync automatically after that. If you subscribed first, they attach as soon as you link." },
+  { q: "I don't have an Elco plan. Do I lose anything?", a: "No. The opportunity board, open IELS Circle sessions, free resources and public events stay free on a free IELSco account." },
+  { q: "What if I cancel or get a refund on Elco?", a: "The benefits follow your Elco subscription. When it ends or is refunded, the paid benefits on IELSco end with it." },
+  { q: "Is IELS Circle still free?", a: "Yes. The open weekly Circle sessions stay available with a free account. Starter and Pro add the speaking club sessions described above." },
+  { q: "Can I get a private tutor?", a: "Yes. Private human tutoring is available at Rp90,000 per session, requested per session on WhatsApp. It is separate from Elco plans." },
 ];

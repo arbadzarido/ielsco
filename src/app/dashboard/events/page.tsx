@@ -172,7 +172,7 @@ function EventsHub({ user, supabase }: { user: User; supabase: SupabaseClient })
 
       {past.length > 0 && (
         <details className="group" data-testid="events-history">
-          <summary className={cn("cursor-pointer list-none text-[18px] font-bold", focusRing)}>Past events ({past.length}) <span className="text-[14px] font-normal text-[#2F4157]/60">· also in your EL-Passport</span></summary>
+          <summary className={cn("cursor-pointer list-none text-[18px] font-bold", focusRing)}>Past events ({past.length}) <span className="text-[14px] font-normal text-[#2F4157]/60">· also in your Elco-Pass</span></summary>
           <div className="mt-3"><ActivityList items={past} userId={user.id} compact /></div>
         </details>
       )}

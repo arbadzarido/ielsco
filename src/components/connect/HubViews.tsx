@@ -307,7 +307,7 @@ export function ElcoConnectView({ supabase }: DashboardCtx) {
         <p className="text-base text-[#2F4157]/70">Optional. Linking lets Elco read your IELSco goals and show a short progress summary here. IELSco never sees your Elco practice history, and you can unlink anytime.</p>
         <ConnectedApps supabase={supabase} />
       </section>
-      <p className="text-sm text-[#2F4157]/60">Elco Copilot (the robot button in the corner) is different: it helps you find your way around IELSco.</p>
+      <p className="text-sm text-[#2F4157]/60">Elco Help (the robot button in the corner) is different: it helps you find your way around IELSco.</p>
     </ConnectFrame>
   );
 }

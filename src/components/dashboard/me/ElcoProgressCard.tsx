@@ -34,7 +34,7 @@ export function ElcoProgressCard({ elco, className }: { elco: ElcoSnapshot | nul
 
       {!elco?.linked ? (
         <div className="pr-20">
-          <p className="mt-2 text-[16px] text-[#2F4157]/70">Link your Elco AI account to see your practice, level estimate and focus skills here and in your EL-Passport. You choose what&apos;s shared.</p>
+          <p className="mt-2 text-[16px] text-[#2F4157]/70">Link your Elco AI account to see your practice, level estimate and focus skills here and in your Elco-Pass. You choose what&apos;s shared.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href="/dashboard/connect/elco" data-testid="home-elco-link" className={btnPrimary}><Link2 size={16} aria-hidden="true" /> Link Elco AI</Link>
           </div>

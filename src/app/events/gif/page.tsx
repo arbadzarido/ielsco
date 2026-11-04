@@ -3,8 +3,9 @@ import { pageMetadata } from "@/lib/seo";
 import GifView from "./GifView";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Global Impact Fellowship (GIF) | IELSco",
-  description: "The IELS Global Impact Fellowship is a leadership and project incubation program for young people who design and run projects with real impact. Fully funded, partially funded and self-funded places.",
+  title: "Global Impact Fellowship Summer 2027 | Southeast Asia Youth Program",
+  description:
+    "Global Impact Fellowship Summer 2027: an international youth incubation and competition program across Singapore, Malaysia and Thailand by bus. Six-month incubation, USD 5,000 project funding pool, study abroad experience. Early Bird USD 800.",
   path: "/events/gif",
 });
 

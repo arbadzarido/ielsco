@@ -7,7 +7,8 @@ import { body, btnPrimary, card, cardLink, container, eyebrow, h1, h2, h3, lead,
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 import { IELS_GUIDES, PUBLIC_RESOURCES, TOPICS } from "@/data/public-resources";
-import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
+import { elcoHref } from "@/lib/elco";
+import { TUTOR_PRICE_LABEL, tutorRequestUrl } from "@/components/tutoring/links";
 
 export const metadata: Metadata = pageMetadata({
   title: "Free resources for scholarship, study-abroad and job applications | IELSco",
@@ -58,19 +59,17 @@ export default function ResourcesPage() {
       <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="next">
         <div className={cn(container, "grid gap-6 lg:grid-cols-2")}>
           <div className={cn(card, "flex flex-col p-8")}>
-            <h2 id="next" className={h3}>Want someone to read your draft?</h2>
-            <p className={cn(body, "mt-2 flex-1")}>Members get written feedback on a CV, motivation letter or essay, plus live application clinics and a study buddy.</p>
-            <Link href="/membership" className={cn(btnPrimary, "mt-6 self-start")}>About membership <ArrowRight size={18} aria-hidden="true" /></Link>
+            <h2 id="next" className={h3}>Want a person to read your draft?</h2>
+            <p className={cn(body, "mt-2 flex-1")}>Request a private IELSco tutor to go through your CV, motivation letter or essay with you, one to one, at {TUTOR_PRICE_LABEL}. You request each session when you need it.</p>
+            <a href={tutorRequestUrl("application documents")} target="_blank" rel="noopener noreferrer" className={cn(btnPrimary, "mt-6 self-start")}>Request a private tutor <ArrowUpRight size={18} aria-hidden="true" /></a>
           </div>
           <div className={cn(card, "flex flex-col p-8")}>
             <h3 className={h3}>Practising English every day?</h3>
             <p className={cn(body, "mt-2 flex-1")}>
-              General English practice lives in Elco AI, our separate English-learning app: guided lessons, conversation practice
-              and a vocabulary notebook.
+              Elco AI is the primary place to learn and practise English: guided lessons, conversation practice, a vocabulary
+              notebook, and test preparation for TOEFL ITP, IELTS and TOEIC.
             </p>
-            {ELCO_ENABLED
-              ? <a href={elcoHref("resources")} target="_blank" rel="noopener noreferrer" className={cn(textLink, "mt-6")}>Try Elco AI <ArrowUpRight size={16} aria-hidden="true" /></a>
-              : <Link href="/products/courses" className={cn(textLink, "mt-6")}>Or learn with a mentor in IELS Courses <ArrowRight size={16} aria-hidden="true" /></Link>}
+            <a href={elcoHref("resources")} target="_blank" rel="noopener noreferrer" className={cn(textLink, "mt-6")}>Access Elco AI <ArrowUpRight size={16} aria-hidden="true" /></a>
           </div>
         </div>
       </section>

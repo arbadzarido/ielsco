@@ -28,7 +28,7 @@ export const QUESTIONS: Question[] = [
     ],
   },
 
-  // Q2 — goal (options aligned to IELS Lounge + Course)
+  // Q2 — goal
   {
     id: 2,
     title: "Why do you want to learn English?",
@@ -116,12 +116,12 @@ export function getRecommendedPrograms(scores: Record<string, number>): Program[
     });
   }
 
-  // Recommend course for academic / career oriented
+  // Academic / career oriented: Elco AI for learning and test prep, with an optional private tutor from IELSco.
   if (isAcademic || isCareer || highest === "academic" || highest === "career") {
     programs.push({
-      name: "IELS Course",
-      tag: "IELTS & TOEFL Prep",
-      desc: "Structured courses with mock tests and expert mentors. Hit the exact score you need to unlock your dream university or global career.",
+      name: "Elco AI + private tutor",
+      tag: "TOEFL ITP, IELTS & TOEIC prep",
+      desc: "Learn, practise and take mock tests with Elco AI, then add a private IELSco tutor at Rp90,000 per session when you want a person's feedback.",
       href: "/products/courses",
       accent: "bg-[#E56668]",
     });

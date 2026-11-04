@@ -3,6 +3,7 @@ import {
 } from "lucide-react";
 import type { Resource, ResourceCategory, ResourceType } from "@/lib/dashboard/types";
 import { cn } from "@/lib/utils";
+import { materialCover } from "@/lib/covers";
 
 export const TYPE_ICONS: Record<ResourceType, typeof Globe> = {
   Website: Globe,
@@ -15,7 +16,7 @@ export const TYPE_ICONS: Record<ResourceType, typeof Globe> = {
   Template: BookOpen,
 };
 
-// Consistent fallback visual (no fabricated thumbnails): brand tone by topic + type icon.
+// Brand tone by topic + type icon: shown only if a resource has neither its own image nor a type cover.
 const TONES: Record<ResourceCategory, string> = {
   "English Speaking": "bg-[#577E90] text-white",
   "English for Interviews": "bg-[#2F4157] text-white",
@@ -28,9 +29,11 @@ const TONES: Record<ResourceCategory, string> = {
 
 export function ResourceThumb({ resource, variant = "square", className }: { resource: Resource; variant?: "square" | "band"; className?: string }) {
   const Icon = TYPE_ICONS[resource.type];
-  if (resource.image) {
+  // The resource's own image, else the cover for its type or topic (lib/covers.ts).
+  const image = resource.image ?? materialCover(resource.type, resource.category);
+  if (image) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={resource.image} alt="" className={cn("object-cover", variant === "square" ? "h-14 w-14 rounded-xl" : "h-28 w-full", className)} />;
+    return <img src={image} alt="" className={cn("object-cover", variant === "square" ? "h-14 w-14 rounded-xl" : "h-28 w-full", className)} />;
   }
   if (variant === "square") {
     return (

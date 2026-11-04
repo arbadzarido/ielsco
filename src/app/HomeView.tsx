@@ -3,26 +3,35 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ArrowUpRight, CalendarClock, Compass, FileText, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarClock, Compass, FileText, Globe2, GraduationCap, Mic, Sparkles, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1, h2, h3, lead, pill, section, textLink, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 import { eventsData } from "@/data/events";
-import { GIF_BATCH, gifRegistrationOpen } from "@/data/gif";
 import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
 import { generateSlug } from "@/utils/slug";
 import { wibDeadline } from "@/lib/events/deadline";
-import { ELCO_ENABLED, ELCO_MASCOT, ELCO_MASCOT_WAVE, elcoHref } from "@/lib/elco";
+import { ELCO_MASCOT, elcoHref } from "@/lib/elco";
+import ElcoCharacter from "@/components/brand/ElcoCharacter";
+import { CircleCIcon } from "@/components/brand/CircleCIcon";
+import StoryAuthorLine from "@/components/stories/StoryAuthorLine";
+import { TUTOR_PRICE_LABEL, tutorRequestUrl } from "@/components/tutoring/links";
+import { ELCO_PLANS } from "@/data/membership";
 import { Photo } from "@/components/site/Photo";
 import { LandingOpportunities } from "@/components/opportunities/LandingOpportunities";
 import { track } from "@/lib/analytics";
 
-// Public landing page. Positioning: IELSco = international opportunities + the community and preparation to go after them.
-// The Elco robot is the shared IELSco/Elco mascot; Elco AI (English practice) is promoted in its own section.
+// Public landing page. Positioning: IELSco is an English community connecting people, English learning and global
+// opportunities across Southeast Asia; Elco AI is its integrated learning technology. The Elco robot is the shared
+// IELSco/Elco mascot (animated: idle, blink, wave; still under prefers-reduced-motion).
+// Membership comes only from Elco AI subscriptions (Starter / Pro); IELSco has no separate paid membership.
 // Everything time-based (sessions, registration status) is computed in the browser after mount, so the page never
 // shows a stale "open" state and server/client renders match.
 
+
+const GIF_EARLY_BIRD_END = "2026-11-09T23:59:00+07:00";
 
 function useNow() {
   const [now, setNow] = useState<Date | null>(null);
@@ -35,31 +44,31 @@ function Hero() {
     <section className="bg-white pb-[56px] pt-[40px] md:pb-[88px] md:pt-[64px]" aria-labelledby="hero-heading">
       <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16")}>
         <div>
-          <p className={eyebrow}>IELSco · Opportunities &amp; community</p>
-          <h1 id="hero-heading" className={cn(h1, "mt-4")}>
-            Go after international opportunities,<br />
-            <span className="text-[#E56668]">with people beside you.</span>
+          <p className={eyebrow}>IELSco · Southeast Asia English community</p>
+          <h1 id="hero-heading" className={cn(h1, "mt-4 text-[34px] sm:text-[44px] lg:text-[52px]")}>
+            Connecting Southeast Asia through English, community, and{" "}
+            <span className="text-[#E56668]">global opportunities</span>.
           </h1>
-          <p className={cn(lead, "mt-6 max-w-[560px]")}>
-            IELSco helps young people in Southeast Asia find scholarships, fellowships and programs abroad, prepare strong
-            applications, and stay on track with a community that is doing the same.
+          <p className={cn(lead, "mt-6 max-w-[580px]")}>
+            Meet people who are learning English too, practise speaking every week in IELS Circle, learn with Elco AI, and
+            find scholarships, study abroad and career opportunities, all in one English learning community.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/sign-up" className={btnPrimary} data-testid="landing-join" onClick={() => track("cta_click", { cta: "home_hero_join" })}>
               Create a free account <ArrowRight size={18} aria-hidden="true" />
             </Link>
-            <Link href="/opportunities" className={btnSecondary} data-testid="landing-opportunities">
-              Browse opportunities
+            <Link href="/circle" className={btnSecondary} data-testid="landing-circle">
+              Join IELS Circle
             </Link>
           </div>
-          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free account · Membership is optional</p>
+          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free account · Membership comes with an Elco AI plan</p>
         </div>
         <div className="relative">
           <Photo photo="communityInPerson" ratio="wide" priority sizes="(min-width: 1024px) 520px, 100vw" />
-          <div className="absolute -bottom-6 left-4 right-4 flex items-center gap-3 rounded-[18px] border border-[#E6E9EE] bg-white p-3 pr-4 shadow-[0_12px_32px_rgba(26,37,52,0.08)] sm:left-auto sm:right-6 sm:w-[310px]">
-            <Image src={ELCO_MASCOT_WAVE} alt="" width={48} height={48} className="h-12 w-12 shrink-0" />
-            <p className="text-[14px] leading-snug text-[#2F4157]">
-              <span className="font-bold text-[#1A2534]">IELS Circle is free.</span> Open sessions every Wednesday and Saturday.
+          <div className="absolute -bottom-8 left-4 right-4 flex items-end gap-2 rounded-[18px] border border-[#E6E9EE] bg-white py-2 pl-2 pr-4 shadow-[0_12px_32px_rgba(26,37,52,0.08)] sm:left-auto sm:right-6 sm:w-[340px]" data-testid="landing-mascot">
+            <ElcoCharacter height={92} className="-mt-8" />
+            <p className="pb-2 text-[14px] leading-snug text-[#2F4157]">
+              <span className="font-bold text-[#1A2534]">Hi, I&apos;m Elco!</span> IELS Circle open sessions run every Wednesday and Saturday.
             </p>
           </div>
         </div>
@@ -70,13 +79,55 @@ function Hero() {
 
 const STEPS = [
   { icon: Compass, n: "01", title: "Find", text: "A checked list of scholarships, fellowships and programs, plus jobs abroad shared with official recruitment partners.", href: "/opportunities", cta: "Browse opportunities" },
-  { icon: FileText, n: "02", title: "Prepare", text: "Free guides for CVs, essays and interviews; mentor-led courses; and for members, written feedback and application clinics.", href: "/products/resources", cta: "Free resources" },
-  { icon: Users, n: "03", title: "Go together", text: "Practise every week in IELS Circle, read how members did it, and (as a member) get a study buddy with the same goal.", href: "/circle", cta: "Meet the Circle" },
+  { icon: FileText, n: "02", title: "Prepare", text: "Free guides for CVs, essays and interviews, English learning and test preparation with Elco AI, and a private tutor when you want a person.", href: "/products/resources", cta: "Free resources" },
+  { icon: Users, n: "03", title: "Go together", text: "Practise English speaking every week in IELS Circle, meet members with the same goal, and read how members did it.", href: "/circle", cta: "Meet the Circle" },
 ];
+
+const FEATURES: { icon: LucideIcon; title: string; text: string; href: string; cta: string }[] = [
+  { icon: Users, title: "People & community", text: "An English speaking community of learners across Southeast Asia. Find members with the same goals and languages, and connect through intros.", href: "/sign-up", cta: "Join the community" },
+  { icon: CircleCIcon, title: "IELS Circle", text: "Our English speaking club: open online speaking sessions every week, plus cohorts with a set agenda.", href: "/circle", cta: "Explore IELS Circle" },
+  { icon: Globe2, title: "Global opportunities", text: "Scholarships, study abroad programs, fellowships, exchanges and career opportunities, checked against official pages.", href: "/opportunities", cta: "Browse opportunities" },
+  { icon: GraduationCap, title: "Programs & events", text: "IELSco programs and official events, including the Global Impact Fellowship and IELS for Schools.", href: "/products", cta: "See programs" },
+  { icon: Mic, title: "IELSco Talks", text: "Real stories and global perspectives: speakers, alumni and partners on studying, working and growing across borders.", href: "/events", cta: "See events" },
+  { icon: Sparkles, title: "Elco AI", text: "IELSco's integrated English learning technology: courses, speaking and writing practice, and test preparation.", href: elcoHref("landing-features"), cta: "Access Elco AI" },
+];
+
+function Highlights() {
+  return (
+    <section className={section} aria-labelledby="features-heading" data-testid="landing-features">
+      <div className={container}>
+        <div className="max-w-[680px]">
+          <p className={eyebrow}>What IELSco brings together</p>
+          <h2 id="features-heading" className={cn(h2, "mt-3")}>One English learning community, from practice to opportunity</h2>
+        </div>
+        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f) => {
+            const external = f.href.startsWith("http");
+            const inner = (
+              <>
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><f.icon size={20} aria-hidden="true" /></span>
+                <h3 className={cn(h3, "mt-5")}>{f.title}</h3>
+                <p className={cn(body, "mt-2 flex-1")}>{f.text}</p>
+                <span className="mt-5 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">{f.cta} {external ? <ArrowUpRight size={16} aria-hidden="true" /> : <ArrowRight size={16} aria-hidden="true" />}</span>
+              </>
+            );
+            return (
+              <li key={f.title}>
+                {external
+                  ? <a href={f.href} target="_blank" rel="noopener noreferrer" className={cn(cardLink, "flex h-full flex-col p-7")}>{inner}</a>
+                  : <Link href={f.href} className={cn(cardLink, "flex h-full flex-col p-7")}>{inner}</Link>}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
 
 function HowItWorks() {
   return (
-    <section className={section} aria-labelledby="how-heading" id="how-it-works">
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="how-heading" id="how-it-works">
       <div className={container}>
         <div className="max-w-[640px]">
           <p className={eyebrow}>How IELS works</p>
@@ -110,11 +161,11 @@ function CircleSessions() {
           <Image src="/images/site/gathering.webp" alt="IELS members smiling together at a meet-up" fill sizes="(min-width: 1024px) 540px, 100vw" className="object-cover" />
         </div>
         <div>
-          <p className={eyebrow}>IELS Circle</p>
-          <h2 id="circle-heading" className={cn(h2, "mt-3")}>A weekly place to practise, ask and share</h2>
+          <p className={eyebrow}>IELS Circle · English speaking club</p>
+          <h2 id="circle-heading" className={cn(h2, "mt-3")}>A weekly place to practise English speaking</h2>
           <p className={cn(lead, "mt-4")}>
-            Circle sessions are online and open to members. Each one has a topic, from scholarship essays to small talk, so you
-            always have something to say.
+            IELS Circle is IELSco&apos;s ongoing English speaking community. Open sessions are online and open to members; each
+            one has a topic, from scholarship essays to small talk, so you always have something to say.
           </p>
           <ul className="mt-8 space-y-3" aria-live="polite">
             {sessions.length === 0 && <li className="h-[76px] animate-pulse rounded-[18px] bg-[#F1F4F8]" aria-hidden="true" />}
@@ -133,7 +184,7 @@ function CircleSessions() {
           </ul>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/circle" className={btnPrimary}>Explore IELS Circle <ArrowRight size={18} aria-hidden="true" /></Link>
-            <Link href="/circle/agenda" className={btnSecondary}>Cohort agenda</Link>
+            <Link href="/circle/agenda" className={btnSecondary}>Current cohort agenda</Link>
           </div>
         </div>
       </div>
@@ -158,17 +209,14 @@ function Stories() {
             <li key={s.slug}>
               <Link href={`/circle/stories/${s.slug}`} className={cn(cardLink, "flex h-full flex-col overflow-hidden")}>
                 <div className="relative aspect-[16/9] bg-[#F1F4F8]">
-                  {s.bannerImage && <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover" />}
+                  {s.bannerImage && <Image src={s.bannerImage} alt={`Banner for ${s.author.name}'s story`} fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover" />}
                 </div>
                 <div className="flex flex-1 flex-col p-6">
-                  <h3 className="text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</h3>
-                  <div className="mt-auto flex items-center gap-3 pt-6">
-                    {s.author.avatar && <Image src={s.author.avatar} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-full object-cover" />}
-                    <div className="min-w-0">
-                      <p className="truncate text-[15px] font-semibold text-[#1A2534]">{s.author.name}</p>
-                      {s.author.role && <p className="truncate text-[13px] text-[#2F4157]/65">{s.author.role}</p>}
-                    </div>
-                  </div>
+                  {/* Verified author identity above the title (photo or initials, name, role from the story record). */}
+                  <div data-testid="story-author"><StoryAuthorLine name={s.author.name} avatar={s.author.avatar} role={s.author.role || s.author.country} size="sm" /></div>
+                  <h3 className="mt-4 text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</h3>
+                  {s.summary && <p className={cn(body, "mt-2 line-clamp-3 text-[15px]")}>{s.summary}</p>}
+                  <span className="mt-auto flex items-center gap-1.5 pt-5 text-[15px] font-semibold text-[#2F4157]">Read the story <ArrowRight size={15} aria-hidden="true" /></span>
                 </div>
               </Link>
             </li>
@@ -181,7 +229,8 @@ function Stories() {
 
 function Opportunities() {
   const now = useNow();
-  const gifOpen = now ? gifRegistrationOpen(now) : null;
+  // GIF Summer 2027 (guidebook): Early Bird open until 9 Nov 2026 23:59 WIB; general registration coming soon.
+  const earlyBirdOpen = now ? now.getTime() < Date.parse(GIF_EARLY_BIRD_END) : null;
   // The next event whose registration is still open, straight from the events data. Nothing shown if there is none.
   const nextEvent = useMemo(() => {
     if (!now) return null;
@@ -197,27 +246,28 @@ function Opportunities() {
       <div className={container}>
         <div className="max-w-[640px]">
           <p className={eyebrow}>Programs &amp; opportunities</p>
-          <h2 id="opps-heading" className={cn(h2, "mt-3")}>IELS programs and events</h2>
+          <h2 id="opps-heading" className={cn(h2, "mt-3")}>IELSco programs and events</h2>
           <p className={cn(lead, "mt-4")}>Programs open and close through the year. Dates and status below come from the event pages themselves.</p>
         </div>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-          <Link href={GIF_BATCH.overviewPage} className={cn(cardLink, "grid overflow-hidden sm:grid-cols-[1fr_200px]")} data-testid="landing-gif">
+          <Link href="/events/gif" className={cn(cardLink, "grid overflow-hidden sm:grid-cols-[1fr_200px]")} data-testid="landing-gif">
             <div className="flex flex-col p-7">
               <div className="flex items-center gap-3">
                 <Image src="/images/logos/events/gif.png" alt="" width={110} height={40} className="h-[40px] w-auto" />
                 <p className="text-[14px] font-semibold text-[#914D4D]">Global Impact Fellowship</p>
               </div>
-              <h3 className={cn(h3, "mt-5")}>Lead a project with youth from across Southeast Asia</h3>
-              <p className={cn(body, "mt-2")}>{GIF_BATCH.facts[0]}. {GIF_BATCH.facts[1]}.</p>
-              <div className="mt-auto pt-6">
-                {gifOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Registration open until {fmt(new Date(GIF_BATCH.registrationDeadline))}</span>}
-                {gifOpen === false && <span className={pill}>{GIF_BATCH.name}: registration closed</span>}
+              <h3 className={cn(h3, "mt-5")}>GIF Summer 2027: Singapore, Malaysia and Thailand</h3>
+              <p className={cn(body, "mt-2")}>An international youth incubation program with university sessions in three countries, six months of mentoring and a Final Pitch.</p>
+              <div className="mt-auto flex flex-wrap gap-2 pt-6">
+                {earlyBirdOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Early Bird open until {fmt(new Date(GIF_EARLY_BIRD_END))}</span>}
+                {earlyBirdOpen === false && <span className={pill}>Early Bird closed</span>}
+                <span className={pill}>General registration: coming soon</span>
                 <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">About the fellowship <ArrowRight size={16} aria-hidden="true" /></span>
               </div>
             </div>
             <div className="relative hidden min-h-[240px] sm:block">
-              <Image src={GIF_BATCH.poster} alt="" fill sizes="200px" className="object-cover" />
+              <Image src="/images/gif-2027/wsu_group.webp" alt="" fill sizes="200px" className="object-cover" />
             </div>
           </Link>
 
@@ -249,48 +299,62 @@ function Opportunities() {
   );
 }
 
-// Elco AI: a separate English learning app (www.elcoai.com) run by PT Elco Edukasi Berkah Indonesia, which shares IELSco's
-// founder. Shown only when NEXT_PUBLIC_ELCO_ENABLED
-// is "true", i.e. after the Elco deployment has been verified, so the landing page never links to a missing site.
-function ElcoSection() {
-  if (!ELCO_ENABLED) return null;
+// Learning: Elco AI is the primary place to learn English (courses, practice, test prep); IELSco adds private human
+// tutoring, requested per session. No enrolment or subscription flow here.
+function Learning() {
   return (
-    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="elco-heading" data-testid="landing-elco">
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="learning-heading" data-testid="landing-learning">
       <div className={cn(container, "grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-14")}>
         <Image src={ELCO_MASCOT} alt="" width={160} height={157} className="mx-auto h-[140px] w-auto lg:h-[160px]" />
         <div>
-          <p className={eyebrow}>Elco AI · English learning app</p>
-          <h2 id="elco-heading" className={cn(h2, "mt-3")}>Practise English through games with Elco AI</h2>
-          <p className={cn(lead, "mt-4 max-w-[640px]")}>
-            Elco AI makes English practice feel like play: short English games you can play against Elco Bot, another
-            learner or a friend, plus guided lessons, AI chat and voice practice. It&apos;s developed and operated by PT Elco
-            Edukasi Berkah Indonesia, a separate company that shares IELSco&apos;s founder. IELSco stays your home for people,
-            Circle and opportunities.
+          <p className={eyebrow}>English learning · Elco AI</p>
+          <h2 id="learning-heading" className={cn(h2, "mt-3")}>Learn English with Elco AI. Add a private tutor when you want a person.</h2>
+          <p className={cn(lead, "mt-4 max-w-[680px]")}>
+            Elco AI is IELSco&apos;s integrated English learning platform: lessons, speaking and writing practice, English games and
+            TOEFL ITP, IELTS and TOEIC preparation (SAT English is coming soon). When you want one-to-one help, IELSco adds a private human tutor for{" "}
+            {TUTOR_PRICE_LABEL}, requested one session at a time.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a href={elcoHref("landing")} target="_blank" rel="noopener noreferrer" className={btnPrimary} data-testid="landing-elco-cta">
-              Try Elco AI <ArrowUpRight size={18} aria-hidden="true" />
+              Access Elco AI <ArrowUpRight size={18} aria-hidden="true" />
             </a>
-            <p className="text-[14px] text-[#2F4157]/60">Free to start at elcoai.com · separate Elco account</p>
+            <a href={tutorRequestUrl()} target="_blank" rel="noopener noreferrer" className={btnSecondary} data-testid="landing-tutor-cta">
+              Request a private tutor <ArrowUpRight size={18} aria-hidden="true" />
+            </a>
           </div>
+          <p className="mt-4 text-[14px] text-[#2F4157]/60">
+            Elco AI is developed and operated by PT Elco Edukasi Berkah Indonesia, IELSco&apos;s learning technology partner.{" "}
+            <Link href="/products/courses" className="underline underline-offset-4">About private tutoring</Link>
+          </p>
         </div>
       </div>
     </section>
   );
 }
 
+// Membership: there is no separate IELSco membership. Elco AI Starter / Pro subscriptions carry the IELSco benefits
+// (synced to IELSco once the accounts are linked). Plan names and benefits come from data/membership.ts.
 function MembershipTeaser() {
   return (
-    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="membership-heading">
+    <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="membership-heading" data-testid="landing-membership">
       <div className={cn(container, "grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16")}>
         <div>
           <p className={eyebrow}>Free account &amp; membership</p>
-          <h2 id="membership-heading" className={cn(h2, "mt-3")}>Free to start. Membership when you want support.</h2>
+          <h2 id="membership-heading" className={cn(h2, "mt-3")}>Free to join. Membership comes with Elco AI.</h2>
           <p className={cn(lead, "mt-4")}>
-            Your free account covers the opportunity board, tracking up to 10 applications, IELS Circle and free resources.
-            Members add live application clinics, written feedback on a CV or essay, a study buddy and a private member group.
+            A free IELSco account covers the community, IELS Circle open sessions, the opportunity board and free resources.
+            There is no separate IELSco payment: an Elco AI Starter or Pro plan adds the IELS Circle Speaking Club and, on Pro,
+            mentoring.
           </p>
-          <Link href="/membership" className={cn(btnPrimary, "mt-8")} onClick={() => track("cta_click", { cta: "home_membership" })}>What members get <ArrowRight size={18} aria-hidden="true" /></Link>
+          <ul className="mt-6 space-y-3">
+            {ELCO_PLANS.map((p) => (
+              <li key={p.id} className={cn(card, "p-4")}>
+                <p className="text-[16px] font-bold text-[#1A2534]">{p.name}</p>
+                <p className="mt-1 text-[15px] text-[#2F4157]/75">{[p.elco, ...p.ielsco].join(" · ")}</p>
+              </li>
+            ))}
+          </ul>
+          <Link href="/membership" className={cn(btnPrimary, "mt-8")} onClick={() => track("cta_click", { cta: "home_membership" })}>How membership works <ArrowRight size={18} aria-hidden="true" /></Link>
         </div>
         <Photo photo="discussion" ratio="wide" position="40% center" />
       </div>
@@ -305,8 +369,8 @@ function FinalCta() {
         <div className="flex items-center gap-5">
           <Image src="/images/contents/mascot/poses/happy.png" alt="" width={88} height={88} className="hidden h-[88px] w-[88px] shrink-0 object-contain sm:block" />
           <div>
-            <h2 id="final-heading" className={h2}>Start with one opportunity</h2>
-            <p className={cn(lead, "mt-2 max-w-[560px]")}>Create a free account, save what you want to apply for, and join the next Circle session.</p>
+            <h2 id="final-heading" className={h2}>Join the English community</h2>
+            <p className={cn(lead, "mt-2 max-w-[560px]")}>Create a free account, join the next IELS Circle session, and save the opportunities you want to go after.</p>
           </div>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -322,13 +386,14 @@ export default function Home() {
   return (
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="landing-page">
       <Hero />
-      <HowItWorks />
-      <LandingOpportunities />
+      <Highlights />
       <CircleSessions />
+      <LandingOpportunities />
+      <HowItWorks />
+      <Learning />
       <Stories />
       <Opportunities />
       <MembershipTeaser />
-      <ElcoSection />
       <FinalCta />
       <Footer />
     </div>

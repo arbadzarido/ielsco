@@ -89,18 +89,18 @@ function Stories() {
         {stories.map((s) => (
           <li key={s.slug}>
             <Link href={`/circle/stories/${s.slug}`} className={cn("group block overflow-hidden rounded-3xl bg-white", cardGloss, focusRing)}>
+              <span className="flex items-center gap-3 px-5 pb-4 pt-5" data-testid="story-author">
+                <Avatar name={s.author.name} url={s.author.avatar} size={40} />
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px] font-semibold text-[#1A2534]">{s.author.name}</span>
+                  {s.author.role && <span className="block truncate text-[13px] text-[#2F4157]/65">{s.author.role}</span>}
+                </span>
+              </span>
+              <span className="block px-5 pb-4 text-[17px] font-bold leading-snug text-[#1A2534]">{s.title}</span>
               <span className="relative block aspect-[16/10] overflow-hidden bg-[#F1F4F8]">
-                {s.bannerImage && <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />}
+                {s.bannerImage && <Image src={s.bannerImage} alt={`Banner for ${s.title}`} fill sizes="(min-width: 768px) 33vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />}
               </span>
               <span className="flex flex-col gap-4 p-5">
-                <span className="block text-[17px] font-bold leading-snug text-[#1A2534]">{s.title}</span>
-                <span className="flex items-center gap-3">
-                  <Avatar name={s.author.name} url={s.author.avatar} size={40} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-semibold text-[#1A2534]">{s.author.name}</span>
-                    {s.author.role && <span className="block truncate text-[13px] text-[#2F4157]/65">{s.author.role}</span>}
-                  </span>
-                </span>
                 <span className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#2F4157] group-hover:text-[#577E90]">Read story <ArrowRight size={15} aria-hidden="true" /></span>
               </span>
             </Link>
@@ -111,8 +111,9 @@ function Stories() {
   );
 }
 
-// Circle: IELSco's community. Recurring weekly sessions (Wed 19:00 / Sat 13:00 WIB) with check-ins, member stories,
-// and community channels. The Oct–Dec cohort agenda stays available as a link.
+// Circle: the ongoing IELS Circle community and speaking club, with its own menu item (Events ▸ Circle). Recurring weekly
+// sessions (Wed 19:00 / Sat 13:00 WIB) with check-ins, member stories and community channels. The current cohort's
+// agenda stays available as a link. The 2025 IELS Circle event is a past event and is not used as this page's identity.
 export function CircleView({ supabase }: { supabase: SupabaseClient }) {
   const { t } = useI18n();
   const sessions = useMemo(() => upcomingSessions(SESSIONS_SHOWN), []);
@@ -147,9 +148,12 @@ export function CircleView({ supabase }: { supabase: SupabaseClient }) {
 
   return (
     <div className="mx-auto max-w-[110rem] space-y-12 px-4 py-10 md:px-6 md:py-12 lg:px-10">
-      <PageHeader title={t("pages.circleTitle")} description="IELSco's community. Meet members twice a week to practise English, swap opportunities and share where you're heading.">
-        <Link href="/circle" className={btnSecondary}>About Circle</Link>
-      </PageHeader>
+      <div className="space-y-4">
+        <Image src="/images/logos/circle/circle-c-blue.svg" alt="IELS Circle logo" width={212} height={243} priority className="h-auto w-[52px]" data-testid="circle-logo" />
+        <PageHeader title={t("pages.circleTitle")} description="IELSco's ongoing English speaking community. Meet members twice a week to practise speaking, swap opportunities and share where you're heading.">
+          <Link href="/circle" className={btnSecondary}>About Circle</Link>
+        </PageHeader>
+      </div>
 
       <section aria-labelledby="sessions-heading" className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -197,9 +201,16 @@ export function CircleView({ supabase }: { supabase: SupabaseClient }) {
           <p className="text-[15px] text-[#2F4157]/70">Find members with similar goals in People, or read the {CIRCLE_COHORT.name.replace("IELS Circle · ", "")} agenda.</p>
           <div className="flex flex-wrap gap-2">
             <Link href="/dashboard/people" className={btnSecondary}>People</Link>
-            <Link href={CIRCLE_COHORT.agendaHref} data-testid="circle-agenda-link" className={btnSecondary}>Cohort agenda</Link>
+            <Link href={CIRCLE_COHORT.agendaHref} data-testid="circle-agenda-link" className={btnSecondary}>Current cohort agenda</Link>
           </div>
         </div>
+      </section>
+      <section aria-labelledby="speaking-club-heading" className={cn(cardGloss, "flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between")} data-testid="circle-speaking-club">
+        <div className="max-w-3xl">
+          <h2 id="speaking-club-heading" className="text-[20px] font-bold">Speaking Club with Elco AI membership</h2>
+          <p className="mt-1 text-[15px] text-[#2F4157]/70">The weekly sessions above are open to everyone. Elco AI Starter includes 12 Speaking Club sessions a month; Elco AI Pro includes Speaking Club without a monthly limit plus 4 mentoring sessions a month. Benefits appear here once your Elco account is linked.</p>
+        </div>
+        <Link href="/dashboard/membership" className={btnSecondary} data-testid="circle-membership-link">See membership <ArrowRight size={16} aria-hidden="true" /></Link>
       </section>
       <div className="grid gap-4 md:grid-cols-2">
         <ElcoPractice context="circle_before" refId="circle-before" />

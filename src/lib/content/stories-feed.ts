@@ -17,6 +17,10 @@ export interface FeedStory {
   title: string;
   summary: string;
   author: string;
+  /** Verified author identity for the card header (name, optional photo and role from the record; nothing invented). */
+  authorName: string;
+  authorAvatar?: string;
+  authorRole?: string;
   date: string | null;
   image?: string;
   href: string;
@@ -30,13 +34,14 @@ export async function loadStoriesFeed(supabase: SupabaseClient): Promise<{ items
   ]);
   const ielsco: FeedStory[] = news.error ? [] : (news.data as unknown as IelscoStoryRow[]).map(rowToIelscoStory).map((s) => ({
     id: `ielsco:${s.slug}`, kind: "ielsco", category: s.category, categoryLabel: IELSCO_CATEGORY_LABELS[s.category].en, title: s.title, summary: s.summary,
-    author: s.author.name, date: s.publishedAt || s.date || null, image: s.bannerImage, href: `/stories/${s.slug}`, tags: s.tags,
+    author: s.author.name, authorName: s.author.name, authorRole: s.author.role, date: s.publishedAt || s.date || null, image: s.bannerImage, href: `/stories/${s.slug}`, tags: s.tags,
   }));
   // Member stories fall back to the static list of already-published stories (same as the public Circle stories page).
   const memberRows = members.error ? sortStories(staticStories()) : sortStories((members.data as unknown as StoryRow[]).map(rowToStory));
   const member: FeedStory[] = memberRows.map((s) => ({
     id: `member:${s.slug}`, kind: "member", category: "member", categoryLabel: "Member story", title: s.title, summary: s.summary,
-    author: [s.author.name, s.author.country].filter(Boolean).join(" · "), date: s.sortDate, image: s.bannerImage, href: `/circle/stories/${s.slug}`, tags: [],
+    author: [s.author.name, s.author.country].filter(Boolean).join(" · "), authorName: s.author.name, authorAvatar: s.author.avatar,
+    authorRole: s.author.role || s.author.country, date: s.sortDate, image: s.bannerImage, href: `/circle/stories/${s.slug}`, tags: [],
   }));
   const items = [...ielsco, ...member].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
   return { items, partial: !!news.error };

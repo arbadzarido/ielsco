@@ -8,8 +8,8 @@ import { getPublishedStories } from "@/lib/stories/public";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Member Stories | IELS Circle",
-  description: "Real people, real journeys across Southeast Asia: internships, exchanges and the everyday wins of using English with confidence.",
+  title: "Member Stories | IELS Circle English speaking community",
+  description: "Real people, real journeys across Southeast Asia: internships, exchanges and the everyday wins of English practice with the IELS Circle speaking community.",
   alternates: { canonical: "https://circle.ielsco.com/stories" },
   openGraph: {
     title: "Member Stories | IELS Circle",

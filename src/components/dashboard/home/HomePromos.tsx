@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
-import { formatIDR, trackInfo, type CourseTrack } from "@/data/dashboard/courses";
+import { trackInfo, type CourseTrack } from "@/data/dashboard/courses";
+import { TUTOR_PRICE_LABEL } from "@/components/tutoring/links";
 import { btnLink, focusRing } from "../ui";
 import { cn } from "@/lib/utils";
 
@@ -27,11 +28,10 @@ export function CircleActivityBanner() {
   );
 }
 
-// Understated course promotion. Only real course data from src/data/courses.ts.
+// Understated private-tutoring promotion for a focus area (Elco AI stays the main place to learn). Real data from src/data/courses.ts.
 export function CoursePromo({ track, reason }: { track: CourseTrack; reason: string }) {
   const { label, packages, mentor } = trackInfo(track);
   if (packages.length === 0) return null;
-  const from = Math.min(...packages.map((p) => p.totalPrice));
   return (
     <section data-testid={`course-promo-${track}`} className="flex flex-col gap-5 border-y border-[#E3E7ED]/70 py-6 md:flex-row md:items-center">
       {mentor && (
@@ -40,15 +40,15 @@ export function CoursePromo({ track, reason }: { track: CourseTrack; reason: str
         </div>
       )}
       <div className="flex-1">
-        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#577E90]">IELS Course · {reason}</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#577E90]">Private tutoring · {reason}</p>
         <h2 className="text-xl font-bold">{label}</h2>
         <p className="text-base text-[#2F4157]/70">
-          {packages.map((p) => `${p.sessions} sessions`).join(" or ")} · from {formatIDR(from)}
-          {mentor ? ` · with ${mentor.name}` : " · facilitator to be confirmed"}
+          One to one, {TUTOR_PRICE_LABEL}
+          {mentor ? ` · with ${mentor.name}` : " · tutor confirmed on request"}
         </p>
       </div>
       <Link href={`/dashboard/programs/courses/${track}`} data-testid={`course-promo-link-${track}`} className={btnLink}>
-        View course <ArrowRight size={16} />
+        See focus area <ArrowRight size={16} />
       </Link>
     </section>
   );

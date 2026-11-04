@@ -26,8 +26,8 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   // Resolves relative canonical and Open Graph URLs. No canonical here: each public page sets its own (see lib/seo.ts).
   metadataBase: new URL(SITE_URL),
-  title: "IELSco | International opportunities and the community to go after them",
-  description: "IELSco helps young people in Southeast Asia find scholarships, fellowships and programs abroad, prepare strong applications and stay on track with a community. Free to join.",
+  title: "IELSco | English Community and Speaking Club in Southeast Asia",
+  description: "IELSco is an English learning community connecting people, English practice and global opportunities across Southeast Asia: the IELS Circle English speaking club, Elco AI, scholarships, study abroad and career opportunities. Free to join.",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -68,9 +68,9 @@ export default function RootLayout({
                   "url": `${SITE_URL}/`,
                   "logo": `${SITE_URL}/images/logos/iels_blue1.png`,
                   "email": "hello@ielsco.com",
-                  "description": "IELSco is an English learning community and opportunity platform connecting young people in Indonesia and Southeast Asia with English practice, scholarships, study and work abroad, and global programs.",
+                  "description": "IELSco is an English community connecting people, English learning and global opportunities across Southeast Asia: the IELS Circle English speaking club, Elco AI for English learning, scholarships, study abroad and career opportunities.",
                   "areaServed": ["Indonesia", "Southeast Asia"],
-                  "knowsAbout": ["English language learning", "Scholarships", "Study abroad", "Work abroad", "International programs"],
+                  "knowsAbout": ["English community", "English speaking club", "English practice", "English language learning", "Scholarships", "Study abroad", "Career opportunities", "Global opportunities", "International programs"],
                   // Elco AI's own JSON-LD names IELSco as parentOrganization (www.elcoai.com/about).
                   "subOrganization": { "@type": "Organization", "name": "Elco AI", "legalName": "PT Elco Edukasi Berkah Indonesia", "url": "https://www.elcoai.com/" },
                   "sameAs": [

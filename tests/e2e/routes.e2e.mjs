@@ -17,23 +17,26 @@ await sql(`insert into public.member_profiles (user_id, display_name, connect_gu
   values ('${MEMBER}', 'Raka Pratama', now(), now(), true, '{id,en}', '{culture_exchange}', '{culture}') on conflict (user_id) do nothing`);
 await sql(`update public.member_profiles set onboarding_completed_at = coalesce(onboarding_completed_at, now()) where user_id = '${MEMBER}'`);
 
-// [route, expected top-level menu id, expected section tabs id or null]
+// [route, expected sidebar group id ("none" = no group lit), expected section tabs id (always null: the tab row was removed)]
 const ROUTES = [
   ["/dashboard", "home", null],
-  ["/dashboard/social", "social", "social"], ["/dashboard/connect/discover", "social", "social"], ["/dashboard/people", "social", "social"],
-  ["/dashboard/connect/connections", "social", "social"], ["/dashboard/connect/requests", "social", "social"], ["/dashboard/connect/messages", "social", "social"],
-  ["/dashboard/circles", "social", "social"], ["/dashboard/circles/cross-cultural", "social", "social"], ["/dashboard/sea-exchange", "social", "social"],
-  ["/dashboard/connect/safety", "social", "social"], ["/dashboard/connect/quick-match", "social", "social"],
-  ["/dashboard/discover", "discover", "discover"], ["/dashboard/discover/opportunities", "discover", "discover"], ["/dashboard/opportunities", "discover", "discover"],
-  ["/dashboard/discover/stories", "discover", "discover"], ["/dashboard/explore", "discover", "discover"], ["/dashboard/pulse", "discover", "discover"],
-  ["/dashboard/programs", "discover", "discover"],
-  ["/dashboard/events", "events", "events"], ["/dashboard/events/ielsco", "events", "events"], ["/dashboard/events/talks", "events", "events"],
-  ["/dashboard/circle", "events", "events"], ["/dashboard/connect/rooms", "events", "events"], ["/dashboard/connect/rooms/new", "events", "events"],
-  ["/dashboard/passport", "passport", "passport"], ["/dashboard/passport/milestones", "passport", "passport"], ["/dashboard/connect/passport", "passport", "passport"],
-  ["/dashboard/connect/elco", "passport", "passport"], ["/dashboard/my-learning", "passport", "passport"],
-  ["/dashboard/shelf", "none", null], ["/dashboard/notifications", "none", null], ["/dashboard/search?q=english", "none", null],
-  ["/dashboard/my-goals", "none", null], ["/dashboard/membership", "none", null], ["/dashboard/profile", "none", null], ["/dashboard/settings", "none", null],
-  ["/dashboard/help", "none", null], ["/dashboard/gif", "none", null],
+  // Social: People (with connections, intro requests, Elco-Pass) and Inbox; hidden pages still belong here.
+  ["/dashboard/connect/discover", "social", null], ["/dashboard/people", "social", null], ["/dashboard/connect/connections", "social", null],
+  ["/dashboard/connect/requests", "social", null], ["/dashboard/passport", "social", null], ["/dashboard/passport/milestones", "social", null],
+  ["/dashboard/connect/passport", "social", null], ["/dashboard/connect/elco", "social", null], ["/dashboard/my-learning", "social", null],
+  ["/dashboard/connect/messages", "social", null], ["/dashboard/social", "social", null], ["/dashboard/circles", "social", null],
+  ["/dashboard/sea-exchange", "social", null], ["/dashboard/connect/safety", "social", null], ["/dashboard/connect/quick-match", "social", null],
+  // Discover: Programs, Opportunities, News & Stories, Learning Materials.
+  ["/dashboard/programs", "discover", null], ["/dashboard/discover/opportunities", "discover", null], ["/dashboard/opportunities", "discover", null],
+  ["/dashboard/discover/stories", "discover", null], ["/dashboard/explore", "discover", null], ["/dashboard/discover", "discover", null],
+  ["/dashboard/search?q=english", "discover", null],
+  // Events: Circle (its own item), IELSco Events (official events and Talks) and Other Events.
+  ["/dashboard/events/ielsco", "events", null], ["/dashboard/events/talks", "events", null], ["/dashboard/circle", "events", null],
+  ["/dashboard/events", "events", null], ["/dashboard/connect/rooms", "events", null], ["/dashboard/connect/rooms/new", "events", null],
+  // Profile card pages: no group lit.
+  ["/dashboard/shelf", "none", null], ["/dashboard/notifications", "none", null], ["/dashboard/membership", "none", null],
+  ["/dashboard/profile", "none", null], ["/dashboard/settings", "none", null], ["/dashboard/help", "none", null], ["/dashboard/my-goals", "none", null],
+  ["/dashboard/gif", "none", null],
 ];
 
 const browser = await chromium.launch();
@@ -65,10 +68,9 @@ for (const [label, viewport] of [["desktop", { width: 1440, height: 900 }], ["ph
     if (!r.h1) problems.push("no h1");
     if (r.font && !/poppins/i.test(r.font)) problems.push(`h1 font ${r.font}`);
     const navIds = r.nav.map((n) => n.replace(/^(mobile-)?nav-/, ""));
-    // Phones: EL-Passport is in the dock's More sheet, so the More cell is the active one there (as in Elco).
-    const want = label === "phone" && menu === "passport" ? "more" : menu;
-    if (["home", "social", "discover", "events", "passport"].includes(menu) && !navIds.includes(want)) problems.push(`menu ${want} not active (${navIds}) at ${new URL(page.url()).pathname}`);
-    if (menu === "none" && navIds.some((n) => ["home", "social", "discover", "events", "passport"].includes(n))) problems.push(`unexpected active ${navIds}`);
+    const want = menu;
+    if (["home", "social", "discover", "events"].includes(menu) && !navIds.includes(want)) problems.push(`menu ${want} not active (${navIds}) at ${new URL(page.url()).pathname}`);
+    if (menu === "none" && navIds.some((n) => ["home", "social", "discover", "events"].includes(n))) problems.push(`unexpected active ${navIds}`);
     if (tabs && r.tabs !== `section-tabs-${tabs}`) problems.push(`tabs ${r.tabs}`);
     if (!tabs && r.tabs) problems.push(`unexpected tabs ${r.tabs}`);
     if (r.overflow > 1) problems.push(`horizontal overflow ${r.overflow}px`);

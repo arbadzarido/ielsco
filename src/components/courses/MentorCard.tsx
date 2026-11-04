@@ -1,5 +1,6 @@
 "use client";
 // src/components/courses/MentorCard.tsx
+// LEGACY (unused): IELSco sells no courses or packages; private tutoring is Rp90,000 per session via WhatsApp (see src/components/tutoring). Do not render this as a purchase path.
 
 import Image from "next/image";
 import Link from "next/link";

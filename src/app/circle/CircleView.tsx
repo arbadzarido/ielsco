@@ -9,6 +9,7 @@ import { FaDiscord, FaInstagram } from "react-icons/fa";
 import { ArrowRight } from "lucide-react";
 import { PublicSessions, CIRCLE_DISCORD_LINK } from "@/components/circle/PublicSessions";
 import { btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h2, lead, section, textLink, siteRoot } from "@/components/site/ui";
+import StoryAuthorLine from "@/components/stories/StoryAuthorLine";
 import { cn } from "@/lib/utils";
 import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 
@@ -175,9 +176,8 @@ function CircleStories() {
               {s.bannerImage && <Image src={s.bannerImage} alt="" fill sizes="(min-width: 768px) 360px, 80vw" className="object-cover" />}
             </div>
             <div className="flex flex-1 flex-col p-6">
-              <p className="text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</p>
-              <p className="mt-auto pt-5 text-[15px] font-semibold text-[#2F4157]">{s.author.name}</p>
-              {s.author.role && <p className="text-[13px] text-[#2F4157]/65">{s.author.role}</p>}
+              <StoryAuthorLine name={s.author.name} avatar={s.author.avatar} role={s.author.role} size="sm" />
+              <p className="mt-4 text-[18px] font-bold leading-snug text-[#1A2534]">{s.title}</p>
             </div>
           </Link>
         </li>
@@ -199,20 +199,17 @@ export default function IELSCirclePage() {
       <section className="bg-white pb-[56px] pt-[40px] md:pb-[80px] md:pt-[64px]">
         <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]")}>
           <div>
-            <Image src="/images/logos/events/circleblue.png" alt="IELS Circle" width={180} height={115} priority className="h-auto w-[150px]" />
+            <Image src="/images/logos/circle/circle-typeface-blue.svg" alt="IELS Circle" width={49} height={72} priority className="h-[84px] w-auto" />
             <h1 className="mt-6 text-[36px] font-extrabold leading-[1.1] tracking-[-0.02em] text-[#1A2534] sm:text-[44px] lg:text-[50px]">
               English connects us.<br />
               <span className="text-[#E56668]">Southeast Asia brings us together.</span>
             </h1>
-            <p className={cn(lead, "mt-5 max-w-[560px]")}>A growing English community connecting young people across Southeast Asia.</p>
+            <p className={cn(lead, "mt-5 max-w-[560px]")}>An English speaking club and community connecting young people across Southeast Asia, with recurring weekly sessions for real speaking practice.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#sessions" className={btnPrimary} data-testid="circle-hero-sessions">Join a weekly session</a>
               <Link href="/circle/stories" className={btnSecondary}>Read member stories</Link>
             </div>
-            <p className="mt-6 flex items-center gap-3 text-[14px] text-[#2F4157]/60">
-              <span>in collaboration with</span>
-              <Image src="/images/logos/company/tofly.png" alt="Tofly.id" width={70} height={20} className="h-5 w-auto" />
-            </p>
+            <p className="mt-6 text-[14px] text-[#2F4157]/60">Free to join · Two live speaking sessions every week · Wednesdays 19:00 and Saturdays 13:00 WIB</p>
           </div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#E6E9EE]">
             <Image src="/images/site/online-cohort.webp" alt="An online IELS Circle session on a video call" fill priority sizes="(min-width: 1024px) 600px, 92vw" className="object-cover" />
@@ -359,7 +356,7 @@ export default function IELSCirclePage() {
       {/* FINAL CTA */}
       <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="final-circle-heading">
         <div className={cn(container, "flex flex-col items-center text-center")}>
-          <Image src="/images/logos/events/circleblue.png" alt="" width={180} height={115} className="h-auto w-[140px]" />
+          <Image src="/images/logos/circle/circle-c-blue.svg" alt="" width={53} height={60} className="h-[80px] w-auto" />
           <h2 id="final-circle-heading" className={cn(h2, "mt-6 max-w-[720px]")}>Your next connection could start here</h2>
           <p className={cn(lead, "mt-3 max-w-[620px]")}>Join IELS Circle, meet people from across Southeast Asia, and make English part of how you connect with the region.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { opportunityCover } from "@/lib/covers";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Bookmark, BookmarkCheck, Search, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -132,7 +134,10 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
       ) : (
         <ul className="mt-4 grid gap-5 md:grid-cols-2">
           {shown.map((o) => (
-            <li key={o.id} className={cn(card, "flex flex-col p-6")} data-testid={`opp-${o.slug}`}>
+            <li key={o.id} className={cn(card, "flex flex-col overflow-hidden p-6")} data-testid={`opp-${o.slug}`}>
+              <div className="relative -mx-6 -mt-6 mb-5 aspect-[16/7] bg-[#F1F4F8]">
+                <Image src={opportunityCover(o.category, o.slug)} alt="" fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[#577E90]">{CATEGORY_LABEL[o.category]}</span>
                 {o.is_iels_program && <span className={cn(pill, "border-[#E56668]/40 text-[#C94F51]")}>IELS program</span>}

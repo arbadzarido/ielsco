@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import ReactCountryFlag from "react-country-flag";
+import StoryAuthorLine from "@/components/stories/StoryAuthorLine";
 import Pagination from "@/components/Pagination";
 import { CATEGORIES, CATEGORY_LABELS, type PublicStory, type StoryCategory } from "@/lib/stories/types";
 
@@ -98,26 +98,11 @@ export default function StoriesBrowser({ stories }: { stories: PublicStory[] }) 
                 data-testid="story-card"
                 className="group flex flex-col rounded-[20px] border border-gray-200 bg-white p-6 sm:p-7 transition-all hover:-translate-y-1 hover:border-[#E56668]/50 hover:shadow-xl"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gray-200 shrink-0 ring-4 ring-[#E56668]/10">
-                    {story.author.avatar && (
-                      <Image src={story.author.avatar} alt={story.author.name} width={96} height={96} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#E56668] bg-[#E56668]/10 rounded-full px-2.5 py-1">
-                      {CATEGORY_LABELS[story.category]}
-                    </span>
-                    <p className="mt-2 flex items-center gap-1.5 text-base sm:text-lg font-extrabold text-[#2F4157]">
-                      {story.author.name}
-                      {story.author.country && (
-                        <ReactCountryFlag countryCode={story.author.country} svg style={{ width: "1em", height: "1em" }} title={story.author.country} />
-                      )}
-                    </p>
-                    {story.author.role && <p className="text-xs sm:text-sm text-gray-500 line-clamp-2">{story.author.role}</p>}
-                  </div>
-                </div>
-                <h3 className="mt-5 text-base sm:text-lg font-bold text-[#2F4157] leading-snug">{story.title}</h3>
+                <span className="mb-3 inline-block self-start rounded-full bg-[#E56668]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[#E56668]">
+                  {CATEGORY_LABELS[story.category]}
+                </span>
+                <StoryAuthorLine name={story.author.name} avatar={story.author.avatar} role={story.author.role} size="md" />
+                <h3 className="mt-4 text-base sm:text-lg font-bold text-[#2F4157] leading-snug">{story.title}</h3>
                 <p className="mt-2 text-sm text-gray-600 leading-relaxed line-clamp-3">{story.summary}</p>
                 <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-[#E56668] group-hover:text-[#C04C4E]">
                   Read the story <span aria-hidden>→</span>

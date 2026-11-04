@@ -36,6 +36,7 @@ export const PUBLIC_RESOURCES: PublicResource[] = DEMO_RESOURCES
 export const IELS_GUIDES = [
   { title: "Member stories", text: "Members who studied, interned or volunteered abroad, in their own words.", href: "/circle/stories" },
   { title: "Opportunity board", text: "Scholarships and programs with official links and honest verification labels.", href: "/opportunities" },
-  { title: "IELTS guide", text: "Test format and how to prepare.", href: "/test/guide/ielts" },
-  { title: "TOEFL guide", text: "Test format and how to prepare.", href: "/test/guide/toefl" },
+  // English tests now live on Elco AI (TOEFL ITP, IELTS, TOEIC). The old IELS Mock Test guides (/test/guide/*) stay as
+  // hidden, noindex routes and are no longer linked.
+  { title: "English test preparation", text: "TOEFL ITP, IELTS and TOEIC preparation is on Elco AI. Add a private tutor when you want a person.", href: "/products/courses" },
 ];

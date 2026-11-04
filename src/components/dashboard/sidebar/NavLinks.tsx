@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ChevronDown, Menu } from "lucide-react";
-import { ADMIN_NAV_GROUP, MORE_ITEMS, SECTIONS, UTILITY_ITEMS, isItemActive, isTabActive, type Section } from "../nav";
+import { ChevronDown } from "lucide-react";
+import { ADMIN_NAV_GROUP, SECTIONS, isChildActive, isItemActive, type Section } from "../nav";
 import { useStoryAdmin } from "../stories-admin/useStoryAdmin";
 import { useHeaderCounts } from "../useHeaderCounts";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -17,8 +17,6 @@ import { cn } from "@/lib/utils";
 // Elco's .press / .panel-in classes are expressed with Tailwind (active:scale, tw-animate-css) so no global CSS changes.
 export const ring = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90] focus-visible:ring-offset-2";
 const press = "transition-[transform,background-color,border-color] duration-150 active:scale-[0.97] motion-reduce:active:scale-100";
-
-const under = (prefix: string, path: string | null) => !!path && (path === prefix || path.startsWith(`${prefix}/`));
 
 export type Leaf = { href: string; label: string; icon: LucideIcon; id: string; sub?: string; match?: string[]; exact?: boolean; count?: number };
 
@@ -39,7 +37,7 @@ function Count({ n, label }: { n: number; label: string }) {
 // Secondary destination: plain row, tinted when current (Elco NavItem).
 export function NavItem({ item, onClick, sub = false, testPrefix = "nav" }: { item: Leaf; onClick?: () => void; sub?: boolean; testPrefix?: string }) {
   const path = usePathname();
-  const active = item.exact ? path === item.href : [item.href, ...(item.match ?? [])].some((m) => under(m, path));
+  const active = isChildActive(item, path);
   return (
     <Link href={item.href} onClick={onClick} data-testid={`${testPrefix}-item-${item.id}`} aria-current={active ? "page" : undefined}
       className={cn("flex items-center gap-[14px] rounded-[16px] text-[15px] transition-colors", ring,
@@ -48,7 +46,7 @@ export function NavItem({ item, onClick, sub = false, testPrefix = "nav" }: { it
       <item.icon className={cn(sub ? "h-[18px] w-[18px]" : "h-[20px] w-[20px]", "shrink-0")} strokeWidth={1.8} aria-hidden="true" />
       <span className="min-w-0 leading-tight"><span className="block">{item.label}</span>
         {item.sub && <span className="block text-[12px] font-normal text-[#6B7A8F] [@media(max-height:900px)]:hidden">{item.sub}</span>}</span>
-      {item.count !== undefined && <Count n={item.count} label={item.id === "inbox" ? "unread" : "need your attention"} />}
+      {item.count !== undefined && <Count n={item.count} label="unread" />}
     </Link>
   );
 }
@@ -86,8 +84,8 @@ export function NavGroup({ id, label, icon: Icon, items, inside, onClick, testPr
   );
 }
 
-// Home and EL-Passport: taller rows, the icon in its own tile; navy when current (Elco PrimaryItem).
-export function PrimaryItem({ section, sub, onClick, testPrefix = "nav" }: { section: Section; sub?: string; onClick?: () => void; testPrefix?: string }) {
+// Home: taller row, the icon in its own tile; navy when current (Elco PrimaryItem).
+export function PrimaryItem({ section, onClick, testPrefix = "nav" }: { section: Section; onClick?: () => void; testPrefix?: string }) {
   const { t } = useI18n();
   const path = usePathname();
   const active = isItemActive(section, path);
@@ -99,59 +97,37 @@ export function PrimaryItem({ section, sub, onClick, testPrefix = "nav" }: { sec
         active ? "bg-white/15 text-white" : "bg-[#F1F4F8] text-[#2F4157] group-hover:bg-white")}>
         <section.icon className="h-[22px] w-[22px]" strokeWidth={1.8} aria-hidden="true" />
       </span>
-      <span className="min-w-0 leading-tight"><span className="block text-[16px] font-semibold">{t(section.key)}</span>
-        {sub && <span className={cn("block text-[12px] [@media(max-height:900px)]:hidden", active ? "text-white/70" : "text-[#6B7A8F]")}>{sub}</span>}</span>
+      <span className="block text-[16px] font-semibold leading-tight">{t(section.key)}</span>
     </Link>
   );
 }
 
-// A section's pages as group rows: its overview first (unless the menu already starts with it), matched like its tabs.
-export function sectionLeaves(section: Section, t: (k: string) => string): Leaf[] {
-  const tabFor = (href: string) => section.tabs?.find((x) => x.href === href);
-  const rows = (section.menu ?? []).map((m) => {
-    const tab = tabFor(m.href);
-    return { href: m.href, label: m.label, icon: m.icon, id: m.testId, sub: m.primary ? m.description : undefined, match: tab?.match, exact: tab?.exact ?? m.href === section.path };
-  });
-  if (rows.some((r) => r.href === section.path)) return rows;
-  return [{ href: section.path, label: `${t(section.key)} home`, icon: section.icon, id: `${section.id}-overview`, exact: true }, ...rows];
+// A group's pages as rows; the Inbox row carries the unread count.
+export function sectionLeaves(section: Section, unread = 0): Leaf[] {
+  return (section.children ?? []).map((c) => ({ ...c, count: c.id === "inbox" ? unread : undefined }));
 }
-
-export const moreLeaves = (t: (k: string) => string): Leaf[] =>
-  MORE_ITEMS.map((i) => ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id, match: i.match }));
-
-const PASSPORT_SUB = "Your learning journey";
 
 export function NavLinks({ onNavigate, testPrefix = "nav" }: { onNavigate?: () => void; testPrefix?: string }) {
   const path = usePathname();
   const { t } = useI18n();
   const { isAdmin } = useStoryAdmin();
-  const counts = useHeaderCounts();
-  const [home, social, discover, events, passport] = ["home", "social", "discover", "events", "passport"].map((id) => SECTIONS.find((s) => s.id === id)!);
-  const group = (s: Section) => (
-    <NavGroup key={s.id} id={s.id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, t)} inside={isItemActive(s, path)} onClick={onNavigate} testPrefix={testPrefix} />
-  );
-  const more = moreLeaves(t);
-  const utility: Leaf[] = UTILITY_ITEMS.map((i) => ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id,
-    count: i.id === "inbox" ? counts.unread : i.id === "notifications" ? counts.notifications : undefined }));
-
+  const { unread } = useHeaderCounts();
+  const [home, ...groups] = SECTIONS;
   return (
     <>
       <PrimaryItem section={home} onClick={onNavigate} testPrefix={testPrefix} />
       <Divider />
-      {group(social)}
-      {group(discover)}
-      {group(events)}
-      <Divider />
-      <PrimaryItem section={passport} sub={PASSPORT_SUB} onClick={onNavigate} testPrefix={testPrefix} />
-      <Divider />
-      <NavGroup id="more" label={t("nav.more")} icon={Menu} items={more} inside={more.some((m) => [m.href, ...(m.match ?? [])].some((x) => under(x, path)))} onClick={onNavigate} testPrefix={testPrefix} />
-      <div className="flex flex-col gap-[2px]">
-        {utility.map((u) => <NavItem key={u.id} item={u} onClick={onNavigate} testPrefix={testPrefix} />)}
-        {isAdmin && ADMIN_NAV_GROUP.items.map((i) => <NavItem key={i.id} item={{ href: i.path, label: t(i.key), icon: i.icon, id: i.id }} onClick={onNavigate} testPrefix={testPrefix} />)}
-      </div>
+      {groups.map((s) => (
+        <NavGroup key={s.id} id={s.id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, unread)} inside={isItemActive(s, path)} onClick={onNavigate} testPrefix={testPrefix} />
+      ))}
+      {isAdmin && (
+        <>
+          <Divider />
+          <div className="flex flex-col gap-[2px]">
+            {ADMIN_NAV_GROUP.items.map((i) => <NavItem key={i.id} item={{ href: i.path, label: t(i.key), icon: i.icon, id: i.id }} onClick={onNavigate} testPrefix={testPrefix} />)}
+          </div>
+        </>
+      )}
     </>
   );
 }
-
-// Kept for the section tabs' active logic elsewhere.
-export { isTabActive };

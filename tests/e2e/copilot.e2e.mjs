@@ -1,4 +1,4 @@
-// Elco Copilot + product tour + mascot motion, against the LOCAL stack only (:54322 DB stand-in, :3300 app).
+// Elco Help (formerly Elco Copilot) + product tour + mascot motion, against the LOCAL stack only (:54322 DB stand-in, :3300 app).
 // Usage: node copilot.e2e.mjs <path to playwright-core>
 import { createRequire } from "node:module";
 
@@ -41,11 +41,11 @@ await check("first visit opens the five-menu tour; Next/Back/Finish work and com
     if (await finish.isVisible()) { await finish.click(); break; }
     await d.getByRole("button", { name: "Next" }).click();
   }
-  const want = ["Your dashboard", "Discover", "Social", "Connect", "More", "Elco Copilot"];
+  const want = ["Your dashboard", "Social", "Discover", "Events", "Elco-Pass", "Membership comes with Elco AI", "Elco Help"];
   for (const w of want) if (!titles.some((t) => t?.includes(w))) return `missing step "${w}" in ${JSON.stringify(titles)}`;
   await page.waitForTimeout(800);
   const [row] = await sql(`select status, version from public.product_tours where tour_key = 'ielsco-dashboard'`);
-  return row?.status === "completed" && row.version === 2 ? null : JSON.stringify(row);
+  return row?.status === "completed" && row.version === 5 ? null : JSON.stringify(row);
 });
 await check("tour does not reopen after it was completed", async () => {
   await page.goto(`${APP}/dashboard`); await page.waitForTimeout(3000);

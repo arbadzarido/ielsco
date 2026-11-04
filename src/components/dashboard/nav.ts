@@ -1,130 +1,77 @@
 import type { LucideIcon } from "lucide-react";
+import { CircleCIcon } from "@/components/brand/CircleCIcon";
 import {
-  BadgeCheck, Bell, BookOpenText, GraduationCap, MessageCircle, Search, Bookmark, BriefcaseBusiness, CalendarDays, CalendarHeart, ClipboardList, Compass, Earth,
-  HandHeart, HelpCircle, Home, IdCard, Library, ListChecks, Mic, Newspaper, Settings, ShieldCheck, Sparkles, Target, Trophy, User, UserPlus,
-  Users, UsersRound,
+  BadgeCheck, BookOpenText, Bookmark, CalendarDays, ClipboardList, Compass, GraduationCap, HandHeart, HelpCircle, Home, IdCard,
+  Library, ListChecks, MessageCircle, Newspaper, BriefcaseBusiness, Settings, Users, UsersRound,
 } from "lucide-react";
 
-// Dashboard information architecture (2026-11-04, docs/IELSCO-PRODUCT-ARCHITECTURE.md §2), drawn by the same sidebar,
-// phone top bar and dock as Elco's AppShell (sidebar/NavLinks.tsx, DashboardHeader.tsx, MobileTabBar.tsx):
-//   Home         /dashboard                  personal command center
-//   Social ▼     People, Connections, Intro requests, Circle groups, Cultural exchange, Safety
-//   Discover ▼   Opportunities (primary), News & Stories, Learning Materials (+ tracker, courses)
-//   Events ▼     My events, IELSco Events, IELS Circle, Talks, Other Events
-//   EL-Passport  identity, learning journey, Elco progress, milestones
-//   More ▾       personal tools (MORE_ITEMS); then Inbox, Notifications, Search (UTILITY_ITEMS)
-// Profile, settings and help are in the profile card menu (ACCOUNT_ITEMS); the Elco card sits above it.
-// Every older URL stays reachable; `match` lists the URL prefixes that belong to each menu so the right one is
-// highlighted and its section tabs are shown (DashboardLayout → SectionTabs).
-// Quick Match is not in the navigation (no TURN relay yet, see §10); its route, code and database stay.
+// Dashboard navigation (2026-11-05, docs/IELSCO-PRODUCT-ARCHITECTURE.md §2), drawn by the Elco-style sidebar, phone
+// top bar and dock (sidebar/NavLinks.tsx, DashboardHeader.tsx, MobileTabBar.tsx). The visible structure is exactly:
+//   Home
+//   Social ▾     People, Inbox
+//   Discover ▾   Programs, Opportunities, News & Stories, Learning Materials
+//   Events ▾     Circle, IELSco Events, Other Events
+// Pages that are no longer in the sidebar keep their routes. Each one is listed in a `match` below so the right group
+// stays highlighted on it: Connections, intro requests and Elco-Pass belong to People; IELSco Talks to IELSco Events;
+// Circle groups, Cultural exchange and Quick Match are hidden but routed (Social).
+// Circle (2026-11-05 revision) is the ongoing IELS Circle community and speaking club, with its own destination and the
+// official Circle "C" mark; IELSco Events are official one-time events and IELSco Talks; Other Events are external.
+// Personal pages (Saved, Membership, settings…) are in the profile card menu (ACCOUNT_ITEMS).
 export type NavItem = { key: string; path: string; icon: LucideIcon; id: string; match?: string[] };
 export type NavGroup = { id: string; title: string | null; items: NavItem[] };
-export type SectionTab = { label: string; href: string; match?: string[]; exact?: boolean };
-// A dropdown entry: label + one line of description. `primary` is drawn as the highlighted first entry.
-export type MenuLink = { label: string; description: string; href: string; icon: LucideIcon; primary?: boolean; testId: string };
-export type Section = NavItem & { tabs?: SectionTab[]; menu?: MenuLink[] };
+// A group's page: `match` = other URL prefixes that count as this page; `exact` = only this URL.
+export type NavChild = { label: string; href: string; icon: LucideIcon; id: string; match?: string[]; exact?: boolean };
+export type Section = NavItem & { children?: NavChild[] };
+
+const PEOPLE_PAGES = ["/dashboard/connect/discover", "/dashboard/connect/people", "/dashboard/people", "/dashboard/connect/connections",
+  "/dashboard/connect/requests", "/dashboard/passport", "/dashboard/connect/passport", "/dashboard/my-learning", "/dashboard/connect/elco"];
 
 export const SECTIONS: Section[] = [
   { key: "nav.home", path: "/dashboard", icon: Home, id: "home" },
   {
-    key: "nav.social", path: "/dashboard/social", icon: UsersRound, id: "social",
-    match: ["/dashboard/social", "/dashboard/connect/discover", "/dashboard/connect/people", "/dashboard/people", "/dashboard/connect/requests",
-      "/dashboard/connect/connections", "/dashboard/connect/messages", "/dashboard/connect/safety", "/dashboard/circles", "/dashboard/sea-exchange",
-      "/dashboard/connect/quick-match"],
-    tabs: [
-      { label: "Overview", href: "/dashboard/social", exact: true },
-      { label: "People", href: "/dashboard/connect/discover", match: ["/dashboard/connect/discover", "/dashboard/connect/people", "/dashboard/people"] },
-      { label: "Connections", href: "/dashboard/connect/connections" },
-      { label: "Intro requests", href: "/dashboard/connect/requests" },
-      { label: "Inbox", href: "/dashboard/connect/messages" },
-      { label: "Circle groups", href: "/dashboard/circles" },
-      { label: "Cultural exchange", href: "/dashboard/sea-exchange" },
-      { label: "Safety", href: "/dashboard/connect/safety" },
-    ],
-    menu: [
-      { label: "People", description: "Members with shared goals and interests", href: "/dashboard/connect/discover", icon: Users, primary: true, testId: "people" },
-      { label: "Connections", description: "The people you're connected with", href: "/dashboard/connect/connections", icon: UsersRound, testId: "connections" },
-      { label: "Intro requests", description: "Letter Intros you sent or received", href: "/dashboard/connect/requests", icon: UserPlus, testId: "requests" },
-      { label: "Circle groups", description: "Topic discussions with other members", href: "/dashboard/circles", icon: Sparkles, testId: "circle-groups" },
-      { label: "Cultural exchange", description: "Southeast Asian perspectives, one prompt a week", href: "/dashboard/sea-exchange", icon: Earth, testId: "sea" },
+    // `path` is where the phone dock's Social cell goes: the group's first page.
+    key: "nav.social", path: "/dashboard/connect/discover", icon: UsersRound, id: "social",
+    match: [...PEOPLE_PAGES, "/dashboard/social", "/dashboard/connect/messages", "/dashboard/connect/safety", "/dashboard/circles",
+      "/dashboard/sea-exchange", "/dashboard/connect/quick-match"],
+    children: [
+      { label: "People", href: "/dashboard/connect/discover", icon: Users, id: "people", match: PEOPLE_PAGES },
+      { label: "Inbox", href: "/dashboard/connect/messages", icon: MessageCircle, id: "inbox" },
     ],
   },
   {
-    key: "nav.discover", path: "/dashboard/discover", icon: Compass, id: "discover",
-    match: ["/dashboard/discover", "/dashboard/opportunities", "/dashboard/explore", "/dashboard/pulse", "/dashboard/programs"],
-    tabs: [
-      { label: "Overview", href: "/dashboard/discover", exact: true },
-      { label: "Opportunities", href: "/dashboard/discover/opportunities" },
-      { label: "My tracker", href: "/dashboard/opportunities" },
-      { label: "News & Stories", href: "/dashboard/discover/stories" },
-      { label: "Learning Materials", href: "/dashboard/explore" },
-      { label: "Courses", href: "/dashboard/programs" },
-    ],
-    menu: [
-      { label: "Opportunities", description: "Scholarships, internships, jobs, fellowships, exchanges and more", href: "/dashboard/discover/opportunities", icon: BriefcaseBusiness, primary: true, testId: "opportunities" },
-      { label: "News & Stories", description: "IELSco news and member stories", href: "/dashboard/discover/stories", icon: Newspaper, testId: "stories" },
-      { label: "Learning Materials", description: "Guides, videos, podcasts and collections", href: "/dashboard/explore", icon: Library, testId: "materials" },
-      { label: "My opportunity tracker", description: "Interested, applying, applied", href: "/dashboard/opportunities", icon: ListChecks, testId: "tracker" },
+    key: "nav.discover", path: "/dashboard/programs", icon: Compass, id: "discover",
+    match: ["/dashboard/discover", "/dashboard/opportunities", "/dashboard/explore", "/dashboard/pulse", "/dashboard/programs", "/dashboard/search"],
+    children: [
+      { label: "Programs", href: "/dashboard/programs", icon: GraduationCap, id: "programs" },
+      { label: "Opportunities", href: "/dashboard/discover/opportunities", icon: BriefcaseBusiness, id: "opportunities", match: ["/dashboard/opportunities"] },
+      { label: "News & Stories", href: "/dashboard/discover/stories", icon: Newspaper, id: "stories" },
+      { label: "Learning Materials", href: "/dashboard/explore", icon: Library, id: "materials", match: ["/dashboard/pulse"] },
     ],
   },
   {
-    key: "nav.events", path: "/dashboard/events", icon: CalendarDays, id: "events",
+    key: "nav.events", path: "/dashboard/events/ielsco", icon: CalendarDays, id: "events",
     match: ["/dashboard/events", "/dashboard/circle", "/dashboard/connect/rooms"],
-    tabs: [
-      { label: "My events", href: "/dashboard/events", exact: true },
-      { label: "IELSco Events", href: "/dashboard/events/ielsco" },
-      { label: "IELS Circle", href: "/dashboard/circle" },
-      { label: "Talks", href: "/dashboard/events/talks" },
-      { label: "Other Events", href: "/dashboard/connect/rooms" },
-    ],
-    menu: [
-      { label: "My upcoming events", description: "Everything you registered for, in one list", href: "/dashboard/events", icon: CalendarHeart, primary: true, testId: "my-events" },
-      { label: "IELSco Events", description: "Workshops, bootcamps, info sessions", href: "/dashboard/events/ielsco", icon: CalendarDays, testId: "ielsco-events" },
-      { label: "IELS Circle", description: "Weekly speaking sessions and cohorts", href: "/dashboard/circle", icon: Mic, testId: "circle" },
-      { label: "IELSco Talks", description: "Real stories, global perspectives", href: "/dashboard/events/talks", icon: Sparkles, testId: "talks" },
-      { label: "Other Events", description: "Community and partner sessions", href: "/dashboard/connect/rooms", icon: HandHeart, testId: "other-events" },
-    ],
-  },
-  {
-    key: "nav.passport", path: "/dashboard/passport", icon: IdCard, id: "passport",
-    match: ["/dashboard/passport", "/dashboard/connect/passport", "/dashboard/connect/elco", "/dashboard/my-learning"],
-    tabs: [
-      { label: "My passport", href: "/dashboard/passport", exact: true },
-      { label: "Milestone Hall", href: "/dashboard/passport/milestones" },
-      { label: "Social profile", href: "/dashboard/connect/passport" },
-      { label: "Elco AI", href: "/dashboard/connect/elco" },
-      { label: "My Learning", href: "/dashboard/my-learning" },
+    children: [
+      { label: "Circle", href: "/dashboard/circle", icon: CircleCIcon, id: "circle" },
+      // IELSco Talks are part of IELSco Events (a section on that page), not an item of their own.
+      { label: "IELSco Events", href: "/dashboard/events/ielsco", icon: CalendarDays, id: "ielsco-events", match: ["/dashboard/events"] },
+      { label: "Other Events", href: "/dashboard/connect/rooms", icon: HandHeart, id: "other-events" },
     ],
   },
 ];
 
-// "More" group (sidebar) and the phone More sheet: personal tools. Each destination appears once in the navigation.
-export const MORE_ITEMS: NavItem[] = [
-  { key: "nav.saved", path: "/dashboard/shelf", icon: Bookmark, id: "shelf" },
-  { key: "nav.milestones", path: "/dashboard/passport/milestones", icon: Trophy, id: "milestones" },
-  { key: "nav.myGoals", path: "/dashboard/my-goals", icon: Target, id: "my-goals" },
-  { key: "nav.myLearning", path: "/dashboard/my-learning", icon: GraduationCap, id: "my-learning" },
-  { key: "nav.membership", path: "/dashboard/membership", icon: BadgeCheck, id: "membership", match: ["/dashboard/membership", "/dashboard/settings/membership"] },
-  { key: "nav.safety", path: "/dashboard/connect/safety", icon: ShieldCheck, id: "safety" },
-];
-
-// Plain rows below the groups (Elco's Leaderboard / Progress rows): inbox and notifications carry a count.
-export const UTILITY_ITEMS: NavItem[] = [
-  { key: "nav.inbox", path: "/dashboard/connect/messages", icon: MessageCircle, id: "inbox" },
-  { key: "nav.notifications", path: "/dashboard/notifications", icon: Bell, id: "notifications" },
-  { key: "nav.search", path: "/dashboard/search", icon: Search, id: "search" },
-];
-
-// Profile card menu (sidebar bottom) and the Account part of the phone More sheet, like Elco's ACCOUNT list.
+// Profile card menu (sidebar bottom) and the Account part of the phone More sheet.
 export const ACCOUNT_ITEMS: NavItem[] = [
-  { key: "nav.profile", path: "/dashboard/profile", icon: User, id: "my-profile" },
+  { key: "nav.profilePassport", path: "/dashboard/passport", icon: IdCard, id: "my-profile", match: ["/dashboard/profile"] },
+  { key: "nav.saved", path: "/dashboard/shelf", icon: Bookmark, id: "shelf" },
+  { key: "nav.membership", path: "/dashboard/membership", icon: BadgeCheck, id: "membership", match: ["/dashboard/membership", "/dashboard/settings/membership"] },
   { key: "nav.settings", path: "/dashboard/settings", icon: Settings, id: "settings" },
   { key: "nav.help", path: "/dashboard/help", icon: HelpCircle, id: "help" },
 ];
 
 // Kept for older imports.
 export const NAV_GROUPS: NavGroup[] = [{ id: "main", title: null, items: SECTIONS }];
-export const NAV_ITEMS: NavItem[] = [...SECTIONS, ...MORE_ITEMS, ...UTILITY_ITEMS, ...ACCOUNT_ITEMS];
+export const NAV_ITEMS: NavItem[] = [...SECTIONS, ...ACCOUNT_ITEMS];
 
 // Shown only to staff admins (public.staff_roles, checked with useStoryAdmin). Access is enforced by RLS / RPCs.
 export const ADMIN_NAV_GROUP: NavGroup = {
@@ -137,15 +84,12 @@ export const ADMIN_NAV_GROUP: NavGroup = {
   ],
 };
 
-// Phone dock (Elco's layout): Home, Social, Discover (centre slot), Events, More. EL-Passport opens the More sheet.
-export const MOBILE_ITEMS: NavItem[] = SECTIONS.filter((s) => s.id !== "passport");
-
-
-// Optional entries switched on per environment. Quick Match stays out until a TURN relay, moderation and enough
-// concurrent members exist (docs/IELSCO-PRODUCT-ARCHITECTURE.md §10); NEXT_PUBLIC_QUICK_MATCH_IN_NAV=true adds it to
-// Social's tabs as a beta. The database switch (connect_settings.quick_match_enabled) still decides whether calls work.
+// Hidden features that can be put back later without code changes elsewhere: Quick Match returns as a Social page
+// with NEXT_PUBLIC_QUICK_MATCH_IN_NAV=true (it still needs connect_settings.quick_match_enabled and a TURN relay).
 export const QUICK_MATCH_IN_NAV = process.env.NEXT_PUBLIC_QUICK_MATCH_IN_NAV === "true";
-if (QUICK_MATCH_IN_NAV) SECTIONS.find((s) => s.id === "social")?.tabs?.push({ label: "Quick Match (beta)", href: "/dashboard/connect/quick-match" });
+if (QUICK_MATCH_IN_NAV) {
+  SECTIONS.find((s) => s.id === "social")?.children?.push({ label: "Quick Match (beta)", href: "/dashboard/connect/quick-match", icon: UsersRound, id: "quick-match" });
+}
 
 const under = (prefix: string, pathname: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
 
@@ -154,8 +98,7 @@ export function isNavActive(path: string, pathname: string | null) {
   return path === "/dashboard" ? pathname === "/dashboard" : under(path, pathname);
 }
 
-// Active state for a menu item that owns several URL prefixes. /dashboard/connect itself (the old Connect overview)
-// belongs to Social.
+// Active state for a menu item that owns several URL prefixes.
 export function isItemActive(item: NavItem, pathname: string | null) {
   if (!pathname) return false;
   if (item.path === "/dashboard") return pathname === "/dashboard";
@@ -164,11 +107,10 @@ export function isItemActive(item: NavItem, pathname: string | null) {
   return under(item.path, pathname);
 }
 
-export const sectionFor = (pathname: string | null) => SECTIONS.find((s) => s.id !== "home" && isItemActive(s, pathname)) ?? null;
-export const moreActive = (pathname: string | null) => MORE_ITEMS.some((i) => isItemActive(i, pathname));
-
-export function isTabActive(tab: SectionTab, pathname: string | null) {
+export function isChildActive(c: NavChild, pathname: string | null) {
   if (!pathname) return false;
-  if (tab.exact) return pathname === tab.href;
-  return [tab.href, ...(tab.match ?? [])].some((m) => under(m, pathname));
+  if (c.exact) return pathname === c.href;
+  return [c.href, ...(c.match ?? [])].some((m) => under(m, pathname));
 }
+
+export const sectionFor = (pathname: string | null) => SECTIONS.find((s) => s.id !== "home" && isItemActive(s, pathname)) ?? null;

@@ -1,5 +1,6 @@
-// Dashboard view over the EXISTING course data in src/data/courses.ts (single source of truth for
-// courses, mentors, prices, registration form and WhatsApp). Do not duplicate prices here.
+// Dashboard view over the EXISTING curriculum data in src/data/courses.ts (single source of truth for tutoring focus areas,
+// tutors and the WhatsApp contact). These are tutoring focus areas, not purchasable courses: the price is Rp90,000 per
+// private session (see src/components/tutoring/links.ts). Do not duplicate prices here.
 import {
   COURSE_PACKAGES, GOOGLE_FORM_URL, MENTORS, TRACK_META, WHATSAPP_URL,
   type CourseTrack, type Mentor,

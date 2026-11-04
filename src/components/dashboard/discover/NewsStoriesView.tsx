@@ -9,8 +9,10 @@ import { EmptyState, PageHeader } from "../PageStates";
 import { SaveButton } from "../bookmarks/SaveButton";
 import { btnSecondary, cardGloss, focusRing, inputClass, tag } from "../ui";
 import { LoadGate, useLoad } from "@/components/connect/shared";
+import StoryAuthorLine from "@/components/stories/StoryAuthorLine";
 import { ElcoPractice } from "@/components/elco/ElcoCallout";
 import { loadStoriesFeed, type FeedCategory, type FeedStory } from "@/lib/content/stories-feed";
+import { STORY_FALLBACK_COVER } from "@/lib/covers";
 import { cn } from "@/lib/utils";
 
 const dateLabel = (d: string | null) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "");
@@ -19,18 +21,19 @@ function StoryCard({ s, large }: { s: FeedStory; large?: boolean }) {
   return (
     <article className={cn(cardGloss, "group flex h-full flex-col overflow-hidden", large && "md:flex-row")} data-testid="story-card">
       <Link href={s.href} className={cn("relative block shrink-0 bg-[#EAEFF5]", large ? "aspect-[16/9] md:aspect-auto md:w-[55%]" : "aspect-[16/9]", focusRing)} tabIndex={-1} aria-hidden="true">
-        {s.image && <Image src={s.image} alt="" fill sizes={large ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 33vw, 100vw"} className="object-cover transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none" />}
+        <Image src={s.image || STORY_FALLBACK_COVER} alt="" fill sizes={large ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 33vw, 100vw"} className="object-cover transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none" />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-5">
         <div className="flex items-center justify-between gap-2">
           <span className={tag}>{s.categoryLabel}</span>
           <SaveButton type="story" id={s.id} title={s.title} />
         </div>
+        {s.authorName && <div className="mt-1" data-testid="story-author"><StoryAuthorLine name={s.authorName} avatar={s.authorAvatar} role={s.authorRole} size="sm" /></div>}
         <h3 className={cn("font-bold leading-snug text-[#1A2534]", large ? "text-[26px]" : "text-[18px]")}>
           <Link href={s.href} className={cn("rounded hover:underline", focusRing)}>{s.title}</Link>
         </h3>
         <p className={cn("text-[15px] text-[#2F4157]/70", large ? "line-clamp-4" : "line-clamp-3")}>{s.summary}</p>
-        <p className="mt-auto pt-2 text-[13px] text-[#2F4157]/55">{[s.author, dateLabel(s.date)].filter(Boolean).join(" · ")}</p>
+        <p className="mt-auto pt-2 text-[13px] text-[#2F4157]/55">{dateLabel(s.date)}</p>
       </div>
     </article>
   );

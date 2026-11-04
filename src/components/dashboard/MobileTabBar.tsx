@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { Compass, LogOut, Menu } from "lucide-react";
-import { ACCOUNT_ITEMS, ADMIN_NAV_GROUP, MORE_ITEMS, SECTIONS, UTILITY_ITEMS, isItemActive } from "./nav";
+import { ACCOUNT_ITEMS, ADMIN_NAV_GROUP, SECTIONS, isItemActive } from "./nav";
 import { BottomSheet } from "./BottomSheet";
-import { Divider, NavGroup, NavItem, SectionLabel, moreLeaves, ring, sectionLeaves, type Leaf } from "./sidebar/NavLinks";
+import { Divider, NavGroup, NavItem, SectionLabel, ring, sectionLeaves, type Leaf } from "./sidebar/NavLinks";
 import { GifBanner } from "./sidebar/GifBanner";
 import { ElcoPromo } from "./sidebar/ElcoPromo";
 import { useStoryAdmin } from "./stories-admin/useStoryAdmin";
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 // Phone dock (< md), the same as Elco's MobileNav: a navy glass bar inset 10px above the home indicator, five cells,
 // the centre one wider with its icon in a pill. IELSco: Home, Social, Discover (centre), Events, More. "More" opens a
-// bottom sheet with every destination (EL-Passport first), the account rows and sign-out, as in Elco.
+// bottom sheet with the three groups, the account rows and sign-out, as in Elco.
 // DashboardLayout reserves matching bottom padding so the dock never covers content.
 const GLASS_NAVY = "border border-white/10 bg-[rgba(47,65,87,0.94)] shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_12px_30px_rgba(26,37,52,0.25)] backdrop-blur-[16px]";
 
@@ -27,14 +27,12 @@ export function MobileTabBar() {
   const router = useRouter();
   const { t } = useI18n();
   const { isAdmin } = useStoryAdmin();
-  const counts = useHeaderCounts();
+  const { unread } = useHeaderCounts();
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
   const close = useCallback(() => setOpen(false), []);
   const byId = (id: string) => SECTIONS.find((s) => s.id === id)!;
-  const passport = byId("passport");
-  const more = moreLeaves(t);
-  const moreActive = isItemActive(passport, path) || [...MORE_ITEMS, ...UTILITY_ITEMS, ...ACCOUNT_ITEMS].some((i) => isItemActive(i, path));
+  const moreActive = ACCOUNT_ITEMS.some((i) => isItemActive(i, path));
 
   const plain = (active: boolean) => cn("flex min-h-[46px] flex-col items-center justify-center gap-[2px] rounded-[16px] text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
     active ? "text-white" : "text-white/65");
@@ -56,8 +54,8 @@ export function MobileTabBar() {
     router.push("/sign-in");
     router.refresh();
   };
-  const leaf = (i: { path: string; key: string; icon: Leaf["icon"]; id: string; match?: string[] }, count?: number): Leaf =>
-    ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id, match: i.match, count });
+  const leaf = (i: { path: string; key: string; icon: Leaf["icon"]; id: string; match?: string[] }): Leaf =>
+    ({ href: i.path, label: t(i.key), icon: i.icon, id: i.id, match: i.match });
 
   return (
     <>
@@ -71,21 +69,18 @@ export function MobileTabBar() {
           </span>{t(discover.key)}
         </Link>
         {cell("events")}
-        <button ref={opener} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} aria-current={moreActive ? "true" : undefined} data-testid="mobile-nav-more" className={plain(moreActive || open)}>
+        <button ref={opener} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} aria-current={moreActive ? "true" : undefined}
+          data-testid="mobile-nav-more" className={plain(moreActive || open)}>
           <Menu className="h-[20px] w-[20px]" aria-hidden="true" />{t("nav.more")}
         </button>
       </nav>
       <BottomSheet open={open} onClose={close} title={t("nav.more")} returnFocusTo={opener} testId="mobile-more-sheet">
         <div className="mt-[4px] space-y-[16px] font-heading">
-          <div className="grid gap-[2px]"><NavItem item={{ href: passport.path, label: t(passport.key), icon: passport.icon, id: "passport", sub: "Your learning journey" }} onClick={close} testPrefix="drawer" /></div>
-          <NavGroup id="social" label={t("nav.social")} icon={byId("social").icon} items={sectionLeaves(byId("social"), t)} inside={isItemActive(byId("social"), path)} onClick={close} testPrefix="drawer" />
-          <NavGroup id="discover" label={t("nav.discover")} icon={discover.icon} items={sectionLeaves(discover, t)} inside={discoverActive} onClick={close} testPrefix="drawer" />
-          <NavGroup id="events" label={t("nav.events")} icon={byId("events").icon} items={sectionLeaves(byId("events"), t)} inside={isItemActive(byId("events"), path)} onClick={close} testPrefix="drawer" />
+          {["social", "discover", "events"].map((id) => {
+            const s = byId(id);
+            return <NavGroup key={id} id={id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, unread)} inside={isItemActive(s, path)} onClick={close} testPrefix="drawer" />;
+          })}
           <Divider />
-          <div className="grid gap-[2px]">
-            {more.map((m) => <NavItem key={m.id} item={m} onClick={close} testPrefix="drawer" />)}
-            {UTILITY_ITEMS.map((i) => <NavItem key={i.id} item={leaf(i, i.id === "inbox" ? counts.unread : i.id === "notifications" ? counts.notifications : undefined)} onClick={close} testPrefix="drawer" />)}
-          </div>
           <div role="group" aria-labelledby="more-account">
             <SectionLabel id="more-account">{t("nav.account")}</SectionLabel>
             <div className="grid gap-[2px]">

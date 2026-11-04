@@ -6,11 +6,13 @@ import { Photo } from "@/components/site/Photo";
 import { body, btnPrimary, btnSecondary, cardLink, container, eyebrow, h1, h2, lead, section, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
-import { ELCO_ENABLED, elcoHref } from "@/lib/elco";
+import { elcoHref } from "@/lib/elco";
+import { TutoringPanel } from "@/components/tutoring/TutoringPanel";
+import { TUTOR_PRICE_LABEL } from "@/components/tutoring/links";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Programs at IELSco: opportunities, community, courses and fellowships",
-  description: "Everything IELSco offers in one place: the opportunity board, IELS Circle, member stories, IELS Courses, events, the Global Impact Fellowship, membership and IELS for Schools.",
+  title: "Programs at IELSco: Elco AI, private English tutor, IELS Circle and fellowships",
+  description: "Learn and practise English with Elco AI, add a private English tutor at Rp90,000 per session, join the IELS Circle English learning community, explore opportunities and the Global Impact Fellowship.",
   path: "/products",
 });
 
@@ -27,20 +29,27 @@ const GROUPS: { title: string; intro: string; items: Item[] }[] = [
   {
     title: "Practise and connect", intro: "People to practise with and learn from.",
     items: [
-      { icon: Users, name: "IELS Circle", text: "Open online speaking sessions every Wednesday 19:00 and Saturday 13:00 WIB.", href: "/circle", cost: "Free" },
+      { icon: Users, name: "IELS Circle", text: "Our English learning community: open online speaking sessions every Wednesday 19:00 and Saturday 13:00 WIB.", href: "https://circle.ielsco.com", cost: "Free", external: true },
       { icon: CalendarDays, name: "Events", text: "Info sessions, workshops and talks, often with partner organizations.", href: "/events", cost: "Mostly free" },
-      { icon: UserPlus, name: "Membership", text: "Application clinics, written feedback, a study buddy and a private member group.", href: "/membership", cost: "Paid (opening soon)" },
+      { icon: UserPlus, name: "Elco member benefits", text: "No separate IELSco membership: Elco Starter and Pro plans carry IELS Circle speaking club access to your IELSco account.", href: "/membership", cost: "With an Elco plan" },
     ],
   },
   {
-    title: "Go deeper", intro: "Structured programs with a clear outcome.",
+    title: "Go deeper", intro: "Human support and programs with a clear outcome.",
     items: [
-      { icon: GraduationCap, name: "IELS Courses", text: "Mentor-led courses for scholarship essays, careers abroad, tests and speaking.", href: "/products/courses", cost: "Paid per course" },
+      { icon: GraduationCap, name: "Private tutoring", text: "One-to-one sessions with an IELSco tutor, on top of learning with Elco AI. Request a session when you need one.", href: "/products/courses", cost: TUTOR_PRICE_LABEL },
       { icon: Sparkles, name: "Global Impact Fellowship", text: "Leadership and project incubation for youth across Southeast Asia, held at NUS.", href: "/events/gif", cost: "Self-funded" },
       { icon: School, name: "IELS for Schools", text: "Sessions and workshops planned with your school.", href: "/school", cost: "Quoted per school" },
     ],
   },
 ];
+
+function ItemLink({ item, children }: { item: Item; children: React.ReactNode }) {
+  const cls = cn(cardLink, "flex h-full flex-col p-7");
+  return item.external
+    ? <a href={item.href} target="_blank" rel="noopener noreferrer" className={cls}>{children}</a>
+    : <Link href={item.href} className={cls}>{children}</Link>;
+}
 
 export default function ProgramsPage() {
   return (
@@ -49,14 +58,22 @@ export default function ProgramsPage() {
         <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16")}>
           <div>
             <p className={eyebrow}>Programs</p>
-            <h1 id="hero" className={cn(h1, "mt-4")}>Everything IELSco offers, and what it costs</h1>
-            <p className={cn(lead, "mt-6 max-w-[560px]")}>Most of it is free. Paid programs say so up front, and none of them is required to use the rest.</p>
+            <h1 id="hero" className={cn(h1, "mt-4")}>Learn English with Elco AI. Grow with IELSco.</h1>
+            <p className={cn(lead, "mt-6 max-w-[560px]")}>Elco AI is where you learn, practise and prepare for tests. IELSco adds people: private tutors, the IELS Circle community, opportunities and fellowships. Costs are stated up front.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/sign-up" className={btnPrimary}>Create a free account <ArrowRight size={18} aria-hidden="true" /></Link>
-              <Link href="/opportunities" className={btnSecondary}>Browse opportunities</Link>
+              <a href={elcoHref("programs-hero")} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Access Elco AI <ArrowUpRight size={18} aria-hidden="true" /></a>
             </div>
           </div>
           <Photo photo="onlineSession" ratio="wide" priority position="center 30%" />
+        </div>
+      </section>
+
+      <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="learn">
+        <div className={container}>
+          <h2 id="learn" className={h2}>Two ways to learn English</h2>
+          <p className={cn(lead, "mt-2 max-w-[720px]")}>Use Elco AI every day. Add a human tutor when you want one-to-one feedback.</p>
+          <TutoringPanel refId="programs" className="mt-8" />
         </div>
       </section>
 
@@ -68,7 +85,7 @@ export default function ProgramsPage() {
             <ul className="mt-8 grid gap-5 md:grid-cols-3">
               {g.items.map((i) => (
                 <li key={i.name}>
-                  <Link href={i.href} className={cn(cardLink, "flex h-full flex-col p-7")}>
+                  <ItemLink item={i}>
                     <span className="flex items-center justify-between">
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><i.icon size={20} aria-hidden="true" /></span>
                       <span className="text-[13px] font-semibold text-[#577E90]">{i.cost}</span>
@@ -76,7 +93,7 @@ export default function ProgramsPage() {
                     <span className="mt-5 text-[19px] font-bold text-[#1A2534]">{i.name}</span>
                     <span className={cn(body, "mt-2 flex-1 text-[15px]")}>{i.text}</span>
                     <ArrowRight size={17} className="mt-5 text-[#2F4157]" aria-hidden="true" />
-                  </Link>
+                  </ItemLink>
                 </li>
               ))}
             </ul>
@@ -84,17 +101,6 @@ export default function ProgramsPage() {
         </section>
       ))}
 
-      {ELCO_ENABLED && (
-        <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="elco">
-          <div className={cn(container, "flex flex-col gap-6 md:flex-row md:items-center md:justify-between")}>
-            <div className="max-w-[640px]">
-              <h2 id="elco" className={h2}>English practice that feels like play: Elco AI</h2>
-              <p className={cn(lead, "mt-3")}>Elco AI is a separate English learning app with English games, guided lessons and AI practice, run by PT Elco Edukasi Berkah Indonesia (a company that shares IELSco&apos;s founder), with its own free and paid plans. IELSco stays your place for opportunities and people.</p>
-            </div>
-            <a href={elcoHref("programs")} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Open Elco AI <ArrowUpRight size={18} aria-hidden="true" /></a>
-          </div>
-        </section>
-      )}
       <Footer />
     </div>
   );

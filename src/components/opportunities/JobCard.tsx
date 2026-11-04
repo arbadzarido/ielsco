@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { opportunityCover } from "@/lib/covers";
 import { ArrowRight, Briefcase, Handshake, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { card, focusRing, pill } from "@/components/site/ui";
@@ -29,8 +31,11 @@ export function SalaryText({ o, className }: { o: ProfessionalOpportunity; class
 
 export function JobCard({ o, href }: { o: ProfessionalOpportunity; href: string }) {
   return (
-    <li className={cn(card, "group relative flex flex-col p-6 transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[#C9D1DC] hover:shadow-[0_12px_32px_rgba(26,37,52,0.08)] motion-reduce:hover:translate-y-0")}
+    <li className={cn(card, "group relative flex flex-col overflow-hidden p-6 transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[#C9D1DC] hover:shadow-[0_12px_32px_rgba(26,37,52,0.08)] motion-reduce:hover:translate-y-0")}
       data-testid={`job-${o.slug}`}>
+      <div className="relative -mx-6 -mt-6 mb-5 aspect-[16/7] bg-[#F1F4F8]">
+        <Image src={opportunityCover("job")} alt="" fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
+      </div>
       <div className="flex items-start justify-between gap-3">
         <span className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[#577E90]">{o.industry}</span>
         <StatusPill status={o.status} />
