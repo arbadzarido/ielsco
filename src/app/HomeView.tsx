@@ -39,38 +39,41 @@ function useNow() {
   return now;
 }
 
+// Hero: the community photo is the full-bleed background. Two CSS gradients sit over it: a soft white centre veil
+// that keeps the headline readable while the people at the edges stay visible, and a vertical white gradient that
+// fades the photo into the white page at the bottom (and lightly under the header), so the next section continues
+// seamlessly. No new image; same asset as before.
 function Hero() {
   return (
-    <section className="bg-white pb-[56px] pt-[40px] md:pb-[88px] md:pt-[64px]" aria-labelledby="hero-heading">
-      <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16")}>
-        <div>
-          <p className={eyebrow}>IELSco · Southeast Asia English community</p>
-          <h1 id="hero-heading" className={cn(h1, "mt-4 text-[34px] sm:text-[44px] lg:text-[52px]")}>
-            Connecting Southeast Asia through English, community, and{" "}
-            <span className="text-[#E56668]">global opportunities</span>.
-          </h1>
-          <p className={cn(lead, "mt-6 max-w-[580px]")}>
-            Meet people who are learning English too, practise speaking every week in IELS Circle, learn with Elco AI, and
-            find scholarships, study abroad and career opportunities, all in one English learning community.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/sign-up" className={btnPrimary} data-testid="landing-join" onClick={() => track("cta_click", { cta: "home_hero_join" })}>
-              Create a free account <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-            <Link href="/circle" className={btnSecondary} data-testid="landing-circle">
-              Join IELS Circle
-            </Link>
-          </div>
-          <p className="mt-4 text-[14px] text-[#2F4157]/60">Free account · Membership comes with an Elco AI plan</p>
+    <section className="relative isolate overflow-hidden bg-white" aria-labelledby="hero-heading" data-testid="landing-hero">
+      <div className="absolute inset-0 -z-10" aria-hidden="true">
+        <Image src="/images/site/community-in-person.webp" alt="" fill priority sizes="100vw" className="object-cover object-[50%_35%]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_62%_58%_at_50%_46%,rgba(255,255,255,0.94)_0%,rgba(255,255,255,0.78)_42%,rgba(255,255,255,0.32)_72%,rgba(255,255,255,0.12)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.7)_0%,rgba(255,255,255,0.15)_18%,rgba(255,255,255,0.1)_48%,rgba(255,255,255,0.6)_74%,#ffffff_100%)]" />
+      </div>
+      <div className={cn(container, "flex flex-col items-center pb-[64px] pt-[64px] text-center sm:pt-[80px] md:pb-[96px] md:pt-[104px]")}>
+        <p className={eyebrow}>IELSco · Southeast Asia English community</p>
+        <h1 id="hero-heading" className={cn(h1, "mt-4 max-w-[1120px] text-[34px] leading-[1.06] sm:text-[50px] lg:text-[60px]")}>
+          Empowering Southeast Asia through English and <span className="text-[#E56668]">connection</span>.
+        </h1>
+        <p className={cn(lead, "mt-5 max-w-[620px] text-[#1A2534]/80")}>
+          Practise speaking every week in IELS Circle, learn with Elco AI, and find scholarships, study abroad and career
+          opportunities with people across Southeast Asia.
+        </p>
+        <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
+          <Link href="/sign-up" className={btnPrimary} data-testid="landing-join" onClick={() => track("cta_click", { cta: "home_hero_join" })}>
+            Create a free account <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+          <Link href="/circle" className={cn(btnSecondary, "bg-white/90")} data-testid="landing-circle">
+            Join IELS Circle
+          </Link>
         </div>
-        <div className="relative">
-          <Photo photo="communityInPerson" ratio="wide" priority sizes="(min-width: 1024px) 520px, 100vw" />
-          <div className="absolute -bottom-8 left-4 right-4 flex items-end gap-2 rounded-[18px] border border-[#E6E9EE] bg-white py-2 pl-2 pr-4 shadow-[0_12px_32px_rgba(26,37,52,0.08)] sm:left-auto sm:right-6 sm:w-[340px]" data-testid="landing-mascot">
-            <ElcoCharacter height={92} className="-mt-8" />
-            <p className="pb-2 text-[14px] leading-snug text-[#2F4157]">
-              <span className="font-bold text-[#1A2534]">Hi, I&apos;m Elco!</span> IELS Circle open sessions run every Wednesday and Saturday.
-            </p>
-          </div>
+        <p className="mt-4 text-[14px] font-medium text-[#2F4157]/75">Free account · Membership comes with an Elco AI plan</p>
+        <div className="mt-10 flex items-end gap-2 rounded-[18px] border border-[#E6E9EE] bg-white/95 py-2 pl-2 pr-4 text-left shadow-[0_12px_32px_rgba(26,37,52,0.08)] backdrop-blur-sm sm:w-[360px] xl:absolute xl:bottom-10 xl:right-10 xl:mt-0" data-testid="landing-mascot">
+          <ElcoCharacter height={92} className="-mt-8" />
+          <p className="pb-2 text-[14px] leading-snug text-[#2F4157]">
+            <span className="font-bold text-[#1A2534]">Hi, I&apos;m Elco!</span> IELS Circle open sessions run every Wednesday and Saturday.
+          </p>
         </div>
       </div>
     </section>
