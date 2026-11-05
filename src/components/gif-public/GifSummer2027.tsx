@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { container, section, h1, h2, h3, lead, body, eyebrow, card, siteRoot, focusRing } from "@/components/site/ui";
 import Footer from "@/components/footer";
+import { EarlyBirdCta, EarlyBirdStatus } from "./EarlyBird";
 
 // Content source: GIF Summer 2027 guidebook. Anything the guidebook does not state is shown as "TBA".
-const MAILTO = "mailto:arbadza@ielsco.com?subject=" + encodeURIComponent("GIF Summer 2027 Early Bird");
 
 const btnYellow = `inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-[#F9E15B] px-6 text-[16px] font-semibold text-[#284055] transition-colors hover:bg-white ${focusRing}`;
 
@@ -156,11 +156,11 @@ export default function GifSummer2027() {
 
             <dl className="mt-6 flex flex-wrap gap-3 text-[15px]">
               <div className="rounded-full bg-white/10 px-4 py-2"><dt className="inline text-white/70">General registration: </dt><dd className="inline font-bold">Coming soon</dd></div>
-              <div className="rounded-full bg-[#F9E15B] px-4 py-2 text-[#284055]"><dt className="inline">Early Bird applications: </dt><dd className="inline font-bold">Open</dd></div>
+              <div className="rounded-full bg-[#F9E15B] px-4 py-2 text-[#284055]"><dt className="inline">Early Bird applications: </dt><EarlyBirdStatus /></div>
             </dl>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href={MAILTO} className={btnYellow}>Apply for Early Bird</a>
+              <EarlyBirdCta className={btnYellow} />
               <a href="#program" className={`inline-flex min-h-[46px] items-center justify-center rounded-full border border-white/40 px-6 text-[16px] font-semibold text-white transition-colors hover:bg-white/10 ${focusRing}`}>See the program</a>
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function GifSummer2027() {
               ))}
             </ol>
             <Note dark>Please contact the official program team (arbadza@ielsco.com) for payment confirmation and the applicable payment schedule.</Note>
-            <div className="mt-6"><a href={MAILTO} className={btnYellow}>Apply for Early Bird</a></div>
+            <div className="mt-6"><EarlyBirdCta className={btnYellow} /></div>
           </div>
         </section>
 
@@ -554,7 +554,7 @@ export default function GifSummer2027() {
                 <p className="text-[17px] text-[#F9E15B]">ielsco.com</p>
               </div>
               <div className="flex flex-col items-start justify-end gap-3">
-                <a href={MAILTO} className={btnYellow}>Apply for Early Bird</a>
+                <EarlyBirdCta className={btnYellow} />
                 <p className="text-[15px] italic text-white/70">Speak Fearlessly, Belong Infinitely</p>
               </div>
             </div>
