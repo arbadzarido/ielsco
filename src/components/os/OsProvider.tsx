@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import type { CompanyCode, OsMe, OsPerson, OsPersonDivision } from "@/lib/os/types";
+import { PERSON_COLUMNS, type CompanyCode, type OsMe, type OsPerson, type OsPersonDivision } from "@/lib/os/types";
 
 // Loads the signed-in person's Company OS record. Everything here is presentation: RLS decides what each query returns,
 // so a person who is not in the OS gets empty results from every table whatever this component shows.
@@ -32,7 +32,7 @@ export function OsProvider({ children }: { children: ReactNode }) {
 
     const { data: person, error } = await supabase
       .from("os_people")
-      .select("id, user_id, full_name, short_name, org_role, status, google_account")
+      .select(PERSON_COLUMNS)
       .eq("user_id", auth.user.id)
       .in("status", ["onboarding", "active"])
       .maybeSingle<OsPerson>();
@@ -40,9 +40,11 @@ export function OsProvider({ children }: { children: ReactNode }) {
     if (error) return setState({ status: "error", message: error.code === "42P01" || error.code === "PGRST205" ? "The Company OS database isn't set up yet." : error.message });
     if (!person) return setState({ status: "not-staff", email: auth.user.email ?? null });
 
-    const [divs, comps] = await Promise.all([
+    const [divs, comps, admin, mfa] = await Promise.all([
       supabase.from("os_person_divisions").select("person_id, division_id, is_manager").eq("person_id", person.id),
       supabase.from("os_person_companies").select("company_code").eq("person_id", person.id),
+      supabase.rpc("os_is_founder"),
+      supabase.rpc("os_is_founder_needing_mfa"),
     ]);
     if (divs.error || comps.error) return setState({ status: "error", message: (divs.error ?? comps.error)!.message });
     setState({
@@ -51,6 +53,8 @@ export function OsProvider({ children }: { children: ReactNode }) {
         person,
         divisions: (divs.data ?? []) as OsPersonDivision[],
         companies: (comps.data ?? []).map((c) => c.company_code as CompanyCode),
+        isAdmin: admin.data === true,
+        needsMfa: mfa.data === true,
       },
     });
   }, [supabase]);

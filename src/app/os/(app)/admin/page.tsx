@@ -8,10 +8,12 @@ import { EmptyState, PageHeader } from "@/components/dashboard/PageStates";
 import { btnSecondary, focusRing } from "@/components/dashboard/ui";
 import { PeopleAdmin } from "@/components/os/admin/PeopleAdmin";
 import { AuditLog, GrantsAdmin, RoutesAdmin } from "@/components/os/admin/AccessAdmin";
+import { SecurityAdmin } from "@/components/os/admin/SecurityAdmin";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { key: "people", label: "People" },
+  { key: "people", label: "People & accounts" },
+  { key: "security", label: "Security & sessions" },
   { key: "access", label: "Access grants" },
   { key: "routes", label: "Drive folder routes" },
   { key: "audit", label: "Audit log" },
@@ -28,7 +30,9 @@ function OsAdmin() {
   const requested = useSearchParams().get("tab");
   const tab: Tab = TABS.some((t) => t.key === requested) ? (requested as Tab) : "people";
 
-  if (me.person.org_role !== "founder")
+  if (me.needsMfa)
+    return <EmptyState title="Two-step verification needed" body="Admin is only available after you confirm sign-in with an authenticator app. Set it up in My account; it takes a minute." action={<Link href="/os/account" className={btnSecondary}>Go to My account</Link>} />;
+  if (!me.isAdmin)
     return <EmptyState title="Founders only" body="People, access and audit settings are managed by the founders." action={<Link href="/os" className={btnSecondary}>Back to Home</Link>} />;
 
   return (
@@ -43,6 +47,7 @@ function OsAdmin() {
         ))}
       </nav>
       {tab === "people" && <PeopleAdmin supabase={supabase} />}
+      {tab === "security" && <SecurityAdmin supabase={supabase} />}
       {tab === "access" && <GrantsAdmin supabase={supabase} />}
       {tab === "routes" && <RoutesAdmin supabase={supabase} />}
       {tab === "audit" && <AuditLog supabase={supabase} />}

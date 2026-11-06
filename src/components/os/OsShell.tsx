@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Lock } from "lucide-react";
 import type { ReactNode } from "react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, focusRing } from "@/components/dashboard/ui";
@@ -17,6 +18,7 @@ const NAV: { href: string; label: string; soon?: boolean; founderOnly?: boolean 
   { href: "/os/documents", label: "Documents", soon: true },
   { href: "/os/knowledge", label: "Knowledge", soon: true },
   { href: "/os/workspaces", label: "Workspaces" },
+  { href: "/os/account", label: "My account" },
   { href: "/os/admin", label: "Admin", founderOnly: true },
 ];
 
@@ -24,20 +26,21 @@ function Gate({ children }: { children: ReactNode }) {
   const { state, reload } = useOs();
   if (state.status === "loading") return <LoadingState label="Checking your access…" />;
   if (state.status === "error") return <ErrorState message={state.message} onRetry={reload} />;
+  // The server gate (app/os/(app)/layout.tsx) normally catches these first; they show if access ends mid-session.
   if (state.status === "signed-out")
     return (
       <EmptyState
-        title="Sign in to the Company OS"
-        body="Use your IELSco account. Access is set up by a founder."
-        action={<Link href="/sign-in?next=/os" className={btnPrimary}>Sign in</Link>}
+        title="Your session has ended"
+        body="Sign in again to continue."
+        action={<Link href="/os/login" className={btnPrimary}>Sign in</Link>}
       />
     );
   if (state.status === "not-staff")
     return (
       <EmptyState
-        title="You don't have Company OS access yet"
-        body={`You're signed in${state.email ? ` as ${state.email}` : ""}, but this account isn't linked to a team record. Ask a founder to add you; they'll need this email address.`}
-        action={<Link href="/dashboard" className={btnSecondary}>Go to your IELSco dashboard</Link>}
+        title="No access"
+        body="This account can't use Company OS right now. If you think that's wrong, ask a founder."
+        action={<form action="/os/auth/signout" method="post"><button type="submit" className={btnSecondary}>Sign out</button></form>}
       />
     );
   return <>{children}</>;
@@ -51,9 +54,10 @@ function Header() {
   const active = (href: string) => (href === "/os" ? pathname === "/os" : pathname.startsWith(href));
 
   return (
-    <header className="border-b border-[#E3E7ED] bg-white">
+    <header className="border-b border-[#E3E7ED] bg-white" data-testid="os-header">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 md:px-6">
-        <Link href="/os" className={cn("text-lg font-bold tracking-tight text-[#2F4157]", focusRing)}>
+        <Link href="/os" className={cn("flex items-center gap-2 text-lg font-bold tracking-tight text-[#1B2A3C]", focusRing)}>
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1B2A3C] text-white"><Lock size={14} aria-hidden="true" /></span>
           Company OS
         </Link>
         {me && (
@@ -86,7 +90,7 @@ function Header() {
               <span className="block font-semibold text-[#2F4157]">{me.person.short_name || me.person.full_name}</span>
               <span className="block text-[#2F4157]/60">{ROLE_LABEL[me.person.org_role]}</span>
             </span>
-            <form action="/auth/signout" method="post">
+            <form action="/os/auth/signout" method="post">
               <button type="submit" className={cn(btnSecondary, "px-3 py-1.5 text-sm")}>Sign out</button>
             </form>
           </div>
