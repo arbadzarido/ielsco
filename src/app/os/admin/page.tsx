@@ -44,7 +44,7 @@ function OsAdmin() {
       </nav>
       {tab === "people" && <PeopleAdmin supabase={supabase} />}
       {tab === "access" && <GrantsAdmin supabase={supabase} />}
-      {tab === "routes" && <RoutesAdmin supabase={supabase} myId={me.person.id} />}
+      {tab === "routes" && <RoutesAdmin supabase={supabase} />}
       {tab === "audit" && <AuditLog supabase={supabase} />}
     </div>
   );

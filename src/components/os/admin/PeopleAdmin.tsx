@@ -65,7 +65,7 @@ export function PeopleAdmin({ supabase }: { supabase: SupabaseClient }) {
         <div><label className={labelClass} htmlFor="p-role">Role</label>
           <select id="p-role" name="org_role" className={inputClass} defaultValue="member">{ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></div>
         <button type="submit" className={btnPrimary}>Add person</button>
-        <p className="text-sm text-[#2F4157]/60 md:col-span-4">New people start as Onboarding with no company or division, so they can see nothing until you set those below.</p>
+        <p className="text-sm text-[#2F4157]/60 md:col-span-4">New people start as Onboarding with no company or division. Until you add a company they see only their own record. Logins are linked below, by confirmed email.</p>
       </form>
 
       <ul className="space-y-3">

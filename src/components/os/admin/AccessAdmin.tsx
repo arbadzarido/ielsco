@@ -43,7 +43,6 @@ export function GrantsAdmin({ supabase }: { supabase: SupabaseClient }) {
       resource_id: type === "division" ? f.get("division_id") : String(f.get("resource_id") ?? "").trim(),
       level: f.get("level"), reason: String(f.get("reason") ?? "").trim(),
       expires_at: expires ? new Date(`${expires}T23:59:59+07:00`).toISOString() : null,
-      granted_by: "set-by-database", // replaced by the caller's own person ID in a trigger
     });
     setMsg(error ? { ok: false, text: error.message } : { ok: true, text: "Access granted and logged." });
     if (!error) form.reset();
@@ -108,7 +107,7 @@ function GrantForm({ people, divisions, onSubmit }: { people: OsPerson[]; divisi
       )}
       <div><label className={labelClass} htmlFor="g-level">Level</label>
         <select id="g-level" name="level" className={inputClass}><option value="view">View</option><option value="edit">Edit</option></select></div>
-      <div><label className={labelClass} htmlFor="g-exp">Ends on (required for managers)</label>
+      <div><label className={labelClass} htmlFor="g-exp">Ends on (managers: required, at most 90 days)</label>
         <input id="g-exp" name="expires_at" type="date" className={inputClass} /></div>
       <div><label className={labelClass} htmlFor="g-reason">Reason</label>
         <input id="g-reason" name="reason" required className={inputClass} placeholder="e.g. Helping Growth with the GIF campaign" /></div>
@@ -122,7 +121,7 @@ function GrantForm({ people, divisions, onSubmit }: { people: OsPerson[]; divisi
 
 interface Route { id: string; company_code: string; division_id: string | null; doc_type: string | null; sensitivity: string; drive_folder_id: string; folder_name: string; status: string; note: string | null }
 
-export function RoutesAdmin({ supabase, myId }: { supabase: SupabaseClient; myId: string }) {
+export function RoutesAdmin({ supabase }: { supabase: SupabaseClient }) {
   const [routes, setRoutes] = useState<Route[] | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const load = useCallback(async () => {
@@ -134,7 +133,7 @@ export function RoutesAdmin({ supabase, myId }: { supabase: SupabaseClient; myId
 
   const approve = async (r: Route) => {
     if (!confirm(`Approve: new ${r.company_code}${r.doc_type ? ` ${r.doc_type}` : ""} ${r.sensitivity} documents${r.division_id ? ` from ${r.division_id}` : ""} go to “${r.folder_name}”?`)) return;
-    const { error } = await supabase.from("os_folder_routes").update({ status: "approved", approved_by: myId, approved_at: new Date().toISOString() }).eq("id", r.id);
+    const { error } = await supabase.from("os_folder_routes").update({ status: "approved" }) // approver and time are set by the database.eq("id", r.id);
     setMsg(error ? { ok: false, text: error.message } : { ok: true, text: "Route approved and logged." });
     load();
   };

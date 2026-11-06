@@ -21,11 +21,15 @@ All rules are enforced in Postgres (RLS + security-definer helpers in
 
 - Roles: founder, manager, member, guest. Status onboarding/active can sign in; inactive/offboarded see nothing.
 - Founders manage people, divisions, folder routes and see the audit log.
-- A manager can grant access to their own division only, and must set an end date. Grants can't be edited, only revoked.
-- `os_link_account` (founders only) links a person to an IELSco login whose email is confirmed.
+- A manager can grant access to their own division only, with an end date at most 90 days away. Grants can't be edited,
+  only revoked. Who granted it and when are set by the database, not the request.
+- Staff means a founder, or a non-guest in at least one company. Someone just added sees only their own record.
+- Document numbers can be reserved only for a company you work in (HQ for all staff).
+- `os_link_account` (founders only) links a person to an IELSco login whose email is confirmed. `user_id` is not writable
+  through the API, so this is the only way to link a login.
 - Every change to people, memberships, grants, divisions and folder routes is written to `os_audit_log` by trigger.
   The log is append-only.
-- Folder routes start as `proposed`. Nothing files documents until a founder approves a route. The OS never creates,
+- Folder routes start as `proposed`. The approver and approval time are recorded by the database. Nothing files documents until a founder approves a route. The OS never creates,
   renames or moves Drive folders.
 - `anon` has no access to any `os_*` table. Defaults are revoked and only the needed privileges granted back.
 
@@ -34,7 +38,7 @@ All rules are enforced in Postgres (RLS + security-definer helpers in
 ```bash
 npm test                                                        # includes tests/company-os.test.mjs
 npm i --no-save @electric-sql/pglite                            # once
-node tests/db/company-os.pglite.mjs supabase/migrations          # access rules, 63 checks
+node tests/db/company-os.pglite.mjs supabase/migrations          # access rules, 77 checks
 ```
 
 ## Going live (manual, needs approval)

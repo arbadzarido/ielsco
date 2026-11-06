@@ -117,8 +117,11 @@ await t("manager sees grants on their division", () => count(U.manager, "os_gran
 await t("member sees only grants to them", () => count(U.elco, "os_grants"), is(0));
 
 // Expiry and revocation
-await t("founder adds an already-expired grant", () => user(U.founder,
-  `insert into public.os_grants (person_id, resource_type, resource_id, level, reason, granted_by, created_at, expires_at) values ('PPL-9004', 'document', 'DOC-OLD', 'view', 'Old', 'PPL-9001', now() - interval '10 days', now() - interval '1 day')`));
+// An already-expired grant can't be made through the API (creation time is always now), so the fixture is written as
+// the owner with the trigger paused.
+await t("fixture: an already-expired grant", () => db.exec(`alter table public.os_grants disable trigger os_grants_before_write;
+  insert into public.os_grants (person_id, resource_type, resource_id, level, reason, granted_by, created_at, expires_at) values ('PPL-9004', 'document', 'DOC-OLD', 'view', 'Old', 'PPL-9001', now() - interval '10 days', now() - interval '1 day');
+  alter table public.os_grants enable trigger os_grants_before_write;`));
 await t("expired grant gives no access", () => canView(U.elco, "IEL", "DIV-05", "Internal", "DOC-OLD"), is(false));
 await te("a grant cannot be widened", () => user(U.manager, `update public.os_grants set level = 'edit' where person_id = 'PPL-9003'`), /cannot be changed/);
 await t("grantor revokes", () => user(U.manager, `update public.os_grants set revoked_at = now() where person_id = 'PPL-9003'`));
@@ -159,10 +162,39 @@ await te("audit log cannot be written directly", () => user(U.founder, "insert i
 const num = (uid, c, ty, y) => one(uid, "select public.os_next_doc_number($1, $2, $3)", [c, ty, y]);
 await t("first IEL LET 2026 is 1", () => num(U.creative, "IEL", "LET", 2026), is(1));
 await t("second is 2", () => num(U.creative, "IEL", "LET", 2026), is(2));
-await t("Elco has its own sequence", () => num(U.creative, "ELC", "LET", 2026), is(1));
+await t("Elco has its own sequence", () => num(U.manager, "ELC", "LET", 2026), is(1));
 await t("sequence restarts each year", () => num(U.creative, "IEL", "LET", 2027), is(1));
 await te("guests cannot reserve numbers", () => num(U.guest, "IEL", "LET", 2026), /Only staff/);
 await te("counters are not readable directly", () => count(U.creative, "os_doc_counters"), /permission denied/);
+
+// Security review fixes (6 Nov)
+const SOON = new Date(Date.now() + 30 * 864e5).toISOString();
+await t("grant creation time is the server's, not the request's", async () => {
+  await user(U.manager, `insert into public.os_grants (person_id, resource_type, resource_id, level, reason, created_at, expires_at) values ('PPL-9004', 'division', 'DIV-03', 'view', 'Backdate probe', '2020-01-01', $1)`, [SOON]);
+  return db.query("select created_at > now() - interval '1 minute' as fresh from public.os_grants where reason = 'Backdate probe'");
+}, (r) => is(true)(r.rows[0].fresh));
+await te("manager grant longer than 90 days is refused", () => user(U.manager, GRANT, ["PPL-9004", "DIV-03", "view", new Date(Date.now() + 91 * 864e5).toISOString()]), /at most 90 days/);
+await t("founder grant may run longer than 90 days", () => user(U.founder, GRANT, ["PPL-9004", "DIV-04", "view", new Date(Date.now() + 365 * 864e5).toISOString()]));
+await t("route approver is the caller, not the value sent", async () => {
+  await user(U.founder, `update public.os_folder_routes set status = 'approved', approved_by = 'PPL-9002', approved_at = '2020-01-01' where folder_name = 'DIV-03 Growth'`);
+  return db.query("select approved_by, approved_at > now() - interval '1 minute' as fresh from public.os_folder_routes where folder_name = 'DIV-03 Growth'");
+}, (r) => (r.rows[0].approved_by === "PPL-9001" && r.rows[0].fresh ? null : JSON.stringify(r.rows[0])));
+await t("editing an approved route's note keeps the approval", async () => {
+  await user(U.founder, `update public.os_folder_routes set note = 'checked' where folder_name = 'DIV-03 Growth'`);
+  return db.query("select approved_by from public.os_folder_routes where folder_name = 'DIV-03 Growth'");
+}, (r) => is("PPL-9001")(r.rows[0].approved_by));
+await te("member cannot reserve numbers for a company they are not in", () => num(U.creative, "ELC", "FIN", 2026), /company you work in/);
+await t("founder reserves numbers for any company", () => num(U.founder, "ELC", "FIN", 2026), is(1));
+await t("staff can reserve HQ numbers", () => num(U.creative, "HQ", "MOM", 2026), is(1));
+await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('00000000-0000-0000-0000-0000000000b1', 'fresh@example.test', null);
+  insert into public.os_people (id, user_id, full_name, status) values ('PPL-9011', '00000000-0000-0000-0000-0000000000b1', 'Fresh Volunteer', 'onboarding');`);
+const FRESH = "00000000-0000-0000-0000-0000000000b1";
+await t("person with no company sees only their own row", () => count(FRESH, "os_people"), is(1));
+await t("person with no company sees no folder routes", () => count(FRESH, "os_folder_routes"), is(0));
+await t("person with no company sees no divisions", () => count(FRESH, "os_divisions"), is(0));
+await te("founder cannot set a login directly", () => user(U.founder, `update public.os_people set user_id = '${FRESH}' where id = 'PPL-9010'`), /permission denied/);
+await te("founder cannot add a person with a login attached", () => user(U.founder, `insert into public.os_people (id, full_name, user_id) values ('PPL-9012', 'X', '${FRESH}')`), /permission denied/);
+await t("founder still edits role and status", () => user(U.founder, `update public.os_people set status = 'active' where id = 'PPL-9011'`));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

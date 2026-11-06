@@ -150,10 +150,14 @@ language sql stable security definer set search_path = '' as $$
                  where p.user_id = (select auth.uid()) and p.status = 'active' and p.org_role = 'founder')
 $$;
 
+-- Staff = a founder, or a non-guest who belongs to at least one company. Someone just added (onboarding, no company
+-- yet) sees only their own person row until a founder adds a company.
 create or replace function public.os_is_staff() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.os_people p
-                 where p.user_id = (select auth.uid()) and p.status in ('onboarding', 'active') and p.org_role <> 'guest')
+                 where p.user_id = (select auth.uid()) and p.status in ('onboarding', 'active') and p.org_role <> 'guest'
+                   and (p.org_role = 'founder'
+                        or exists (select 1 from public.os_person_companies c where c.person_id = p.id)))
 $$;
 
 create or replace function public.os_in_division(p_division text) returns boolean
@@ -225,6 +229,9 @@ declare n int;
 begin
   if not public.os_is_staff() then
     raise exception 'Only staff can reserve document numbers' using errcode = '42501';
+  end if;
+  if not (public.os_is_founder() or public.os_in_company(p_company)) then
+    raise exception 'You can only reserve numbers for a company you work in' using errcode = '42501';
   end if;
   insert into public.os_doc_counters as c (company_code, doc_type, year, last_number)
   values (p_company, p_type, p_year, 1)
@@ -308,6 +315,7 @@ language plpgsql security definer set search_path = '' as $$
 begin
   if tg_op = 'INSERT' then
     new.granted_by := public.os_current_person();
+    new.created_at := now();
     new.revoked_at := null;
     new.revoked_by := null;
     if new.granted_by is null then
@@ -315,6 +323,9 @@ begin
     end if;
     if not public.os_is_founder() and new.expires_at is null then
       raise exception 'Grants made by managers need an end date' using errcode = '23514';
+    end if;
+    if not public.os_is_founder() and new.expires_at > now() + interval '90 days' then
+      raise exception 'Grants made by managers can last at most 90 days' using errcode = '23514';
     end if;
   elsif tg_op = 'UPDATE' then
     -- Only revoking is allowed after creation.
@@ -337,6 +348,30 @@ drop trigger if exists os_grants_before_write on public.os_grants;
 create trigger os_grants_before_write before insert or update on public.os_grants
   for each row execute function public.os_grants_before_write();
 
+-- Folder routes: who approved and when are set here from the caller, never taken from the request. Changing where an
+-- approved route points counts as a new approval by whoever made the change.
+create or replace function public.os_folder_routes_before_write() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.status = 'approved' and (tg_op = 'INSERT' or old.status <> 'approved'
+       or (new.company_code, new.division_id, new.doc_type, new.sensitivity, new.drive_folder_id)
+          is distinct from (old.company_code, old.division_id, old.doc_type, old.sensitivity, old.drive_folder_id)) then
+    new.approved_by := public.os_current_person();
+    new.approved_at := now();
+  elsif tg_op = 'INSERT' then
+    new.approved_by := null;
+    new.approved_at := null;
+  else
+    new.approved_by := old.approved_by;
+    new.approved_at := old.approved_at;
+  end if;
+  return new;
+end $$;
+revoke all on function public.os_folder_routes_before_write() from public, anon, authenticated;
+drop trigger if exists os_folder_routes_before_write on public.os_folder_routes;
+create trigger os_folder_routes_before_write before insert or update on public.os_folder_routes
+  for each row execute function public.os_folder_routes_before_write();
+
 -- ── Row level security ─────────────────────────────────────────────────────────────────────────────────────────────
 
 alter table public.os_companies        enable row level security;
@@ -355,8 +390,13 @@ revoke all on public.os_companies, public.os_divisions, public.os_people, public
               public.os_doc_counters from anon, authenticated;
 grant select on public.os_companies, public.os_divisions, public.os_people, public.os_person_companies,
                 public.os_person_divisions, public.os_grants, public.os_audit_log, public.os_folder_routes to authenticated;
-grant insert, update, delete on public.os_divisions, public.os_people, public.os_person_companies,
+grant insert, update, delete on public.os_divisions, public.os_person_companies,
                                 public.os_person_divisions, public.os_folder_routes to authenticated;
+-- os_people: user_id, created_at and updated_at are not writable through the API. Logins are linked only by
+-- os_link_account(), which checks the email is confirmed.
+grant insert (id, full_name, short_name, org_role, status, google_account) on public.os_people to authenticated;
+grant update (full_name, short_name, org_role, status, google_account) on public.os_people to authenticated;
+grant delete on public.os_people to authenticated;
 grant insert, update on public.os_grants to authenticated;
 -- os_doc_counters: no grants at all; numbers come only from os_next_doc_number().
 
