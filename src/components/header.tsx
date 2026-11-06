@@ -18,7 +18,7 @@ function createClient() {
 }
 
 const HIDDEN_PATHS = [
-  "/school/dashboard", "/quiz", "/school/sign-in", "/dashboard", "/cafe", "/planner", "/privacy-policy",
+  "/school/dashboard", "/os", "/quiz", "/school/sign-in", "/dashboard", "/cafe", "/planner", "/privacy-policy",
   "/terms-of-service", "/welcome/start", "/welcome/result", "/sign-in", "/sign-up", "/api/auth",
 ];
 

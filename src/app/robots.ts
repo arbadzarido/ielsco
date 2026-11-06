@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/seo";
 // themselves. AI crawlers fall under "*"; to opt out of model training only, add a group for GPTBot or Google-Extended.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/dashboard", "/school/dashboard", "/monitoring"] }],
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/dashboard", "/school/dashboard", "/os", "/monitoring"] }],
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

@@ -88,6 +88,24 @@ export async function proxy(request: NextRequest) {
   }
 
   // ===========================================================================
+  // STEP 2C — SUBDOMAIN REDIRECT: os.ielsco.com/x -> os.ielsco.com/os/x  (Company OS, staff only)
+  //
+  // Sign-in, auth, API, dashboard and the Sentry tunnel (/monitoring) are left alone so they work on this host.
+  // Access to OS data is enforced by RLS on the os_* tables, not by this rewrite.
+  // ===========================================================================
+
+  const isOsSubdomain =
+    host === 'os.ielsco.com' ||
+    host.startsWith('os.localhost');
+
+  if (isOsSubdomain && !/^\/(os|sign-in|sign-up|auth|api|dashboard|monitoring)(\/|$)/.test(url.pathname)) {
+    // Redirect rather than rewrite, so the browser path is the real /os/... route. A rewrite leaves the client
+    // pathname at "/" while the server renders "/os", which breaks hydration and skips the auth check below.
+    url.pathname = url.pathname === '/' ? '/os' : `/os${url.pathname}`;
+    return NextResponse.redirect(url);
+  }
+
+  // ===========================================================================
   // STEP 3 — BOT KILLER ENGINE
   // ===========================================================================
 
@@ -208,6 +226,7 @@ export async function proxy(request: NextRequest) {
 
   // Daftar route yang butuh auth (proteksi utama)
   const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/school/dashboard');
+  const isOsRoute = pathname === '/os' || pathname.startsWith('/os/');
 
   // Auth routes yang diizinkan tanpa login
   const isMainAuthRoute =
@@ -226,6 +245,11 @@ export async function proxy(request: NextRequest) {
   // KONDISI 1: User BELUM LOGIN tapi maksa masuk ke halaman terproteksi
   // (Ini yang nyelesaiin masalah bocor & flash 2 detik)
   // =========================================================================
+  // Company OS: back to the OS after signing in.
+  if (!user && isOsRoute) {
+    return NextResponse.redirect(new URL('/sign-in?next=/os', request.url));
+  }
+
   if (!user && isProtectedRoute) {
     // Arahkan instan ke /sign-in sebelum halaman sempat di-render
     const signInUrl = new URL(isSchoolSubdomain ? '/sign-in' : '/sign-in', request.url);

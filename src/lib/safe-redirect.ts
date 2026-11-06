@@ -42,7 +42,7 @@ export function safeNextPath(raw: string | null | undefined, fallback = "/dashbo
 
 // Production hosts IELSco is served on. Extra hosts (staging, a self-hosted server) come from the server-only
 // TRUSTED_HOSTS env var, comma-separated, e.g. "staging.ielsco.com,app.example.org".
-const DEFAULT_TRUSTED_HOSTS = ["ielsco.com", "www.ielsco.com", "school.ielsco.com", "circle.ielsco.com"];
+const DEFAULT_TRUSTED_HOSTS = ["ielsco.com", "www.ielsco.com", "school.ielsco.com", "circle.ielsco.com", "os.ielsco.com"];
 const LOCAL_HOSTS = ["localhost", "127.0.0.1"];
 const CANONICAL_ORIGIN = "https://ielsco.com";
 
