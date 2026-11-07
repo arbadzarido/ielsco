@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireOsPerson } from "@/lib/os/api";
 import { oauthClient, oauthConfigured, saveDriveConnection } from "@/lib/os/drive-oauth";
 import { osServiceClient } from "@/lib/os/server";
+import { callbackErrorCode } from "@/lib/os/google-oauth";
 import { callbackUrl, STATE_COOKIE } from "../shared";
 
 export const runtime = "nodejs";
@@ -29,6 +30,8 @@ export async function GET(req: Request) {
   const given = url.searchParams.get("state") ?? "";
   const ok = state && given && state.length === given.length && timingSafeEqual(Buffer.from(state), Buffer.from(given)) && personId === auth.personId;
   if (!ok) return back(req, "expired");
+  const googleError = callbackErrorCode(url.searchParams.get("error"));
+  if (googleError) return back(req, googleError);
   const code = url.searchParams.get("code");
   if (!code) return back(req, "cancelled");
 

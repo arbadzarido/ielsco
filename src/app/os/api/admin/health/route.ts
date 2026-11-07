@@ -4,6 +4,7 @@ import { osServiceClient } from "@/lib/os/server";
 import { driveConfigured, driveError, listTemplates } from "@/lib/os/drive";
 import { aiConfigured } from "@/lib/os/ai";
 import { driveConnection, oauthConfigured, writerDrive } from "@/lib/os/drive-oauth";
+import { CALLBACK_PATHS, OS_ORIGIN, oauthClientInfo } from "@/lib/os/google-oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,5 +46,10 @@ export async function GET() {
   checks.push({ key: "ai", label: "AI agents (Gemini)", ok: aiConfigured(), detail: aiConfigured() ? "API key set. Spending is capped in the database." : "GEMINI_API_KEY isn't set; the agents show as unavailable." });
   const mail = Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
   checks.push({ key: "email", label: "Email alerts", ok: mail, detail: mail ? "New-device alerts can be sent." : "RESEND_API_KEY or EMAIL_FROM isn't set; new-device alerts are skipped." });
-  return NextResponse.json({ checks, at: new Date().toISOString(), drive: { configured: oauthConfigured(), connected: Boolean(conn), email: conn?.google_email ?? null } });
+  // What a founder needs to register in Google Cloud Console. The client ID is public (it is in every consent URL);
+  // the secret is never returned, only whether it is set.
+  const client = oauthClientInfo();
+  const oauth = { client_id: client.clientId, client_source: client.source, has_secret: client.hasSecret,
+    redirect_uris: { drive: `${OS_ORIGIN}${CALLBACK_PATHS.drive}` } };
+  return NextResponse.json({ checks, at: new Date().toISOString(), oauth, drive: { configured: oauthConfigured(), connected: Boolean(conn), email: conn?.google_email ?? null } });
 }

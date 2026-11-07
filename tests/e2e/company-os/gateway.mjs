@@ -253,6 +253,40 @@ function cors(req, extra = {}) {
     "access-control-allow-headers": "authorization, apikey, content-type, prefer, accept, accept-profile, content-profile, x-client-info, x-supabase-api-version",
     "access-control-allow-methods": "GET, HEAD, POST, PATCH, DELETE, OPTIONS", "access-control-expose-headers": "content-range", ...extra };
 }
+
+// ── Google OAuth stand-in (the app uses it only when OS_GOOGLE_OAUTH_BASE is set, never on Vercel) ──────────────────
+// Behaves like Google for the parts the app relies on: the consent URL refuses a redirect_uri that isn't registered
+// for the client ("redirect_uri_mismatch"), the token endpoint exchanges a code once, tokeninfo names the account.
+let googleRedirects = [];                 // the "Authorized redirect URIs" of the stub client, set by the test
+const googleCodes = new Map();            // code -> { scope }
+function google(req, res, url, body) {
+  const path = url.pathname.replace(/^\/__google/, "");
+  if (path === "/o/oauth2/v2/auth") {
+    const redirect = url.searchParams.get("redirect_uri") ?? "";
+    if (!googleRedirects.includes(redirect)) {
+      res.writeHead(400, { "content-type": "text/html" });
+      return res.end(`<h1>Access blocked: this app's request is invalid</h1><p>Error 400: redirect_uri_mismatch</p><p>${redirect.replace(/[<>&"]/g, "")}</p>`);
+    }
+    const code = `code-${Math.random().toString(36).slice(2)}`;
+    googleCodes.set(code, { scope: url.searchParams.get("scope") ?? "" });
+    const back = new URL(redirect); back.searchParams.set("code", code); back.searchParams.set("state", url.searchParams.get("state") ?? "");
+    res.writeHead(302, { location: back.toString() }); return res.end();
+  }
+  if (path === "/token") {
+    if (body.grant_type === "authorization_code") {
+      const c = googleCodes.get(body.code); googleCodes.delete(body.code);
+      if (!c || !googleRedirects.includes(body.redirect_uri)) return send(res, 400, { error: "invalid_grant" });
+      return send(res, 200, { access_token: "e2e-google-access", refresh_token: "e2e-google-refresh-SECRET", scope: c.scope, expires_in: 3600, token_type: "Bearer" });
+    }
+    if (body.grant_type === "refresh_token") return send(res, 200, { access_token: "e2e-google-access-2", expires_in: 3600, token_type: "Bearer", scope: "https://www.googleapis.com/auth/drive" });
+    return send(res, 400, { error: "unsupported_grant_type" });
+  }
+  if (path === "/tokeninfo") return send(res, 200, { email: "drive.writer@ielsco.test", email_verified: "true", scope: "https://www.googleapis.com/auth/drive openid email", expires_in: 3599 });
+  if (path === "/revoke") return send(res, 200, {});
+  if (path === "/drive/v3/about") return send(res, 200, { user: { emailAddress: "drive.writer@ielsco.test" } });
+  return send(res, 404, { error: "not simulated" });
+}
+
 let lastReq;
 function send(res, status, body, headers = {}, req = lastReq) {
   res.writeHead(status, cors(req, { "content-type": "application/json", ...headers }));
@@ -275,6 +309,8 @@ http.createServer(async (req, res) => {
   }
   try {
     if (url.pathname === "/__test/next-google") { nextGoogle = body; return send(res, 200, { ok: true }); }
+    if (url.pathname === "/__test/google-redirects") { googleRedirects = body.uris ?? []; return send(res, 200, { ok: true }); }
+    if (url.pathname.startsWith("/__google/")) return google(req, res, url, body);
     if (url.pathname.startsWith("/auth/v1/")) return await auth(req, res, url, body);
     if (url.pathname.startsWith("/rest/v1/")) return await rest(req, res, url, body);
     return send(res, 404, { message: "not simulated" });
