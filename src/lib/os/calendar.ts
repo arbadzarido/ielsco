@@ -110,7 +110,7 @@ export function toGoogleEvent(e: OsEventLike, osUrl: string) {
   return { summary: e.title, description: desc, location: e.location ?? undefined, ...when, status: e.status === "Cancelled" ? "cancelled" : "confirmed", extendedProperties: { private: { osEventId: e.id } } };
 }
 
-export interface GoogleEventLike { id: string; etag?: string; status?: string; summary?: string; description?: string; location?: string; htmlLink?: string; start?: { date?: string; dateTime?: string; timeZone?: string }; end?: { date?: string; dateTime?: string; timeZone?: string }; extendedProperties?: { private?: Record<string, string> } }
+export interface GoogleEventLike { id: string; etag?: string; status?: string; recurrence?: string[]; attendees?: { email?: string; responseStatus?: string }[]; summary?: string; description?: string; location?: string; htmlLink?: string; start?: { date?: string; dateTime?: string; timeZone?: string }; end?: { date?: string; dateTime?: string; timeZone?: string }; extendedProperties?: { private?: Record<string, string> } }
 
 /** A Google event as start/end instants (all-day: midnight in the zone, end exclusive). */
 export function fromGoogleEvent(g: GoogleEventLike, tz = DEFAULT_TZ): { title: string; starts_at: string; ends_at: string; all_day: boolean; location: string | null } | null {

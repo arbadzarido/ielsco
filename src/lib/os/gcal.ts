@@ -118,9 +118,11 @@ export async function findByOsId(personId: string, osEventId: string): Promise<G
   return ((j?.items ?? []) as GoogleEventLike[]).find((e) => e.status !== "cancelled") ?? null;
 }
 export const getGoogleEvent = (personId: string, id: string) => api(personId, `/events/${encodeURIComponent(id)}`) as Promise<GoogleEventLike>;
-export const insertGoogleEvent = (personId: string, body: object) => api(personId, `/events`, { method: "POST", body: JSON.stringify(body) }) as Promise<GoogleEventLike>;
+/** sendUpdates: "all" lets Google email the attendees (only when the event's organiser turned invitations on). */
+const q = (sendUpdates?: "all" | "none") => (sendUpdates ? `?sendUpdates=${sendUpdates}` : "");
+export const insertGoogleEvent = (personId: string, body: object, sendUpdates?: "all" | "none") => api(personId, `/events${q(sendUpdates)}`, { method: "POST", body: JSON.stringify(body) }) as Promise<GoogleEventLike>;
 /** Update only if Google's copy is still the one we last saw (If-Match etag); otherwise a CalendarError("conflict"). */
-export const patchGoogleEvent = (personId: string, id: string, body: object, etag?: string) => api(personId, `/events/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(body), ifMatch: etag }) as Promise<GoogleEventLike>;
+export const patchGoogleEvent = (personId: string, id: string, body: object, etag?: string, sendUpdates?: "all" | "none") => api(personId, `/events/${encodeURIComponent(id)}${q(sendUpdates)}`, { method: "PATCH", body: JSON.stringify(body), ifMatch: etag }) as Promise<GoogleEventLike>;
 export const deleteGoogleEvent = (personId: string, id: string, etag?: string) => api(personId, `/events/${encodeURIComponent(id)}`, { method: "DELETE", ifMatch: etag });
 
 export async function disconnectCalendar(personId: string): Promise<void> {

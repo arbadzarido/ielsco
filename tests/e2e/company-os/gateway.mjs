@@ -291,6 +291,7 @@ function google(req, res, url, body) {
 
 // ── Google Calendar stand-in: one "primary" calendar, etags that change on every write, If-Match → 412 ──────────────
 const gcal = new Map();                   // id -> event
+const rsvp = new Map();                   // attendee email -> answer, for the next write
 let gcalSeq = 0;
 const etag = () => `"e${++gcalSeq}"`;
 function calendar(req, res, url, body, path) {
@@ -309,16 +310,26 @@ function calendar(req, res, url, body, path) {
     if (min && max) items = items.filter((e) => Date.parse(startOf(e)) < Date.parse(max) && Date.parse(endOf(e)) > Date.parse(min));
     return send(res, 200, { items });
   }
+  // Attendees keep the answer they gave (set by the test with /__test/gcal-rsvp); new ones haven't answered yet.
+  const withRsvp = (prev, b) => (b.attendees ? { ...b, attendees: b.attendees.map((x) => ({ responseStatus: (prev?.attendees ?? []).find((y) => y.email === x.email)?.responseStatus ?? rsvp.get(x.email) ?? "needsAction", ...x })) } : b);
   if (!id && req.method === "POST") {
-    const ev = { ...body, id: `g${++gcalSeq}`, etag: etag(), status: body.status ?? "confirmed", htmlLink: "https://calendar.google.com/event?eid=e2e" };
+    const ev = { ...withRsvp(null, body), id: `g${++gcalSeq}`, etag: etag(), status: body.status ?? "confirmed", htmlLink: "https://calendar.google.com/event?eid=e2e", sendUpdates: url.searchParams.get("sendUpdates") };
     gcal.set(ev.id, ev); return send(res, 200, ev);
+  }
+  // An instance of a recurring event ("<id>_20261116T030000Z" or "<id>_20261116"): changes are kept per instance.
+  const inst = id && id.match(/^(g\d+)_(\d{8}(?:T\d{6}Z)?)$/);
+  if (inst && req.method === "PATCH") {
+    const master = gcal.get(inst[1]);
+    if (!master || !master.recurrence) return send(res, 404, { error: { code: 404 } });
+    master.instances = { ...(master.instances ?? {}), [inst[2]]: body };
+    return send(res, 200, { ...master, ...body, id, recurringEventId: master.id, etag: etag() });
   }
   const ev = gcal.get(id);
   if (!ev) return send(res, 404, { error: { code: 404 } });
   const match = req.headers["if-match"];
   if (match && match !== ev.etag && req.method !== "GET") return send(res, 412, { error: { code: 412, message: "Precondition Failed" } });
   if (req.method === "GET") return send(res, 200, ev);
-  if (req.method === "PATCH") { Object.assign(ev, body, { etag: etag() }); return send(res, 200, ev); }
+  if (req.method === "PATCH") { Object.assign(ev, withRsvp(ev, body), { etag: etag(), sendUpdates: url.searchParams.get("sendUpdates") }); return send(res, 200, ev); }
   if (req.method === "DELETE") { gcal.delete(id); res.writeHead(204, cors(req)); return res.end(); }
   return send(res, 405, {});
 }
@@ -361,6 +372,7 @@ http.createServer(async (req, res) => {
     if (url.pathname === "/__test/gemini") { geminiQueue.push(body); return send(res, 200, { ok: true }); }
     if (url.pathname === "/__test/gemini-last") return send(res, 200, geminiLast ?? {});
     if (url.pathname === "/__test/gcal" && req.method === "GET") return send(res, 200, { items: [...gcal.values()] });
+    if (url.pathname === "/__test/gcal-rsvp") { for (const [k, v] of Object.entries(body)) { rsvp.set(k, v); for (const e of gcal.values()) for (const x of e.attendees ?? []) if (x.email === k) x.responseStatus = v; } return send(res, 200, { ok: true }); }
     if (url.pathname === "/__test/gcal") {
       // Change or remove an event "in Google", as the person would in Google Calendar.
       const ev = gcal.get(body.id);
