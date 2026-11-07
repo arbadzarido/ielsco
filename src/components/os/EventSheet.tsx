@@ -24,6 +24,7 @@ import { CATEGORIES, DEFAULT_TZ, addDays, itemDays, zonedInstant, zonedParts } f
 import { PRESETS, WEEKDAYS, describeRule, presetOf, presetRule, ruleProblem, shiftRule, splitRules, type PresetKey, type Recurrence, type Weekday } from "@/lib/os/recurrence";
 import { ROLE_GROUPS, groupLabel, resolveInvitations, type Candidate, type GroupSpec, type Resolution, type RoleGroup } from "@/lib/os/groups";
 import { busyBlocks, conflictLines, findConflicts, linkWarnings, rescheduleReasons, type BusyRow, type Conflict } from "@/lib/os/conflicts";
+import { rekeyExceptions } from "@/lib/os/event-moves";
 import { cn } from "@/lib/utils";
 
 export interface EventRow {
@@ -259,7 +260,7 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
         times = { starts_at: s, ends_at: new Date(Date.parse(s) + dur).toISOString() };
         const days = Math.round(delta / 86400000);
         if (JSON.stringify(rule) === JSON.stringify(ev.recurrence) && rule) rec = shiftRule(rule, days);
-        if (delta) await rekeyExceptions(ev.id, delta);
+        if (delta) await rekeyExceptions(supabase, ev.id, delta);
       }
       const res = await supabase.from("os_events").update({ ...row(), ...times, recurrence: rec }).eq("id", ev.id).select("id, sync_state").maybeSingle();
       if (res.error || !res.data) { setBusy(false); return setErr(res.error ? friendlyError(res.error.message) : "You can't change this event."); }
@@ -273,16 +274,6 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
     }
     setBusy(false);
     onSaved(id);
-  }
-
-  /** When a whole series moves, each changed occurrence follows it (same offset), keeping its own changes. */
-  async function rekeyExceptions(eventId: string, delta: number) {
-    const { data } = await supabase.from("os_event_exceptions").select("occurrence_start, cancelled, title, description, starts_at, ends_at, location, meeting_url").eq("event_id", eventId);
-    const rows = (data ?? []) as { occurrence_start: string; starts_at: string | null; ends_at: string | null }[];
-    if (!rows.length) return;
-    await supabase.from("os_event_exceptions").delete().eq("event_id", eventId);
-    const shift = (x: string | null) => (x ? new Date(Date.parse(x) + delta).toISOString() : null);
-    await supabase.from("os_event_exceptions").insert(rows.map((r) => ({ ...r, event_id: eventId, occurrence_start: shift(r.occurrence_start), starts_at: shift(r.starts_at), ends_at: shift(r.ends_at) })));
   }
 
   async function resolveGoogle(action: "keep_os" | "keep_google" | "unlink" | "push") {

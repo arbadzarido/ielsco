@@ -147,3 +147,63 @@ test("milestone and deadline warnings, and when a reschedule needs confirming", 
   assert.deepEqual(rescheduleReasons({ attendees: 2, inGoogle: false, majorMilestone: false, conflicts: 0, warnings: 0, recurring: false }), []);
   assert.equal(rescheduleReasons({ attendees: 8, inGoogle: true, majorMilestone: true, conflicts: 1, warnings: 0, recurring: false }).length, 4);
 });
+
+// ── Time grid layout and moving events ────────────────────────────────────────────────────────────────────────────
+import { layoutDay, minutesToTime } from "../src/lib/os/calendar.ts";
+import { moveEvent } from "../src/lib/os/event-moves.ts";
+
+test("time grid: overlapping blocks share columns, separate clusters reset", () => {
+  const l = layoutDay([{ key: "a", start: 600, end: 660 }, { key: "b", start: 630, end: 690 }, { key: "c", start: 660, end: 720 }, { key: "d", start: 800, end: 860 }]);
+  assert.deepEqual(l.get("a"), { col: 0, cols: 2 });
+  assert.deepEqual(l.get("b"), { col: 1, cols: 2 });
+  assert.deepEqual(l.get("c"), { col: 0, cols: 2 }); // reuses a's column once a ended
+  assert.deepEqual(l.get("d"), { col: 0, cols: 1 });
+  assert.equal(minutesToTime(607), "10:00");
+  assert.equal(minutesToTime(-30), "00:00");
+  assert.equal(minutesToTime(2000), "23:45");
+});
+
+// A stand-in Supabase client that records what moveEvent writes.
+function fakeDb() {
+  const calls = [];
+  const q = (table) => {
+    const c = { table, ops: [] };
+    calls.push(c);
+    const api = {
+      update(v) { c.ops.push(["update", v]); return api; }, upsert(v, o) { c.ops.push(["upsert", v, o]); return api; }, insert(v) { c.ops.push(["insert", v]); return api; },
+      delete() { c.ops.push(["delete"]); return api; }, select() { return api; }, eq(k, v) { c.ops.push(["eq", k, v]); return api; },
+      maybeSingle: async () => ({ data: { id: "x", event_id: "x" }, error: null }), then: (r) => r({ data: [], error: null }),
+    };
+    return api;
+  };
+  return { calls, from: q, rpc: async (fn, args) => { calls.push({ rpc: fn, args }); return { data: "EV-0099", error: null }; } };
+}
+
+test("moving: a one-off event updates the row; nothing linked is touched", async () => {
+  const db = fakeDb();
+  const r = await moveEvent(db, { ...MON, recurrence: null }, null, "all", { starts_at: "2026-11-17T03:00:00.000Z", ends_at: "2026-11-17T04:00:00.000Z" });
+  assert.equal(r.ok, true);
+  assert.deepEqual(db.calls.map((c) => c.table ?? c.rpc), ["os_events"]);
+  assert.deepEqual(db.calls[0].ops[0], ["update", { starts_at: "2026-11-17T03:00:00.000Z", ends_at: "2026-11-17T04:00:00.000Z" }]);
+});
+
+test("moving: one occurrence writes an exception; this-and-following splits; the whole series shifts its weekday", async () => {
+  const ev = { ...MON, recurrence: { freq: "weekly", byweekday: ["MO"] } };
+  const occ = { occurrence_start: "2026-11-23T03:00:00.000Z", starts_at: "2026-11-23T03:00:00.000Z", ends_at: "2026-11-23T04:00:00.000Z" };
+  const tue = { starts_at: "2026-11-24T03:00:00.000Z", ends_at: "2026-11-24T04:00:00.000Z" };
+  let db = fakeDb();
+  await moveEvent(db, ev, occ, "this", tue);
+  assert.equal(db.calls[0].table, "os_event_exceptions");
+  assert.deepEqual(db.calls[0].ops[0][1], { event_id: "EV-0001", occurrence_start: occ.occurrence_start, ...tue });
+  db = fakeDb();
+  const f = await moveEvent(db, ev, occ, "following", tue);
+  assert.deepEqual(f.changed, ["EV-0001", "EV-0099"]);
+  assert.equal(db.calls[0].rpc, "os_split_series");
+  assert.equal(db.calls[0].args.p_until, "2026-11-22");
+  assert.deepEqual(db.calls[0].args.p.recurrence.byweekday, ["TU"]);
+  db = fakeDb();
+  await moveEvent(db, ev, occ, "all", tue);
+  const upd = db.calls[0].ops[0][1];
+  assert.equal(upd.starts_at, "2026-11-17T03:00:00.000Z"); // the series start moves by one day too
+  assert.deepEqual(upd.recurrence.byweekday, ["TU"]);
+});
