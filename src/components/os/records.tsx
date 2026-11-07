@@ -2,7 +2,7 @@
 
 // Small create/edit sheets and lists for HQ records (announcements, decisions, meetings) and Elco product items.
 // Everything is written with the signed-in person's session; the database decides who may write what.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Pin } from "lucide-react";
 import { friendlyError, useDirectory, useQuery } from "./data";
 import { useOsMe } from "./OsProvider";
@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 type FieldDef = { key: string; label: string; kind?: "text" | "textarea" | "date" | "person" | "division" | "select" | "checkbox"; options?: readonly (string | { value: string; label: string })[]; required?: boolean; hint?: string; full?: boolean };
 
 /** A generic record form. Only the listed fields are sent, so it can never write a column the person can't. */
-export function RecordSheet({ open, title, table, fields, record, defaults, onClose, onSaved }: {
-  open: boolean; title: string; table: string; fields: FieldDef[]; record?: Record<string, unknown> | null; defaults?: Record<string, unknown>;
+export function RecordSheet({ open, title, table, fields, record, defaults, onClose, onSaved, idColumn = "id", extra }: {
+  open: boolean; title: string; table: string; fields: FieldDef[]; record?: Record<string, unknown> | null; defaults?: Record<string, unknown>; idColumn?: string; extra?: ReactNode;
   onClose: () => void; onSaved: (id: string) => void;
 }) {
   const { supabase } = useOsMe();
@@ -32,11 +32,11 @@ export function RecordSheet({ open, title, table, fields, record, defaults, onCl
     setBusy(true); setErr(null);
     const payload: Record<string, unknown> = {};
     for (const f of fields) { const x = v[f.key]; payload[f.key] = typeof x === "string" ? (x.trim() || null) : x; }
-    const q = record ? supabase.from(table).update(payload).eq("id", record.id as string) : supabase.from(table).insert({ ...defaults, ...payload });
-    const { data, error } = await q.select("id").maybeSingle();
+    const q = record ? supabase.from(table).update(payload).eq(idColumn, record[idColumn] as string) : supabase.from(table).insert({ ...defaults, ...payload });
+    const { data, error } = await q.select(idColumn).maybeSingle();
     setBusy(false);
     if (error || !data) return setErr(error ? friendlyError(error.message) : "You can't change this record.");
-    onSaved((data as { id: string }).id);
+    onSaved(String((data as unknown as Record<string, unknown>)[idColumn]));
   }
 
   return (
@@ -59,6 +59,7 @@ export function RecordSheet({ open, title, table, fields, record, defaults, onCl
             }}
           </Field>
         ))}
+        {extra && <div className="border-t border-[#E6E9EE] pt-4 sm:col-span-2">{extra}</div>}
       </div>
     </Sheet>
   );

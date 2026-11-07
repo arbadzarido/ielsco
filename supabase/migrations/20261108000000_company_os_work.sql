@@ -660,6 +660,22 @@ language sql stable security definer set search_path = '' as $$
                        and public.os_is_staff()))
 $$;
 
+-- Reporting lines decide who may read private records and write reviews, so only founders set them.
+create or replace function public.os_person_profiles_before_write() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if (tg_op = 'INSERT' and new.manager_person_id is not null) or (tg_op = 'UPDATE' and new.manager_person_id is distinct from old.manager_person_id) then
+    if not public.os_is_founder() and not public.os_caller_is_privileged() then
+      raise exception 'Only a founder can change who someone reports to' using errcode = '42501';
+    end if;
+  end if;
+  new.updated_at := now();
+  return new;
+end $$;
+revoke all on function public.os_person_profiles_before_write() from public, anon, authenticated;
+drop trigger if exists os_person_profiles_a_rules on public.os_person_profiles;
+create trigger os_person_profiles_a_rules before insert or update on public.os_person_profiles for each row execute function public.os_person_profiles_before_write();
+
 create or replace function public.os_can_view_person_private(p_person text) returns boolean
 language sql stable security definer set search_path = '' as $$
   select public.os_current_person() is not null and (

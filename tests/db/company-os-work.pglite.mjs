@@ -194,6 +194,9 @@ await te("period must be a year, quarter or half", () => user(F, "insert into pu
 
 // ── People and reviews
 await t("staff read profiles", async () => { await user(F, "insert into public.os_person_profiles (person_id, title, manager_person_id) values ('PPL-9003', 'Designer', 'PPL-9002'), ('PPL-9004', 'Marketer', 'PPL-9002')"); return one(C, "select count(*)::int from public.os_person_profiles"); }, is(2));
+await te("person cannot change who they report to", () => user(C, "update public.os_person_profiles set manager_person_id = 'PPL-9004' where person_id = 'PPL-9003'"), /Only a founder/);
+await te("division manager cannot re-point a reporting line", () => user(M, "insert into public.os_person_profiles (person_id, manager_person_id) values ('PPL-9007', 'PPL-9002')"), /Only a founder/);
+await t("person edits their own title", async () => { await user(C, "update public.os_person_profiles set title = 'Senior Designer' where person_id = 'PPL-9003'"); return one(C, "select title from public.os_person_profiles where person_id = 'PPL-9003'"); }, is("Senior Designer"));
 await t("founder records employment", async () => { await user(F, "insert into public.os_person_employment (person_id, membership_type, employing_company, start_date) values ('PPL-9003', 'Volunteer', 'IEL', '2026-12-14'), ('PPL-9004', 'Volunteer', 'ELC', '2026-12-14')"); return one(F, "select count(*)::int from public.os_person_employment"); }, is(2));
 await t("person sees own employment only", () => rows(C, "select person_id from public.os_person_employment"), (r) => (r.length === 1 && r[0].person_id === "PPL-9003" ? null : JSON.stringify(r)));
 await t("Elco member cannot see another person's employment", () => one(E, "select count(*)::int from public.os_person_employment where person_id = 'PPL-9003'"), is(0));
