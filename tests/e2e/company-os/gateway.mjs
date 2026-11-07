@@ -136,15 +136,22 @@ function cond(col, expr, args) {
   else throw Object.assign(new Error(`filter ${op} not simulated`), { code: "PGRST100" });
   return neg ? `not (${c})` : c;
 }
+// or=(a.eq.1,and(b.lt.2,c.gt.3)): nested and()/or() groups, as PostgREST allows.
+function logic(op, v, args, pre) {
+  const parts = splitTop(v.replace(/^\(|\)$/g, "")).map((p) => {
+    const g = p.match(/^(and|or)\((.*)\)$/);
+    if (g) return logic(g[1], `(${g[2]})`, args, pre);
+    const i = p.indexOf("."); return cond(pre + ident(p.slice(0, i)), p.slice(i + 1), args);
+  });
+  return `(${parts.join(` ${op} `)})`;
+}
 function where(params, args, alias = "") {
   const out = [];
   const pre = alias ? `${alias}.` : "";
   for (const [k, v] of params) {
     if (["select", "order", "limit", "offset", "columns", "on_conflict"].includes(k)) continue;
-    if (k === "or") {
-      const parts = splitTop(v.replace(/^\(|\)$/g, "")).map((p) => { const i = p.indexOf("."); return cond(pre + ident(p.slice(0, i)), p.slice(i + 1), args); });
-      out.push(`(${parts.join(" or ")})`);
-    } else out.push(cond(pre + ident(k), v, args));
+    if (k === "or" || k === "and") out.push(logic(k, v, args, pre));
+    else out.push(cond(pre + ident(k), v, args));
   }
   return out.length ? ` where ${out.join(" and ")}` : "";
 }
@@ -153,14 +160,14 @@ async function selectList(db, table, select) {
   const cols = [];
   for (const raw of items) {
     const it = raw.trim();
-    const m = it.match(/^(?:([a-z_][a-z0-9_]*):)?([a-z_][a-z0-9_]*)\((.*)\)$/);
+    const m = it.match(/^(?:([a-z_][a-z0-9_]*):)?([a-z_][a-z0-9_]*)(?:!([a-z_][a-z0-9_]*))?\((.*)\)$/);
     if (m) {
-      const [, alias, rel, inner] = m;
-      // many-to-one: a foreign key on this table pointing at rel
+      const [, alias, rel, hint, inner] = m;
+      // many-to-one: a foreign key on this table pointing at rel (a !hint names the constraint)
       const { rows } = await db.query(`select a.attname col, af.attname ref from pg_constraint c
         join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
         join pg_attribute af on af.attrelid = c.confrelid and af.attnum = c.confkey[1]
-        where c.contype = 'f' and c.conrelid = $1::regclass and c.confrelid = $2::regclass`, [`public.${table}`, `public.${rel}`]);
+        where c.contype = 'f' and c.conrelid = $1::regclass and c.confrelid = $2::regclass and ($3::text is null or c.conname = $3)`, [`public.${table}`, `public.${rel}`, hint ?? null]);
       if (!rows.length) throw Object.assign(new Error(`no relationship ${table} -> ${rel}`), { code: "PGRST200" });
       const innerCols = splitTop(inner).map((c) => (c.trim() === "*" ? "*" : ident(c.trim()))).join(", ");
       cols.push(`(select row_to_json(e) from (select ${innerCols} from public.${ident(rel)} r where r.${ident(rows[0].ref)} = t.${ident(rows[0].col)}) e) as ${ident(alias || rel)}`);

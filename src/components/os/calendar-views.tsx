@@ -57,6 +57,11 @@ export function useCalendarDrag(onDrop: (d: Drop) => void, onOpen: (i: Item) => 
       st.current = null;
       setPreview(null);
       if (!s.started) { if (!s.touch || !s.ready) onOpen(s.item); return; }
+      // The click that ends a drag lands on whatever is under the pointer (often an empty slot, which would start a new
+      // event): swallow it.
+      const eat = (ev: MouseEvent) => { ev.stopPropagation(); ev.preventDefault(); };
+      window.addEventListener("click", eat, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener("click", eat, { capture: true }), 250);
       const t = target(e.clientX, e.clientY);
       if (t) onDrop({ item: s.item, mode: s.mode, day: t.day, minutes: t.minutes, grabOffset: s.grabOffset });
     };

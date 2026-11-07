@@ -355,7 +355,7 @@ function GoogleBar({ google, note, error, onChange }: { google: GoogleStatus; no
   };
   return (
     <div className={cn(panel, "mb-4 flex flex-wrap items-center gap-2 px-3 py-2 text-sm")} data-testid="os-cal-google">
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 basis-60">
         {google.connected ? <>Google Calendar: <span className="font-medium">{google.email}</span>. Your Google events show here only for you.</>
           : google.configured ? "Connect your own Google Calendar to see your Google events here and add Company OS events to it."
           : "Google Calendar isn't set up on the server yet. Company OS events work without it."}
