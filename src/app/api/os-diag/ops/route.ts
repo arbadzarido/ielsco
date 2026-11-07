@@ -10,20 +10,35 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 const HASH = "dd7e6734b7ed9237bcb8df9e52e43bf60366888095bc6f68cd464ab5e899740e";
 const SHEET = "1squ61BolAnFuisz1d5y3mKQe8-DYN7Vc_BkEMT-qbUc";
-const TABS = ["Projects", "Tasks", "Documents", "Decisions", "Opportunities", "Meetings", "People", "Divisions"];
+const GIDS: Record<string, number> = { Projects: 11, Tasks: 12, Documents: 14, Decisions: 16, Opportunities: 28, Meetings: 15, People: 13, Divisions: 36 };
+const TABS = Object.keys(GIDS);
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = []; let row: string[] = []; let cell = ""; let q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; continue; }
+    if (c === '"') q = true; else if (c === ",") { row.push(cell); cell = ""; } else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; } else if (c !== "\r") cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
 
 export async function GET(req: Request) {
   const u = new URL(req.url);
   if (process.env.VERCEL_ENV !== "preview" || createHash("sha256").update(u.searchParams.get("t") ?? "").digest("hex") !== HASH) return new Response("Not found", { status: 404 });
   const auth = new google.auth.GoogleAuth({ credentials: { client_email: process.env.GOOGLE_CLIENT_EMAIL, private_key: normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY) }, scopes: ["https://www.googleapis.com/auth/drive.readonly"] });
-  const sheets = google.sheets({ version: "v4", auth });
   const tab = u.searchParams.get("tab");
   const cols = (u.searchParams.get("cols") ?? "").split(",").filter(Boolean);
   try {
-    const r = await sheets.spreadsheets.values.batchGet({ spreadsheetId: SHEET, ranges: TABS.map((t) => `${t}!A1:AZ1000`) });
+    const headersAuth = await auth.getRequestHeaders();
     const data: Record<string, { headers: string[]; rows: Record<string, string>[] }> = {};
-    r.data.valueRanges?.forEach((vr, i) => {
-      const v = (vr.values ?? []) as string[][];
+    const texts = await Promise.all(TABS.map(async (t) => {
+      const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${GIDS[t]}`, { headers: headersAuth as unknown as HeadersInit });
+      if (!res.ok) throw Object.assign(new Error(`export ${t}: HTTP ${res.status}`), { code: res.status });
+      return res.text();
+    }));
+    texts.forEach((txt, i) => {
+      const v = parseCsv(txt);
       const headers = (v[0] ?? []).map((h) => String(h).trim());
       const rows = v.slice(1).filter((row) => row.some((c) => String(c ?? "").trim())).map((row) => Object.fromEntries(headers.map((h, j) => [h, String(row[j] ?? "").trim()])));
       data[TABS[i]] = { headers, rows };
