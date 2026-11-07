@@ -9,6 +9,7 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isGatedOsPath, isOsHost, isOsPath, osHostRoute } from '@/lib/os/host'
 
 // ── In-memory rate limiter (resets on cold start) ─────────────────────────────
 const requestTracker = new Map<string, { count: number; timestamp: number }>();
@@ -88,6 +89,33 @@ export async function proxy(request: NextRequest) {
   }
 
   // ===========================================================================
+  // STEP 2C — COMPANY OS HOST ISOLATION (src/lib/os/host.ts)
+  //
+  // os.ielsco.com serves only /os/... routes. Short URLs (/, /login, /dashboard, /admin) redirect into /os; every other
+  // path goes to /os/<path>, which is either a Company OS page or the Company OS 404. Public pages (the member
+  // dashboard, sign-in, sign-up) and public APIs never answer on this host, and the public hosts never serve /os.
+  // Redirect (not rewrite) so the browser path is the real route: a rewrite broke hydration before.
+  // Data access is still enforced by RLS on every os_* table and by the server gate in app/os/(app)/layout.tsx.
+  // ===========================================================================
+
+  const isOsSubdomain = isOsHost(host);
+
+  if (isOsSubdomain) {
+    const decision = osHostRoute(url.pathname);
+    if (decision.action === 'api-not-found') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    if (decision.action === 'redirect') {
+      url.pathname = decision.to;
+      return NextResponse.redirect(url);
+    }
+  } else if (isOsPath(url.pathname)) {
+    // Not on the OS host: render the public 404, as if the route did not exist.
+    url.pathname = '/__company-os-is-on-its-own-domain';
+    return NextResponse.rewrite(url, { status: 404 });
+  }
+
+  // ===========================================================================
   // STEP 3 — BOT KILLER ENGINE
   // ===========================================================================
 
@@ -122,6 +150,22 @@ export async function proxy(request: NextRequest) {
 
     if (homeRecord.count > 5) {
       return new NextResponse('Too many requests. Please slow down.', { status: 429 });
+    }
+  }
+
+  // ===========================================================================
+  // STEP 4B — COMPANY OS SIGN-IN RATE LIMIT (max 10 req / 60 sec per IP; OS_SIGNIN_RATE_LIMIT overrides, for tests)
+  // Per serverless instance (in-memory); Supabase Auth applies its own limits to the OAuth endpoints too.
+  // ===========================================================================
+
+  if (isOsSubdomain && (request.nextUrl.pathname === '/os/login' || request.nextUrl.pathname.startsWith('/os/auth/'))) {
+    const now = Date.now();
+    const key = `os-auth-${ip}`;
+    const record = requestTracker.get(key) || { count: 0, timestamp: now };
+    if (now - record.timestamp > 60_000) { record.count = 1; record.timestamp = now; } else { record.count++; }
+    requestTracker.set(key, record);
+    if (record.count > (Number(process.env.OS_SIGNIN_RATE_LIMIT) || 10)) {
+      return new NextResponse('Too many sign-in attempts. Please wait a minute and try again.', { status: 429 });
     }
   }
 
@@ -208,6 +252,7 @@ export async function proxy(request: NextRequest) {
 
   // Daftar route yang butuh auth (proteksi utama)
   const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/school/dashboard');
+  const isOsRoute = pathname === '/os' || pathname.startsWith('/os/');
 
   // Auth routes yang diizinkan tanpa login
   const isMainAuthRoute =
@@ -226,6 +271,12 @@ export async function proxy(request: NextRequest) {
   // KONDISI 1: User BELUM LOGIN tapi maksa masuk ke halaman terproteksi
   // (Ini yang nyelesaiin masalah bocor & flash 2 detik)
   // =========================================================================
+  // Company OS: its own sign-in page. Who may use the OS is decided by the server gate and RLS, not here.
+  if (!user && isOsRoute && isGatedOsPath(pathname)) {
+    return NextResponse.redirect(new URL('/os/login', request.url));
+  }
+  if (isOsSubdomain) return response;
+
   if (!user && isProtectedRoute) {
     // Arahkan instan ke /sign-in sebelum halaman sempat di-render
     const signInUrl = new URL(isSchoolSubdomain ? '/sign-in' : '/sign-in', request.url);

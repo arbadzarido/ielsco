@@ -14,6 +14,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     "/school/sign-in",
     "/planner",
     "/dashboard",
+    "/os",
     "/privacy-policy",
     "/terms-of-service",
     "/cafe",
