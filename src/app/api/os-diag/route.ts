@@ -6,6 +6,7 @@ import { google } from "googleapis";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 import { systemPrompt, AGENTS } from "@/lib/os/ai-core";
+import { normalizePrivateKey } from "@/lib/os/pem";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
   const part = u.searchParams.get("part") ?? "env";
   const out: Record<string, unknown> = { part, vercel_env: process.env.VERCEL_ENV, sha: process.env.VERCEL_GIT_COMMIT_SHA };
   const rawKey = process.env.GOOGLE_PRIVATE_KEY ?? "";
-  const key = rawKey.replace(/\\n/g, "\n");
+  const key = normalizePrivateKey(rawKey);
   if (part === "env") {
     out.env = { GOOGLE_CLIENT_EMAIL: Boolean(process.env.GOOGLE_CLIENT_EMAIL), sa_domain: (process.env.GOOGLE_CLIENT_EMAIL ?? "").split("@")[1] ?? null,
       GOOGLE_PRIVATE_KEY: Boolean(rawKey), key_has_literal_backslash_n: rawKey.includes("\\n"), key_has_real_newlines: rawKey.includes("\n"), key_starts_quoted: /^["']/.test(rawKey.trim()),
