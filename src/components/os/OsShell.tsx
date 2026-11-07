@@ -13,6 +13,8 @@ import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
 import { WORKSPACES, workspaceByCode } from "@/lib/os/meta";
 import { OsProvider, useOs } from "./OsProvider";
 import { Avatar, Empty, Loading, btn, btnPrimary, ring } from "./ui";
+import { ChoiceProvider } from "./dialogs";
+import { NotificationsButton } from "./notifications";
 
 // The Company OS frame: a persistent, collapsible sidebar on desktop and a drawer on phones. Navigation only lists
 // modules that exist; Admin shows for founders. What each page shows is decided by RLS, not by this menu.
@@ -193,6 +195,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
       </nav>
       {me && (
         <div className={cn("border-t border-[#E6E9EE] p-2", collapsed && "flex flex-col items-center gap-1")}>
+          <NotificationsButton compact={collapsed} />
           <Link href="/os/account" onClick={onNavigate} data-testid="os-profile-link" title={collapsed ? "My account" : undefined}
             className={cn("flex min-h-11 items-center gap-2.5 rounded-lg px-2 hover:bg-[#EDF0F4]", ring, pathname.startsWith("/os/account") && "bg-[#E4E9EF]")}>
             <Avatar name={me.person.full_name} size={26} />
@@ -251,6 +254,7 @@ function Frame({ children }: { children: ReactNode }) {
         <Link href="/os" className={cn("flex items-center gap-2 rounded-lg text-sm font-semibold", ring)}>
           <Image src="/icon-192.png" alt="" width={22} height={22} className="rounded-md" /> Company OS
         </Link>
+        <span className="ml-auto"><TopbarBell /></span>
       </header>
 
       {drawer && (
@@ -275,10 +279,17 @@ function Frame({ children }: { children: ReactNode }) {
   );
 }
 
+function TopbarBell() {
+  const { state } = useOs();
+  return state.status === "ready" ? <NotificationsButton compact /> : null;
+}
+
 export function OsShell({ children }: { children: ReactNode }) {
   return (
     <OsProvider>
-      <Frame>{children}</Frame>
+      <ChoiceProvider>
+        <Frame>{children}</Frame>
+      </ChoiceProvider>
     </OsProvider>
   );
 }

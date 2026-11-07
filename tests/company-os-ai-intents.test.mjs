@@ -132,3 +132,103 @@ test("the model gets today and the next two weeks with weekdays", () => {
   assert.match(c, /2026-11-10 Tuesday/);
   assert.match(c, /2026-11-21 Saturday/);
 });
+
+// ── Planning: the assistant examples from the brief ───────────────────────────────────────────────────────────────
+// 2026-11-07 is a Saturday. Times are Asia/Jakarta (UTC+7).
+const MGR = (id, name, extra = {}) => person(id, name, ["IEL"], { org_role: "manager", ...extra });
+const pdir = {
+  ...dir,
+  people: [...dir.people, MGR("PPL-0008", "Maya Manager", { divisions: ["DIV-03"] }), MGR("PPL-0009", "Rudi Lead", { divisions: ["DIV-04"], managed: ["DIV-04"] }),
+    person("PPL-0010", "Eko Elco Manager", ["ELC"], { org_role: "manager" }), MGR("PPL-0011", "Former Manager", { status: "inactive" })],
+  campaigns: [{ id: "CMP-0001", name: "January Intake", company_code: "IEL", project_id: null, timeline_item_id: null, status: "Planned" }],
+  partnerships: [{ id: "OPP-0001", organisation: "British Council", company_code: "IEL" }],
+  events: [
+    { id: "EV-0001", title: "GIF preparation meeting", company_code: "IEL", category: "Meeting", starts_at: "2026-11-12T03:00:00.000Z", ends_at: "2026-11-12T04:00:00.000Z", all_day: false, timezone: "Asia/Jakarta", recurrence: null, exceptions: [], status: "Scheduled" },
+    { id: "EV-0002", title: "Monthly company review", company_code: "IEL", category: "Meeting", starts_at: "2026-11-30T02:00:00.000Z", ends_at: "2026-11-30T03:00:00.000Z", all_day: false, timezone: "Asia/Jakarta", recurrence: { freq: "monthly" }, exceptions: [], status: "Scheduled" },
+    { id: "EV-0003", title: "Partnership signing event", company_code: "IEL", category: "Partnership", starts_at: "2026-11-20T02:00:00.000Z", ends_at: "2026-11-20T05:00:00.000Z", all_day: false, timezone: "Asia/Jakarta", recurrence: null, exceptions: [], status: "Scheduled" },
+    { id: "EV-0004", title: "Growth weekly", company_code: "IEL", category: "Meeting", starts_at: "2026-11-09T03:00:00.000Z", ends_at: "2026-11-09T04:00:00.000Z", all_day: false, timezone: "Asia/Jakarta", recurrence: { freq: "weekly", byweekday: ["MO"] }, exceptions: [], status: "Scheduled" },
+  ],
+};
+const one = (type, payload) => resolveIntent(type, draftsOf(type, payload), pdir)[0];
+
+test("example 1: a weekly Growth meeting every Monday at 10 AM is one repeating event", () => {
+  const e = one("create_event", { title: "Growth weekly sync", date: "2026-11-09", start_time: "10:00", end_time: "11:00", division: "Growth", invite_division: true, repeat: "weekly" });
+  assert.deepEqual(e.issues, []);
+  assert.deepEqual(e.insert.recurrence, { freq: "weekly", byweekday: ["MO"] });
+  assert.equal(e.insert.starts_at, "2026-11-09T03:00:00.000Z");
+  assert.ok(e.fields.some((f) => f.label === "Repeats" && /Monday/.test(f.value)));
+});
+
+test("example 2: creating a campaign resolves its owner and checks the dates", () => {
+  const c = one("create_campaign", { name: "Ramadan Promo", start_date: "2027-02-01", end_date: "2027-03-15", owner: "Farrel" });
+  assert.deepEqual(c.issues, []);
+  assert.equal(c.insert.owner_person_id, "PPL-0003");
+  assert.equal(c.insert.company_code, "IEL");
+  const bad = one("create_campaign", { name: "Backwards", start_date: "2027-03-01", end_date: "2027-02-01" });
+  assert.equal(bad.insert, null);
+});
+
+test("example 3: a campaign launch on 10 January linked to the campaign and a timeline milestone", () => {
+  const e = one("create_event", { title: "January Intake launch", category: "Campaign", date: "2027-01-10", all_day: true, campaign: "January Intake", milestone: "Mojo beta" });
+  assert.deepEqual(e.issues, []);
+  assert.equal(e.insert.campaign_id, "CMP-0001");
+  assert.equal(e.insert.timeline_item_id, "TL-001");
+  assert.equal(e.insert.recurrence, null);
+});
+
+test("example 4: content slots every weekday become separate content items, not tasks", () => {
+  const c = one("create_content_items", { title: "Daily English tip", channel: "Instagram", from: "2026-11-09", to: "2026-11-15", pattern: "weekdays", time: "18:00", creator: "Farrel", reviewer: "Maya" });
+  assert.deepEqual(c.issues, []);
+  assert.equal(c.kind, "content");
+  assert.equal(c.insert.items.length, 5);
+  assert.deepEqual(c.insert.items.map((i) => i.planned_publish_date), ["2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"]);
+  assert.equal(c.insert.items[0].publish_at, "2026-11-09T11:00:00.000Z");
+  assert.equal(c.insert.items[0].reviewer_person_id, "PPL-0008");
+  const tooMany = one("create_content_items", { title: "Tip", from: "2026-11-09", to: "2027-01-30", pattern: "daily" });
+  assert.equal(tooMany.insert, null);
+});
+
+test("example 5: move the GIF preparation meeting from Thursday to Friday keeps its time and touches nothing else", () => {
+  const m = one("move_event", { event: "GIF preparation", from_date: "2026-11-12", to_date: "2026-11-13" });
+  assert.deepEqual(m.issues, []);
+  assert.equal(m.insert.event_id, "EV-0001");
+  assert.equal(m.insert.starts_at, "2026-11-13T03:00:00.000Z");
+  assert.equal(m.insert.ends_at, "2026-11-13T04:00:00.000Z");
+  assert.ok(m.fields.some((f) => /not changed/.test(f.value)));
+  const wrongDay = one("move_event", { event: "GIF preparation", from_date: "2026-11-11", to_date: "2026-11-13" });
+  assert.equal(wrongDay.insert, null);
+});
+
+test("moving a repeating meeting asks which occurrences, then splits or moves only what was chosen", () => {
+  const ask = one("move_event", { event: "Growth weekly", from_date: "2026-11-16", to_date: "2026-11-17" });
+  assert.equal(ask.insert, null);
+  assert.equal(ask.issues[0].field, "scope");
+  const m = one("move_event", { event: "Growth weekly", from_date: "2026-11-16", to_date: "2026-11-17", scope: "this" });
+  assert.deepEqual(m.issues, []);
+  assert.equal(m.insert.occurrence_start, "2026-11-16T03:00:00.000Z");
+  assert.equal(m.insert.starts_at, "2026-11-17T03:00:00.000Z");
+});
+
+test("example 7: three preparation tasks linked to the upcoming partnership event", () => {
+  const items = resolveIntent("create_tasks", draftsOf("create_tasks", { tasks: ["Book venue", "Print MoU", "Brief speakers"].map((title) => ({ title, event: "partnership event", due_date: "2026-11-18" })) }), pdir);
+  assert.equal(items.length, 3);
+  for (const t of items) { assert.deepEqual(t.issues, []); assert.equal(t.insert.event_id, "EV-0003"); }
+});
+
+test("example 8: invite all IELSco managers to the monthly company review, from the registry only", () => {
+  const i = one("invite_to_event", { event: "monthly company review", groups: ["all IELSco managers"] });
+  assert.deepEqual(i.issues, []);
+  const ids = i.insert.attendees.map((a) => a.person_id).sort();
+  // Active IELSco managers (by role or by managing a division); not the Elco manager, not the inactive one, not guests.
+  assert.deepEqual(ids, ["PPL-0008", "PPL-0009"]);
+  assert.ok(i.insert.attendees.every((a) => a.via_group === "Managers in IELSco"));
+  const nobody = one("invite_to_event", { event: "monthly company review", groups: ["the moon team"] });
+  assert.equal(nobody.insert, null);
+});
+
+test("event groups: C-Level and a division; an unknown group is a question, never a guess", () => {
+  const e = one("create_event", { title: "Strategy", date: "2026-11-10", start_time: "09:00", invite_groups: ["C-Level", "Creative"] });
+  assert.deepEqual(e.issues, []);
+  assert.deepEqual(e.insert.attendees.map((a) => (typeof a === "string" ? a : a.person_id)).sort(), ["PPL-0002", "PPL-0005", "PPL-0009"]);
+  assert.deepEqual(e.draft.attendees, []); // stored draft keeps groups, not their members
+});

@@ -5,7 +5,7 @@ export const CATEGORIES = ["Meeting", "Internal Activity", "Event", "Deadline", 
 export type Category = (typeof CATEGORIES)[number];
 export const DEFAULT_TZ = "Asia/Jakarta";
 
-export const CATEGORY_STYLE: Record<Category | "Task deadline" | "Milestone" | "Google", { bar: string; dot: string }> = {
+export const CATEGORY_STYLE: Record<Category | "Task deadline" | "Scheduled task" | "Milestone" | "Content" | "Campaign span" | "Google", { bar: string; dot: string }> = {
   Meeting: { bar: "bg-[#2457A6] text-white", dot: "bg-[#2457A6]" },
   "Internal Activity": { bar: "bg-[#0B6058] text-white", dot: "bg-[#0B6058]" },
   Event: { bar: "bg-[#5638B8] text-white", dot: "bg-[#5638B8]" },
@@ -14,7 +14,10 @@ export const CATEGORY_STYLE: Record<Category | "Task deadline" | "Milestone" | "
   Partnership: { bar: "bg-[#2E6B4F] text-white", dot: "bg-[#2E6B4F]" },
   Other: { bar: "bg-[#4A5A6E] text-white", dot: "bg-[#4A5A6E]" },
   "Task deadline": { bar: "border border-[#F1C9CA] bg-[#FDF2F2] text-[#A12D2F]", dot: "bg-[#F08A8C]" },
-  Milestone: { bar: "border border-[#D9CFF5] bg-[#F4F0FD] text-[#5638B8]", dot: "bg-[#9C86E0]" },
+  "Scheduled task": { bar: "border-l-4 border-[#A12D2F] bg-[#FDF2F2] text-[#7A1F21]", dot: "bg-[#A12D2F]" },
+  Milestone: { bar: "border border-dashed border-[#9C86E0] bg-[#F4F0FD] text-[#5638B8]", dot: "bg-[#9C86E0]" },
+  Content: { bar: "border border-[#F3C99B] bg-[#FDF5EC] text-[#8A4307]", dot: "bg-[#E89A52]" },
+  "Campaign span": { bar: "bg-[#FBE7D3] text-[#8A4307]", dot: "bg-[#F3C99B]" },
   Google: { bar: "border border-[#C9DAF5] bg-[#EEF4FD] text-[#2457A6]", dot: "bg-[#7FA6E3]" },
 };
 
@@ -107,7 +110,7 @@ export function toGoogleEvent(e: OsEventLike, osUrl: string) {
   return { summary: e.title, description: desc, location: e.location ?? undefined, ...when, status: e.status === "Cancelled" ? "cancelled" : "confirmed", extendedProperties: { private: { osEventId: e.id } } };
 }
 
-export interface GoogleEventLike { id: string; etag?: string; status?: string; summary?: string; description?: string; location?: string; htmlLink?: string; start?: { date?: string; dateTime?: string; timeZone?: string }; end?: { date?: string; dateTime?: string; timeZone?: string }; extendedProperties?: { private?: Record<string, string> } }
+export interface GoogleEventLike { id: string; etag?: string; status?: string; recurrence?: string[]; attendees?: { email?: string; responseStatus?: string }[]; summary?: string; description?: string; location?: string; htmlLink?: string; start?: { date?: string; dateTime?: string; timeZone?: string }; end?: { date?: string; dateTime?: string; timeZone?: string }; extendedProperties?: { private?: Record<string, string> } }
 
 /** A Google event as start/end instants (all-day: midnight in the zone, end exclusive). */
 export function fromGoogleEvent(g: GoogleEventLike, tz = DEFAULT_TZ): { title: string; starts_at: string; ends_at: string; all_day: boolean; location: string | null } | null {
@@ -117,3 +120,30 @@ export function fromGoogleEvent(g: GoogleEventLike, tz = DEFAULT_TZ): { title: s
   const ends_at = allDay ? zonedInstant(g.end.date!, "00:00", tz) : new Date(g.end.dateTime!).toISOString();
   return { title: g.summary?.trim() || "(no title)", starts_at, ends_at, all_day: allDay, location: g.location ?? null };
 }
+
+// ── Time grid layout ────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** Side-by-side columns for overlapping timed blocks in one day (minutes from midnight). Blocks that overlap share
+ *  a cluster; each gets a column and the cluster's column count, like a desk calendar. */
+export function layoutDay<T extends { key: string; start: number; end: number }>(blocks: T[]): Map<string, { col: number; cols: number }> {
+  const out = new Map<string, { col: number; cols: number }>();
+  const sorted = [...blocks].sort((a, b) => a.start - b.start || b.end - a.end || a.key.localeCompare(b.key));
+  let cluster: { key: string; col: number }[] = [], clusterEnd = -1, ends: number[] = [];
+  const flush = () => { const cols = Math.max(1, ends.length); for (const c of cluster) out.set(c.key, { col: c.col, cols }); cluster = []; ends = []; };
+  for (const b of sorted) {
+    if (b.start >= clusterEnd) { flush(); clusterEnd = -1; }
+    let col = ends.findIndex((e) => e <= b.start);
+    if (col === -1) { col = ends.length; ends.push(b.end); } else ends[col] = b.end;
+    cluster.push({ key: b.key, col });
+    clusterEnd = Math.max(clusterEnd, b.end);
+  }
+  flush();
+  return out;
+}
+
+/** "HH:MM" for minutes from midnight, snapped to a step and kept inside the day. */
+export function minutesToTime(min: number, step = 15): string {
+  const m = Math.max(0, Math.min(24 * 60 - step, Math.round(min / step) * step));
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+export const timeToMinutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));

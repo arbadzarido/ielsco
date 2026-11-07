@@ -4,6 +4,7 @@ import { jsonError, requireOsPerson, sameOrigin } from "@/lib/os/api";
 import { osServiceClient } from "@/lib/os/server";
 import { calendarErrorText, CalendarError, deleteGoogleEvent, findByOsId, getGoogleEvent, insertGoogleEvent, patchGoogleEvent } from "@/lib/os/gcal";
 import { fromGoogleEvent, toGoogleEvent, type GoogleEventLike } from "@/lib/os/calendar";
+import { googleInstanceId, googleRecurrence, type ExceptionLike, type Recurrence } from "@/lib/os/recurrence";
 import { OS_ORIGIN } from "@/lib/os/google-oauth";
 
 export const runtime = "nodejs";
@@ -17,9 +18,14 @@ export const dynamic = "force-dynamic";
 //   keep_google  resolve a conflict by copying Google's version into the OS event
 //   unlink       stop syncing; the Google event stays as it is
 //   delete       delete the OS event; with remove_from_google, also the Google copy (only if unchanged in Google)
+//
+// Recurring events go to Google as ONE recurring event (RRULE, with cancelled occurrences as EXDATE); occurrences
+// changed in Company OS are then written to their Google instances, so Google never gets duplicates. Attendees are
+// sent only when the event's "Send Google Calendar invitations" is on, as the individual people on the event (their
+// registered work Google accounts; groups are already expanded), and Google's answers (RSVP) are read back.
 const Body = z.object({ event_id: z.string().regex(/^EV-[0-9]{4,}$/), action: z.enum(["push", "keep_os", "keep_google", "unlink", "delete"]), remove_from_google: z.boolean().optional() });
-const COLS = "id, company_code, title, description, starts_at, ends_at, all_day, timezone, location, meeting_url, status, google_synced_by, google_event_id, google_etag, sync_state";
-type Ev = { id: string; company_code: string; title: string; description: string | null; starts_at: string; ends_at: string; all_day: boolean; timezone: string; location: string | null; meeting_url: string | null; status: string; google_synced_by: string | null; google_event_id: string | null; google_etag: string | null; sync_state: string };
+const COLS = "id, company_code, title, description, starts_at, ends_at, all_day, timezone, location, meeting_url, status, google_synced_by, google_event_id, google_etag, sync_state, recurrence, google_invites";
+type Ev = { id: string; company_code: string; title: string; description: string | null; starts_at: string; ends_at: string; all_day: boolean; timezone: string; location: string | null; meeting_url: string | null; status: string; google_synced_by: string | null; google_event_id: string | null; google_etag: string | null; sync_state: string; recurrence: Recurrence | null; google_invites: boolean };
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return jsonError("Not allowed.", 403);
@@ -59,25 +65,58 @@ export async function POST(req: Request) {
       await service.from("os_events").update({ google_synced_by: null, google_calendar_id: null, google_event_id: null, google_etag: null, google_synced_at: null, sync_state: "local", sync_error: null }).eq("id", ev.id);
       return NextResponse.json({ sync_state: "local" });
     }
-    const body = toGoogleEvent(ev, `${OS_ORIGIN}/os/calendar?event=${ev.id}`);
+    // Exceptions and attendees are read as the person (RLS), like the event.
+    const [exq, atq] = await Promise.all([
+      ev.recurrence ? auth.supabase.from("os_event_exceptions").select("occurrence_start, cancelled, title, description, starts_at, ends_at, location, meeting_url").eq("event_id", ev.id) : Promise.resolve({ data: [] }),
+      ev.google_invites ? auth.supabase.from("os_event_attendees").select("person_id, os_people(google_account)").eq("event_id", ev.id) : Promise.resolve({ data: [] }),
+    ]);
+    const exceptions = (exq.data ?? []) as ExceptionLike[];
+    const invitees = ((atq.data ?? []) as unknown as { person_id: string; os_people: { google_account: string | null } | null }[])
+      .map((a) => ({ person_id: a.person_id, email: a.os_people?.google_account?.trim().toLowerCase() || null }));
+    const emails = invitees.filter((i) => i.email && /^[^@\s]+@[^@\s]+$/.test(i.email));
+    const body = {
+      ...toGoogleEvent(ev, `${OS_ORIGIN}/os/calendar?event=${ev.id}`),
+      ...(ev.recurrence ? { recurrence: googleRecurrence(ev, exceptions) } : {}),
+      ...(ev.google_invites ? { attendees: emails.map((i) => ({ email: i.email })) } : {}),
+    };
+    const updates = ev.google_invites ? "all" as const : "none" as const;
+    // After the master is written: changed occurrences to their instances, and attendees' answers back to the OS.
+    const after = async (g: GoogleEventLike) => {
+      let instanceErrors = 0;
+      for (const x of exceptions.filter((x) => !x.cancelled && (x.starts_at || x.title || x.location || x.description))) {
+        const tz = ev.timezone;
+        const start = x.starts_at ?? x.occurrence_start, end = x.ends_at ?? new Date(Date.parse(x.occurrence_start) + Date.parse(ev.ends_at) - Date.parse(ev.starts_at)).toISOString();
+        const part = toGoogleEvent({ ...ev, title: x.title ?? ev.title, description: x.description ?? ev.description, location: x.location ?? ev.location, meeting_url: x.meeting_url ?? ev.meeting_url, starts_at: start, ends_at: end }, `${OS_ORIGIN}/os/calendar?event=${ev.id}`);
+        try { await patchGoogleEvent(me, googleInstanceId(g.id, x.occurrence_start, ev.all_day, tz), { summary: part.summary, description: part.description, location: part.location, start: part.start, end: part.end }, undefined, updates); }
+        catch { instanceErrors++; }
+      }
+      if (ev.google_invites && g.attendees?.length) {
+        for (const a of g.attendees) {
+          const who = emails.find((i) => i.email === a.email?.toLowerCase());
+          if (who && a.responseStatus && ["accepted", "declined", "tentative", "needsAction"].includes(a.responseStatus))
+            await service.from("os_event_attendees").update({ response_status: a.responseStatus }).eq("event_id", ev.id).eq("person_id", who.person_id);
+        }
+      }
+      return { instance_errors: instanceErrors, invited: ev.google_invites ? emails.length : 0, without_google_account: ev.google_invites ? invitees.length - emails.length : 0 };
+    };
     if (action === "push") {
       if (!ev.google_event_id) {
         // A copy from an earlier push (e.g. the link was lost) is reused, never duplicated.
         const existing = await findByOsId(me, ev.id);
-        const g = existing ? await patchGoogleEvent(me, existing.id, body, existing.etag) : await insertGoogleEvent(me, body);
+        const g = existing ? await patchGoogleEvent(me, existing.id, body, existing.etag, updates) : await insertGoogleEvent(me, body, updates);
         await link(g);
-        return NextResponse.json({ sync_state: "synced", google_event_id: g.id, relinked: Boolean(existing) });
+        return NextResponse.json({ sync_state: "synced", google_event_id: g.id, relinked: Boolean(existing), ...(await after(g)) });
       }
-      const g = await patchGoogleEvent(me, ev.google_event_id, body, ev.google_etag ?? undefined);
+      const g = await patchGoogleEvent(me, ev.google_event_id, body, ev.google_etag ?? undefined, updates);
       await link(g);
-      return NextResponse.json({ sync_state: "synced" });
+      return NextResponse.json({ sync_state: "synced", ...(await after(g)) });
     }
     if (!ev.google_event_id) return jsonError("This event isn't in Google Calendar.", 409);
     const current = await getGoogleEvent(me, ev.google_event_id);
     if (action === "keep_os") {
-      const g = await patchGoogleEvent(me, ev.google_event_id, body, current.etag);
+      const g = await patchGoogleEvent(me, ev.google_event_id, body, current.etag, updates);
       await link(g);
-      return NextResponse.json({ sync_state: "synced" });
+      return NextResponse.json({ sync_state: "synced", ...(await after(g)) });
     }
     // keep_google: Google's title, times and place replace the OS ones, as an edit by this person (RLS applies).
     const m = fromGoogleEvent(current, ev.timezone);

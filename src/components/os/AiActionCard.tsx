@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Pencil, X } from "lucide-react";
 import { btn, btnGhost, btnPrimary, input, muted } from "@/components/os/ui";
+import { syncEvent } from "./EventSheet";
 import { cn } from "@/lib/utils";
 
 // The confirmation card for an action the assistant proposed. Records described in words (tasks, events, milestones,
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils";
 type Draft = Record<string, unknown>;
 interface Issue { field: string; query?: string; kind: string; message: string; choices?: { value: string; label: string }[] }
 interface Item { kind: string; draft: Draft; fields: { label: string; value: string }[]; issues: Issue[]; warnings: string[] }
-export interface Created { id: string; kind: string; title: string; assignee: string | null; deadline: string | null; link: string }
+export interface Created { id: string; kind: string; title: string; assignee: string | null; deadline: string | null; link: string; push?: string[] }
 export interface AiAction { id: string; action_type: string; preview: string; status: string; details?: { items: Item[] } | null; result?: { ref?: string; error?: string; created?: Created[] } | null }
 
 const EDITABLE: Record<string, { key: string; label: string; type: string }[]> = {
@@ -21,9 +22,13 @@ const EDITABLE: Record<string, { key: string; label: string; type: string }[]> =
   event: [{ key: "title", label: "Title", type: "text" }, { key: "date", label: "Date", type: "date" }, { key: "start_time", label: "Starts", type: "time" }, { key: "end_time", label: "Ends", type: "time" }, { key: "location", label: "Location", type: "text" }],
   milestone: [{ key: "title", label: "Milestone", type: "text" }, { key: "due_date", label: "Date", type: "date" }],
   assignment: [],
+  campaign: [{ key: "name", label: "Campaign", type: "text" }, { key: "start_date", label: "Starts", type: "date" }, { key: "end_date", label: "Ends", type: "date" }],
+  content: [{ key: "title", label: "Content", type: "text" }, { key: "from", label: "From", type: "date" }, { key: "to", label: "To", type: "date" }, { key: "time", label: "Publish time", type: "time" }, { key: "channel", label: "Channel", type: "text" }],
+  move: [{ key: "to_date", label: "New date", type: "date" }, { key: "start_time", label: "New start", type: "time" }],
+  invitation: [],
 };
-const ARRAY_FIELDS = new Set(["assignees", "attendees"]);
-const fmtWhen = (c: Created) => (c.deadline ? (c.kind === "event" ? new Date(c.deadline).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" }) + " WIB" : c.deadline) : null);
+const ARRAY_FIELDS = new Set(["assignees", "attendees", "people", "tasks", "invite_groups", "groups"]);
+const fmtWhen = (c: Created) => (c.deadline ? (c.kind === "event" || c.kind === "move" ? new Date(c.deadline).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" }) + " WIB" : c.deadline) : null);
 
 /** Apply a choice to a draft: replace the ambiguous name in a list, or set the field. "" removes it. */
 function choose(d: Draft, issue: Issue, value: string): Draft {
@@ -56,6 +61,8 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
     if (!r) return setErr("Couldn't reach the server.");
     if (j.details) { setDrafts(null); onChange({ ...action, status: j.status ?? action.status, preview: j.preview ?? action.preview, details: j.details }); if (r.status === 422) setErr("Some details still need your choice."); else if (decision === "revise") setEditing(false); return; }
     if (!r.ok && !j.status) return setErr(j.error ?? "That didn't work.");
+    // A moved event that is in the person's own Google Calendar is sent to Google now (never someone else's copy).
+    for (const c of (j.created ?? []) as Created[]) for (const id of c.push ?? []) await syncEvent(id, "push").catch(() => null);
     onChange({ ...action, status: j.status, result: j.created ? { created: j.created, ref: j.ref } : j.ref ? { ref: j.ref } : j.error ? { error: j.error } : null });
   }
 
@@ -91,7 +98,7 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
                 <select aria-label={`Choose ${iss.field}`} className={cn(input, "mt-1")} value="" disabled={busy} onChange={(e) => pick(n, iss, e.target.value)} data-testid="os-ai-choice">
                   <option value="" disabled>Choose…</option>
                   {iss.choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  {(ARRAY_FIELDS.has(iss.field) || ["project", "milestone", "division", "owner"].includes(iss.field)) && <option value="__remove">Leave it out</option>}
+                  {(ARRAY_FIELDS.has(iss.field) || ["project", "milestone", "division", "owner", "campaign", "partnership", "creator", "reviewer"].includes(iss.field)) && <option value="__remove">Leave it out</option>}
                 </select>
               )}
               {!iss.choices?.length && !editing && <button type="button" className={cn(btnGhost, "mt-1 text-xs")} onClick={() => setEditing(true)}>Fill it in</button>}
@@ -127,8 +134,8 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
           {created.map((c) => (
             <li key={`${c.kind}-${c.id}`} className="text-xs">
               <Link className="font-medium text-[#2F4157] underline" href={c.link}>{c.id}</Link> {c.title}
-              {c.assignee && <span className={muted}> · {c.kind === "event" ? "with" : "assigned to"} {c.assignee}</span>}
-              {fmtWhen(c) && <span className={muted}> · {c.kind === "event" ? "" : "due "}{fmtWhen(c)}</span>}
+              {c.assignee && <span className={muted}> · {c.kind === "event" || c.kind === "invitation" ? "with" : c.kind === "content" ? "by" : "assigned to"} {c.assignee}</span>}
+              {fmtWhen(c) && <span className={muted}> · {c.kind === "event" ? "" : c.kind === "move" ? "now " : c.kind === "content" ? "from " : "due "}{fmtWhen(c)}</span>}
             </li>
           ))}
         </ul>

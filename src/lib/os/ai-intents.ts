@@ -11,9 +11,11 @@
 // draft again (never trusting the browser) and runs it with the person's own session, so RLS decides. Pure: no
 // network, no database; the directory of visible records is passed in.
 import { z } from "zod";
-import { CATEGORIES, DEFAULT_TZ, addDays, weekday, zonedInstant } from "./calendar.ts";
+import { CATEGORIES, DEFAULT_TZ, addDays, weekday, zonedInstant, zonedParts } from "./calendar.ts";
+import { WEEKDAYS, describeRule, expandSeries, presetRule, ruleProblem, type ExceptionLike, type Occurrence, type Recurrence } from "./recurrence.ts";
+import { groupLabel, resolveInvitations, type Candidate, type GroupSpec, type RoleGroup } from "./groups.ts";
 
-export const INTENT_TYPES = ["create_task", "create_tasks", "assign_task", "create_event", "create_timeline_item"] as const;
+export const INTENT_TYPES = ["create_task", "create_tasks", "assign_task", "create_event", "create_timeline_item", "create_campaign", "create_content_items", "move_event", "invite_to_event"] as const;
 export type IntentType = (typeof INTENT_TYPES)[number];
 export const isIntent = (t: string): t is IntentType => (INTENT_TYPES as readonly string[]).includes(t);
 
@@ -22,18 +24,21 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const PRIORITIES = ["P1 Critical", "P2 High", "P3 Normal", "P4 Low"] as const;
 const unclear = z.array(z.string().max(40)).max(10).optional();
+const REPEATS = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "yearly"] as const;
 
 export const TaskDraft = z.object({
   title: z.string().trim().min(1).max(300), company: ref.optional(), division: ref.optional(), project: ref.optional(),
   milestone: ref.optional(), assignees: z.array(ref).max(10).optional(), due_date: date.optional(),
-  priority: z.enum(PRIORITIES).optional(), description: z.string().max(4000).optional(), unclear,
+  priority: z.enum(PRIORITIES).optional(), description: z.string().max(4000).optional(), event: ref.optional(), unclear,
 }).strip();
 export const EventDraft = z.object({
   title: z.string().trim().min(1).max(200), category: z.enum(CATEGORIES).optional(), date, end_date: date.optional(),
   start_time: time.optional(), end_time: time.optional(), all_day: z.boolean().optional(), company: ref.optional(),
   division: ref.optional(), project: ref.optional(), attendees: z.array(ref).max(30).optional(),
   invite_division: z.boolean().optional(), location: z.string().max(300).optional(),
-  meeting_url: z.string().url().startsWith("https://").max(500).optional(), description: z.string().max(5000).optional(), unclear,
+  meeting_url: z.string().url().startsWith("https://").max(500).optional(), description: z.string().max(5000).optional(),
+  repeat: z.enum(REPEATS).optional(), repeat_days: z.array(z.enum(WEEKDAYS)).min(1).max(7).optional(), repeat_until: date.optional(), repeat_count: z.number().int().min(1).max(730).optional(),
+  invite_groups: z.array(ref).max(6).optional(), milestone: ref.optional(), campaign: ref.optional(), partnership: ref.optional(), tasks: z.array(ref).max(10).optional(), unclear,
 }).strip();
 export const MilestoneDraft = z.object({
   title: z.string().trim().min(1).max(300), due_date: date, company: ref.optional(), workstream: ref.optional(),
@@ -41,6 +46,17 @@ export const MilestoneDraft = z.object({
   deliverable: z.string().max(1000).optional(), unclear,
 }).strip();
 export const AssignDraft = z.object({ task: ref, assignees: z.array(ref).min(1).max(10), replace: z.boolean().optional(), unclear }).strip();
+export const CampaignDraft = z.object({
+  name: z.string().trim().min(1).max(200), company: ref.optional(), division: ref.optional(), start_date: date.optional(), end_date: date.optional(),
+  objective: z.string().max(2000).optional(), owner: ref.optional(), project: ref.optional(), milestone: ref.optional(), unclear,
+}).strip();
+export const ContentDraft = z.object({
+  title: z.string().trim().min(1).max(200), campaign: ref.optional(), company: ref.optional(), channel: z.string().max(80).optional(), format: z.string().max(80).optional(),
+  pillar: z.string().max(80).optional(), dates: z.array(date).max(31).optional(), from: date.optional(), to: date.optional(), pattern: z.enum(["daily", "weekdays", "weekly"]).optional(),
+  time: time.optional(), creator: ref.optional(), reviewer: ref.optional(), unclear,
+}).strip();
+export const MoveDraft = z.object({ event: ref, from_date: date.optional(), to_date: date, start_time: time.optional(), end_time: time.optional(), scope: z.enum(["this", "following", "all"]).optional(), unclear }).strip();
+export const InviteDraft = z.object({ event: ref, people: z.array(ref).max(30).optional(), groups: z.array(ref).max(6).optional(), unclear }).strip();
 
 export const INTENT_SCHEMAS = {
   create_task: TaskDraft,
@@ -48,13 +64,21 @@ export const INTENT_SCHEMAS = {
   assign_task: AssignDraft,
   create_event: EventDraft,
   create_timeline_item: MilestoneDraft,
+  create_campaign: CampaignDraft,
+  create_content_items: ContentDraft,
+  move_event: MoveDraft,
+  invite_to_event: InviteDraft,
 } satisfies Record<IntentType, z.ZodType>;
 
 export type TaskDraftT = z.infer<typeof TaskDraft>;
 export type EventDraftT = z.infer<typeof EventDraft>;
 export type MilestoneDraftT = z.infer<typeof MilestoneDraft>;
 export type AssignDraftT = z.infer<typeof AssignDraft>;
-export type AnyDraft = TaskDraftT | EventDraftT | MilestoneDraftT | AssignDraftT;
+export type CampaignDraftT = z.infer<typeof CampaignDraft>;
+export type ContentDraftT = z.infer<typeof ContentDraft>;
+export type MoveDraftT = z.infer<typeof MoveDraft>;
+export type InviteDraftT = z.infer<typeof InviteDraft>;
+export type AnyDraft = TaskDraftT | EventDraftT | MilestoneDraftT | AssignDraftT | CampaignDraftT | ContentDraftT | MoveDraftT | InviteDraftT;
 
 /** Each intent as a list of single-record drafts (create_tasks is several tasks; everything else one). */
 export function draftsOf(type: IntentType, payload: unknown): AnyDraft[] | null {
@@ -62,11 +86,12 @@ export function draftsOf(type: IntentType, payload: unknown): AnyDraft[] | null 
   if (!r.success) return null;
   return type === "create_tasks" ? (r.data as { tasks: TaskDraftT[] }).tasks : [r.data as AnyDraft];
 }
-export const kindOf = (type: IntentType) => (type === "create_event" ? "event" : type === "create_timeline_item" ? "milestone" : type === "assign_task" ? "assignment" : "task");
+export const kindOf = (type: IntentType): ResolvedItem["kind"] => (({ create_event: "event", create_timeline_item: "milestone", assign_task: "assignment", create_campaign: "campaign", create_content_items: "content", move_event: "move", invite_to_event: "invitation" } as Record<string, ResolvedItem["kind"]>)[type] ?? "task");
 
 // ── The directory: what the person can see, read with their own session ────────────────────────────────────────────
 
-export interface DirPerson { id: string; full_name: string; short_name: string | null; org_role: string; status: string; companies: string[]; divisions: string[] }
+export interface DirPerson { id: string; full_name: string; short_name: string | null; org_role: string; status: string; companies: string[]; divisions: string[]; managed?: string[] }
+export interface DirEvent { id: string; title: string; company_code: string; category: string; starts_at: string; ends_at: string; all_day: boolean; timezone: string; recurrence: Recurrence | null; exceptions: ExceptionLike[]; status: string; google_event_id?: string | null }
 export interface Directory {
   me: string; today: string; myCompanies: string[];
   people: DirPerson[];
@@ -75,12 +100,15 @@ export interface Directory {
   workstreams: { code: string; name: string; company_code: string }[];
   milestones: { id: string; title: string; company_code: string }[];
   tasks: { id: string; title: string; company_code: string; project_id: string | null; status: string }[];
+  events?: DirEvent[];
+  campaigns?: { id: string; name: string; company_code: string; project_id: string | null; timeline_item_id: string | null; status: string }[];
+  partnerships?: { id: string; organisation: string; company_code: string }[];
 }
 
 export interface Choice { value: string; label: string }
 export interface Issue { field: string; query?: string; kind: "missing" | "ambiguous" | "not_found" | "invalid"; message: string; choices?: Choice[] }
 export interface ResolvedItem {
-  kind: "task" | "event" | "milestone" | "assignment";
+  kind: "task" | "event" | "milestone" | "assignment" | "campaign" | "content" | "move" | "invitation";
   draft: AnyDraft;              // the draft with every resolved reference replaced by its ID (resolving again is a no-op)
   fields: { label: string; value: string }[];
   issues: Issue[];
@@ -202,12 +230,16 @@ export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
   }
   const ppl = resolvePeople(d.assignees, dir, co.code, "assignees");
   issues.push(...ppl.issues, ...unclearIssues(d.unclear, { due_date: "deadline", project: "project", division: "division", company: "company", assignees: "assignee" }));
+  const ev = d.event ? resolveEventRef(d.event, dir) : null;
+  if (ev?.issue) issues.push(ev.issue);
   if (d.due_date && d.due_date < dir.today) warnings.push(`The deadline ${d.due_date} is in the past.`);
   const dup = dir.tasks.find((t) => norm(t.title) === norm(d.title) && t.company_code === co.code && (t.project_id ?? null) === (pr.project?.id ?? null) && !["Done", "Cancelled"].includes(t.status));
   if (dup) warnings.push(`An open task with this title already exists: ${dup.id}.`);
-  const draft: TaskDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, milestone: milestone?.id ?? d.milestone, assignees: ppl.issues.length ? d.assignees : ppl.ids, unclear: issues.length ? d.unclear : undefined };
+  const draft: TaskDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, milestone: milestone?.id ?? d.milestone, assignees: ppl.issues.length ? d.assignees : ppl.ids, event: ev?.event?.id ?? d.event, unclear: issues.length ? d.unclear : undefined };
+  if (ev?.event && d.due_date && d.due_date > zonedParts(ev.event.starts_at, ev.event.timezone).date && !ev.event.recurrence) warnings.push(`The deadline is after “${ev.event.title}”.`);
   const fields = [
     { label: "Title", value: d.title },
+    ...(ev?.event ? [{ label: "For event", value: `${ev.event.title} (${ev.event.id}, ${dayLabel(zonedParts(ev.event.starts_at, ev.event.timezone).date)})` }] : []),
     { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
     ...(division ? [{ label: "Division", value: divName(dir, division) }] : []),
     ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
@@ -219,6 +251,7 @@ export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
   const insert = issues.length ? null : {
     title: d.title, company_code: co.code, division_id: division ?? null, project_id: pr.project?.id ?? null, timeline_item_id: milestone?.id ?? null,
     owner_person_id: ppl.ids[0] ?? null, assignees: ppl.ids, due_date: d.due_date ?? null, priority: d.priority ?? "P3 Normal", description: d.description ?? null,
+    event_id: ev?.event?.id ?? null,
   };
   return { kind: "task", draft, fields, issues, warnings, insert };
 }
@@ -238,6 +271,23 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
   if (d.invite_division && division && co.code) {
     attendees = Array.from(new Set([...attendees, ...dir.people.filter((p) => p.divisions.includes(division) && p.companies.includes(co.code!) && p.org_role !== "guest" && ["active", "onboarding"].includes(p.status)).map((p) => p.id)]));
   } else if (d.invite_division && !division) issues.push({ field: "division", kind: "missing", message: "Which division should be invited?", choices: dir.divisions.map((x) => ({ value: x.id, label: x.name })) });
+  // Groups ("all IELSco managers", "C-Level", "Growth") are worked out now into named people; each remembers its group.
+  const inv = co.code && d.invite_groups?.length ? groupInvitees(d.invite_groups, dir, co.code, attendees) : null;
+  if (inv) issues.push(...inv.issues);
+  const viaGroup = new Map((inv?.invitees ?? []).map((i) => [i.person_id, i.via]));
+  const individual = attendees;
+  attendees = Array.from(new Set([...attendees, ...(inv?.invitees ?? []).map((i) => i.person_id)]));
+  // Repeats
+  const rule = repeatRule(d);
+  const rp = ruleProblem(rule);
+  if (rp) issues.push({ field: "repeat", kind: "invalid", message: rp });
+  if (rule?.until && rule.until < d.date) issues.push({ field: "repeat_until", kind: "invalid", message: "The repeat ends before the first occurrence." });
+  // Links (explicit, by name or ID; nothing linked is changed)
+  const ms = d.milestone ? pickRef("milestone", d.milestone, dir.milestones, "TL", (m) => [m.title], (m) => `${m.title} (${m.id})`, "milestone") : null;
+  const cp = d.campaign ? pickRef("campaign", d.campaign, (dir.campaigns ?? []).filter((c) => !co.code || c.company_code === co.code || co.code === "HQ"), "CMP", (c) => [c.name], (c) => `${c.name} (${c.id})`, "campaign") : null;
+  const pa = d.partnership ? pickRef("partnership", d.partnership, (dir.partnerships ?? []).filter((x) => !co.code || x.company_code === co.code), "OPP", (x) => [x.organisation], (x) => `${x.organisation} (${x.id})`, "partnership") : null;
+  const tk = (d.tasks ?? []).map((q) => pickRef("tasks", q, dir.tasks.filter((t) => !["Done", "Cancelled"].includes(t.status)), "TSK", (t) => [t.title], (t) => `${t.title} (${t.id})`, "open task"));
+  for (const r of [ms, cp, pa, ...tk]) if (r?.issue) issues.push(r.issue);
   const allDay = Boolean(d.all_day);
   if (!allDay && !d.start_time) issues.push({ field: "start_time", kind: "missing", message: "What time does it start? Or make it an all-day event." });
   issues.push(...unclearIssues(d.unclear, { date: "date", start_time: "start time", end_time: "end time", division: "division", company: "company", project: "project" }));
@@ -250,7 +300,10 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
     if (ends_at < starts_at) issues.push({ field: "end_time", kind: "invalid", message: "The event ends before it starts." });
   }
   if (d.date < dir.today) warnings.push(`${d.date} is in the past.`);
-  const draft: EventDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, attendees: ppl.issues.length ? d.attendees : attendees, invite_division: undefined, unclear: issues.length ? d.unclear : undefined };
+  // The stored draft keeps the group names and only the individually named people, so resolving again doesn't double-add.
+  const draft: EventDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, attendees: ppl.issues.length ? d.attendees : individual,
+    invite_division: undefined, invite_groups: d.invite_groups, milestone: ms?.hit?.id ?? d.milestone, campaign: cp?.hit?.id ?? d.campaign, partnership: pa?.hit?.id ?? d.partnership,
+    tasks: d.tasks ? tk.map((r, n) => r.hit?.id ?? d.tasks![n]) : undefined, unclear: issues.length ? d.unclear : undefined };
   const when = allDay ? (lastDay === d.date ? `${dayLabel(d.date)}, all day` : `${dayLabel(d.date)} to ${dayLabel(lastDay)}, all day`)
     : d.start_time ? `${dayLabel(d.date)}, ${d.start_time}–${d.end_time ?? `${String((Number(d.start_time.slice(0, 2)) + 1) % 24).padStart(2, "0")}${d.start_time.slice(2)}`} (${tz === DEFAULT_TZ ? "WIB" : tz})` : `${dayLabel(d.date)}, time ?`;
   const fields = [
@@ -258,13 +311,22 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
     { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
     ...(division ? [{ label: "Division", value: divName(dir, division) }] : []),
     ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
-    { label: "Attendees", value: attendees.length ? attendees.map((i) => nameOf(dir, i)).join(", ") : "None yet" },
+    ...(rule ? [{ label: "Repeats", value: describeRule(rule) }] : []),
+    { label: "Attendees", value: attendees.length ? `${attendees.length}: ${attendees.map((i) => nameOf(dir, i)).join(", ")}` : "None yet" },
+    ...(inv ? inv.lines.map((l) => ({ label: "Group", value: l })) : []),
+    ...(ms?.hit ? [{ label: "Timeline milestone", value: `${ms.hit.title} (${ms.hit.id})` }] : []),
+    ...(cp?.hit ? [{ label: "Campaign", value: `${cp.hit.name} (${cp.hit.id})` }] : []),
+    ...(pa?.hit ? [{ label: "Partnership", value: `${pa.hit.organisation} (${pa.hit.id})` }] : []),
+    ...(tk.length ? [{ label: "Linked tasks", value: tk.map((r) => r.hit ? `${r.hit.title} (${r.hit.id})` : "?").join(", ") }] : []),
     ...(d.location ? [{ label: "Location", value: d.location }] : []), ...(d.meeting_url ? [{ label: "Meeting link", value: d.meeting_url }] : []),
   ];
   const insert = issues.length ? null : {
     title: d.title, category: d.category ?? "Meeting", company_code: co.code, division_id: division ?? null, project_id: pr.project?.id ?? null,
-    starts_at, ends_at, all_day: allDay, timezone: tz, location: d.location ?? null, meeting_url: d.meeting_url ?? null, description: d.description ?? null, attendees,
+    starts_at, ends_at, all_day: allDay, timezone: tz, location: d.location ?? null, meeting_url: d.meeting_url ?? null, description: d.description ?? null,
+    attendees: attendees.map((id) => (viaGroup.get(id) ? { person_id: id, via_group: viaGroup.get(id) } : id)),
+    recurrence: rule, timeline_item_id: ms?.hit?.id ?? null, campaign_id: cp?.hit?.id ?? null, partnership_id: pa?.hit?.id ?? null, task_ids: tk.map((r) => r.hit!.id),
   };
+  if (inv && inv.total >= 15) warnings.push(`${inv.total} people will be invited and notified.`);
   return { kind: "event", draft, fields, issues, warnings, insert };
 }
 
@@ -316,8 +378,217 @@ export function resolveAssign(d: AssignDraftT, dir: Directory): ResolvedItem {
   return { kind: "assignment", draft, fields, issues, warnings: [], insert: issues.length || !task ? null : { task_id: task.id, assignees: ppl.ids, replace: Boolean(d.replace) } };
 }
 
+// ── Planning intents: references, groups, repeats ───────────────────────────────────────────────────────────────
+
+/** One record by ID or name from a pool the person can see. */
+function pickRef<T extends { id: string }>(field: string, q: string, pool: T[], prefix: string, names: (t: T) => (string | null | undefined)[], label: (t: T) => string, what: string): { hit?: T; issue?: Issue } {
+  const hits = idLike(q, prefix) ? pool.filter((t) => t.id === q.trim().toUpperCase()) : byName(pool, q, names);
+  if (hits.length === 1) return { hit: hits[0] };
+  return { issue: { field, query: q, kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${q}” matches ${hits.length} of them. Choose one.` : `No ${what} you can see matches “${q}”.`, choices: hits.slice(0, 12).map((t) => ({ value: t.id, label: label(t) })) } };
+}
+
+/** The repeat rule an event draft describes, or null. */
+export function repeatRule(d: Pick<EventDraftT, "repeat" | "repeat_days" | "repeat_until" | "repeat_count" | "date">): Recurrence | null {
+  if ((!d.repeat || d.repeat === "none") && !d.repeat_days) return null;
+  let r: Recurrence | null;
+  if (d.repeat_days?.length) r = { freq: "weekly", ...(d.repeat === "biweekly" ? { interval: 2 } : {}), byweekday: d.repeat_days };
+  else r = presetRule(d.repeat as Exclude<typeof d.repeat, undefined>, d.date);
+  if (!r) return null;
+  if (d.repeat_until) r = { ...r, until: d.repeat_until };
+  else if (d.repeat_count) r = { ...r, count: d.repeat_count };
+  return r;
+}
+
+/** "all IELSco managers", "C-Level", "Growth", "associates in Elco AI" → a group spec. Roles come from the registry. */
+export function parseGroup(text: string, dir: Directory): { spec?: GroupSpec; issue?: Issue } {
+  const n = ` ${norm(text)} `;
+  let role: RoleGroup | undefined;
+  if (/ (c ?level|c ?suite|founders?|executives?|direksi|pendiri) /.test(n)) role = "c_level";
+  else if (/ (managers?|manajer|heads?|leads?) /.test(n)) role = "managers";
+  else if (/ (associates?|members?|anggota) /.test(n)) role = "associates";
+  else if (/ (all staff|everyone|everybody|all employees|semua|whole company|all) /.test(n)) role = "all";
+  const company = / (ielsco|iel|english space) /.test(n) ? "IEL" : / (elco|elc|elco ai) /.test(n) ? "ELC" : undefined;
+  const division = dir.divisions.find((d) => n.includes(` ${norm(d.name)} `) || n.includes(` ${norm(d.code)} `))?.id;
+  if (!role && !company && !division) return { issue: { field: "invite_groups", query: text, kind: "not_found", message: `“${text}” isn't a group Company OS knows. Groups are C-Level, Managers, Associates, All staff, a division, or a combination such as “IELSco managers”.`,
+    choices: [...["C-Level", "Managers", "Associates", "All staff"].map((g) => ({ value: g, label: g })), ...dir.divisions.map((d) => ({ value: d.name, label: `${d.name} division` }))] } };
+  return { spec: { role: role ?? (division ? undefined : "all"), ...(division ? { division } : {}), ...(company ? { company } : {}) } };
+}
+
+/** Active, non-guest staff who can be invited to an event in a company (the same rule as os_invite_candidates). */
+export function candidatesFor(dir: Directory, company: string): Candidate[] {
+  return dir.people.filter((p) => p.status === "active" && p.org_role !== "guest" && (p.org_role === "founder" || company === "HQ" || p.companies.includes(company)))
+    .map((p) => ({ person_id: p.id, full_name: p.full_name, short_name: p.short_name, org_role: p.org_role, companies: p.companies, divisions: p.divisions, managed_divisions: p.managed ?? [] }));
+}
+
+function groupInvitees(texts: string[], dir: Directory, company: string, existing: string[]) {
+  const issues: Issue[] = [], specs: GroupSpec[] = [], textOf = new Map<string, string>();
+  const dn = (id: string) => divName(dir, id);
+  for (const t of texts) { const g = parseGroup(t, dir); if (g.issue) issues.push(g.issue); else { specs.push(g.spec!); textOf.set(groupLabel(g.spec!, dn), t); } }
+  const res = resolveInvitations(candidatesFor(dir, company), specs, [], existing, dn);
+  for (const e of res.empty) issues.push({ field: "invite_groups", query: textOf.get(e) ?? e, kind: "invalid", message: `Nobody active matches “${e}”, so nobody would be invited from it. Leave it out, or choose another group.`,
+    choices: ["C-Level", "Managers", "Associates", "All staff"].map((g) => ({ value: g, label: g })) });
+  const by = new Map<string, string[]>();
+  for (const i of res.invitees) by.set(i.via ?? "", [...(by.get(i.via ?? "") ?? []), i.name]);
+  const lines = [...by.entries()].map(([g, names]) => `${g}: ${names.length} (${names.join(", ")})`);
+  if (res.duplicates.length) lines.push(`In more than one group, invited once: ${res.duplicates.map((d) => d.name).join(", ")}`);
+  return { invitees: res.invitees, issues, lines, total: res.invitees.length + existing.length };
+}
+
+const occurrenceOn = (e: DirEvent, date: string): Occurrence | null => expandSeries(e, e.exceptions, zonedInstant(date, "00:00", e.timezone), zonedInstant(addDays(date, 1), "00:00", e.timezone))[0] ?? null;
+const nextOccurrence = (e: DirEvent, today: string): Occurrence | null => expandSeries(e, e.exceptions, zonedInstant(today, "00:00", e.timezone), zonedInstant(addDays(today, 400), "00:00", e.timezone))[0] ?? null;
+const evLabel = (e: DirEvent, today: string) => { const o = e.recurrence ? nextOccurrence(e, today) : null; return `${e.title} (${e.id}, ${e.recurrence ? `repeats${o ? `, next ${dayLabel(zonedParts(o.starts_at, e.timezone).date)}` : ""}` : dayLabel(zonedParts(e.starts_at, e.timezone).date)})`; };
+
+/** An event by ID or title; with a date, only events that happen that day. Prefers upcoming ones. */
+export function resolveEventRef(q: string, dir: Directory, onDate?: string): { event?: DirEvent; issue?: Issue } {
+  const pool = (dir.events ?? []).filter((e) => e.status !== "Cancelled");
+  let hits = idLike(q, "EV") ? pool.filter((e) => e.id === q.trim().toUpperCase()) : byName(pool, q.replace(/\b(meeting|rapat|event|acara)\b/gi, "").trim() || q, (e) => [e.title]);
+  if (onDate && hits.length > 1) { const on = hits.filter((e) => occurrenceOn(e, onDate)); if (on.length) hits = on; }
+  if (hits.length > 1) { const up = hits.filter((e) => e.recurrence ? nextOccurrence(e, dir.today) : zonedParts(e.ends_at, e.timezone).date >= dir.today); if (up.length) hits = up; }
+  if (hits.length === 1) return { event: hits[0] };
+  return { issue: { field: "event", query: q, kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${q}” matches ${hits.length} events. Choose one.` : `No event you can see matches “${q}”.`, choices: hits.slice(0, 12).map((e) => ({ value: e.id, label: evLabel(e, dir.today) })) } };
+}
+
+export function resolveCampaign(d: CampaignDraftT, dir: Directory): ResolvedItem {
+  const issues: Issue[] = [], warnings: string[] = [];
+  const pr = resolveProject(d.project, dir, undefined);
+  if (pr.issue) issues.push(pr.issue);
+  const co = companyFor(d.company, dir, pr.project?.company_code);
+  if (co.issue) issues.push(co.issue);
+  const dv = resolveDivision(d.division, dir);
+  if (dv.issue) issues.push(dv.issue);
+  const owner = resolvePeople(d.owner ? [d.owner] : [], dir, co.code, "owner");
+  issues.push(...owner.issues);
+  const ms = d.milestone ? pickRef("milestone", d.milestone, dir.milestones, "TL", (m) => [m.title], (m) => `${m.title} (${m.id})`, "milestone") : null;
+  if (ms?.issue) issues.push(ms.issue);
+  if (d.start_date && d.end_date && d.end_date < d.start_date) issues.push({ field: "end_date", kind: "invalid", message: "The campaign ends before it starts." });
+  issues.push(...unclearIssues(d.unclear, { start_date: "start date", end_date: "end date", company: "company", owner: "owner" }));
+  const dup = (dir.campaigns ?? []).find((c) => norm(c.name) === norm(d.name) && c.company_code === co.code && !["Completed", "Cancelled"].includes(c.status));
+  if (dup) warnings.push(`A campaign with this name already exists: ${dup.id}.`);
+  const draft: CampaignDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, owner: owner.ids[0] ?? d.owner, milestone: ms?.hit?.id ?? d.milestone, unclear: issues.length ? d.unclear : undefined };
+  const fields = [
+    { label: "Campaign", value: d.name }, { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
+    { label: "Dates", value: d.start_date ? `${dayLabel(d.start_date)}${d.end_date ? ` to ${dayLabel(d.end_date)}` : ""}` : "Not set" },
+    ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
+    ...(ms?.hit ? [{ label: "Timeline milestone", value: `${ms.hit.title} (${ms.hit.id})` }] : []),
+    { label: "Owner", value: owner.ids[0] ? nameOf(dir, owner.ids[0]) : "Nobody yet" }, ...(d.objective ? [{ label: "Objective", value: d.objective }] : []),
+  ];
+  const insert = issues.length ? null : { name: d.name, company_code: co.code, division_id: dv.id ?? pr.project?.division_id ?? "DIV-03", start_date: d.start_date ?? null, end_date: d.end_date ?? null,
+    objective: d.objective ?? null, owner_person_id: owner.ids[0] ?? null, project_id: pr.project?.id ?? null, timeline_item_id: ms?.hit?.id ?? null, status: "Planned" };
+  return { kind: "campaign", draft, fields, issues, warnings, insert };
+}
+
+/** The publish dates a content draft describes (at most 31). */
+export function contentDates(d: Pick<ContentDraftT, "dates" | "from" | "to" | "pattern">): string[] {
+  if (d.dates?.length) return Array.from(new Set(d.dates)).sort();
+  if (!d.from) return [];
+  const to = d.to ?? d.from, out: string[] = [];
+  for (let x = d.from, n = 0; x <= to && n < 400; x = addDays(x, 1), n++) {
+    if (d.pattern === "weekdays" && [0, 6].includes(weekday(x))) continue;
+    if (d.pattern === "weekly" && n % 7 !== 0) continue;
+    out.push(x);
+  }
+  return out;
+}
+
+export function resolveContent(d: ContentDraftT, dir: Directory, tz = DEFAULT_TZ): ResolvedItem {
+  const issues: Issue[] = [], warnings: string[] = [];
+  const cp = d.campaign ? pickRef("campaign", d.campaign, dir.campaigns ?? [], "CMP", (c) => [c.name], (c) => `${c.name} (${c.id})`, "campaign") : null;
+  if (cp?.issue) issues.push(cp.issue);
+  const co = cp?.hit ? { code: cp.hit.company_code } : companyFor(d.company, dir);
+  if (co.issue) issues.push(co.issue);
+  const creator = resolvePeople(d.creator ? [d.creator] : [], dir, co.code, "creator");
+  const reviewer = resolvePeople(d.reviewer ? [d.reviewer] : [], dir, co.code, "reviewer");
+  issues.push(...creator.issues, ...reviewer.issues);
+  const dates = contentDates(d);
+  if (!dates.length) issues.push({ field: "dates", kind: "missing", message: "On which days should the content go out?" });
+  if (dates.length > 31) issues.push({ field: "dates", kind: "invalid", message: `That's ${dates.length} slots. Plan at most 31 at a time.` });
+  if (dates[0] && dates[0] < dir.today) warnings.push(`${dates[0]} is in the past.`);
+  issues.push(...unclearIssues(d.unclear, { dates: "dates", channel: "channel", campaign: "campaign", time: "time" }));
+  const draft: ContentDraftT = { ...d, campaign: cp?.hit?.id ?? d.campaign, company: co.code ?? d.company, creator: creator.ids[0] ?? d.creator, reviewer: reviewer.ids[0] ?? d.reviewer, unclear: issues.length ? d.unclear : undefined };
+  const short = (x: string) => `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][weekday(x)]} ${Number(x.slice(8))}/${Number(x.slice(5, 7))}`;
+  const fields = [
+    { label: "Content", value: d.title }, ...(cp?.hit ? [{ label: "Campaign", value: `${cp.hit.name} (${cp.hit.id})` }] : []),
+    { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" }, ...(d.channel ? [{ label: "Channel", value: d.channel }] : []),
+    { label: "Slots", value: `${dates.length} content slot${dates.length === 1 ? "" : "s"}` },
+    { label: "Dates", value: dates.slice(0, 12).map(short).join(", ") + (dates.length > 12 ? ` and ${dates.length - 12} more` : "") + (d.time ? ` at ${d.time}` : "") },
+    { label: "Creator", value: creator.ids[0] ? nameOf(dir, creator.ids[0]) : "Nobody yet" }, { label: "Reviewer", value: reviewer.ids[0] ? nameOf(dir, reviewer.ids[0]) : "Nobody yet" },
+  ];
+  const insert = issues.length ? null : { items: dates.map((x) => ({
+    company_code: co.code, campaign_id: cp?.hit?.id ?? null, title: dates.length > 1 ? `${d.title} (${short(x)})` : d.title, channel: d.channel ?? null, format: d.format ?? null, pillar: d.pillar ?? null,
+    publish_at: d.time ? zonedInstant(x, d.time, tz) : null, planned_publish_date: x, creator_person_id: creator.ids[0] ?? null, owner_person_id: creator.ids[0] ?? null, reviewer_person_id: reviewer.ids[0] ?? null,
+  })) };
+  return { kind: "content", draft, fields, issues, warnings, insert };
+}
+
+export function resolveMove(d: MoveDraftT, dir: Directory): ResolvedItem {
+  const issues: Issue[] = [], warnings: string[] = [];
+  const ref = resolveEventRef(d.event, dir, d.from_date);
+  if (ref.issue) issues.push(ref.issue);
+  const e = ref.event;
+  let occ: ReturnType<typeof occurrenceOn> = null;
+  if (e) {
+    occ = d.from_date ? occurrenceOn(e, d.from_date) : e.recurrence ? nextOccurrence(e, dir.today) : expandSeries(e, [], e.starts_at, e.ends_at === e.starts_at ? new Date(Date.parse(e.ends_at) + 1).toISOString() : e.ends_at)[0] ?? null;
+    if (!occ) issues.push({ field: "from_date", kind: "invalid", message: d.from_date ? `“${e.title}” isn't on ${dayLabel(d.from_date)}.` : `“${e.title}” has no upcoming occurrence.` });
+  }
+  let scope = d.scope;
+  if (e?.recurrence && occ && !scope) issues.push({ field: "scope", kind: "missing", message: "It repeats. Move only this occurrence, this and the following ones, or the whole series?", choices: [{ value: "this", label: "This occurrence only" }, { value: "following", label: "This and following" }, { value: "all", label: "The entire series" }] });
+  if (e && !e.recurrence) scope = undefined;
+  if (occ?.index === 0 && scope === "following") scope = "all";
+  issues.push(...unclearIssues(d.unclear, { to_date: "new date", from_date: "current date", start_time: "new time" }));
+  let starts_at = "", ends_at = "";
+  if (e && occ) {
+    const tz = e.timezone, dur = Date.parse(occ.ends_at) - Date.parse(occ.starts_at);
+    if (e.all_day) { starts_at = zonedInstant(d.to_date, "00:00", tz); ends_at = new Date(Date.parse(starts_at) + dur).toISOString(); }
+    else {
+      starts_at = zonedInstant(d.to_date, d.start_time ?? zonedParts(occ.starts_at, tz).time, tz);
+      ends_at = d.end_time ? zonedInstant(d.to_date, d.end_time, tz) : new Date(Date.parse(starts_at) + dur).toISOString();
+      if (Date.parse(ends_at) <= Date.parse(starts_at)) issues.push({ field: "end_time", kind: "invalid", message: "It would end before it starts." });
+    }
+    if (starts_at === occ.starts_at && ends_at === occ.ends_at) issues.push({ field: "to_date", kind: "invalid", message: "That's when it already is." });
+    if (d.to_date < dir.today) warnings.push(`${d.to_date} is in the past.`);
+    if (e.google_event_id) warnings.push("It's in Google Calendar. The Google copy is updated when the person who synced it sends the change.");
+  }
+  const fmt = (iso: string) => e ? `${dayLabel(zonedParts(iso, e.timezone).date)}${e.all_day ? "" : ` ${zonedParts(iso, e.timezone).time}`}` : "?";
+  const draft: MoveDraftT = { ...d, event: e?.id ?? d.event, from_date: occ && e ? zonedParts(occ.occurrence_start, e.timezone).date : d.from_date, scope, unclear: issues.length ? d.unclear : undefined };
+  const fields = [
+    { label: "Event", value: e ? `“${e.title}” (${e.id})` : "?" }, { label: "From", value: occ ? fmt(occ.starts_at) : "?" }, { label: "To", value: starts_at ? fmt(starts_at) : "?" },
+    ...(e?.recurrence ? [{ label: "Applies to", value: scope === "this" ? "This occurrence only" : scope === "following" ? "This and following occurrences" : scope === "all" ? "The entire series" : "?" }] : []),
+    { label: "Linked records", value: "Tasks and milestones linked to it are not changed" },
+  ];
+  const insert = issues.length || !e || !occ ? null : { event_id: e.id, occurrence_start: occ.occurrence_start, occ_starts_at: occ.starts_at, occ_ends_at: occ.ends_at, starts_at, ends_at, scope: scope ?? "all" };
+  return { kind: "move", draft, fields, issues, warnings, insert };
+}
+
+export function resolveInvite(d: InviteDraftT, dir: Directory): ResolvedItem {
+  const issues: Issue[] = [], warnings: string[] = [];
+  const ref = resolveEventRef(d.event, dir);
+  if (ref.issue) issues.push(ref.issue);
+  const e = ref.event;
+  if (!d.people?.length && !d.groups?.length) issues.push({ field: "people", kind: "missing", message: "Who should be invited?" });
+  const company = e?.company_code;
+  const ppl = resolvePeople(d.people, dir, company && company !== "HQ" ? company : undefined, "attendees");
+  issues.push(...ppl.issues);
+  const inv = e && d.groups?.length ? groupInvitees(d.groups, dir, e.company_code, ppl.ids) : null;
+  if (inv) issues.push(...inv.issues.map((i) => (i.field === "invite_groups" ? { ...i, field: "groups" } : i)));
+  const all = [...ppl.ids.map((id) => ({ person_id: id, via_group: null as string | null })), ...(inv?.invitees ?? []).filter((i) => !ppl.ids.includes(i.person_id)).map((i) => ({ person_id: i.person_id, via_group: i.via }))];
+  if (all.length >= 15) warnings.push(`${all.length} people will be invited and notified.`);
+  const draft: InviteDraftT = { ...d, event: e?.id ?? d.event, people: ppl.issues.length ? d.people : ppl.ids, unclear: undefined };
+  const fields = [
+    { label: "Event", value: e ? evLabel(e, dir.today) : "?" },
+    ...(ppl.ids.length ? [{ label: "People", value: ppl.ids.map((i) => nameOf(dir, i)).join(", ") }] : []),
+    ...(inv ? inv.lines.map((l) => ({ label: "Group", value: l })) : []),
+    { label: "Invited in total", value: `${all.length} ${all.length === 1 ? "person" : "people"}, each notified in Company OS` },
+  ];
+  const insert = issues.length || !e || !all.length ? null : { event_id: e.id, attendees: all };
+  return { kind: "invitation", draft, fields, issues, warnings, insert };
+}
+
 export function resolveIntent(type: IntentType, drafts: AnyDraft[], dir: Directory, tz = DEFAULT_TZ): ResolvedItem[] {
   return drafts.map((d) => type === "create_event" ? resolveEvent(d as EventDraftT, dir, tz)
+    : type === "create_campaign" ? resolveCampaign(d as CampaignDraftT, dir)
+    : type === "create_content_items" ? resolveContent(d as ContentDraftT, dir, tz)
+    : type === "move_event" ? resolveMove(d as MoveDraftT, dir)
+    : type === "invite_to_event" ? resolveInvite(d as InviteDraftT, dir)
     : type === "create_timeline_item" ? resolveMilestone(d as MilestoneDraftT, dir)
     : type === "assign_task" ? resolveAssign(d as AssignDraftT, dir)
     : resolveTask(d as TaskDraftT, dir));
@@ -326,7 +597,9 @@ export function resolveIntent(type: IntentType, drafts: AnyDraft[], dir: Directo
 export function intentPreview(type: IntentType, items: ResolvedItem[]): string {
   const ready = items.every((i) => i.issues.length === 0);
   const what = type === "create_tasks" || (type === "create_task" && items.length > 1) ? `Create ${items.length} tasks` : type === "create_task" ? `Create task “${items[0]?.fields[0]?.value}”`
-    : type === "create_event" ? `Schedule “${items[0]?.fields[0]?.value}”` : type === "create_timeline_item" ? `Add milestone “${items[0]?.fields[0]?.value}”` : `Assign ${items[0]?.fields[0]?.value}`;
+    : type === "create_event" ? `Schedule “${items[0]?.fields[0]?.value}”` : type === "create_timeline_item" ? `Add milestone “${items[0]?.fields[0]?.value}”`
+    : type === "create_campaign" ? `Create campaign “${items[0]?.fields[0]?.value}”` : type === "create_content_items" ? `Plan ${items[0]?.fields.find((f) => f.label === "Slots")?.value ?? "content"}`
+    : type === "move_event" ? `Move ${items[0]?.fields[0]?.value}` : type === "invite_to_event" ? `Invite people to ${items[0]?.fields[0]?.value}` : `Assign ${items[0]?.fields[0]?.value}`;
   return `${what}${ready ? "" : " (needs your input)"}`;
 }
 
@@ -348,7 +621,8 @@ const taskProps = {
   milestone: S("STRING", "Timeline milestone this task delivers, by name or TL-ID"),
   assignees: S("ARRAY", "People to assign, by the name the person used (never invent IDs)", { items: S("STRING") }),
   due_date: S("STRING", "Deadline as YYYY-MM-DD, from the calendar given"), priority: S("STRING", undefined, { enum: [...PRIORITIES], format: "enum" }),
-  description: S("STRING"), unclear: S("ARRAY", "Fields the instruction left unclear", { items: S("STRING") }),
+  description: S("STRING"), event: S("STRING", "An existing event this task prepares for, by title or EV-ID (e.g. 'the partnership event')"),
+  unclear: S("ARRAY", "Fields the instruction left unclear", { items: S("STRING") }),
 };
 export const FUNCTION_DECLARATIONS = [
   { name: "create_task", description: "Propose one new task. The person reviews it before anything is created.", parameters: S("OBJECT", undefined, { properties: taskProps, required: ["title"] }) },
@@ -358,10 +632,31 @@ export const FUNCTION_DECLARATIONS = [
     title: S("STRING"), category: S("STRING", undefined, { enum: [...CATEGORIES], format: "enum" }), date: S("STRING", "YYYY-MM-DD"), end_date: S("STRING", "Last day, YYYY-MM-DD, for multi-day events"),
     start_time: S("STRING", "HH:MM, 24-hour, Asia/Jakarta"), end_time: S("STRING", "HH:MM"), all_day: S("BOOLEAN"), company: S("STRING"), division: S("STRING"), project: S("STRING"),
     attendees: S("ARRAY", "People by name", { items: S("STRING") }), invite_division: S("BOOLEAN", "Invite everyone in the division, e.g. 'a Growth meeting'"),
+    invite_groups: S("ARRAY", "Groups as the person said them: 'C-Level', 'managers', 'all IELSco managers', 'associates in Elco AI', 'all staff', a division name", { items: S("STRING") }),
+    repeat: S("STRING", "How it repeats; 'weekly' for 'every Monday'", { enum: ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "yearly"], format: "enum" }),
+    repeat_days: S("ARRAY", "For weekly repeats on specific days: MO TU WE TH FR SA SU", { items: S("STRING", undefined, { enum: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"], format: "enum" }) }),
+    repeat_until: S("STRING", "Last date of the repeat, YYYY-MM-DD"), repeat_count: S("INTEGER", "Number of occurrences"),
+    milestone: S("STRING", "Timeline milestone it is for, by name or TL-ID"), campaign: S("STRING", "Campaign by name or CMP-ID"), partnership: S("STRING", "Partner organisation or OPP-ID"),
+    tasks: S("ARRAY", "Existing tasks to link, by title or TSK-ID", { items: S("STRING") }),
     location: S("STRING"), meeting_url: S("STRING", "https link"), description: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["title", "date"] }) },
   { name: "create_timeline_item", description: "Propose a milestone on the company timeline (e.g. 'Mojo launch by Nov 12').", parameters: S("OBJECT", undefined, { properties: {
     title: S("STRING"), due_date: S("STRING", "YYYY-MM-DD"), company: S("STRING"), workstream: S("STRING", "Workstream code (WS1…) or name"), lead_division: S("STRING"),
     owner: S("STRING", "Person by name"), project: S("STRING"), is_major: S("BOOLEAN"), deliverable: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["title", "due_date"] }) },
+  { name: "create_campaign", description: "Propose a marketing campaign (the plan: name, dates, objective). Its launch is a separate create_event with category Campaign and campaign set.", parameters: S("OBJECT", undefined, { properties: {
+    name: S("STRING"), company: S("STRING"), division: S("STRING"), start_date: S("STRING", "YYYY-MM-DD"), end_date: S("STRING", "YYYY-MM-DD"), objective: S("STRING"), owner: S("STRING", "Person by name"),
+    project: S("STRING"), milestone: S("STRING", "Timeline milestone by name or TL-ID"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["name"] }) },
+  { name: "create_content_items", description: "Propose content slots (posts, videos, emails) on publish dates, e.g. 'an Instagram post every weekday next week'. Content items are not tasks.", parameters: S("OBJECT", undefined, { properties: {
+    title: S("STRING", "What the content is, e.g. 'Daily English tip'"), campaign: S("STRING"), company: S("STRING"), channel: S("STRING"), format: S("STRING"), pillar: S("STRING"),
+    dates: S("ARRAY", "Exact publish dates, YYYY-MM-DD", { items: S("STRING") }), from: S("STRING", "First date, YYYY-MM-DD"), to: S("STRING", "Last date, YYYY-MM-DD"),
+    pattern: S("STRING", "With from/to", { enum: ["daily", "weekdays", "weekly"], format: "enum" }), time: S("STRING", "HH:MM publish time"), creator: S("STRING", "Person by name"), reviewer: S("STRING", "Person by name"),
+    unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["title"] }) },
+  { name: "move_event", description: "Propose moving an EXISTING event, e.g. 'move the GIF preparation meeting from Thursday to Friday'. Linked tasks and milestones are never changed.", parameters: S("OBJECT", undefined, { properties: {
+    event: S("STRING", "Event title as the person said it, or EV-ID"), from_date: S("STRING", "The date it is on now, YYYY-MM-DD, when the person said it"), to_date: S("STRING", "New date, YYYY-MM-DD"),
+    start_time: S("STRING", "New start HH:MM, only if the person gave one"), end_time: S("STRING", "New end HH:MM"),
+    scope: S("STRING", "For repeating events, only if the person said which", { enum: ["this", "following", "all"], format: "enum" }), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["event", "to_date"] }) },
+  { name: "invite_to_event", description: "Propose inviting people or groups to an EXISTING event, e.g. 'invite all IELSco managers to the monthly company review'.", parameters: S("OBJECT", undefined, { properties: {
+    event: S("STRING", "Event title or EV-ID"), people: S("ARRAY", "People by name", { items: S("STRING") }),
+    groups: S("ARRAY", "Groups as said: 'C-Level', 'managers', 'all IELSco managers', 'associates', 'all staff', a division", { items: S("STRING") }), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["event"] }) },
 ] as const;
 
 /** What the confirmation card shows: everything except the insert payload. */

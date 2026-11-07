@@ -7,6 +7,7 @@ import { useDirectory, useQuery } from "@/components/os/data";
 import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
 import { useDefaultCompany } from "@/components/os/pickers";
+import { LinkedEvents } from "@/components/os/linked-events";
 import { RecordSheet } from "@/components/os/records";
 import { Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, Tabs, btnPrimary, input, muted, panel } from "@/components/os/ui";
 import { EVIDENCE_STATUSES, OPP_STAGES, SENSITIVITIES, WORKSPACES, companyName, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
@@ -100,7 +101,7 @@ export default function PartnershipsPage() {
       )}
       <RecordSheet open={creating || !!editing} title={editing ? `${editing.id} ${editing.organisation}` : "New opportunity"} table="os_partnerships" record={editing}
         defaults={{ company_code: defCompany, stage: "1 Identified", sensitivity: "Confidential", division_id: "DIV-06" }} fields={fields}
-        extra={editing ? <div className="space-y-4"><div><h3 className="mb-2 text-sm font-semibold">Documents</h3><LinkedDocuments type="partnership" id={editing.id} /></div><EntityFeed type="partnership" id={editing.id} /></div> : undefined}
+        extra={editing ? <div className="space-y-4"><div><h3 className="mb-2 text-sm font-semibold">Meetings and events</h3><LinkedEvents type="partnership" id={editing.id} company={editing.company_code} defaults={{ category: "Partnership" }} /></div><div><h3 className="mb-2 text-sm font-semibold">Documents</h3><LinkedDocuments type="partnership" id={editing.id} /></div><EntityFeed type="partnership" id={editing.id} /></div> : undefined}
         onClose={() => { setCreating(false); setOpenId(null); }} onSaved={() => { setCreating(false); setOpenId(null); opps.reload(); }} />
     </div>
   );

@@ -4,18 +4,19 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Diamond } from "lucide-react";
 import { useOsMe } from "@/components/os/OsProvider";
-import { friendlyError, useQuery } from "@/components/os/data";
+import Link from "next/link";
+import { friendlyError, useDirectory, useQuery } from "@/components/os/data";
 import { ErrorLine, KeyValue, Loading, PageTitle, Select, Sheet, StatusBadge, Tabs, btn, btnPrimary, input, muted, panel } from "@/components/os/ui";
-import { TIMELINE_STATUSES, fmtDate, relativeDue, todayJakarta } from "@/lib/os/meta";
+import { TIMELINE_STATUSES, WORKSPACES, fmtDate, relativeDue, todayJakarta } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
 
 type Item = {
   id: string; company_code: string; workstream_code: string | null; workstream_name: string | null; title: string; deliverable: string | null;
   owner_person_id: string | null; owner_name: string | null; lead_division: string | null; supporting_divisions: string | null; dependencies: string | null;
   planned_start: string | null; due_date: string | null; status: string; decision_gate: string | null; budget_dependency: string | null; evidence: string | null;
-  risk: string | null; related_event: string | null; linked_refs: string | null; is_major: boolean; planning_label: string | null;
+  risk: string | null; related_event: string | null; linked_refs: string | null; is_major: boolean; planning_label: string | null; lead_division_id: string | null; project_id: string | null;
 };
-const COLS = "id, company_code, workstream_code, workstream_name, title, deliverable, owner_person_id, owner_name, lead_division, supporting_divisions, dependencies, planned_start, due_date, status, decision_gate, budget_dependency, evidence, risk, related_event, linked_refs, is_major, planning_label";
+const COLS = "id, company_code, workstream_code, workstream_name, title, deliverable, owner_person_id, owner_name, lead_division, supporting_divisions, dependencies, planned_start, due_date, status, decision_gate, budget_dependency, evidence, risk, related_event, linked_refs, is_major, planning_label, lead_division_id, project_id";
 const MONTH = (iso: string) => iso.slice(0, 7);
 const monthLabel = (ym: string) => new Date(`${ym}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" });
 const dayNum = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / 86400000);
@@ -28,10 +29,16 @@ export default function TimelinePage() {
   const [ws, setWs] = useState("");
   const [status, setStatus] = useState("");
   const [majorOnly, setMajorOnly] = useState(false);
+  const [company, setCompany] = useState(params.get("c") ?? "");
+  const [division, setDivision] = useState("");
+  const [project, setProject] = useState(params.get("p") ?? "");
+  const dir = useDirectory();
+  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").order("name").limit(300), []);
   const [open, setOpen] = useState<string | null>(params.get("focus"));
   const all = useMemo(() => items.data ?? [], [items.data]);
   const streams = useMemo(() => Array.from(new Map(all.filter((i) => i.workstream_code).map((i) => [i.workstream_code!, i.workstream_name ?? ""])).entries()).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })), [all]);
-  const rows = all.filter((i) => (!ws || i.workstream_code === ws) && (!status || i.status === status) && (!majorOnly || i.is_major));
+  const rows = all.filter((i) => (!ws || i.workstream_code === ws) && (!status || i.status === status) && (!majorOnly || i.is_major)
+    && (!company || i.company_code === company) && (!division || i.lead_division_id === division) && (!project || i.project_id === project));
   const months = useMemo(() => {
     const ds = all.flatMap((i) => [i.planned_start, i.due_date]).filter(Boolean) as string[];
     if (!ds.length) return [] as string[];
@@ -51,6 +58,9 @@ export default function TimelinePage() {
       <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
         <Select ariaLabel="Workstream" value={ws} onChange={setWs} options={streams.map(([c, n]) => ({ value: c, label: `${c} ${n}` }))} placeholder="All workstreams" className="col-span-2 md:w-72" />
         <Select ariaLabel="Status" value={status} onChange={setStatus} options={TIMELINE_STATUSES} placeholder="Any status" className="md:w-36" />
+        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="Company-wide" className="md:w-36" />
+        <Select ariaLabel="Division" value={division} onChange={setDivision} options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} placeholder="All divisions" className="md:w-44" />
+        <Select ariaLabel="Project" value={project} onChange={setProject} options={(projects.data ?? []).map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} placeholder="All projects" className="col-span-2 md:w-56" />
         {view === "month" && <Select ariaLabel="Month" value={month} onChange={setMonth} options={months.map((m) => ({ value: m, label: monthLabel(m) }))} className="md:w-32" />}
         <label className="col-span-2 flex min-h-10 items-center gap-2 text-sm text-[#3A4B60]"><input type="checkbox" className="h-4 w-4" checked={majorOnly} onChange={(e) => setMajorOnly(e.target.checked)} />Major milestones only</label>
       </div>
@@ -167,6 +177,7 @@ function ItemSheet({ item, onClose, onSaved }: { item: Item; onClose: () => void
       footer={<><button type="button" className={btn} onClick={onClose}>Close</button><button type="button" className={btnPrimary} onClick={save}>Save</button></>}>
       <div className="space-y-4">
         <ErrorLine message={err} />
+        <Link href={`/os/timeline/${item.id}`} className={cn(btn, "w-fit")} data-testid="os-timeline-open">Open the milestone page: dependencies, tasks, events, documents</Link>
         {item.planning_label && <p className="rounded-lg bg-[#FFF7E6] px-3 py-2 text-xs text-[#865400]">{item.planning_label}</p>}
         <KeyValue items={[
           { label: "Workstream", value: `${item.workstream_code ?? ""} ${item.workstream_name ?? ""}` }, { label: "Owner", value: item.owner_name ?? item.owner_person_id ?? "—" },
