@@ -1,5 +1,6 @@
 import "server-only";
 import { google, type drive_v3 } from "googleapis";
+import { normalizePrivateKey } from "./pem";
 
 // Google Drive for Company OS, server side only. Uses the existing service account (GOOGLE_CLIENT_EMAIL /
 // GOOGLE_PRIVATE_KEY); the key never reaches the browser.
@@ -13,6 +14,7 @@ export const MASTER_TEMPLATES_FOLDER = "1deyBzqGI5e1zj1cl3smndFDfqWPbWcz1"; // 0
 export class DriveUnavailable extends Error {}
 
 let client: drive_v3.Drive | null = null;
+
 export function driveConfigured(): boolean {
   return Boolean(process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY);
 }
@@ -20,7 +22,7 @@ function drive(): drive_v3.Drive {
   if (!driveConfigured()) throw new DriveUnavailable("Google Drive isn't connected on the server.");
   if (!client) {
     const auth = new google.auth.GoogleAuth({
-      credentials: { client_email: process.env.GOOGLE_CLIENT_EMAIL, private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n") },
+      credentials: { client_email: process.env.GOOGLE_CLIENT_EMAIL, private_key: normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY) },
       scopes: ["https://www.googleapis.com/auth/drive"],
     });
     client = google.drive({ version: "v3", auth });

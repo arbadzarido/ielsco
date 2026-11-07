@@ -93,5 +93,10 @@ export async function callModel(model: string, system: string, history: { role: 
     contents: [...history.map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.content }] })), { role: "user", parts: [{ text: userTurn }] }],
   });
   const u = res.response.usageMetadata;
-  return { text: res.response.text(), input: u?.promptTokenCount ?? 0, output: u?.candidatesTokenCount ?? 0 };
+  // Thinking tokens are billed as output, so count everything the model produced, not only the visible reply.
+  const input = u?.promptTokenCount ?? 0;
+  const output = Math.max((u?.totalTokenCount ?? 0) - input, (u?.candidatesTokenCount ?? 0) + ((u as { thoughtsTokenCount?: number } | undefined)?.thoughtsTokenCount ?? 0));
+  const cut = res.response.candidates?.[0]?.finishReason === "MAX_TOKENS";
+  const text = res.response.text() + (cut ? "\n\n(The reply was cut short. Ask a narrower question for the rest.)" : "");
+  return { text, input, output };
 }

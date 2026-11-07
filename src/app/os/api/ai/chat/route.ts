@@ -47,7 +47,8 @@ export async function POST(req: Request) {
 
   const tier = pickTier(message, Boolean(deep));
   const model = tier === "complex" ? settings.complex_model : settings.routine_model;
-  const maxOutput = tier === "complex" ? 3000 : 1200;
+  // The complex model thinks before it answers and its thinking counts against this limit (and is billed as output).
+  const maxOutput = tier === "complex" ? 4000 : 1200;
   const context = await gatherContext(supabase, personId, agent as AgentKey, company, message);
   const userTurn = `DATA (records the person can access, as of ${context.today}; company scope: ${context.company}):\n${JSON.stringify(context.data)}\n\nQUESTION:\n${message}`;
   const estInput = Math.ceil((systemPrompt(agent).length + userTurn.length + history.reduce((n, h) => n + h.content.length, 0)) / 3) + 200;
