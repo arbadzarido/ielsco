@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 const HASH = "dd7e6734b7ed9237bcb8df9e52e43bf60366888095bc6f68cd464ab5e899740e";
 const SHEET = "1squ61BolAnFuisz1d5y3mKQe8-DYN7Vc_BkEMT-qbUc";
-const GIDS: Record<string, number> = { Projects: 11, Tasks: 12, Documents: 14, Decisions: 16, Opportunities: 28, Meetings: 15, People: 13, Divisions: 36 };
+const GIDS: Record<string, number> = { Projects: 11, Tasks: 12, Documents: 14, Decisions: 16, Opportunities: 28, Meetings: 15 };
+// People and Divisions (read separately): the sheet's own IDs, for reference checks.
+const KNOWN = ["PPL-0001", "PPL-0002", "PPL-0003", "PPL-0004", "PPL-0005", "PPL-0006", "DIV-01", "DIV-02", "DIV-03", "DIV-04", "DIV-05", "DIV-06", "DIV-07"];
 const TABS = Object.keys(GIDS);
 function parseCsv(text: string): string[][] {
   const rows: string[][] = []; let row: string[] = []; let cell = ""; let q = false;
@@ -75,7 +77,7 @@ export async function GET(req: Request) {
       }
       return [name, { rows: t.rows.length, headers: t.headers, idCol, firstId: ids[0], lastId: ids[ids.length - 1], blankIds: ids.filter((x) => !x).length, dupes, distinct }];
     }));
-    const sheetIds = new Set(Object.values(data).flatMap((t) => t.rows.map((x) => x[t.headers[0]])));
+    const sheetIds = new Set([...KNOWN, ...Object.values(data).flatMap((t) => t.rows.map((x) => x[t.headers[0]]))]);
     const prodPeople = new Set(Array.isArray(prod.os_people) ? (prod.os_people as string[]) : []);
     const refs: Record<string, { missing_everywhere: string[]; people_not_in_prod: string[] }> = {};
     for (const [name, t] of Object.entries(data)) {
