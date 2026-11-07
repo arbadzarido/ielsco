@@ -51,7 +51,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         actions={<><button type="button" className={btn} onClick={() => setEditing(true)}>Edit</button><button type="button" className={btnPrimary} onClick={() => setNewTask(true)}><Plus size={16} aria-hidden="true" />Task</button></>} />
       <ErrorLine message={err} />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-6">
           <section className={cn(panel, "grid grid-cols-2 gap-4 p-4 sm:grid-cols-4")} aria-label="Project overview">
             <div><p className="text-xs text-[#66768A]">Status</p><div className="mt-1"><StatusBadge value={p.status} /></div></div>

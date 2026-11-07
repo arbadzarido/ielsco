@@ -29,7 +29,7 @@ export default function TimelinePage() {
   const [status, setStatus] = useState("");
   const [majorOnly, setMajorOnly] = useState(false);
   const [open, setOpen] = useState<string | null>(params.get("focus"));
-  const all = items.data ?? [];
+  const all = useMemo(() => items.data ?? [], [items.data]);
   const streams = useMemo(() => Array.from(new Map(all.filter((i) => i.workstream_code).map((i) => [i.workstream_code!, i.workstream_name ?? ""])).entries()).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })), [all]);
   const rows = all.filter((i) => (!ws || i.workstream_code === ws) && (!status || i.status === status) && (!majorOnly || i.is_major));
   const months = useMemo(() => {

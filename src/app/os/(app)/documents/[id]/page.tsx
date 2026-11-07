@@ -67,10 +67,10 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
         </>} />
       <ErrorLine message={err} />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-6">
           <Section title="Access check" action={d.drive_file_id ? <button type="button" className={btn} onClick={check} disabled={checking} data-testid="os-doc-check"><ShieldCheck size={15} aria-hidden="true" />{checking ? "Checking…" : "Check access"}</button> : undefined}>
-            {!d.drive_file_id ? <p className={cn("text-sm", muted)}>No Drive file is attached, so there's nothing to check.</p>
+            {!d.drive_file_id ? <p className={cn("text-sm", muted)}>No Drive file is attached, so there&apos;s nothing to check.</p>
               : d.drift_findings?.length ? (
                 <ul className={cn(panel, "divide-y divide-[#F0F2F5]")} data-testid="os-doc-findings">
                   {d.drift_findings.map((f) => (
@@ -93,7 +93,7 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
                     {href ? <Link href={href} className={linkCls}>{l.entity_id}</Link> : <span>{l.entity_id}</span>}
                   </li>); })}
               </ul>
-            ) : <p className={cn("text-sm", muted)}>Not linked to any project, task, meeting or partnership yet. Link it from that record's Documents section.</p>}
+            ) : <p className={cn("text-sm", muted)}>Not linked to any project, task, meeting or partnership yet. Link it from that record&apos;s Documents section.</p>}
           </Section>
           <EntityFeed type="document" id={d.id} />
         </div>

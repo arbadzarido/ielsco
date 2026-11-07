@@ -68,7 +68,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
         </>} />
       <ErrorLine message={err} />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-6">
           {(t.description || t.definition_of_done || t.blocker) && (
             <section className={cn(panel, "space-y-3 p-4 text-sm")}>

@@ -30,7 +30,8 @@ export function GrantsAdmin({ supabase }: { supabase: SupabaseClient }) {
   useEffect(() => { load(); }, [load]);
 
   const name = (id: string | null) => people.find((p) => p.id === id)?.full_name ?? id ?? "";
-  const target = (g: OsGrant) => (g.resource_type === "division" ? divisions.find((d) => d.id === g.resource_id)?.name ?? g.resource_id : `${g.resource_type} ${g.resource_id}`);
+  const target = (g: OsGrant) => (g.resource_type === "division" ? divisions.find((d) => d.id === g.resource_id)?.name ?? g.resource_id
+    : g.resource_type === "people" ? `People Lead for ${g.resource_id === "HQ" ? "all companies" : g.resource_id === "IEL" ? "IELSco" : "Elco AI"}` : `${g.resource_type} ${g.resource_id}`);
 
   const create = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,7 +41,7 @@ export function GrantsAdmin({ supabase }: { supabase: SupabaseClient }) {
     const expires = String(f.get("expires_at") ?? "");
     const { error } = await supabase.from("os_grants").insert({
       person_id: f.get("person_id"), resource_type: type,
-      resource_id: type === "division" ? f.get("division_id") : String(f.get("resource_id") ?? "").trim(),
+      resource_id: type === "division" ? f.get("division_id") : type === "people" ? f.get("people_company") : String(f.get("resource_id") ?? "").trim(),
       level: f.get("level"), reason: String(f.get("reason") ?? "").trim(),
       expires_at: expires ? new Date(`${expires}T23:59:59+07:00`).toISOString() : null,
     });
@@ -97,8 +98,12 @@ function GrantForm({ people, divisions, onSubmit }: { people: OsPerson[]; divisi
       <div><label className={labelClass} htmlFor="g-type">Access to</label>
         <select id="g-type" name="resource_type" className={inputClass} value={type} onChange={(e) => setType(e.target.value)}>
           <option value="division">A division</option><option value="document">One document</option><option value="project">One project</option>
+          <option value="people">People Lead (employment and reviews)</option>
         </select></div>
-      {type === "division" ? (
+      {type === "people" ? (
+        <div><label className={labelClass} htmlFor="g-co">For people in</label>
+          <select id="g-co" name="people_company" className={inputClass}><option value="IEL">IELSco</option><option value="ELC">Elco AI</option><option value="HQ">Both companies</option></select></div>
+      ) : type === "division" ? (
         <div><label className={labelClass} htmlFor="g-div">Division</label>
           <select id="g-div" name="division_id" className={inputClass}>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
       ) : (

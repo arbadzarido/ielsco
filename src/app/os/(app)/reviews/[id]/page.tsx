@@ -17,7 +17,7 @@ type Review = {
 };
 const MANAGER_FIELDS: [keyof Review, string, string][] = [
   ["manager_assessment", "Manager assessment", "Overall view of the period, in words."],
-  ["kpi_achievement", "KPI achievement", "What happened against the KPIs they're accountable for. Describe; don't score."],
+  ["kpi_achievement", "KPI achievement", "What happened against the KPIs they&apos;re accountable for. Describe; don't score."],
   ["objective_achievement", "Objective achievement", "Progress on their objectives and key results."],
   ["strengths", "Strengths", ""], ["development_areas", "Development areas", ""],
   ["development_plan", "Development plan", "Agreed actions, support and dates."], ["feedback", "Feedback", "Anything else to share with them."],
@@ -61,7 +61,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         actions={<StatusBadge value={r.status} />} />
       <ErrorLine message={err} />
       {saved && <p role="status" className="mb-3 rounded-lg bg-[#EEF6F0] px-3 py-2 text-sm text-[#25633A]">{saved}</p>}
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-6">
           <Section title="Self-assessment">
             {selfEditable ? (
@@ -95,7 +95,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
               <div className={cn(panel, "space-y-3 p-4 text-sm")}>
                 {MANAGER_FIELDS.filter(([k]) => r[k]).map(([k, label]) => <div key={k}><h3 className="text-xs font-medium text-[#66768A]">{label}</h3><p className="mt-0.5 whitespace-pre-wrap">{r[k] as string}</p></div>)}
               </div>
-            ) : <p className={cn("text-sm", muted)}>Your reviewer hasn't completed this yet.</p>}
+            ) : <p className={cn("text-sm", muted)}>Your reviewer hasn&apos;t completed this yet.</p>}
             {isSelf && r.status === "Completed" && (
               <button type="button" className={cn(btnPrimary, "mt-3")} onClick={() => save({ status: "Acknowledged" }, "Acknowledged.")}>Acknowledge</button>
             )}
@@ -115,7 +115,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
           </section>
           <section className={cn(panel, "p-4")}>
             <h2 className="mb-2 text-sm font-semibold">For reference</h2>
-            <p className={cn("mb-1 text-xs", muted)}>KPIs they're accountable for</p>
+            <p className={cn("mb-1 text-xs", muted)}>KPIs they&apos;re accountable for</p>
             {kpis.data?.length ? <ul className="mb-3 space-y-1 text-sm">{kpis.data.map((k) => <li key={k.id}><Link href={`/os/kpis/${k.id}`} className="hover:underline">{k.id} · {k.name}</Link></li>)}</ul> : <p className="mb-3 text-sm">None</p>}
             <p className={cn("mb-1 text-xs", muted)}>Objectives they own</p>
             {objectives.data?.length ? <ul className="space-y-1 text-sm">{objectives.data.map((o) => <li key={o.id} className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate">{o.title}</span><StatusBadge value={o.status} /></li>)}</ul> : <p className="text-sm">None</p>}

@@ -43,7 +43,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
       <PageTitle title={p.full_name} crumbs={[{ href: "/os/people", label: "People" }]}
         description={`${p.id} · ${pr?.title ?? ROLE_LABEL[p.org_role as keyof typeof ROLE_LABEL]}`}
         actions={<button type="button" className={btn} onClick={() => setEditProfile(true)}>Edit profile</button>} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
           <section className={cn(panel, "p-4")}>
             <div className="mb-3 flex items-center gap-3"><Avatar name={p.full_name} size={40} /><div><p className="font-semibold">{p.full_name}</p><p className={cn("text-sm", muted)}>{ROLE_LABEL[p.org_role as keyof typeof ROLE_LABEL]} · <StatusBadge value={p.status === "onboarding" ? "Onboarding" : p.status === "active" ? "Active" : p.status} /></p></div></div>

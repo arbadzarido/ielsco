@@ -11,7 +11,7 @@ import { DOC_COLUMNS, type DocRow } from "@/components/os/doc-forms";
 import { Announcements, Decisions, Meetings, ProductItems } from "@/components/os/records";
 import { PROJECT_COLUMNS, TASK_COLUMNS, type ProjectRow, type TaskRow } from "@/components/os/work-forms";
 import { Avatar, Empty, ErrorLine, Loading, Progress, RowList, Section, Stat, StatusBadge, Tabs, btn, linkCls, muted, panel } from "@/components/os/ui";
-import { addDays, fmtDate, fmtDateTime, isOpenTask, personLabel, relativeDue, todayJakarta, workspaceBySlug } from "@/lib/os/meta";
+import { addDays, fmtDate, fmtDateTime, personLabel, relativeDue, todayJakarta, workspaceBySlug } from "@/lib/os/meta";
 import { ROLE_LABEL } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +75,7 @@ function Overview({ code, canPost }: { code: string; canPost: boolean }) {
   const activity = useQuery<Activity[]>((s) => s.from("os_activity").select("id, at, entity_type, entity_id, actor_person_id, action, summary").eq("company_code", code).order("at", { ascending: false }).limit(12), [code]);
   const docs = useQuery<DocRow[]>((s) => s.from("os_documents").select(DOC_COLUMNS).eq("company_code", code).neq("status", "Archived").order("updated_at", { ascending: false }).limit(6), [code]);
   const kpis = useQuery<KpiRow[]>((s) => s.from("os_kpis").select("id, name, reporting_period, target_status, sheet_latest_value, values_restricted, division_id").eq("company_code", code).eq("level", "Company").order("id").limit(8), [code]);
-  const t = tasks.data ?? [];
+  const t = useMemo(() => tasks.data ?? [], [tasks.data]);
   const overdue = t.filter((x) => relativeDue(x.due_date)?.overdue).length;
   const blocked = t.filter((x) => x.status === "Blocked").length;
   const deadlines = useMemo(() => {
@@ -87,7 +87,7 @@ function Overview({ code, canPost }: { code: string; canPost: boolean }) {
   }, [t, projects.data, timeline.data, horizon]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Active projects" value={projects.data?.length ?? "…"} href={`/os/projects?company=${code}`} />

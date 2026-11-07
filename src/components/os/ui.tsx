@@ -103,7 +103,7 @@ export function Loading({ label = "Loading…" }: { label?: string }) {
 
 export function ErrorLine({ message }: { message: string | null | undefined }) {
   if (!message) return null;
-  return <p role="alert" className="rounded-lg border border-[#F1C9CA] bg-[#FDF2F2] px-3 py-2 text-sm text-[#A12D2F]">{message}</p>;
+  return <p role="alert" data-testid="os-error" className="rounded-lg border border-[#F1C9CA] bg-[#FDF2F2] px-3 py-2 text-sm text-[#A12D2F]">{message}</p>;
 }
 
 export function Field({ label, children, hint, className }: { label: string; children: (id: string) => ReactNode; hint?: string; className?: string }) {
