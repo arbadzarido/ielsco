@@ -32,11 +32,18 @@ export async function GET(req: Request) {
   try {
     const headersAuth = await auth.getRequestHeaders();
     const data: Record<string, { headers: string[]; rows: Record<string, string>[] }> = {};
-    const texts = await Promise.all(TABS.map(async (t) => {
-      const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${GIDS[t]}`, { headers: headersAuth as unknown as HeadersInit });
-      if (!res.ok) throw Object.assign(new Error(`export ${t}: HTTP ${res.status}`), { code: res.status });
-      return res.text();
-    }));
+    const texts: string[] = [];
+    for (const t of TABS) {
+      let res: Response | null = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET}/export?format=csv&gid=${GIDS[t]}`, { headers: headersAuth as unknown as HeadersInit });
+        if (res.status !== 429) break;
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      }
+      if (!res || !res.ok) throw Object.assign(new Error(`export ${t}: HTTP ${res?.status}`), { code: res?.status });
+      texts.push(await res.text());
+      await new Promise((r) => setTimeout(r, 500));
+    }
     texts.forEach((txt, i) => {
       const v = parseCsv(txt);
       const headers = (v[0] ?? []).map((h) => String(h).trim());
