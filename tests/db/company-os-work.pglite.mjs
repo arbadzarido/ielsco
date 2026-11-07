@@ -43,7 +43,7 @@ await db.exec(`
 const SESS = Object.fromEntries(Object.values(U).map((id) => [id, id.replace(/^00000000/, "5e55a000")]));
 await db.exec(`insert into auth.sessions (id, user_id) values ${Object.values(U).map((id) => `('${SESS[id]}', '${id}')`).join(", ")}`);
 
-for (const f of ["20261107000000_company_os_foundation.sql", "20261107010000_company_os_access.sql", "20261108000000_company_os_work.sql", "20261108010000_company_os_kpi_timeline_data.sql"]) {
+for (const f of ["20261107000000_company_os_foundation.sql", "20261107010000_company_os_access.sql", "20261108000000_company_os_work.sql", "20261108010000_company_os_kpi_timeline_data.sql", "20261108020000_company_os_drive_connection.sql"]) {
   const sql = readFileSync(join(dir, f), "utf8");
   await db.exec(sql);
   await db.exec(sql);
@@ -253,6 +253,13 @@ await t("person can reject a proposed action but not confirm it themselves", asy
   const s = await one(C, "select status from public.os_ai_actions");
   return confirmBlocked && s === "rejected" ? null : `blocked=${confirmBlocked} status=${s}`;
 }, (w) => w);
+
+// ── Drive connection (sealed refresh token): service role only
+await svc("insert into public.os_drive_connection (google_email, token_sealed, scopes, connected_by) values ('founder@example.com', 'v1.x.y.z', 'drive', 'PPL-9001')");
+await te("a founder cannot read the Drive token through the API", () => user(F, "select token_sealed from public.os_drive_connection"), /permission denied/);
+await te("a member cannot replace the Drive connection", () => user(C, "update public.os_drive_connection set google_email = 'attacker@example.com'"), /permission denied/);
+await te("anon cannot read the Drive connection", () => as("anon", null, "select * from public.os_drive_connection"), /permission denied/);
+await te("only one Drive connection can exist", () => svc("insert into public.os_drive_connection (id, google_email, token_sealed, scopes, connected_by) values (false, 'x@example.com', 'v1', 'drive', 'PPL-9001')"), /check/);
 
 // ── Grants hygiene
 await t("anon has no privileges on any os_ table", () => db.query("select count(*)::int c from information_schema.role_table_grants where grantee = 'anon' and table_name like 'os\\_%'"), (r) => is(0)(r.rows[0].c));

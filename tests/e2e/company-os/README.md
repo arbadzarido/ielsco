@@ -10,7 +10,8 @@ tells the gateway which identity (email, verified, MFA) the next "Continue with 
 sudo -u postgres psql -c "create database os_e2e"
 sudo -u postgres psql -d os_e2e -f tests/e2e/company-os/setup-db.sql
 for f in 20261107000000_company_os_foundation.sql 20261107010000_company_os_access.sql \
-         20261108000000_company_os_work.sql 20261108010000_company_os_kpi_timeline_data.sql; do
+         20261108000000_company_os_work.sql 20261108010000_company_os_kpi_timeline_data.sql \
+         20261108020000_company_os_drive_connection.sql; do
   sudo -u postgres psql -v ON_ERROR_STOP=1 -d os_e2e -f supabase/migrations/$f; done
 
 # 2. Gateway (prints the anon / service keys with --keys)

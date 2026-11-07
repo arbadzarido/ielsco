@@ -1,12 +1,17 @@
 import "server-only";
 import { google, type drive_v3 } from "googleapis";
 import { normalizePrivateKey } from "./pem";
+import { writerDrive } from "./drive-oauth";
 
 // Google Drive for Company OS, server side only. Uses the existing service account (GOOGLE_CLIENT_EMAIL /
 // GOOGLE_PRIVATE_KEY); the key never reaches the browser.
 //
 // What this module does: list the Master Templates folder, copy a template into an existing folder, upload a file into
 // an existing folder, and READ a file's sharing for the access-drift report.
+//
+// Two Google identities: the service account READS (templates, folder checks, sharing). New files are WRITTEN with
+// the Google account a founder connected in Admin (os_drive_connection), because the folders are in a personal My
+// Drive and a service account has no storage there. See drive-oauth.ts.
 // What it never does: create, rename, move or delete folders; change any permission or sharing setting.
 
 export const MASTER_TEMPLATES_FOLDER = "1deyBzqGI5e1zj1cl3smndFDfqWPbWcz1"; // 02.1 Master Templates
@@ -33,6 +38,9 @@ function drive(): drive_v3.Drive {
 /** Drive errors in words, without echoing file IDs or Google's internal messages. */
 export function driveError(e: unknown): string {
   if (e instanceof DriveUnavailable) return e.message;
+  const msg = String((e as { message?: string })?.message ?? "");
+  if (/storage quota/i.test(msg)) return "Google Drive refused to store the file for the service account. A founder needs to connect Google Drive in Admin → Integration health.";
+  if (/invalid_grant/i.test(msg)) return "The Google Drive connection has expired or was removed. A founder needs to connect Google Drive again in Admin → Integration health.";
   const code = (e as { code?: number })?.code;
   if (code === 404 || code === 403) return "The Company OS service account can't reach that Drive folder or file. A founder needs to share it with the service account.";
   return "Google Drive didn't respond. Try again in a moment.";
@@ -55,7 +63,8 @@ export async function copyTemplate(templateId: string, name: string, folderId: s
   // Only files that really are in the Master Templates folder can be copied.
   const meta = await drive().files.get({ fileId: templateId, fields: "id, parents, trashed", supportsAllDrives: true });
   if (meta.data.trashed || !(meta.data.parents ?? []).includes(MASTER_TEMPLATES_FOLDER)) throw new Error("not-a-template");
-  const res = await drive().files.copy({
+  const w = await requireWriter();
+  const res = await w.files.copy({
     fileId: templateId, supportsAllDrives: true, fields: "id, webViewLink, mimeType, modifiedTime",
     requestBody: { name, parents: [folderId] },
   });
@@ -63,11 +72,18 @@ export async function copyTemplate(templateId: string, name: string, folderId: s
 }
 
 export async function uploadFile(name: string, mimeType: string, body: NodeJS.ReadableStream, folderId: string): Promise<DriveFileInfo> {
-  const res = await drive().files.create({
+  const w = await requireWriter();
+  const res = await w.files.create({
     supportsAllDrives: true, fields: "id, webViewLink, mimeType, modifiedTime",
     requestBody: { name, parents: [folderId] }, media: { mimeType, body },
   });
   return { id: res.data.id!, webViewLink: res.data.webViewLink!, mimeType: res.data.mimeType!, modifiedTime: res.data.modifiedTime ?? null };
+}
+
+async function requireWriter(): Promise<drive_v3.Drive> {
+  const w = await writerDrive();
+  if (!w) throw new DriveUnavailable("Creating files in Drive needs a founder to connect Google Drive first (Admin → Integration health).");
+  return w;
 }
 
 export interface DriftFinding { code: string; message: string; severity: "high" | "medium" | "low" }
@@ -77,7 +93,16 @@ export interface DriftFinding { code: string; message: string; severity: "high" 
  * fixing a finding is done by a person in Drive (Company OS never changes Drive sharing).
  */
 export async function checkDrift(fileId: string, sensitivity: string, expectedFolder: string | null, knownAccounts: Set<string>): Promise<{ findings: DriftFinding[]; modifiedTime: string | null; parents: string[] }> {
-  const meta = await drive().files.get({ fileId, supportsAllDrives: true, fields: "id, parents, trashed, modifiedTime, permissions(id, type, role, domain, emailAddress), writersCanShare" });
+  const fields = "id, parents, trashed, modifiedTime, permissions(id, type, role, domain, emailAddress), writersCanShare";
+  let meta;
+  try { meta = await drive().files.get({ fileId, supportsAllDrives: true, fields }); }
+  catch (e) {
+    // Restricted folders are not shared with the service account; read those with the connected founder account.
+    const code = (e as { code?: number })?.code;
+    const w = code === 403 || code === 404 ? await writerDrive() : null;
+    if (!w) throw e;
+    meta = await w.files.get({ fileId, supportsAllDrives: true, fields });
+  }
   const findings: DriftFinding[] = [];
   const perms = meta.data.permissions ?? [];
   if (meta.data.trashed) findings.push({ code: "trashed", message: "The file is in the Drive trash.", severity: "high" });

@@ -106,19 +106,44 @@ export function AiAdmin() {
 }
 
 export function HealthAdmin() {
-  const [data, setData] = useState<{ checks: { key: string; label: string; ok: boolean; detail: string }[]; at: string } | null>(null);
+  type Health = { checks: { key: string; label: string; ok: boolean; detail: string }[]; at: string; drive?: { configured: boolean; connected: boolean; email: string | null } };
+  const [data, setData] = useState<Health | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const run = () => { setErr(null); fetch("/os/api/admin/health").then(async (r) => { const j = await r.json().catch(() => ({})); if (r.ok) setData(j); else setErr(j.error ?? "The check didn't run."); }).catch(() => setErr("Couldn't reach the server.")); };
   useEffect(run, []);
+  useEffect(() => {
+    const r = new URLSearchParams(window.location.search).get("drive");
+    const words: Record<string, string> = {
+      connected: "Google Drive is connected. New documents are created with that account.",
+      cancelled: "Connecting Google Drive was cancelled.", expired: "The Google sign-in took too long or came from another session. Try again.",
+      scope: "Google didn't grant full Drive access. Try again and allow Drive access.", failed: "Connecting Google Drive didn't work. Try again.",
+      denied: "Only founders can connect Google Drive.",
+    };
+    if (r && words[r]) setNote(words[r]);
+  }, []);
+  const disconnect = async () => {
+    if (!window.confirm("Disconnect Google Drive? Existing files stay in Drive; new documents can't be created until a founder connects again.")) return;
+    const r = await fetch("/os/api/admin/drive/disconnect", { method: "POST" });
+    if (!r.ok) setErr("Couldn't disconnect. Try again."); else { setNote("Google Drive disconnected."); run(); }
+  };
   return (
     <Section title="Integration health" action={<button type="button" className={btn} onClick={run}>Check again</button>}>
       <ErrorLine message={err} />
+      {note && <p className={cn("mb-2 text-sm", muted)} role="status">{note}</p>}
       {!data ? <Loading /> : (
         <ul className={cn(panel, "divide-y divide-[#F0F2F5]")} data-testid="os-health">
           {data.checks.map((c) => (
             <li key={c.key} className="flex items-start gap-2 px-3 py-2.5 text-sm">
               {c.ok ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#2E7D4F]" aria-label="Working" /> : <XCircle size={16} className="mt-0.5 shrink-0 text-[#A12D2F]" aria-label="Not working" />}
               <span className="flex-1"><span className="font-medium">{c.label}</span><span className={cn("block", muted)}>{c.detail}</span></span>
+              {c.key === "drive_write" && data.drive?.configured && (
+                data.drive.connected
+                  ? <button type="button" className={btn} onClick={disconnect}>Disconnect</button>
+                  // A full navigation to Google's consent screen, not an in-app page.
+                  // eslint-disable-next-line @next/next/no-html-link-for-pages
+                  : <a className={btn} href="/os/api/admin/drive/connect" data-testid="os-drive-connect">Connect Google Drive</a>
+              )}
             </li>
           ))}
           <li className={cn("px-3 py-2 text-xs", muted)}>Checked {fmtDateTime(data.at)}. Elco AI&apos;s own app and database are separate and aren&apos;t checked from here.</li>
