@@ -8,6 +8,7 @@
 // =============================================================================
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { unreadableAuthCookies } from '@/lib/supabase/auth-cookie-guard'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isGatedOsPath, isOsHost, isOsPath, osHostRoute } from '@/lib/os/host'
 
@@ -211,27 +212,29 @@ export async function proxy(request: NextRequest) {
   // STEP 6 — SUPABASE AUTH (session refresh + redirect rules)
   // ===========================================================================
 
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
+  // A session cookie the browser holds in an unreadable state (chunks from two different sessions) is dropped before
+  // any Supabase client reads it: auth-js would otherwise log the raw value, tokens included. The person is signed out,
+  // which is what happens anyway.
+  const unreadable = unreadableAuthCookies(request.cookies.getAll());
+  for (const name of unreadable) request.cookies.delete(name);
 
+  let response = NextResponse.next({ request });
+
+  // getAll/setAll: a refreshed session can span several cookie chunks, and every chunk must reach the browser. The old
+  // get/set/remove adapter rebuilt the response on each set, so only the last chunk was sent and the browser kept the
+  // previous session's refresh token (already rotated, so the next refresh failed and the person was signed out).
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
-          response.cookies.set({ name, value: '', ...options });
+        setAll(list: { name: string; value: string; options: CookieOptions }[]) {
+          for (const { name, value } of list) request.cookies.set(name, value);
+          response = NextResponse.next({ request });
+          for (const { name, value, options } of list) response.cookies.set(name, value, options);
         },
       },
     }
@@ -241,6 +244,10 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  for (const name of unreadable) {
+    if (!response.cookies.has(name)) response.cookies.set(name, '', { path: '/', maxAge: 0 });
+  }
 
   // ── Redirect rules ──────────────────────────────────────────────────────────
   // Catatan: IELS Circle (circle.ielsco.com) saat ini adalah halaman publik
