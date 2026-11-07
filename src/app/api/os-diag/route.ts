@@ -1,3 +1,4 @@
+// diag rev 2
 // THROWAWAY DIAGNOSTIC (branch diag/os-integrations, never merged). Runs only on a Vercel preview deployment and only
 // with a token whose SHA-256 matches below. Reports booleans, names, counts and error reasons; never secrets.
 import { createHash, createPrivateKey } from "node:crypto";
