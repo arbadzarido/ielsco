@@ -305,17 +305,187 @@ const member = await signIn({ email: "member.iel@ielsco.test" });
   const setRows = setb.ok ? await setb.json() : [];
   check("members cannot change the AI budget", Array.isArray(setRows) && setRows.length === 0 && sql("select per_person_daily_usd from public.os_ai_settings") === "2", `status ${setb.status}`);
 
+  // ── Calendar: views, an event, the task deadline, a project event ──────────────────────────────────────────────────
+  const jkt = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(d);
+  const plusDays = (iso, n) => { const x = new Date(`${iso}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const nextDow = (iso, dow) => { for (let i = 1; i <= 7; i++) { const d = plusDays(iso, i); if (new Date(`${d}T00:00:00Z`).getUTCDay() === dow) return d; } };
+  const today = jkt();
+  // An event three days out, unless that crosses into next month (then the first days of this month are fine too).
+  const evDay = plusDays(today, 3).slice(0, 7) === today.slice(0, 7) ? plusDays(today, 3) : plusDays(today, -3);
+  await page.goto(`${OS}/os/calendar`);
+  await page.getByTestId("os-cal-month").waitFor();
+  const monthName = new Date(`${today}T00:00:00Z`).toLocaleString("en-GB", { month: "long", timeZone: "UTC" });
+  check("calendar opens on this month's grid, Sunday first", (await page.getByTestId("os-cal-title").innerText()).includes(monthName) && /^\s*sun/i.test(await page.getByTestId("os-cal-month").innerText()), await page.getByTestId("os-cal-title").innerText());
+  await page.getByTestId("os-event-new").click();
+  await page.getByTestId("os-event-title").fill("Creative stand-up");
+  await page.getByTestId("os-event-start-date").fill(evDay);
+  await page.getByTestId("os-event-start-time").fill("10:00");
+  await page.getByTestId("os-event-end-time").fill("11:00");
+  await page.getByTestId("os-event-save").click();
+  await page.getByTestId("os-cal-month").getByText("Creative stand-up").first().waitFor({ timeout: 15000 }).catch(() => {});
+  const ev = sql("select id || '|' || company_code || '|' || coalesce(division_id, '-') || '|' || to_char(starts_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || '|' || created_by from public.os_events where title = 'Creative stand-up'");
+  const evId = ev.split("|")[0];
+  check("member creates an event; it gets an EV ID, their company, and 10:00 WIB is 03:00 UTC", /^EV-\d{4}\|IEL\|/.test(ev) && ev.includes(`${evDay} 03:00`) && ev.endsWith("|PPL-0002"), ev);
+  check("…and shows on the month grid", (await page.getByTestId("os-cal-month").innerText()).includes("Creative stand-up"));
+  await page.screenshot({ path: `${OUT}/30-calendar-month.png`, fullPage: true });
+  sql(`update public.os_tasks set due_date = '${evDay}' where id = '${tsk}'`);
+  await page.goto(`${OS}/os/calendar?view=week&d=${evDay}`);
+  await page.getByTestId("os-cal-week").waitFor();
+  const week = await page.getByTestId("os-cal-week").innerText();
+  check("week view shows the event and the task deadline from Tasks", week.includes("Creative stand-up") && week.includes("Draft logo usage guide"), week.slice(0, 300));
+  await page.goto(`${OS}/os/calendar?view=day&d=${evDay}`);
+  await page.getByText("Creative stand-up").first().waitFor({ timeout: 10000 }).catch(() => {});
+  check("day view lists the event with its time", (await text()).includes("10:00"));
+  await page.goto(`${OS}/os/calendar?view=upcoming`);
+  await page.getByTestId("os-cal-agenda").waitFor({ timeout: 10000 }).catch(() => {});
+  check("upcoming list includes the event", (await page.getByTestId("os-cal-agenda").innerText().catch(() => "")).includes("Creative stand-up") || evDay < today);
+  await page.goto(`${OS}/os/projects/${prj}`);
+  await page.getByTestId("os-linked-events").getByRole("button", { name: "Schedule an event" }).click();
+  await page.getByTestId("os-event-title").fill("Brand kit review");
+  await page.getByTestId("os-event-start-date").fill(evDay);
+  await page.getByTestId("os-event-save").click();
+  await page.getByTestId("os-linked-events").getByText("Brand kit review").waitFor({ timeout: 15000 }).catch(() => {});
+  check("an event scheduled from the project page is linked to it and listed there", sql(`select project_id from public.os_events where title = 'Brand kit review'`) === prj && (await page.getByTestId("os-linked-events").innerText()).includes("Brand kit review"));
+  const tokM = await accessToken(ctx);
+  const elcoEv = await restAs(tokM, "os_events", { method: "POST", body: JSON.stringify({ company_code: "ELC", title: "x", starts_at: `${evDay}T03:00:00Z`, ends_at: `${evDay}T04:00:00Z` }) });
+  check("an IELSco member can't create an Elco event through the API", elcoEv.status === 403 || elcoEv.status === 401, `status ${elcoEv.status}`);
+
+  // ── Google Calendar for this member (their own consent; separate from the founder's Drive connection) ────────────
+  const CAL_CB = "http://os.localhost:3000/os/api/calendar/callback";
+  await fetch(`${GW}/__test/google-redirects`, { method: "POST", body: JSON.stringify({ uris: [CAL_CB] }) });
+  await page.goto(`${OS}/os/calendar`);
+  await page.getByTestId("os-cal-connect").click();
+  await page.waitForURL(/google=connected/, { timeout: 15000 }).catch(() => {});
+  const calConn = sql("select person_id || '|' || google_email || '|' || token_sealed || '|' || coalesce(timezone, '-') from public.os_calendar_connections");
+  check("the member connects their own Google Calendar", page.url().includes("google=connected") && calConn.startsWith("PPL-0002|drive.writer@ielsco.test|"), `${page.url()} ${calConn.slice(0, 40)}`);
+  check("…the token is sealed and the calendar's time zone is kept", !calConn.includes("e2e-google-refresh-SECRET") && calConn.includes("|v1.") && calConn.endsWith("|Asia/Jakarta"));
+  check("…and that is not a Drive connection", sql("select count(*) from public.os_drive_connection") === "0");
+  const syncApi = (body) => page.evaluate(async (b) => { const r = await fetch("/os/api/calendar/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }); return { status: r.status, body: await r.json().catch(() => ({})) }; }, body);
+  const gcal = async () => (await (await fetch(`${GW}/__test/gcal`)).json()).items;
+  await page.goto(`${OS}/os/calendar?event=${evId}`);
+  const waitSql = async (q, want, ms = 15000) => { const end = Date.now() + ms; let v; while (Date.now() < end) { v = sql(q); if (v === want) return v; await page.waitForTimeout(300); } return v; };
+  const stateOf = `select sync_state from public.os_events where id = '${evId}'`;
+  await page.getByTestId("os-event-sync-local").getByRole("button", { name: "Add to my Google Calendar" }).click();
+  await waitSql(stateOf, "synced");
+  let g = await gcal();
+  check("pushing creates one Google event carrying the OS event ID, in Asia/Jakarta", g.length === 1 && g[0].extendedProperties?.private?.osEventId === evId && g[0].start?.timeZone === "Asia/Jakarta", JSON.stringify(g).slice(0, 200));
+  check("…and the OS keeps Google's event ID and etag", sql(`select sync_state || '|' || (google_event_id is not null)::text || '|' || (google_etag is not null)::text from public.os_events where id = '${evId}'`) === "synced|true|true");
+  sql(`update public.os_events set google_event_id = null, google_synced_by = null, google_etag = null, sync_state = 'local' where id = '${evId}'`);
+  const again = await syncApi({ event_id: evId, action: "push" });
+  check("pushing again after the link was lost finds the first copy instead of duplicating it", again.status === 200 && (await gcal()).length === 1, JSON.stringify(again));
+  // Someone moves it in Google; then the member edits it in the OS. Saving tries to send the edit, and must not overwrite.
+  g = await gcal();
+  await fetch(`${GW}/__test/gcal`, { method: "POST", body: JSON.stringify({ id: g[0].id, patch: { summary: "Stand-up (moved in Google)" } }) });
+  await page.goto(`${OS}/os/calendar?event=${evId}`);
+  await page.waitForFunction(() => document.querySelector("[data-testid=os-event-title]")?.value === "Creative stand-up", null, { timeout: 10000 }).catch(() => {});
+  await page.getByTestId("os-event-title").fill("Creative stand-up (agenda)");
+  await page.getByTestId("os-event-save").click();
+  await waitSql(stateOf, "conflict");
+  check("when Google changed too, the OS edit is kept but not sent: a conflict, and Google is untouched", sql(stateOf) === "conflict" && (await gcal())[0].summary === "Stand-up (moved in Google)" && sql(`select title from public.os_events where id = '${evId}'`) === "Creative stand-up (agenda)");
+  const conflict = await syncApi({ event_id: evId, action: "push" });
+  check("…a plain push is refused with Google's version attached", conflict.status === 409 && (await gcal())[0].summary === "Stand-up (moved in Google)", JSON.stringify(conflict).slice(0, 200));
+  await page.goto(`${OS}/os/calendar?event=${evId}`);
+  await page.getByTestId("os-event-sync").getByText("Changed in Google too").waitFor({ timeout: 10000 }).catch(() => {});
+  await page.screenshot({ path: `${OUT}/31-calendar-conflict.png` });
+  await page.getByTestId("os-event-sync").getByRole("button", { name: "Keep Google's version" }).click();
+  await waitSql(stateOf, "synced");
+  check("the member resolves it by keeping Google's version", sql(`select title || '|' || sync_state from public.os_events where id = '${evId}'`) === "Stand-up (moved in Google)|synced");
+  await fetch(`${GW}/__test/gcal`, { method: "POST", body: JSON.stringify({ id: (await gcal())[0].id, remove: true }) });
+  const gone = await syncApi({ event_id: evId, action: "push" });
+  check("an event deleted in Google is reported, not silently re-created", gone.status === 410 && (await gcal()).length === 0 && sql(stateOf) === "deleted_remote", JSON.stringify(gone).slice(0, 160));
+  await page.goto(`${OS}/os/calendar?event=${evId}`);
+  await page.getByTestId("os-event-sync").getByRole("button", { name: "Add it to Google again" }).click();
+  await waitSql(stateOf, "synced");
+  check("…and added back only when the member asks", (await gcal()).length === 1);
+  await page.keyboard.press("Escape");
+  await fetch(`${GW}/calendar/v3/calendars/primary/events`, { method: "POST", headers: { authorization: "Bearer e2e-google-access", "content-type": "application/json" }, body: JSON.stringify({ summary: "Dentist (personal)", start: { dateTime: `${evDay}T08:00:00+07:00` }, end: { dateTime: `${evDay}T09:00:00+07:00` } }) });
+  await page.goto(`${OS}/os/calendar?view=week&d=${evDay}`);
+  await page.getByTestId("os-cal-week").getByText("Dentist (personal)").waitFor({ timeout: 15000 }).catch(() => {});
+  const wk = await page.getByTestId("os-cal-week").innerText();
+  check("the member's own Google events show in their calendar, and a synced event shows once", wk.includes("Dentist (personal)") && wk.split("Stand-up (moved in Google)").length === 2, wk.slice(0, 300));
+  check("Google events are read live, never stored in the OS", sql("select count(*) from public.os_events where title like 'Dentist%'") === "0");
+  await page.goto(`${OS}/os/calendar?event=${evId}`);
+  page.once("dialog", (d) => d.accept());
+  await page.getByTestId("os-event-delete").click();
+  await page.waitForTimeout(1500);
+  check("deleting the event removes it from the OS and, unchanged, from Google", sql(`select count(*) from public.os_events where id = '${evId}'`) === "0" && (await gcal()).every((e) => e.extendedProperties?.private?.osEventId !== evId));
+
+  // ── Documents: the route check names exactly what is missing ──────────────────────────────────────────────────────
+  const rc = await page.evaluate(async () => (await fetch("/os/api/documents/route-check?company=IEL&division=DIV-04&doc_type=SOP&sensitivity=Internal")).json());
+  check("the document route check refuses to create without an approved route, and says which one", rc.ok === false && rc.missing?.company === "IEL" && rc.problems.some((p) => p.includes("IELSco, Internal, Creative, SOP")), JSON.stringify(rc).slice(0, 300));
+  check("…and that the Drive writer isn't connected", rc.problems.some((p) => /Drive isn't connected|connect Google Drive/.test(p)));
+
+  // ── AI: words → real records, with a preview the member confirms ─────────────────────────────────────────────────
+  const askAi = async (message, answer) => {
+    await fetch(`${GW}/__test/gemini`, { method: "POST", body: JSON.stringify(answer) });
+    const before = await page.getByTestId("os-ai-action").count();
+    await page.getByTestId("os-ai-input").fill(message);
+    await page.getByRole("button", { name: "Send" }).click();
+    await page.waitForFunction((n) => document.querySelectorAll("[data-testid=os-ai-action]").length > n || document.querySelectorAll("[data-testid=os-error]").length > 0, before, { timeout: 30000 }).catch(() => {});
+    return page.getByTestId("os-ai-action").nth(before);
+  };
+  const friday = nextDow(today, 5), tuesday = nextDow(today, 2);
+  await page.goto(`${OS}/os/assistant`);
+  let card = await askAi("Create two Creative tasks for Member by Friday: storyboard and voiceover", { text: "Here are the two tasks.", calls: [{ name: "create_tasks", args: { tasks: [{ title: "Storyboard", division: "Creative", assignees: ["Member"], due_date: friday }, { title: "Voiceover", division: "Creative", assignees: ["Member"], due_date: friday }] } }] });
+  const last = await (await fetch(`${GW}/__test/gemini-last`)).json();
+  check("the model is offered declared functions (structured calls, no SQL) and today's date", JSON.stringify(last.tools ?? []).includes("create_tasks") && JSON.stringify(last.systemInstruction ?? "").includes(`Today is`) && !/sql/i.test(JSON.stringify(last.tools ?? [])));
+  const preview = await card.innerText();
+  check("a batch preview lists every task and asks which “Member” is meant", (await card.getByTestId("os-ai-item").count()) === 2 && preview.includes("needs your input") && preview.includes("could be 2 people"), preview.slice(0, 300));
+  check("…and nothing is created yet", sql("select count(*) from public.os_tasks where title in ('Storyboard', 'Voiceover')") === "0");
+  check("…Confirm & Create is blocked until every choice is made", await card.getByRole("button", { name: "Confirm & Create" }).isDisabled());
+  await page.screenshot({ path: `${OUT}/32-ai-choice.png`, fullPage: true });
+  for (let i = 0; i < 2; i++) {
+    await card.getByTestId("os-ai-choice").first().selectOption("PPL-0002");
+    await page.waitForTimeout(700);
+  }
+  await card.getByRole("button", { name: "Confirm & Create" }).click();
+  await card.getByTestId("os-ai-created").waitFor({ timeout: 15000 }).catch(() => {});
+  const made = sql(`select string_agg(t.id || ':' || t.division_id || ':' || t.due_date || ':' || t.owner_person_id || ':' || (select count(*) from public.os_task_assignees a where a.task_id = t.id), ',' order by t.title) from public.os_tasks t where t.title in ('Storyboard', 'Voiceover')`);
+  check("confirming creates both tasks with the chosen person, the Creative division and Friday's date", made.split(",").length === 2 && made.split(",").every((r) => r.includes(`:DIV-04:${friday}:PPL-0002:1`)), made);
+  const createdText = await card.getByTestId("os-ai-created").innerText().catch(() => "");
+  check("…and the card returns each new ID, assignee, deadline and a link", /TSK-\d{4}/.test(createdText) && createdText.includes("IELSco Member") && createdText.includes(friday) && (await card.getByTestId("os-ai-created").getByRole("link").count()) === 2, createdText);
+  const actId = sql("select id from public.os_ai_actions where action_type = 'create_tasks' order by created_at desc limit 1");
+  const twice = await page.evaluate(async (id) => (await fetch(`/os/api/ai/actions/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ decision: "confirm" }) })).status, actId);
+  check("confirming the same suggestion again creates nothing more", twice === 409 && sql("select count(*) from public.os_tasks where title in ('Storyboard', 'Voiceover')") === "2", `status ${twice}`);
+  check("the suggestion and its outcome stay in the AI audit trail", sql(`select status from public.os_ai_actions where id = '${actId}'`) === "executed" && sql(`select count(*) from public.os_activity where entity_type = 'task' and entity_id in (select id from public.os_tasks where title = 'Storyboard')`) !== "0");
+
+  card = await askAi("Assign Farrel to the poster task", { calls: [{ name: "create_task", args: { title: "Poster", assignees: ["Farrel"] } }] });
+  check("an unknown person is never invented: the card says nobody matches", (await card.innerText()).includes("nobody called “Farrel”"));
+  await card.getByRole("button", { name: "Cancel" }).click();
+  await card.getByText("Cancelled").waitFor({ timeout: 10000 }).catch(() => {});
+  check("…and Cancel creates nothing", sql("select count(*) from public.os_tasks where title = 'Poster'") === "0" && sql("select status from public.os_ai_actions order by created_at desc limit 1") === "rejected");
+
+  card = await askAi("Create an Elco task to prepare the pitch", { calls: [{ name: "create_task", args: { title: "Prepare pitch", company: "Elco" } }] });
+  check("a task in a company the member doesn't work in is refused on the card", (await card.innerText()).includes("You don't work in Elco AI"));
+  const forgedId = sql("select id from public.os_ai_actions order by created_at desc limit 1");
+  const forgedConfirm = await page.evaluate(async (id) => { const r = await fetch(`/os/api/ai/actions/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ decision: "confirm", drafts: [{ title: "Prepare pitch", company: "ELC", assignees: ["PPL-0003"] }] }) }); return r.status; }, forgedId);
+  check("…and the server refuses it too, whatever the browser sends", forgedConfirm === 422 && sql("select count(*) from public.os_tasks where title = 'Prepare pitch'") === "0", `status ${forgedConfirm}`);
+
+  card = await askAi("Schedule a Creative meeting next Tuesday 2 PM", { calls: [{ name: "create_event", args: { title: "Creative weekly", date: tuesday, start_time: "14:00", division: "Creative", invite_division: true } }] });
+  check("an event preview shows the time in WIB and who is invited", (await card.innerText()).includes("14:00–15:00 (WIB)") && (await card.innerText()).includes("IELSco Member"), (await card.innerText()).slice(0, 300));
+  await card.getByRole("button", { name: "Confirm & Create" }).click();
+  await card.getByTestId("os-ai-created").waitFor({ timeout: 15000 }).catch(() => {});
+  const aiEv = sql(`select id || '|' || to_char(starts_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || '|' || (select string_agg(person_id, ',') from public.os_event_attendees a where a.event_id = e.id) from public.os_events e where title = 'Creative weekly'`);
+  check("confirming creates the event at 14:00 WIB (07:00 UTC) with the Creative division invited", aiEv.includes(`|${tuesday} 07:00|PPL-0002`), aiEv);
+  check("…and its link opens it in the calendar", (await card.getByTestId("os-ai-created").getByRole("link").getAttribute("href")).startsWith("/os/calendar?event=EV-"));
+
+  card = await askAi("Add a milestone: Mojo launch by Nov 12", { calls: [{ name: "create_timeline_item", args: { title: "Mojo launch", due_date: plusDays(today, 5), workstream: "WS1" } }] });
+  const confirmMs = card.getByRole("button", { name: "Confirm & Create" });
+  if (await confirmMs.isEnabled()) { await confirmMs.click(); await card.getByText(/Not done/).waitFor({ timeout: 15000 }).catch(() => {}); }
+  const msText = await card.innerText();
+  check("a member can't add a timeline milestone: refused under their own permissions, with a plain message", sql("select count(*) from public.os_timeline_items where title = 'Mojo launch'") === "0" && (msText.includes("You don't have permission") || msText.includes("workstream")), msText.slice(0, 200));
+
   // Phones: 360 px wide, drawer navigation, no sideways scrolling
   const phone = await browser.newContext({ viewport: { width: 360, height: 780 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
   const pp = await phone.newPage();
   const widths = [];
-  for (const path of ["/os", "/os/tasks", `/os/projects/${prj}`, "/os/documents", `/os/documents/${doc}`, "/os/kpis", "/os/timeline", "/os/w/ielsco", "/os/people", "/os/assistant"]) {
+  for (const path of ["/os", "/os/tasks", `/os/projects/${prj}`, "/os/documents", `/os/documents/${doc}`, "/os/kpis", "/os/timeline", "/os/w/ielsco", "/os/people", "/os/assistant", "/os/calendar", "/os/calendar?view=week", "/os/calendar?view=upcoming"]) {
     await pp.goto(`${OS}${path}`); await pp.waitForLoadState("networkidle");
     const w = await pp.evaluate(() => document.documentElement.scrollWidth);
     widths.push(`${path}=${w}`);
     if (w > 362) check(`no sideways scroll at 360 px on ${path}`, false, String(w));
   }
-  check("no sideways scroll at 360 px on ten Company OS screens", widths.every((x) => Number(x.split("=")[1]) <= 362), widths.join(" "));
+  check("no sideways scroll at 360 px on thirteen Company OS screens, including the calendar", widths.every((x) => Number(x.slice(x.lastIndexOf("=") + 1)) <= 362), widths.join(" "));
   await pp.goto(`${OS}/os/tasks`);
   await pp.screenshot({ path: `${OUT}/14-phone-tasks.png`, fullPage: true });
   await pp.getByTestId("os-menu-button").click();
@@ -339,6 +509,10 @@ const elco = await signIn({ email: "member.elc@ielsco.test" }, { ua: "Mozilla/5.
   check("Elco member views Elco Confidential of their own division", (await can("ELC", "DIV-03", "Confidential")) === true);
   const hist = await (await restAs(token, "rpc/os_login_history", { method: "POST", body: "{}" })).json();
   check("Elco member cannot see the IELSco member's session history", hist.every((e) => e.email === "member.elc@ielsco.test"));
+  const evs = await (await restAs(token, "os_events?select=id,title")).json();
+  check("Elco member sees none of the IELSco events", Array.isArray(evs) && evs.length === 0 && Number(sql("select count(*) from public.os_events where company_code = 'IEL'")) > 0, JSON.stringify(evs).slice(0, 120));
+  const calTok = await restAs(token, "os_calendar_connections?select=token_sealed");
+  check("nobody can read Google Calendar tokens through the API", calTok.status >= 400, `status ${calTok.status}`);
 }
 
 // ── 6. Founder (two-step verified) ──────────────────────────────────────────────────────────────────────────────────
@@ -501,11 +675,78 @@ const founder = await signIn({ email: "founder@ielsco.test", aal2: true });
   check("health says whether Drive file creation is connected", health.includes("Google Drive: creating files"));
   const connectOut = await raw("os.localhost:3000", "/os/api/admin/drive/connect");
   check("connecting Google Drive refuses a signed-out caller", connectOut.status === 401, `status ${connectOut.status}`);
-  const connectNoOauth = await page.evaluate(async () => (await fetch("/os/api/admin/drive/connect", { redirect: "manual" })).status);
-  check("connecting Google Drive is refused while the server has no OAuth client", connectNoOauth === 503, `status ${connectNoOauth}`);
   await page.goto(`${OS}/os/api/admin/drive/callback?state=forged&code=x`);
   check("a Drive callback without the matching state stores nothing", page.url().includes("drive=") && sql("select count(*) from public.os_drive_connection") === "0", page.url());
+
+  // Google OAuth for Drive file creation, against the Google stand-in (it refuses unregistered redirect URIs).
+  const DRIVE_CB = "http://os.localhost:3000/os/api/admin/drive/callback";
+  await page.goto(`${OS}/os/admin?tab=health`);
+  const setup = await page.getByTestId("os-oauth-setup").innerText();
+  check("health names the OAuth client and the exact redirect URI to register", setup.includes("e2e-client.apps.googleusercontent.com") && setup.includes(DRIVE_CB) && setup.includes("OS_GOOGLE_CLIENT_ID"), setup);
+  check("health never shows the OAuth client secret", !(await page.locator("body").innerText()).includes("e2e-client-secret"));
+  await fetch(`${GW}/__test/google-redirects`, { method: "POST", body: JSON.stringify({ uris: ["https://ielsco.example/auth/v1/callback"] }) });
+  await page.getByTestId("os-drive-connect").click();
+  await page.waitForLoadState("load");
+  const mismatch = await page.locator("body").innerText();
+  check("with the URI missing from the client, Google answers redirect_uri_mismatch for exactly that URI", mismatch.includes("redirect_uri_mismatch") && mismatch.includes(DRIVE_CB), mismatch.slice(0, 200));
+  check("…and nothing is stored", sql("select count(*) from public.os_drive_connection") === "0");
+  await fetch(`${GW}/__test/google-redirects`, { method: "POST", body: JSON.stringify({ uris: [DRIVE_CB] }) });
+  await page.goto(`${OS}/os/admin?tab=health`);
+  await page.getByTestId("os-drive-connect").click();
+  await page.waitForURL(/drive=connected/, { timeout: 15000 }).catch(() => {});
+  check("with the URI registered, the founder connects Google Drive", page.url().includes("drive=connected"), page.url());
+  const stored = sql("select google_email || '|' || token_sealed || '|' || connected_by from public.os_drive_connection");
+  check("the connection names the Google account and the founder", stored.startsWith("drive.writer@ielsco.test|") && stored.endsWith("|PPL-0001"), stored.slice(0, 60));
+  check("the refresh token is stored sealed, never in plain text", !stored.includes("e2e-google-refresh-SECRET") && /\|v1\./.test(stored), stored.slice(0, 60));
+  check("the connection is recorded in the audit log", sql("select count(*) from public.os_audit_log where action = 'drive.connected'") === "1");
+  await page.getByTestId("os-health").getByText("Connected as drive.writer@ielsco.test").waitFor({ timeout: 10000 }).catch(() => {});
+  check("health shows Drive file creation connected", (await page.getByTestId("os-health").innerText()).includes("Connected as drive.writer@ielsco.test"));
   await page.screenshot({ path: `${OUT}/22-admin-health.png`, fullPage: true });
+  const cbErr = await page.evaluate(async () => (await fetch("/os/api/admin/drive/callback?error=access_denied", { redirect: "manual" })).headers.get("location"));
+  check("a cancelled Google consent is reported as cancelled", String(cbErr).includes("drive=cancelled") || cbErr === null);
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Disconnect" }).click();
+  await page.getByText("Google Drive disconnected.").waitFor({ timeout: 10000 }).catch(() => {});
+  check("disconnecting removes the stored connection", sql("select count(*) from public.os_drive_connection") === "0");
+  // Admin → Drive folder routes: status, missing routes, access check, approve, add, reject
+  await page.goto(`${OS}/os/admin?tab=routes`);
+  await page.getByTestId("os-routes-list").waitFor();
+  const rows = await page.getByTestId("os-route-row").count();
+  check("routes admin lists every route with its status", rows === Number(sql("select count(*) from public.os_folder_routes")) && (await page.getByTestId("os-routes-list").innerText()).includes("proposed"), String(rows));
+  const gapsText = await page.getByTestId("os-routes-gaps").innerText();
+  check("routes admin lists the company and sensitivity combinations with no approved route", gapsText.includes("IELSco · Internal") && gapsText.includes("Elco AI · Confidential"), gapsText.slice(0, 200));
+  check("routes admin shows the Drive integration problem (no service account here)", (await page.getByTestId("os-routes-integration").innerText().catch(() => "")).includes("Google Drive"));
+  const ielRoute = sql("select folder_name from public.os_folder_routes where company_code = 'IEL' and sensitivity = 'Internal' and division_id is null and doc_type is null and status = 'proposed' limit 1");
+  const row = page.getByTestId("os-route-row").filter({ hasText: ielRoute }).first();
+  await row.getByRole("button", { name: "Check access" }).click();
+  await page.waitForFunction(() => document.querySelector("[role=alert], [role=status]"), null, { timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  check("checking access records the result on the route without touching Drive folders", sql(`select coalesce(access_ok::text, '-') || '|' || (access_checked_at is not null)::text from public.os_folder_routes where folder_name = '${ielRoute.replace(/'/g, "''")}' and company_code = 'IEL' and sensitivity = 'Internal' and division_id is null and doc_type is null`) === "false|true");
+  page.once("dialog", (d) => d.accept());
+  await row.getByRole("button", { name: "Approve" }).click();
+  await page.getByText(/Route approved/).waitFor({ timeout: 10000 }).catch(() => {});
+  check("a founder approves a route; the database records who and when", sql(`select status || '|' || approved_by || '|' || (approved_at is not null)::text from public.os_folder_routes where company_code = 'IEL' and sensitivity = 'Internal' and division_id is null and doc_type is null and status = 'approved'`) === "approved|PPL-0001|true");
+  check("…and the approval is in the audit log", Number(sql("select count(*) from public.os_audit_log where target_type = 'os_folder_routes'")) >= 1);
+  check("…approving one route approves only that one", sql("select count(*) from public.os_folder_routes where status = 'approved'") === "1");
+  check("…and IELSco Internal is no longer a missing route", !(await page.getByTestId("os-routes-gaps").innerText()).includes("IELSco · Internal"));
+  const rcOk = await page.evaluate(async () => (await fetch("/os/api/documents/route-check?company=IEL&division=DIV-04&doc_type=SOP&sensitivity=Internal")).json());
+  check("the document route check now finds the approved route, and still reports the failed access check", rcOk.route?.folder_name === ielRoute && rcOk.missing === null && rcOk.problems.some((p) => p.includes("failed its last access check")), JSON.stringify(rcOk).slice(0, 300));
+  await page.getByRole("button", { name: "Add route" }).click();
+  const rs = page.getByRole("dialog", { name: "Add route" });
+  await rs.getByLabel("Drive folder link or ID").fill("https://drive.google.com/drive/folders/1TestFolderIdForElcoConf00?usp=sharing");
+  await rs.getByLabel("Folder name").fill("Elco confidential (test)");
+  await rs.getByLabel("Company").selectOption("ELC");
+  await rs.getByLabel("Sensitivity").selectOption("Confidential");
+  await rs.getByRole("button", { name: "Save" }).click();
+  await page.getByText(/Route added as proposed/).waitFor({ timeout: 10000 }).catch(() => {});
+  check("a founder adds a route from a Drive link; it starts as proposed with the folder ID extracted", sql("select status || '|' || drive_folder_id from public.os_folder_routes where folder_name = 'Elco confidential (test)'") === "proposed|1TestFolderIdForElcoConf00");
+  page.once("dialog", (d) => d.accept());
+  await page.getByTestId("os-route-row").filter({ hasText: "Elco confidential (test)" }).getByRole("button", { name: "Reject" }).click();
+  await page.getByText(/Route rejected/).waitFor({ timeout: 10000 }).catch(() => {});
+  check("a founder rejects it; nothing routes there", sql("select status || '|' || coalesce(approved_by, '-') from public.os_folder_routes where folder_name = 'Elco confidential (test)'") === "rejected|-");
+  await page.screenshot({ path: `${OUT}/23-admin-routes.png`, fullPage: true });
+  const memberCheck = await raw("os.localhost:3000", "/os/api/admin/routes/check", { method: "POST" });
+  check("the access-check API refuses a signed-out caller", memberCheck.status === 401 || memberCheck.status === 403, `status ${memberCheck.status}`);
   const healthAsMember = await raw("os.localhost:3000", "/os/api/admin/health");
   check("health API refuses a signed-out caller", healthAsMember.status === 401, `status ${healthAsMember.status}`);
 }

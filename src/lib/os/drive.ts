@@ -129,3 +129,39 @@ export function driveIdFromUrl(url: string): string | null {
   const m = url.match(/\/d\/([A-Za-z0-9_-]{20,})/) ?? url.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
   return m ? m[1] : null;
 }
+
+export interface FolderAccess { ok: boolean; name: string | null; detail: string }
+
+/**
+ * Checks a route's folder: the service account can read it (and it is a folder, not in the trash), and the account
+ * that creates files (the founder-connected Drive writer) can add files to it. Reads only.
+ */
+export async function checkFolderAccess(folderId: string): Promise<FolderAccess> {
+  const fields = "id, name, mimeType, trashed, capabilities(canAddChildren)";
+  let name: string | null = null;
+  try {
+    const r = await drive().files.get({ fileId: folderId, fields, supportsAllDrives: true });
+    name = r.data.name ?? null;
+    if (r.data.mimeType !== "application/vnd.google-apps.folder") return { ok: false, name, detail: "That ID is a file, not a folder." };
+    if (r.data.trashed) return { ok: false, name, detail: "The folder is in the Drive trash." };
+  } catch (e) {
+    const code = (e as { code?: number })?.code;
+    if (e instanceof DriveUnavailable) return { ok: false, name, detail: e.message };
+    if (code !== 403 && code !== 404) return { ok: false, name, detail: "Google Drive didn't respond. Try again in a moment." };
+    // Not shared with the service account (the Restricted folders, by design). The writer may still reach it.
+    const w = await writerDrive();
+    if (!w) return { ok: false, name, detail: "The service account can't open this folder, and no founder has connected Google Drive. Share the folder with the service account, or connect Google Drive." };
+  }
+  const w = await writerDrive();
+  if (!w) return { ok: false, name, detail: `The service account can read “${name ?? folderId}”. Creating files in it needs a founder to connect Google Drive (Admin → Integration health).` };
+  try {
+    const r = await w.files.get({ fileId: folderId, fields, supportsAllDrives: true });
+    name = r.data.name ?? name;
+    if (r.data.mimeType !== "application/vnd.google-apps.folder") return { ok: false, name, detail: "That ID is a file, not a folder." };
+    if (!r.data.capabilities?.canAddChildren) return { ok: false, name, detail: `The connected Google account can open “${name}” but can't add files to it. Give it edit access in Drive.` };
+    return { ok: true, name, detail: `Readable by the service account and writable by the connected Google account.` };
+  } catch (e) {
+    const code = (e as { code?: number })?.code;
+    return { ok: false, name, detail: code === 403 || code === 404 ? "The connected Google account can't open this folder." : driveError(e) };
+  }
+}

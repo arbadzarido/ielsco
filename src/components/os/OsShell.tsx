@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  BarChart3, Bot, Briefcase, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
+  BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
   Home, Inbox, LogOut, Megaphone, Menu, ScrollText, Settings, Shield, Target, Users, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ const NAV: { group?: string; items: NavItem[] }[] = [
   { group: "Work", items: [
     { href: "/os/projects", label: "Projects", icon: Briefcase },
     { href: "/os/tasks?view=board", label: "Tasks", icon: CheckSquare },
+    { href: "/os/calendar", label: "Calendar", icon: CalendarDays },
     { href: "/os/documents", label: "Documents", icon: FileText },
     { href: "/os/timeline", label: "Timeline", icon: CalendarRange },
   ] },

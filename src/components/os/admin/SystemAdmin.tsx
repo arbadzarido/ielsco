@@ -106,7 +106,8 @@ export function AiAdmin() {
 }
 
 export function HealthAdmin() {
-  type Health = { checks: { key: string; label: string; ok: boolean; detail: string }[]; at: string; drive?: { configured: boolean; connected: boolean; email: string | null } };
+  type Health = { checks: { key: string; label: string; ok: boolean; detail: string }[]; at: string; drive?: { configured: boolean; connected: boolean; email: string | null };
+    oauth?: { client_id: string | null; client_source: string | null; has_secret: boolean; redirect_uris: Record<string, string> } };
   const [data, setData] = useState<Health | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -146,6 +147,19 @@ export function HealthAdmin() {
               )}
             </li>
           ))}
+          {data.oauth && (
+            <li className="px-3 py-2.5 text-sm" data-testid="os-oauth-setup">
+              <span className="font-medium">Google sign-in for Drive file creation</span>
+              {data.oauth.client_id ? (
+                <span className={cn("block", muted)}>
+                  OAuth client <code className="break-all text-[#1F2D3D]">{data.oauth.client_id}</code> (from {data.oauth.client_source}{data.oauth.has_secret ? "" : ", secret not set"}).
+                  In Google Cloud Console → APIs &amp; Services → Credentials, open this client and add this exact URI under Authorized redirect URIs:
+                  <code className="mt-1 block break-all rounded bg-[#F5F7FA] px-2 py-1 text-[#1F2D3D]">{data.oauth.redirect_uris.drive}</code>
+                  Without it Google answers &ldquo;Error 400: redirect_uri_mismatch&rdquo;. Reading Drive doesn&apos;t use this; the service account reads on its own.
+                </span>
+              ) : <span className={cn("block", muted)}>No OAuth client is configured (OS_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID).</span>}
+            </li>
+          )}
           <li className={cn("px-3 py-2 text-xs", muted)}>Checked {fmtDateTime(data.at)}. Elco AI&apos;s own app and database are separate and aren&apos;t checked from here.</li>
         </ul>
       )}

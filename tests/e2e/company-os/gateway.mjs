@@ -193,7 +193,8 @@ async function rest(req, res, url, body) {
       const fn = path.slice(4);
       const { rows: procs } = await db.query("select proretset from pg_proc where proname = $1 and pronamespace = 'public'::regnamespace", [fn]);
       if (!procs.length) { await db.query("rollback"); return send(res, 404, { code: "PGRST202", message: `Could not find the function public.${fn}` }); }
-      const named = Object.entries(body || {}).map(([k, v]) => { args.push(v); return `${ident(k)} => $${args.length}`; }).join(", ");
+      // Like PostgREST: JSON arguments arrive as JSON (node-postgres would turn an array of objects into a Postgres array).
+      const named = Object.entries(body || {}).map(([k, v]) => { args.push(Array.isArray(v) && v.some((x) => x && typeof x === "object") ? JSON.stringify(v) : v); return `${ident(k)} => $${args.length}`; }).join(", ");
       const r = await db.query(procs[0].proretset ? `select * from public.${ident(fn)}(${named})` : `select public.${ident(fn)}(${named}) as v`, args);
       result = procs[0].proretset ? r.rows : r.rows[0]?.v ?? null;
     } else {
@@ -253,6 +254,87 @@ function cors(req, extra = {}) {
     "access-control-allow-headers": "authorization, apikey, content-type, prefer, accept, accept-profile, content-profile, x-client-info, x-supabase-api-version",
     "access-control-allow-methods": "GET, HEAD, POST, PATCH, DELETE, OPTIONS", "access-control-expose-headers": "content-range", ...extra };
 }
+
+// ── Google OAuth stand-in (the app uses it only when OS_GOOGLE_OAUTH_BASE is set, never on Vercel) ──────────────────
+// Behaves like Google for the parts the app relies on: the consent URL refuses a redirect_uri that isn't registered
+// for the client ("redirect_uri_mismatch"), the token endpoint exchanges a code once, tokeninfo names the account.
+let googleRedirects = [];                 // the "Authorized redirect URIs" of the stub client, set by the test
+const googleCodes = new Map();            // code -> { scope }
+function google(req, res, url, body) {
+  const path = url.pathname.replace(/^\/__google/, "");
+  if (path === "/o/oauth2/v2/auth") {
+    const redirect = url.searchParams.get("redirect_uri") ?? "";
+    if (!googleRedirects.includes(redirect)) {
+      res.writeHead(400, { "content-type": "text/html" });
+      return res.end(`<h1>Access blocked: this app's request is invalid</h1><p>Error 400: redirect_uri_mismatch</p><p>${redirect.replace(/[<>&"]/g, "")}</p>`);
+    }
+    const code = `code-${Math.random().toString(36).slice(2)}`;
+    googleCodes.set(code, { scope: url.searchParams.get("scope") ?? "" });
+    const back = new URL(redirect); back.searchParams.set("code", code); back.searchParams.set("state", url.searchParams.get("state") ?? "");
+    res.writeHead(302, { location: back.toString() }); return res.end();
+  }
+  if (path === "/token") {
+    if (body.grant_type === "authorization_code") {
+      const c = googleCodes.get(body.code); googleCodes.delete(body.code);
+      if (!c || !googleRedirects.includes(body.redirect_uri)) return send(res, 400, { error: "invalid_grant" });
+      return send(res, 200, { access_token: "e2e-google-access", refresh_token: "e2e-google-refresh-SECRET", scope: c.scope, expires_in: 3600, token_type: "Bearer" });
+    }
+    if (body.grant_type === "refresh_token") return send(res, 200, { access_token: "e2e-google-access-2", expires_in: 3600, token_type: "Bearer", scope: "https://www.googleapis.com/auth/drive" });
+    return send(res, 400, { error: "unsupported_grant_type" });
+  }
+  if (path === "/tokeninfo") return send(res, 200, { email: "drive.writer@ielsco.test", email_verified: "true", scope: "https://www.googleapis.com/auth/drive openid email", expires_in: 3599 });
+  if (path === "/revoke") return send(res, 200, {});
+  if (path === "/drive/v3/about") return send(res, 200, { user: { emailAddress: "drive.writer@ielsco.test" } });
+  if (path.startsWith("/calendar/v3/")) return calendar(req, res, url, body, path.slice("/calendar/v3".length));
+  return send(res, 404, { error: "not simulated" });
+}
+
+// ── Google Calendar stand-in: one "primary" calendar, etags that change on every write, If-Match → 412 ──────────────
+const gcal = new Map();                   // id -> event
+let gcalSeq = 0;
+const etag = () => `"e${++gcalSeq}"`;
+function calendar(req, res, url, body, path) {
+  if (!/^Bearer e2e-google-access/.test(req.headers.authorization ?? "")) return send(res, 401, { error: { code: 401 } });
+  if (path === "/users/me/settings/timezone") return send(res, 200, { value: "Asia/Jakarta" });
+  const m = path.match(/^\/calendars\/primary\/events(?:\/([^/]+))?$/);
+  if (!m) return send(res, 404, { error: { code: 404 } });
+  const id = m[1] && decodeURIComponent(m[1]);
+  if (!id && req.method === "GET") {
+    const prop = url.searchParams.get("privateExtendedProperty");
+    let items = [...gcal.values()].filter((e) => e.status !== "cancelled");
+    if (prop) { const [k, v] = prop.split("="); items = items.filter((e) => e.extendedProperties?.private?.[k] === v); }
+    const min = url.searchParams.get("timeMin"), max = url.searchParams.get("timeMax");
+    const startOf = (e) => e.start?.dateTime ?? `${e.start?.date}T00:00:00+07:00`;
+    const endOf = (e) => e.end?.dateTime ?? `${e.end?.date}T00:00:00+07:00`;
+    if (min && max) items = items.filter((e) => Date.parse(startOf(e)) < Date.parse(max) && Date.parse(endOf(e)) > Date.parse(min));
+    return send(res, 200, { items });
+  }
+  if (!id && req.method === "POST") {
+    const ev = { ...body, id: `g${++gcalSeq}`, etag: etag(), status: body.status ?? "confirmed", htmlLink: "https://calendar.google.com/event?eid=e2e" };
+    gcal.set(ev.id, ev); return send(res, 200, ev);
+  }
+  const ev = gcal.get(id);
+  if (!ev) return send(res, 404, { error: { code: 404 } });
+  const match = req.headers["if-match"];
+  if (match && match !== ev.etag && req.method !== "GET") return send(res, 412, { error: { code: 412, message: "Precondition Failed" } });
+  if (req.method === "GET") return send(res, 200, ev);
+  if (req.method === "PATCH") { Object.assign(ev, body, { etag: etag() }); return send(res, 200, ev); }
+  if (req.method === "DELETE") { gcal.delete(id); res.writeHead(204, cors(req)); return res.end(); }
+  return send(res, 405, {});
+}
+
+// ── Gemini stand-in (the app uses it only when OS_GEMINI_BASE is set, never on Vercel) ─────────────────────────────
+// The test queues the model's next answer; with nothing queued the "model" is down, so failures stay testable.
+const geminiQueue = [];
+let geminiLast = null;
+function gemini(req, res, body) {
+  geminiLast = body;
+  const next = geminiQueue.shift();
+  if (!next) return send(res, 503, { error: { code: 503, message: "unavailable", status: "UNAVAILABLE" } });
+  const parts = [...(next.text ? [{ text: next.text }] : []), ...(next.calls ?? []).map((c) => ({ functionCall: { name: c.name, args: c.args } }))];
+  return send(res, 200, { candidates: [{ content: { role: "model", parts }, finishReason: "STOP", index: 0 }], usageMetadata: { promptTokenCount: 1200, candidatesTokenCount: 80, totalTokenCount: 1280 } });
+}
+
 let lastReq;
 function send(res, status, body, headers = {}, req = lastReq) {
   res.writeHead(status, cors(req, { "content-type": "application/json", ...headers }));
@@ -275,6 +357,19 @@ http.createServer(async (req, res) => {
   }
   try {
     if (url.pathname === "/__test/next-google") { nextGoogle = body; return send(res, 200, { ok: true }); }
+    if (url.pathname === "/__test/google-redirects") { googleRedirects = body.uris ?? []; return send(res, 200, { ok: true }); }
+    if (url.pathname === "/__test/gemini") { geminiQueue.push(body); return send(res, 200, { ok: true }); }
+    if (url.pathname === "/__test/gemini-last") return send(res, 200, geminiLast ?? {});
+    if (url.pathname === "/__test/gcal" && req.method === "GET") return send(res, 200, { items: [...gcal.values()] });
+    if (url.pathname === "/__test/gcal") {
+      // Change or remove an event "in Google", as the person would in Google Calendar.
+      const ev = gcal.get(body.id);
+      if (ev && body.remove) gcal.delete(body.id); else if (ev) Object.assign(ev, body.patch ?? {}, { etag: etag() });
+      return send(res, 200, { ok: Boolean(ev) });
+    }
+    if (url.pathname.startsWith("/__gemini/")) return gemini(req, res, body);
+    if (url.pathname.startsWith("/__google/")) return google(req, res, url, body);
+    if (url.pathname.startsWith("/drive/v3/") || url.pathname.startsWith("/calendar/v3/")) return google(req, res, url, body);
     if (url.pathname.startsWith("/auth/v1/")) return await auth(req, res, url, body);
     if (url.pathname.startsWith("/rest/v1/")) return await rest(req, res, url, body);
     return send(res, 404, { message: "not simulated" });

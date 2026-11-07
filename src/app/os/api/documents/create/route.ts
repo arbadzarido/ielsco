@@ -3,6 +3,8 @@ import { Readable } from "node:stream";
 import { jsonError, requireOsPerson, sameOrigin } from "@/lib/os/api";
 import { osServiceClient } from "@/lib/os/server";
 import { copyTemplate, driveConfigured, driveError, driveIdFromUrl, uploadFile } from "@/lib/os/drive";
+import { matchRoute, missingRouteText, type FolderRoute } from "@/lib/os/routes";
+import { companyName } from "@/lib/os/meta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +18,6 @@ const SENS = ["Internal", "Confidential", "Restricted"];
 const LINKABLE = ["project", "task", "meeting", "partnership", "decision", "campaign", "objective", "kpi"];
 const MAX_UPLOAD = 25 * 1024 * 1024;
 
-type Route = { id: string; company_code: string; division_id: string | null; doc_type: string | null; sensitivity: string; drive_folder_id: string };
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return jsonError("Bad request", 400);
@@ -45,13 +46,16 @@ export async function POST(req: Request) {
   if (mode !== "register" && (!service || !driveConfigured())) return jsonError("Google Drive isn't connected on this deployment yet, so new files can't be created. You can still register a file that already exists in Drive.", 503);
 
   // Folder routing: the most specific APPROVED route for company, division, type and sensitivity.
-  let route: Route | null = null;
+  let route: FolderRoute | null = null;
   if (mode !== "register") {
-    const { data: routes } = await supabase.from("os_folder_routes").select("id, company_code, division_id, doc_type, sensitivity, drive_folder_id")
-      .eq("status", "approved").eq("company_code", company).eq("sensitivity", sensitivity);
-    const score = (r: Route) => (r.division_id === division ? 2 : r.division_id === null ? 0 : -99) + (r.doc_type === docType ? 1 : r.doc_type === null ? 0 : -99);
-    route = ((routes ?? []) as Route[]).filter((r) => score(r) >= 0).sort((a, b) => score(b) - score(a))[0] ?? null;
-    if (!route) return jsonError("There's no approved Drive folder for this company, division, type and sensitivity yet. A founder approves folder routes in Admin → Drive folder routes.", 409);
+    const { data: routes } = await supabase.from("os_folder_routes").select("id, company_code, division_id, doc_type, sensitivity, drive_folder_id, folder_name, status")
+      .in("status", ["approved", "proposed"]).eq("company_code", company).eq("sensitivity", sensitivity);
+    const q = { company, division, docType, sensitivity };
+    route = matchRoute((routes ?? []) as FolderRoute[], q);
+    if (!route) {
+      const { data: div } = division ? await supabase.from("os_divisions").select("name").eq("id", division).maybeSingle() : { data: null };
+      return NextResponse.json({ error: missingRouteText(q, { company: companyName(company), division: (div as { name?: string } | null)?.name ?? null }, matchRoute((routes ?? []) as FolderRoute[], q, "proposed")), missing_route: q }, { status: 409 });
+    }
   }
 
   let driveUrl: string | null = null;

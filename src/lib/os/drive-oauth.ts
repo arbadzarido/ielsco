@@ -2,6 +2,7 @@ import "server-only";
 import { google, type drive_v3 } from "googleapis";
 import { osServiceClient } from "./server";
 import { seal, unseal } from "./seal";
+import { oauthEndpoints } from "./google-oauth";
 
 // The founder-connected Google account Company OS writes new Drive files with. Server only: the refresh token is
 // sealed before it is stored, read only with the service role, and never sent to the browser.
@@ -14,7 +15,8 @@ export function oauthConfigured(): boolean { return Boolean(oauthClientId() && o
 export function sealingSecret(): string { return process.env.OS_TOKEN_SEALING_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ""; }
 
 export function oauthClient(redirectUri?: string) {
-  return new google.auth.OAuth2(oauthClientId(), oauthClientSecret(), redirectUri);
+  const e = oauthEndpoints();
+  return new google.auth.OAuth2({ clientId: oauthClientId(), clientSecret: oauthClientSecret(), redirectUri, ...(e ? { endpoints: e.endpoints } : {}) });
 }
 
 export interface DriveConnection { google_email: string; connected_by: string; connected_at: string; scopes: string }
@@ -34,7 +36,8 @@ export async function writerDrive(): Promise<drive_v3.Drive | null> {
   if (cached?.sealed === c.token_sealed) return cached.drive;
   const auth = oauthClient();
   auth.setCredentials({ refresh_token: unseal(c.token_sealed, sealingSecret()) });
-  cached = { sealed: c.token_sealed, drive: google.drive({ version: "v3", auth }) };
+  const e = oauthEndpoints();
+  cached = { sealed: c.token_sealed, drive: google.drive({ version: "v3", auth, ...(e ? { rootUrl: e.apiRoot } : {}) }) };
   return cached.drive;
 }
 

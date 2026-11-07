@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { btnPrimary, btnSecondary, card, inputClass, labelClass, tag } from "@/components/dashboard/ui";
+import { btnPrimary, btnSecondary, card, inputClass, labelClass } from "@/components/dashboard/ui";
 import { dateWib } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { auditLabel, grantIsLive, type OsAuditEntry, type OsDivision, type OsGrant, type OsPerson } from "@/lib/os/types";
@@ -124,47 +124,7 @@ function GrantForm({ people, divisions, onSubmit }: { people: OsPerson[]; divisi
   );
 }
 
-interface Route { id: string; company_code: string; division_id: string | null; doc_type: string | null; sensitivity: string; drive_folder_id: string; folder_name: string; status: string; note: string | null }
-
-export function RoutesAdmin({ supabase }: { supabase: SupabaseClient }) {
-  const [routes, setRoutes] = useState<Route[] | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const load = useCallback(async () => {
-    const { data, error } = await supabase.from("os_folder_routes").select("*").order("company_code").order("folder_name");
-    if (error) return setMsg({ ok: false, text: error.message });
-    setRoutes((data as Route[]) ?? []);
-  }, [supabase]);
-  useEffect(() => { load(); }, [load]);
-
-  const approve = async (r: Route) => {
-    if (!confirm(`Approve: new ${r.company_code}${r.doc_type ? ` ${r.doc_type}` : ""} ${r.sensitivity} documents${r.division_id ? ` from ${r.division_id}` : ""} go to “${r.folder_name}”?`)) return;
-    const { error } = await supabase.from("os_folder_routes").update({ status: "approved" }) // approver and time are set by the database.eq("id", r.id);
-    setMsg(error ? { ok: false, text: error.message } : { ok: true, text: "Route approved and logged." });
-    load();
-  };
-
-  return (
-    <div className="space-y-4">
-      <p className="text-[#2F4157]/75">Where uploads and generated documents will be filed once Documents goes live. Only approved routes are used; with no matching route, an upload stops and asks for a folder. The OS never creates, renames or moves folders.</p>
-      {msg && <p role="status" className={msg.ok ? "text-[#0B6E64]" : "text-[#A23B3D]"}>{msg.text}</p>}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="text-[#2F4157]/60"><tr><th className="py-2 pr-3">Company</th><th className="pr-3">Division</th><th className="pr-3">Type</th><th className="pr-3">Sensitivity</th><th className="pr-3">Drive folder</th><th className="pr-3">Status</th><th /></tr></thead>
-          <tbody>
-            {(routes ?? []).map((r) => (
-              <tr key={r.id} className="border-t border-[#E3E7ED] align-top">
-                <td className="py-2 pr-3">{r.company_code}</td><td className="pr-3">{r.division_id ?? "any"}</td><td className="pr-3">{r.doc_type ?? "any"}</td><td className="pr-3">{r.sensitivity}</td>
-                <td className="pr-3"><a className="underline" href={`https://drive.google.com/drive/folders/${r.drive_folder_id}`} target="_blank" rel="noreferrer">{r.folder_name}</a>{r.note && <span className="block text-[#2F4157]/55">{r.note}</span>}</td>
-                <td className="pr-3"><span className={tag}>{r.status}</span></td>
-                <td>{r.status === "proposed" && <button type="button" className={cn(btnSecondary, "px-3 py-1.5 text-sm")} onClick={() => approve(r)}>Approve</button>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+export { RoutesAdmin } from "./RoutesAdmin";
 
 export function AuditLog({ supabase }: { supabase: SupabaseClient }) {
   const [rows, setRows] = useState<OsAuditEntry[] | null>(null);

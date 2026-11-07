@@ -3,9 +3,12 @@
 // The "new document" sheet: from a Master Template (copied in Drive), by uploading a file, or by registering a file
 // that already exists in Drive. The server routes the file to the approved folder and numbers it; this form never
 // talks to Drive directly.
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CompanySelect, DivisionSelect, useDefaultCompany } from "./pickers";
-import { ErrorLine, Field, Select, Sheet, btn, btnPrimary, input, muted } from "./ui";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { useDirectory, useMyScope } from "./data";
+import { CompanySelect, useDefaultCompany } from "./pickers";
+import { ErrorLine, Field, Select, Sheet, btn, btnPrimary, input, linkCls, muted } from "./ui";
 import { DOC_TYPES, SENSITIVITIES } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +20,7 @@ export type DocRow = {
 export const DOC_COLUMNS = "id, reference_number, title, company_code, division_id, doc_type, category, status, sensitivity, owner_person_id, drive_url, updated_at, drift_findings, drive_checked_at";
 
 type Template = { id: string; name: string; mimeType: string };
+type RouteCheck = { ok: boolean; route: { folder_name: string } | null; problems: string[]; can_create: boolean };
 export type NewDocDefaults = { company_code?: string; division_id?: string; link_type?: string; link_id?: string };
 
 export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open: boolean; onClose: () => void; onCreated: (id: string) => void; defaults?: NewDocDefaults }) {
@@ -35,6 +39,20 @@ export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open:
   const [tplError, setTplError] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [check, setCheck] = useState<RouteCheck | null>(null);
+  const dir = useDirectory();
+  const scope = useMyScope();
+  // Divisions the person can file for: founders all; others the divisions they belong to.
+  const divisions = (dir?.divisions ?? []).filter((d) => scope.isFounder || scope.member.has(d.id) || d.id === division);
+
+  // Before creating a Drive file: which approved folder it goes to, or exactly what is missing.
+  useEffect(() => {
+    if (!open || mode === "register" || !docType || !company) { setCheck(null); return; }
+    let live = true;
+    const q = new URLSearchParams({ company, doc_type: docType, sensitivity, ...(division ? { division } : {}) });
+    fetch(`/os/api/documents/route-check?${q}`).then((r) => r.json()).then((j) => live && setCheck(j)).catch(() => live && setCheck(null));
+    return () => { live = false; };
+  }, [open, mode, company, division, docType, sensitivity]);
 
   useEffect(() => {
     if (!open || templates) return;
@@ -66,7 +84,7 @@ export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open:
     setBusy(false);
   }
 
-  const ready = title.trim() && docType && (mode !== "template" || template) && (mode !== "upload" || file) && (mode !== "register" || driveUrl);
+  const ready = title.trim() && docType && (mode !== "template" || template) && (mode !== "upload" || file) && (mode !== "register" || driveUrl) && (mode === "register" || check?.ok);
   return (
     <Sheet open={open} onClose={onClose} title="New document"
       footer={<><button type="button" className={btn} onClick={onClose}>Cancel</button><button type="button" className={btnPrimary} onClick={submit} disabled={!ready || busy} data-testid="os-doc-save">{busy ? "Working…" : mode === "register" ? "Register" : "Create in Drive"}</button></>}>
@@ -101,11 +119,21 @@ export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open:
         <Field label="Title">{(id) => <input id={id} className={input} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={300} data-testid="os-doc-title" />}</Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Company">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
-          <Field label="Division">{(id) => <DivisionSelect id={id} value={division} onChange={setDivision} />}</Field>
+          <Field label="Division">{(id) => <Select id={id} value={division} onChange={setDivision} placeholder="No division (company-wide)" options={divisions.map((d) => ({ value: d.id, label: d.name }))} />}</Field>
           <Field label="Type">{(id) => <Select id={id} value={docType} onChange={setDocType} placeholder="Choose…" options={DOC_TYPES.map((t) => ({ value: t.code, label: `${t.code} · ${t.label}` }))} />}</Field>
           <Field label="Sensitivity">{(id) => <Select id={id} value={sensitivity} onChange={setSensitivity} options={SENSITIVITIES} />}</Field>
         </div>
         <Field label="Category" hint="Optional, for example Governance, Programs or Finance.">{(id) => <input id={id} className={input} value={category} onChange={(e) => setCategory(e.target.value)} />}</Field>
+        {mode !== "register" && check && (
+          <div className={cn("rounded-lg border px-3 py-2 text-sm", check.ok ? "border-[#CDE8D6] bg-[#F1F9F4]" : "border-[#F1C9CA] bg-[#FDF2F2]")} data-testid="os-doc-route" role="status">
+            {check.ok
+              ? <p className="flex items-start gap-1.5"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#2E7D4F]" aria-hidden="true" />Will be filed in the approved folder “{check.route?.folder_name}”.</p>
+              : check.problems.map((p) => <p key={p} className="flex items-start gap-1.5 text-[#A12D2F]"><XCircle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />{p}</p>)}
+            {!check.ok && (scope.isAdmin
+              ? <Link href="/os/admin?tab=routes" className={cn(linkCls, "mt-1 inline-block text-xs")}>Open Admin → Drive folder routes</Link>
+              : <p className={cn("mt-1 text-xs", muted)}>Ask a founder to set this up, or register a file that already exists in Drive.</p>)}
+          </div>
+        )}
         {mode !== "register" && <p className={cn("text-xs", muted)}>A reference number like {company || "IEL"}-{docType || "SOP"}-{new Date().getFullYear()}-001 is assigned and used in the file name.</p>}
       </div>
     </Sheet>
