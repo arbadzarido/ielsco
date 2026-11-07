@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CALLBACK_PATHS, callbackErrorCode, oauthClientInfo, oauthEndpoints, redirectUriFor } from "../src/lib/os/google-oauth.ts";
+import { CALLBACK_PATHS, backTo, callbackErrorCode, oauthClientInfo, oauthEndpoints, redirectUriFor } from "../src/lib/os/google-oauth.ts";
 
 test("the Drive redirect URI is the exact production callback, whatever forwarded port or case arrives", () => {
   assert.equal(redirectUriFor("os.ielsco.com", "drive"), "https://os.ielsco.com/os/api/admin/drive/callback");
@@ -34,4 +34,12 @@ test("Google's callback errors map to plain outcomes", () => {
   assert.equal(callbackErrorCode("access_denied"), "cancelled");
   assert.equal(callbackErrorCode("invalid_scope"), "failed");
   assert.equal(callbackErrorCode(null), null);
+});
+
+test("callbacks send the person back to the OS host, not the server's internal URL", () => {
+  assert.equal(backTo("https://os.ielsco.com/os/api/admin/drive/callback", "http://localhost:3000/os/api/admin/drive/callback", "/os/admin?tab=health").toString(), "https://os.ielsco.com/os/admin?tab=health");
+});
+
+test("the Google API stand-in is served from the origin root, as googleapis builds absolute paths", () => {
+  assert.equal(oauthEndpoints({ OS_GOOGLE_OAUTH_BASE: "http://localhost:1/g" }).apiRoot, "http://localhost:1/");
 });

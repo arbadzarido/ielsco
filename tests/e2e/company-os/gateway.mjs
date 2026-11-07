@@ -311,6 +311,7 @@ http.createServer(async (req, res) => {
     if (url.pathname === "/__test/next-google") { nextGoogle = body; return send(res, 200, { ok: true }); }
     if (url.pathname === "/__test/google-redirects") { googleRedirects = body.uris ?? []; return send(res, 200, { ok: true }); }
     if (url.pathname.startsWith("/__google/")) return google(req, res, url, body);
+    if (url.pathname.startsWith("/drive/v3/") || url.pathname.startsWith("/calendar/v3/")) return google(req, res, url, body);
     if (url.pathname.startsWith("/auth/v1/")) return await auth(req, res, url, body);
     if (url.pathname.startsWith("/rest/v1/")) return await rest(req, res, url, body);
     return send(res, 404, { message: "not simulated" });

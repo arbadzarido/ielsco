@@ -4,14 +4,14 @@ import { osServiceClient } from "@/lib/os/server";
 import { driveConfigured, driveError, listTemplates } from "@/lib/os/drive";
 import { aiConfigured } from "@/lib/os/ai";
 import { driveConnection, oauthConfigured, writerDrive } from "@/lib/os/drive-oauth";
-import { CALLBACK_PATHS, OS_ORIGIN, oauthClientInfo } from "@/lib/os/google-oauth";
+import { CALLBACK_PATHS, OS_ORIGIN, oauthClientInfo, redirectUriFor } from "@/lib/os/google-oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Integration health for founders: which server-side integrations are configured and answering. Reports only
 // yes/no and a plain message; never a key, an ID or an upstream error text.
-export async function GET() {
+export async function GET(req: Request) {
   const auth = await requireOsPerson();
   if (auth instanceof NextResponse) return auth;
   const { data: founder } = await auth.supabase.rpc("os_is_founder");
@@ -50,6 +50,6 @@ export async function GET() {
   // the secret is never returned, only whether it is set.
   const client = oauthClientInfo();
   const oauth = { client_id: client.clientId, client_source: client.source, has_secret: client.hasSecret,
-    redirect_uris: { drive: `${OS_ORIGIN}${CALLBACK_PATHS.drive}` } };
+    redirect_uris: { drive: redirectUriFor(req.headers.get("x-forwarded-host") ?? req.headers.get("host"), "drive") ?? `${OS_ORIGIN}${CALLBACK_PATHS.drive}` } };
   return NextResponse.json({ checks, at: new Date().toISOString(), oauth, drive: { configured: oauthConfigured(), connected: Boolean(conn), email: conn?.google_email ?? null } });
 }

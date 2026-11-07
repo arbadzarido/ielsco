@@ -3,14 +3,14 @@ import { NextResponse } from "next/server";
 import { requireOsPerson } from "@/lib/os/api";
 import { oauthClient, oauthConfigured, saveDriveConnection } from "@/lib/os/drive-oauth";
 import { osServiceClient } from "@/lib/os/server";
-import { callbackErrorCode } from "@/lib/os/google-oauth";
+import { backTo, callbackErrorCode } from "@/lib/os/google-oauth";
 import { callbackUrl, STATE_COOKIE } from "../shared";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const back = (req: Request, result: string) => {
-  const res = NextResponse.redirect(new URL(`/os/admin?tab=health&drive=${result}`, req.url));
+  const res = NextResponse.redirect(backTo(callbackUrl(req), req.url, `/os/admin?tab=health&drive=${result}`));
   res.cookies.set(STATE_COOKIE, "", { path: "/os/api/admin/drive", maxAge: 0 });
   return res;
 };

@@ -40,8 +40,14 @@ export function oauthClientInfo(env: Record<string, string | undefined> = proces
 export function oauthEndpoints(env: Record<string, string | undefined> = process.env) {
   const base = !env.VERCEL && env.OS_GOOGLE_OAUTH_BASE ? env.OS_GOOGLE_OAUTH_BASE.replace(/\/$/, "") : null;
   return base
-    ? { endpoints: { oauth2AuthBaseUrl: `${base}/o/oauth2/v2/auth`, oauth2TokenUrl: `${base}/token`, oauth2RevokeUrl: `${base}/revoke`, tokenInfoUrl: `${base}/tokeninfo` }, apiRoot: `${base}/` }
+    ? { endpoints: { oauth2AuthBaseUrl: `${base}/o/oauth2/v2/auth`, oauth2TokenUrl: `${base}/token`, oauth2RevokeUrl: `${base}/revoke`, tokenInfoUrl: `${base}/tokeninfo` }, apiRoot: `${new URL(base).origin}/` }
     : null;
+}
+
+/** Where a callback sends the person back to: always on the Company OS host (the request URL inside the server can
+ *  name an internal host). */
+export function backTo(redirectUri: string | null, fallback: string, path: string): URL {
+  return new URL(path, redirectUri ?? fallback);
 }
 
 /** Google's ?error= on the callback, in a short code the Admin page explains. */
