@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { OsShell } from "@/components/os/OsShell";
 import { MfaChallenge } from "@/components/os/auth/MfaChallenge";
 import { OsNotice } from "@/components/os/auth/OsNotice";
@@ -37,5 +37,5 @@ export default async function GatedOsLayout({ children }: { children: ReactNode 
     redirect("/os/auth/signout?reason=denied");
   }
 
-  return <OsShell>{children}</OsShell>;
+  return <Suspense fallback={null}><OsShell>{children}</OsShell></Suspense>;
 }

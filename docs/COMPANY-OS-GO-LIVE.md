@@ -99,6 +99,55 @@ No `user_id`: the first Google sign-in links it. Then:
 - Check: `https://os.ielsco.com/dashboard` shows the Company OS sign-in (not the member dashboard),
   `https://os.ielsco.com/sign-up` shows the Company OS 404, `https://www.ielsco.com/os` shows the public 404.
 
+## 7. Phase 2: work, documents, KPIs, timeline, people, reviews and AI
+
+Database (after a backup, as in section 1). Both files only create or replace `os_*` objects; the first widens one
+check constraint on `os_grants` to allow People Lead grants. They touch no public-site table. Both are re-runnable.
+
+1. `supabase/migrations/20261108000000_company_os_work.sql`
+2. `supabase/migrations/20261108010000_company_os_kpi_timeline_data.sql` (68 KPIs, 104 timeline items, ID counters)
+3. `supabase/migrations/20261108020000_company_os_drive_connection.sql` (one service-role-only table for the connected
+   Google account)
+
+If the Supabase GitHub integration applies migrations on merge, merging the PR runs them; check with
+`select version from supabase_migrations.schema_migrations order by 1 desc limit 3;`. Otherwise run them in the SQL
+editor in that order. Verify:
+
+```sql
+select count(*) from public.os_kpis;              -- 68
+select count(*) from public.os_timeline_items;    -- 104
+select count(*) from public.os_kpi_values;        -- 0 (the KPI Log was empty)
+select prefix, last from public.os_id_counters order by 1;  -- PRJ 27, TSK 80, DOC 94, OD 8, OPP 3, MTG 1, KPI 68, TL 104
+select count(*) from pg_tables where schemaname = 'public' and tablename like 'os\_%' and not rowsecurity;  -- 0
+```
+
+Vercel env (server only; never `NEXT_PUBLIC_`):
+
+| Setting | Needed for |
+| --- | --- |
+| `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY` | Documents: list Master Templates, copy, upload, access check. The existing service account. Share **02.1 Master Templates** (view) and each approved route folder (edit) with it. Without it the hub still registers existing Drive links. |
+| `GEMINI_API_KEY` | AI agents. Without it they show as unavailable. Spending is capped in the database regardless. |
+| `OS_GOOGLE_CLIENT_ID`, `OS_GOOGLE_CLIENT_SECRET` | Creating Drive files (templates, uploads). A Google OAuth "Web application" client whose authorised redirect URI is `https://os.ielsco.com/os/api/admin/drive/callback`. Falls back to `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` if those belong to a client with that redirect URI. |
+
+**Why a founder connects Google Drive.** The folders are in a personal (gmail) My Drive. Google gives service accounts
+no storage there, so the service account can read folders and templates but every copy or upload is refused
+("Service Accounts do not have storage quota"; tested against production on 7 Nov 2026). New files are therefore
+created with a founder's Google account: Admin → Integration health → **Connect Google Drive**, sign in with the
+account that owns the Drive folders, allow Drive access. The refresh token is encrypted (AES-256-GCM) and stored in
+`os_drive_connection`, readable only by the server. New files are owned by that account. **Disconnect** revokes it.
+
+OAuth consent screen: user type External; set the publishing status to **In production** (in Testing, Google expires
+the refresh token after 7 days). The app is unverified, so Google shows a warning on the one-time consent; continue
+as the founder. The 7 Restricted folders (Finance, Legal, Personnel) are not shared with the service account, so their
+access checks run through the connected founder account.
+
+Then in the OS: approve the Drive folder routes you want used (Admin → Drive folder routes), check Admin → Integration
+health, and set the AI budget (Admin → AI usage & budget; at most US$25).
+
+The Operations Master's Projects (27), Tasks (74), Documents (93), Decisions (8), Opportunities (3) and Meetings (1)
+are **not** imported. ID counters start after them, so a later import keeps their IDs. The source sheets stay
+editable until you decide to make them read-only.
+
 ## Rollback
 
 The app side: remove the os.ielsco.com domain (nothing else links to it). The database side, only if needed:

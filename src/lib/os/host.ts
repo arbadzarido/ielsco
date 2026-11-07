@@ -24,6 +24,9 @@ const ALIASES: Record<string, string> = {
   "/admin": "/os/admin",
   "/account": "/os/account",
   "/workspaces": "/os/workspaces",
+  "/tasks": "/os/tasks",
+  "/projects": "/os/projects",
+  "/documents": "/os/documents",
 };
 
 export type OsHostDecision =
@@ -43,6 +46,11 @@ export function osHostRoute(pathname: string): OsHostDecision {
 
 // /os routes that need a signed-in session. Everything else under /os (login, auth callbacks, unknown paths that
 // render the 404) is reachable signed out and shows no internal data.
+export const GATED_OS_SECTIONS = [
+  "admin", "workspaces", "account", "w", "projects", "tasks", "documents", "timeline", "kpis", "okrs", "people",
+  "reviews", "partnerships", "campaigns", "assistant",
+] as const;
+const GATED = new RegExp(`^/os(/(${GATED_OS_SECTIONS.join("|")})(/.*)?)?/?$`);
 export function isGatedOsPath(pathname: string): boolean {
-  return /^\/os(\/(admin|workspaces|account)(\/.*)?)?\/?$/.test(pathname);
+  return GATED.test(pathname);
 }

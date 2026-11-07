@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 
+// The public site renders at a 75% root size; the Company OS is a dense work tool used on phones too, so it uses the
+// browser default (16px). That keeps text legible and touch targets at their intended 40-44 px.
 export default function OsRootLayout({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-[#F4F6F9] text-[#1B2A3C]">{children}</div>;
+  return (
+    <>
+      <style>{"html{font-size:100%!important}"}</style>
+      <div className="min-h-screen bg-[#F4F6F9] text-[#1B2A3C]">{children}</div>
+    </>
+  );
 }

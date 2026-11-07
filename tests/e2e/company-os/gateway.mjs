@@ -12,6 +12,9 @@ import pg from "pg";
 
 export const JWT_SECRET = "e2e-only-secret-not-used-anywhere-else-0123456789";
 const PORT = Number(process.env.PORT || 54399);
+// PostgREST returns dates as YYYY-MM-DD and numerics as numbers; node-pg would turn dates into JS Dates (UTC-shifted).
+pg.types.setTypeParser(1082, (v) => v);
+pg.types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 const pool = new pg.Pool({ host: process.env.PGHOST || "127.0.0.1", database: process.env.PGDATABASE || "os_e2e", user: process.env.PGUSER || "os_gateway", password: process.env.PGPASSWORD || "gateway", max: 8 });
 
 const b64u = (b) => Buffer.from(b).toString("base64url");
@@ -104,21 +107,70 @@ async function auth(req, res, url, body) {
 }
 
 // ── REST (PostgREST subset) ──────────────────────────────────────────────────────────────────────────────────────────
+// Enough of PostgREST for the Company OS screens: filters (eq, neq, gt(e), lt(e), in, is, like, ilike and their not.
+// forms), or=(...), select with aliases and one level of many-to-one embedding, order with nulls first/last, limit,
+// exact counts, return=representation and single-object responses. Embedded rows are read in the same transaction
+// and role, so RLS applies to them exactly as it does in PostgREST.
 const ident = (s) => { if (!/^[a-z_][a-z0-9_]*$/.test(s)) throw Object.assign(new Error(`bad identifier ${s}`), { code: "PGRST100" }); return `"${s}"`; };
-function where(params, args) {
+function splitTop(str) {
+  const out = []; let depth = 0, quote = false, cur = "";
+  for (const ch of str) {
+    if (ch === '"') quote = !quote;
+    if (!quote && ch === "(") depth++;
+    if (!quote && ch === ")") depth--;
+    if (!quote && depth === 0 && ch === ",") { out.push(cur); cur = ""; } else cur += ch;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+const unq = (x) => x.replace(/^"|"$/g, "");
+function cond(col, expr, args) {
+  let neg = false;
+  if (expr.startsWith("not.")) { neg = true; expr = expr.slice(4); }
+  const [op, ...rest] = expr.split("."); const val = rest.join(".");
+  const map = { eq: "=", neq: "<>", gt: ">", gte: ">=", lt: "<", lte: "<=", like: "like", ilike: "ilike" };
+  let c;
+  if (map[op]) { args.push(op.endsWith("like") ? val.replace(/\*/g, "%") : val); c = `${col} ${map[op]} $${args.length}`; }
+  else if (op === "in") { args.push(splitTop(val.replace(/^\(|\)$/g, "")).map(unq)); c = `${col}::text = any($${args.length})`; }
+  else if (op === "is") c = `${col} is ${val === "null" ? "null" : val === "true" ? "true" : "false"}`;
+  else throw Object.assign(new Error(`filter ${op} not simulated`), { code: "PGRST100" });
+  return neg ? `not (${c})` : c;
+}
+function where(params, args, alias = "") {
   const out = [];
+  const pre = alias ? `${alias}.` : "";
   for (const [k, v] of params) {
     if (["select", "order", "limit", "offset", "columns", "on_conflict"].includes(k)) continue;
-    const [op, ...rest] = v.split("."); const val = rest.join(".");
-    const col = ident(k);
-    const map = { eq: "=", neq: "<>", gt: ">", gte: ">=", lt: "<", lte: "<=" };
-    if (map[op]) { args.push(val); out.push(`${col} ${map[op]} $${args.length}`); }
-    else if (op === "in") { args.push(val.replace(/^\(|\)$/g, "").split(",").map((x) => x.replace(/^"|"$/g, ""))); out.push(`${col}::text = any($${args.length})`); }
-    else if (op === "is") out.push(`${col} is ${val === "null" ? "null" : val === "true" ? "true" : "false"}`);
-    else throw Object.assign(new Error(`filter ${op} not simulated`), { code: "PGRST100" });
+    if (k === "or") {
+      const parts = splitTop(v.replace(/^\(|\)$/g, "")).map((p) => { const i = p.indexOf("."); return cond(pre + ident(p.slice(0, i)), p.slice(i + 1), args); });
+      out.push(`(${parts.join(" or ")})`);
+    } else out.push(cond(pre + ident(k), v, args));
   }
   return out.length ? ` where ${out.join(" and ")}` : "";
 }
+async function selectList(db, table, select) {
+  const items = splitTop(select || "*");
+  const cols = [];
+  for (const raw of items) {
+    const it = raw.trim();
+    const m = it.match(/^(?:([a-z_][a-z0-9_]*):)?([a-z_][a-z0-9_]*)\((.*)\)$/);
+    if (m) {
+      const [, alias, rel, inner] = m;
+      // many-to-one: a foreign key on this table pointing at rel
+      const { rows } = await db.query(`select a.attname col, af.attname ref from pg_constraint c
+        join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
+        join pg_attribute af on af.attrelid = c.confrelid and af.attnum = c.confkey[1]
+        where c.contype = 'f' and c.conrelid = $1::regclass and c.confrelid = $2::regclass`, [`public.${table}`, `public.${rel}`]);
+      if (!rows.length) throw Object.assign(new Error(`no relationship ${table} -> ${rel}`), { code: "PGRST200" });
+      const innerCols = splitTop(inner).map((c) => (c.trim() === "*" ? "*" : ident(c.trim()))).join(", ");
+      cols.push(`(select row_to_json(e) from (select ${innerCols} from public.${ident(rel)} r where r.${ident(rows[0].ref)} = t.${ident(rows[0].col)}) e) as ${ident(alias || rel)}`);
+    } else if (it === "*") cols.push("t.*");
+    else { const [a, c] = it.includes(":") ? it.split(":") : [null, it]; cols.push(`t.${ident(c)}${a ? ` as ${ident(a)}` : ""}`); }
+  }
+  return cols.join(", ");
+}
+const returning = (select) => (select || "*").split(",").map((c) => (c.trim() === "*" ? "*" : ident(c.trim().split(":").pop()))).join(", ");
+const param = (v) => (typeof v === "object" && v !== null ? JSON.stringify(v) : v);
 
 async function rest(req, res, url, body) {
   const token = req.headers.authorization?.replace(/^Bearer /, "") || req.headers.apikey;
@@ -127,13 +179,16 @@ async function rest(req, res, url, body) {
   const role = ["anon", "authenticated", "service_role"].includes(claims.role) ? claims.role : "anon";
   const path = url.pathname.replace(/^\/rest\/v1\//, "");
   const db = await pool.connect();
+  const wantsObject = (req.headers.accept || "").includes("vnd.pgrst.object");
   try {
     await db.query("begin");
     await db.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify(claims)]);
     await db.query(`set local role ${role}`);
     const prefer = req.headers.prefer || "";
     const args = [];
-    let result, status = 200, headers = {};
+    let result, status = 200;
+    const headers = {};
+    let rowsOut = null;
     if (path.startsWith("rpc/")) {
       const fn = path.slice(4);
       const { rows: procs } = await db.query("select proretset from pg_proc where proname = $1 and pronamespace = 'public'::regnamespace", [fn]);
@@ -142,39 +197,48 @@ async function rest(req, res, url, body) {
       const r = await db.query(procs[0].proretset ? `select * from public.${ident(fn)}(${named})` : `select public.${ident(fn)}(${named}) as v`, args);
       result = procs[0].proretset ? r.rows : r.rows[0]?.v ?? null;
     } else {
-      const table = `public.${ident(path)}`;
+      const tname = path; ident(tname);
+      const table = `public.${ident(tname)}`;
+      const select = url.searchParams.get("select");
       if (req.method === "GET" || req.method === "HEAD") {
-        const cols = (url.searchParams.get("select") || "*").split(",").map((c) => (c === "*" ? "*" : ident(c.trim()))).join(", ");
-        const w = where(url.searchParams, args);
-        let q = `select ${cols} from ${table}${w}`;
+        const cols = await selectList(db, tname, select);
+        const w = where(url.searchParams, args, "t");
+        let q = `select ${cols} from ${table} t${w}`;
         const order = url.searchParams.get("order");
-        if (order) q += " order by " + order.split(",").map((o) => { const [c, d] = o.split("."); return `${ident(c)} ${d === "desc" ? "desc" : "asc"}`; }).join(", ");
+        if (order) q += " order by " + order.split(",").map((o) => { const [c, d, n] = o.split("."); return `t.${ident(c)} ${d === "desc" ? "desc" : "asc"}${n === "nullsfirst" ? " nulls first" : n === "nullslast" ? " nulls last" : ""}`; }).join(", ");
         if (url.searchParams.get("limit")) q += ` limit ${Number(url.searchParams.get("limit"))}`;
         const r = await db.query(q, args);
-        result = r.rows;
-        if (prefer.includes("count=exact")) { const c = await db.query(`select count(*)::int n from ${table}${w}`, args.slice()); headers["content-range"] = `0-${Math.max(r.rows.length - 1, 0)}/${c.rows[0].n}`; }
-        if ((req.headers.accept || "").includes("vnd.pgrst.object")) {
-          if (r.rows.length !== 1) { await db.query("rollback"); return send(res, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned", details: `The result contains ${r.rows.length} rows` }); }
-          result = r.rows[0];
-        }
+        rowsOut = r.rows;
+        if (prefer.includes("count=exact")) { const c = await db.query(`select count(*)::int n from ${table} t${w}`, args.slice()); headers["content-range"] = `0-${Math.max(r.rows.length - 1, 0)}/${c.rows[0].n}`; }
       } else if (req.method === "POST") {
         const rows = Array.isArray(body) ? body : [body];
+        rowsOut = [];
         for (const row of rows) {
-          const keys = Object.keys(row); const vals = keys.map((k) => { args.push(row[k]); return `$${args.length}`; });
-          await db.query(`insert into ${table} (${keys.map(ident).join(", ")}) values (${vals.join(", ")})`, args.splice(0));
+          const keys = Object.keys(row); const vals = keys.map((k) => { args.push(param(row[k])); return `$${args.length}`; });
+          const r = await db.query(`insert into ${table} (${keys.map(ident).join(", ")}) values (${vals.join(", ")}) returning ${returning(select)}`, args.splice(0));
+          rowsOut.push(...r.rows);
         }
-        status = 201; result = null;
+        status = 201;
       } else if (req.method === "PATCH") {
-        const sets = Object.keys(body).map((k) => { args.push(body[k]); return `${ident(k)} = $${args.length}`; });
-        await db.query(`update ${table} set ${sets.join(", ")}${where(url.searchParams, args)}`, args);
-        status = 204;
+        const sets = Object.keys(body).map((k) => { args.push(param(body[k])); return `${ident(k)} = $${args.length}`; });
+        const r = await db.query(`update ${table} t set ${sets.join(", ")}${where(url.searchParams, args, "t")} returning ${returning(select).split(", ").map((c) => (c === "*" ? "t.*" : `t.${c}`)).join(", ")}`, args);
+        rowsOut = r.rows; status = 204;
       } else if (req.method === "DELETE") {
-        await db.query(`delete from ${table}${where(url.searchParams, args)}`, args);
-        status = 204;
+        const r = await db.query(`delete from ${table} t${where(url.searchParams, args, "t")} returning t.*`, args);
+        rowsOut = r.rows; status = 204;
+      }
+      const rep = req.method === "GET" || req.method === "HEAD" || prefer.includes("return=representation");
+      if (rep) {
+        status = req.method === "POST" ? 201 : 200;
+        if (wantsObject) {
+          if (rowsOut.length !== 1) { await db.query("rollback"); return send(res, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned", details: `The result contains ${rowsOut.length} rows` }); }
+          result = rowsOut[0];
+        } else result = rowsOut;
       }
     }
     await db.query("commit");
     if (status === 204 || (status === 201 && !prefer.includes("return=representation"))) { res.writeHead(status, cors(req, headers)); return res.end(); }
+    if (req.method === "HEAD") { res.writeHead(200, cors(req, headers)); return res.end(); }
     return send(res, status, result, headers, req);
   } catch (e) {
     await db.query("rollback").catch(() => {});

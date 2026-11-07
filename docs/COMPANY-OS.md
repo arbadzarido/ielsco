@@ -2,11 +2,39 @@
 
 Internal operating system for IELSco (PT English Space Berkah Indonesia) and Elco AI (PT Elco Edukasi Berkah Indonesia).
 It is served only on `os.ielsco.com` (routes under `/os` in this app; the public hosts return 404 for `/os`). Google Drive stays the file store; the OS
-holds people, access rules, document metadata and (later) work, and links out to Drive.
+holds people, access rules, document metadata, work, KPIs, OKRs, the Master Timeline, reviews and four AI agents, and
+links out to Drive.
 
-This first slice is the foundation only: people, companies, divisions, access grants, folder routes, document numbering
-and an audit log, with the Home, Workspaces and Admin screens. Work, Documents, Knowledge and the AI assistant are later
-phases (shown as "Soon" in the nav).
+## Modules (migration `20261108000000_company_os_work.sql`, data `20261108010000_company_os_kpi_timeline_data.sql`)
+
+| Screen | What it does |
+| --- | --- |
+| Shell | Sidebar (collapsible, remembered) on desktop; top bar and drawer on phones. Workspace switcher with the real IELSco mark (`/icon-192.png`) and the Elco robot mark (`/images/contents/mascot/elco.svg`; the repo has no Elco wordmark). HQ shows both. |
+| Home `/os` | Role dashboard: my work for everyone, my divisions for managers, all three workspaces plus decisions, partner follow-ups, access findings, folder routes and AI spend for founders. Live counts only. |
+| Workspaces `/os/w/hq\|ielsco\|elco` | Overview (stats, quick actions, 30-day deadlines across tasks, projects and the timeline, company KPIs, announcements, recent documents, recent activity), divisions, projects, documents, team; HQ adds decisions and meetings, Elco adds product items. |
+| Projects, Tasks | Projects with team, tasks, decisions, documents, comments and activity. Tasks with owner, assignees, reviewer, priority, status, due date, one level of subtasks, comments, linked documents, activity and overdue flags. Views: My tasks, Team, List, Board (drag and drop), Upcoming. No Gantt, time tracking or sprints. |
+| Documents `/os/documents` | Register with search and filters (company, division, type, status, sensitivity, category, access findings). New document from a Master Template (Drive copy, "copy, never edit"), by upload, or by registering an existing Drive link. Number `CO-TYPE-YEAR-NNN` and the approved folder route are applied by the server; the file is named `{number} — {title}`. Access check reads Drive sharing and reports drift; it never changes Drive. Approval needs the division manager or a founder. |
+| KPIs `/os/kpis` | The 68 KPI Dictionary rows with their KPI IDs. Targets only where the sheet had one (6); "No approved target" otherwise. Values logged by the KPI owner or the division manager; trend chart from three periods. The 16 Finance KPIs never store values (Restricted Finance Control). |
+| OKRs `/os/okrs` | Company and division objectives (`OBJ-`), aligned under a parent, with key results (`KR-`) optionally measured by a KPI. No progress percentage without a target. |
+| Timeline `/os/timeline` | The 104 Master Timeline items with their TL IDs: annual Gantt-style lanes per workstream (WS0–WS9), monthly view, list. Founders and the lead division's manager update status, dates and evidence. |
+| People, Reviews | Directory, profiles (title, responsibilities, reporting line, location), memberships, projects, open tasks, KPIs. Employment and reviews are private: the person, their manager(s), founders, and a People Lead with an explicit `people` grant. Only founders change reporting lines. Reviews: cycles, self-assessment, manager assessment, KPI and objective achievement, strengths, development areas and plan, completion, acknowledgement. No scores, ranks or ratings; task counts are labelled as not a measure of performance. |
+| Partnerships, Campaigns | Opportunity pipeline (list and stage board; Confidential, Partnerships division by default) and the content calendar. |
+| Assistant `/os/assistant` | Company Assistant, Operations, Partnerships and Growth. See below. |
+| Admin | People & accounts, divisions, security & sessions, access grants (including People Lead), Drive folder routes, AI usage & budget, integration health, audit log. |
+
+### AI agents
+
+- Every record an agent sees is read with the signed-in person's own session, so RLS decides; the service role is used
+  only for the cost ledger and storing messages. Database text is passed as data, with an instruction to ignore any
+  instructions inside it.
+- Agents only propose changes (create task, change task status, create project, comment, log KPI value, add
+  opportunity, depending on the agent). Each proposal is validated, shown as a preview, and runs only when the person
+  confirms, again with their own session. Proposals expire after a day. Nothing is ever sent, signed, published or
+  approved by an agent. `os_ai_actions` keeps every proposal and decision.
+- Cost: `gemini-3.1-flash-lite` for routine questions, `gemini-3-flash-preview` for analysis, long questions or "deeper
+  analysis". Each call reserves its worst-case cost first (`os_ai_reserve`, row-locked), then settles the real cost.
+  The monthly cap is at most US$25 (database check constraint) with a per-person daily limit (default US$2). When the
+  budget is used up the agents say so and nothing else is affected. A failed model call costs nothing.
 
 ## Access rules
 
@@ -102,8 +130,9 @@ Limits to know:
 ```bash
 npm test                                                        # includes tests/company-os.test.mjs
 npm i --no-save @electric-sql/pglite                            # once
-node tests/db/company-os.pglite.mjs supabase/migrations          # access rules, 157 checks
-# Browser end-to-end against a real Postgres (84 checks): see tests/e2e/company-os/README.md
+node tests/db/company-os.pglite.mjs supabase/migrations          # access rules
+node tests/db/company-os-work.pglite.mjs supabase/migrations     # work, KPI, OKR, timeline, people, reviews, AI: 124 checks
+# Browser end-to-end against a real Postgres, desktop and 360 px phones (130 checks): see tests/e2e/company-os/README.md
 ```
 
 ## Going live

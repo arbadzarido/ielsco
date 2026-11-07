@@ -44,8 +44,11 @@ test("/os paths are recognised exactly", () => {
 });
 
 test("gated OS pages need a session; login, callback and 404 do not", () => {
-  for (const p of ["/os", "/os/", "/os/admin", "/os/admin/x", "/os/workspaces", "/os/account"]) assert.equal(isGatedOsPath(p), true, p);
-  for (const p of ["/os/login", "/os/auth/callback", "/os/auth/signout", "/os/unknown", "/os/administrator"]) assert.equal(isGatedOsPath(p), false, p);
+  for (const p of ["/os", "/os/", "/os/admin", "/os/admin/x", "/os/workspaces", "/os/account", "/os/w/hq", "/os/projects/PRJ-0028",
+    "/os/tasks", "/os/documents/DOC-0001", "/os/timeline", "/os/kpis", "/os/okrs", "/os/people/PPL-0001", "/os/reviews", "/os/partnerships",
+    "/os/campaigns", "/os/assistant"]) assert.equal(isGatedOsPath(p), true, p);
+  // API routes answer 401 themselves (JSON), so the proxy doesn't redirect them to the sign-in page.
+  for (const p of ["/os/login", "/os/auth/callback", "/os/auth/signout", "/os/unknown", "/os/administrator", "/os/api/ai/chat", "/os/taskss"]) assert.equal(isGatedOsPath(p), false, p);
 });
 
 test("device profile from common browsers", () => {

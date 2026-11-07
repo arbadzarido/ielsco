@@ -35,7 +35,7 @@ export interface OsPersonDivision {
 export interface OsGrant {
   id: string;
   person_id: string;
-  resource_type: "division" | "document" | "project";
+  resource_type: "division" | "document" | "project" | "people";
   resource_id: string;
   level: "view" | "edit";
   reason: string;
