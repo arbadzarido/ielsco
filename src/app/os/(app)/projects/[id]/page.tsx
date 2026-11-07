@@ -22,6 +22,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const project = useQuery<ProjectRow | null>((s) => s.from("os_projects").select(PROJECT_COLUMNS).eq("id", id).maybeSingle(), [id]);
   const tasks = useQuery<TaskRow[]>((s) => s.from("os_tasks").select(TASK_COLUMNS).eq("project_id", id).is("parent_task_id", null).order("due_date", { nullsFirst: false }), [id]);
   const members = useQuery<{ person_id: string; role: string }[]>((s) => s.from("os_project_members").select("person_id, role").eq("project_id", id), [id]);
+  const milestones = useQuery<{ id: string; title: string; due_date: string | null; status: string; is_major: boolean }[]>((s) => s.from("os_timeline_items").select("id, title, due_date, status, is_major").eq("project_id", id).order("due_date", { nullsFirst: false }), [id]);
+  const campaigns = useQuery<{ id: string; name: string; status: string; start_date: string | null }[]>((s) => s.from("os_campaigns").select("id, name, status, start_date").eq("project_id", id).order("start_date", { nullsFirst: false }), [id]);
   const decisions = useQuery<{ id: string; decision: string; status: string; decided_on: string | null }[]>((s) => s.from("os_decisions").select("id, decision, status, decided_on").eq("project_id", id).order("decided_on", { ascending: false }), [id]);
   const [editing, setEditing] = useState(false);
   const [newTask, setNewTask] = useState(false);
@@ -84,7 +86,23 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               </ul>
             </Section>
           )}
-          <Section title="Events"><LinkedEvents type="project" id={p.id} company={p.company_code} /></Section>
+          <Section title="Milestones" action={<Link href={`/os/timeline?p=${p.id}`} className={btnGhost}>On the Timeline</Link>}>
+            <ul className={cn(panel, "divide-y divide-[#F0F2F5] text-sm")} data-testid="os-project-milestones">
+              {(milestones.data ?? []).map((m) => (
+                <li key={m.id} className="flex items-center gap-2 px-3 py-2">
+                  <Link href={`/os/timeline/${m.id}`} className="min-w-0 flex-1 truncate hover:underline">{m.is_major ? "◆ " : "◇ "}{m.title}</Link>
+                  <span className="text-xs text-[#66768A]">{fmtDate(m.due_date)}</span><StatusBadge value={m.status} />
+                </li>
+              ))}
+              {milestones.data && !milestones.data.length && <li className="px-3 py-2 text-xs text-[#66768A]">No timeline milestones are linked to this project.</li>}
+            </ul>
+          </Section>
+          {!!campaigns.data?.length && (
+            <Section title="Campaigns">
+              <ul className={cn(panel, "divide-y divide-[#F0F2F5] text-sm")}>{campaigns.data.map((c) => <li key={c.id} className="flex items-center gap-2 px-3 py-2"><Link href={`/os/campaigns/${c.id}`} className="min-w-0 flex-1 truncate hover:underline">{c.name}</Link><span className="text-xs text-[#66768A]">{fmtDate(c.start_date)}</span><StatusBadge value={c.status} /></li>)}</ul>
+            </Section>
+          )}
+          <Section title="Events and calendar"><LinkedEvents type="project" id={p.id} company={p.company_code} /></Section>
           <Section title="Documents"><LinkedDocuments type="project" id={p.id} /></Section>
           <EntityFeed type="project" id={p.id} />
         </div>

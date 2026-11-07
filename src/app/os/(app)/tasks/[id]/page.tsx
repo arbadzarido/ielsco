@@ -10,6 +10,7 @@ import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
 import { LinkedEvents } from "@/components/os/linked-events";
 import { PersonSelect } from "@/components/os/pickers";
+import { TaskPlanning } from "@/components/os/task-planning";
 import { TASK_COLUMNS, TaskSheet, type TaskRow } from "@/components/os/work-forms";
 import { Avatar, Empty, ErrorLine, KeyValue, Loading, PageTitle, Section, Select, StatusBadge, btn, btnDanger, btnGhost, panel, ring } from "@/components/os/ui";
 import { TASK_STATUSES, companyName, fmtDate, fmtDateTime, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
@@ -23,7 +24,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
   const people = dir?.peopleById ?? new Map();
   const task = useQuery<TaskRow | null>((s) => s.from("os_tasks").select(TASK_COLUMNS).eq("id", id).maybeSingle(), [id]);
   const subs = useQuery<TaskRow[]>((s) => s.from("os_tasks").select(TASK_COLUMNS).eq("parent_task_id", id).order("created_at"), [id]);
-  const assignees = useQuery<{ person_id: string }[]>((s) => s.from("os_task_assignees").select("person_id").eq("task_id", id), [id]);
+  const assignees = useQuery<{ person_id: string; added_by: string | null; added_at: string | null }[]>((s) => s.from("os_task_assignees").select("person_id, added_by, added_at").eq("task_id", id), [id]);
   const project = useQuery<{ id: string; name: string } | null>((s) => task.data?.project_id ? s.from("os_projects").select("id, name").eq("id", task.data.project_id).maybeSingle() : Promise.resolve({ data: null, error: null }), [task.data?.project_id]);
   const [editing, setEditing] = useState(false);
   const [subOpen, setSubOpen] = useState(false);
@@ -95,6 +96,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
               ) : <p className="text-sm text-[#66768A]">No subtasks.</p>}
             </Section>
           )}
+          <TaskPlanning id={t.id} onChanged={() => task.reload()} />
           <Section title="Events"><LinkedEvents type="task" id={t.id} company={t.company_code} /></Section>
           <Section title="Documents and attachments"><LinkedDocuments type="task" id={t.id} /></Section>
           <EntityFeed type="task" id={t.id} />
@@ -118,7 +120,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
             <ul className="space-y-1.5" data-testid="os-assignees">
               {(assignees.data ?? []).map((a) => (
                 <li key={a.person_id} className="flex items-center gap-2 text-sm">
-                  <Avatar name={personLabel(people, a.person_id)} size={20} /><span className="flex-1">{personLabel(people, a.person_id)}</span>
+                  <Avatar name={personLabel(people, a.person_id)} size={20} /><span className="flex-1">{personLabel(people, a.person_id)}{a.added_by && a.added_by !== a.person_id && <span className="block text-[11px] text-[#66768A]">assigned by {personLabel(people, a.added_by)}{a.added_at ? `, ${fmtDate(a.added_at.slice(0, 10))}` : ""}</span>}</span>
                   <button type="button" className={btnGhost} onClick={() => unassign(a.person_id)} aria-label={`Remove ${personLabel(people, a.person_id)}`}><X size={14} aria-hidden="true" /></button>
                 </li>
               ))}

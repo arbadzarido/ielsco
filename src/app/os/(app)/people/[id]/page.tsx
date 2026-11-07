@@ -5,6 +5,7 @@ import { use, useState } from "react";
 import { Lock } from "lucide-react";
 import { useOsMe } from "@/components/os/OsProvider";
 import { useDirectory, useQuery } from "@/components/os/data";
+import { PersonWorkload } from "@/components/os/person-workload";
 import { RecordSheet } from "@/components/os/records";
 import { Avatar, Empty, ErrorLine, KeyValue, Loading, PageTitle, Section, StatusBadge, btn, linkCls, muted, panel } from "@/components/os/ui";
 import { MEMBERSHIP_TYPES, WORKSPACES, companyName, fmtDate, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
@@ -56,6 +57,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
             ]} />
             {pr?.responsibilities && <div className="mt-4"><h2 className="text-xs font-medium text-[#66768A]">Responsibilities</h2><p className="mt-1 whitespace-pre-wrap text-sm">{pr.responsibilities}</p></div>}
           </section>
+          <PersonWorkload personId={id} />
           <Section title="Projects they own">
             {projects.data?.length ? <ul className={cn(panel, "divide-y divide-[#F0F2F5] text-sm")}>{projects.data.map((x) => <li key={x.id} className="flex items-center gap-2 px-3 py-2"><Link href={`/os/projects/${x.id}`} className="min-w-0 flex-1 truncate hover:underline">{x.name}</Link><StatusBadge value={x.status} /></li>)}</ul>
               : <p className={cn("text-sm", muted)}>No active projects you can see.</p>}
