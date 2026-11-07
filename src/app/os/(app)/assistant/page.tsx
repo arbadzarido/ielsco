@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, MessageSquarePlus, Send, X } from "lucide-react";
+import { MessageSquarePlus, Send } from "lucide-react";
+import { AiActionCard, type AiAction } from "@/components/os/AiActionCard";
 import { useOsMe } from "@/components/os/OsProvider";
 import { useQuery } from "@/components/os/data";
-import { ErrorLine, PageTitle, Select, Tabs, btn, btnGhost, btnPrimary, input, muted, panel, ring } from "@/components/os/ui";
+import { ErrorLine, PageTitle, Select, Tabs, btn, btnPrimary, input, muted, panel, ring } from "@/components/os/ui";
 import { WORKSPACES, fmtDateTime } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +17,7 @@ const AGENTS = [
   { key: "growth", label: "Growth", hint: "Campaign calendar, content ideas, growth KPIs." },
 ] as const;
 type Msg = { id: number | string; role: string; content: string; model?: string | null; created_at?: string };
-type Action = { id: string; action_type: string; preview: string; status: string; result?: { ref?: string; error?: string } | null };
+type Action = AiAction;
 
 export default function AssistantPage() {
   const params = useSearchParams();
@@ -39,7 +40,7 @@ export default function AssistantPage() {
     if (!conv) { setMsgs([]); setActions([]); return; }
     Promise.all([
       supabase.from("os_ai_messages").select("id, role, content, model, created_at").eq("conversation_id", conv).in("role", ["user", "assistant"]).order("created_at"),
-      supabase.from("os_ai_actions").select("id, action_type, preview, status, result").eq("conversation_id", conv).order("created_at"),
+      supabase.from("os_ai_actions").select("id, action_type, preview, status, result, details").eq("conversation_id", conv).order("created_at"),
     ]).then(([m, a]) => { setMsgs((m.data ?? []) as Msg[]); setActions((a.data ?? []) as Action[]); });
   }, [conv, supabase]);
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [msgs.length, actions.length]);
@@ -62,14 +63,6 @@ export default function AssistantPage() {
     } catch { setErr("Couldn't reach the server."); }
     setBusy(false);
   }
-  async function decide(a: Action, decision: "confirm" | "reject") {
-    setErr(null);
-    const r = await fetch(`/os/api/ai/actions/${a.id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ decision }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok && !j.status) return setErr(j.error ?? "That didn't work.");
-    setActions((list) => list.map((x) => (x.id === a.id ? { ...x, status: j.status, result: j.ref ? { ref: j.ref } : j.error ? { error: j.error } : null } : x)));
-  }
-
   const b = budget.data?.[0];
   const info = AGENTS.find((a) => a.key === agent)!;
   return (
@@ -97,18 +90,7 @@ export default function AssistantPage() {
                 {m.created_at && <p className={cn("mt-1 text-[11px]", m.role === "user" ? "text-white/70" : muted)}>{fmtDateTime(m.created_at)}</p>}
               </div>
             ))}
-            {actions.map((a) => (
-              <div key={a.id} className="rounded-xl border border-[#D9E2EA] bg-white p-3 text-sm" data-testid="os-ai-action">
-                <p className="text-xs font-medium text-[#66768A]">Suggested change · needs your confirmation</p>
-                <p className="mt-1">{a.preview}</p>
-                {a.status === "proposed" ? (
-                  <div className="mt-2 flex gap-2">
-                    <button type="button" className={btnPrimary} onClick={() => decide(a, "confirm")}><Check size={14} aria-hidden="true" />Confirm</button>
-                    <button type="button" className={btnGhost} onClick={() => decide(a, "reject")}><X size={14} aria-hidden="true" />Dismiss</button>
-                  </div>
-                ) : <p className={cn("mt-1 text-xs", a.status === "failed" ? "text-[#A12D2F]" : muted)}>{a.status === "executed" ? `Done${a.result?.ref ? `: ${a.result.ref}` : ""}` : a.status === "failed" ? `Not done: ${a.result?.error ?? "not allowed"}` : a.status === "rejected" ? "Dismissed" : a.status}</p>}
-              </div>
-            ))}
+            {actions.map((a) => <AiActionCard key={a.id} action={a} onChange={(next) => setActions((list) => list.map((x) => (x.id === next.id ? next : x)))} />)}
             {busy && <p className={cn("text-sm", muted)} role="status">Thinking…</p>}
             <div ref={endRef} />
           </div>

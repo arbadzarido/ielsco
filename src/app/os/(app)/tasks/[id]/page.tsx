@@ -8,6 +8,7 @@ import { useOsMe } from "@/components/os/OsProvider";
 import { friendlyError, useDirectory, useQuery } from "@/components/os/data";
 import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
+import { LinkedEvents } from "@/components/os/linked-events";
 import { PersonSelect } from "@/components/os/pickers";
 import { TASK_COLUMNS, TaskSheet, type TaskRow } from "@/components/os/work-forms";
 import { Avatar, Empty, ErrorLine, KeyValue, Loading, PageTitle, Section, Select, StatusBadge, btn, btnDanger, btnGhost, panel, ring } from "@/components/os/ui";
@@ -94,6 +95,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
               ) : <p className="text-sm text-[#66768A]">No subtasks.</p>}
             </Section>
           )}
+          <Section title="Events"><LinkedEvents type="task" id={t.id} company={t.company_code} /></Section>
           <Section title="Documents and attachments"><LinkedDocuments type="task" id={t.id} /></Section>
           <EntityFeed type="task" id={t.id} />
         </div>

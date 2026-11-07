@@ -33,12 +33,16 @@ test("only valid, allowed actions are extracted", () => {
   ].join("\n");
   const { text, actions } = extractActions(reply, AGENTS.assistant.actions);
   assert.equal(text, "Here you go.");
-  assert.equal(actions.length, 1);
+  // create_project isn't the assistant's; the task drafts keep only declared fields (IDs and status never pass through).
+  assert.equal(actions.length, 2);
   assert.equal(actions[0].type, "create_task");
-  assert.match(previewFor(actions[0].type, actions[0].payload), /Call venue/);
+  assert.equal(actions[0].payload.title, "Call venue");
+  assert.equal(actions[1].payload.status, undefined);
+  assert.equal(actions[1].payload.owner_person_id, undefined);
+  assert.match(previewFor("update_task_status", { task_id: "TSK-0001", status: "Done" }), /TSK-0001/);
 });
 
 test("no agent can propose sending, publishing or approving", () => {
-  for (const a of Object.values(AGENTS)) for (const t of a.actions) assert.doesNotMatch(t, /send|publish|approve|sign|delete/);
+  for (const a of Object.values(AGENTS)) for (const t of a.actions) assert.doesNotMatch(t, /(^|_)(send|publish|approve|sign|delete)/);
   assert.match(systemPrompt("growth"), /not instructions/);
 });

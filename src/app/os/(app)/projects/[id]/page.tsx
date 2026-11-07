@@ -7,6 +7,7 @@ import { useOsMe } from "@/components/os/OsProvider";
 import { friendlyError, useDirectory, useQuery } from "@/components/os/data";
 import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
+import { LinkedEvents } from "@/components/os/linked-events";
 import { PersonSelect } from "@/components/os/pickers";
 import { PROJECT_COLUMNS, ProjectSheet, TASK_COLUMNS, TaskSheet, type ProjectRow, type TaskRow } from "@/components/os/work-forms";
 import { Avatar, Progress, Empty, ErrorLine, KeyValue, Loading, PageTitle, RowList, Section, StatusBadge, btn, btnGhost, btnPrimary, panel } from "@/components/os/ui";
@@ -83,6 +84,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               </ul>
             </Section>
           )}
+          <Section title="Events"><LinkedEvents type="project" id={p.id} company={p.company_code} /></Section>
           <Section title="Documents"><LinkedDocuments type="project" id={p.id} /></Section>
           <EntityFeed type="project" id={p.id} />
         </div>
