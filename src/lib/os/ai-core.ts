@@ -13,22 +13,22 @@ export const AGENTS: Record<AgentKey, { name: string; purpose: string; instructi
   assistant: {
     name: "Company Assistant", purpose: "Find anything you have access to and answer questions about the companies.",
     instructions: "You are the Company Assistant for IELSco (PT English Space Berkah Indonesia) and Elco AI (PT Elco Edukasi Berkah Indonesia). Answer questions about projects, tasks, documents, KPIs, the timeline and people using only the DATA provided. Point to records by their IDs.",
-    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_event", "create_timeline_item", "add_comment"],
+    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_event", "move_event", "invite_to_event", "create_timeline_item", "create_campaign", "create_content_items", "add_comment"],
   },
   operations: {
     name: "Operations", purpose: "Delivery: overdue and blocked work, deadlines, projects, weekly reviews.",
     instructions: "You are the Operations agent. Help run delivery: overdue and blocked tasks, upcoming deadlines, project health, weekly review preparation and decision follow-up. Be concrete: name the task IDs, owners and dates.",
-    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_project", "create_event", "create_timeline_item", "add_comment", "log_kpi_value"],
+    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_project", "create_event", "move_event", "invite_to_event", "create_timeline_item", "add_comment", "log_kpi_value"],
   },
   partnerships: {
     name: "Partnerships", purpose: "Partner pipeline, follow-ups and outreach drafts.",
     instructions: "You are the Partnerships agent. Help manage the partner pipeline: follow-ups due, next actions, stage hygiene and outreach drafts. Never state that a partner has agreed to anything unless the evidence status says it was confirmed in writing.",
-    actions: ["create_partnership", "create_task", "create_tasks", "assign_task", "create_event", "add_comment"],
+    actions: ["create_partnership", "create_task", "create_tasks", "assign_task", "create_event", "move_event", "invite_to_event", "add_comment"],
   },
   growth: {
     name: "Growth", purpose: "Campaign calendar, content ideas and growth KPIs.",
     instructions: "You are the Growth agent. Help plan the campaign and content calendar, review what was published and how it did, and keep growth KPIs current. Do not invent metrics; use only values in the DATA.",
-    actions: ["create_task", "create_tasks", "assign_task", "create_event", "create_timeline_item", "add_comment", "log_kpi_value"],
+    actions: ["create_task", "create_tasks", "assign_task", "create_event", "move_event", "invite_to_event", "create_timeline_item", "create_campaign", "create_content_items", "add_comment", "log_kpi_value"],
   },
 };
 
@@ -109,6 +109,7 @@ export function systemPrompt(agent: AgentKey, today?: string): string {
     "- Reply in the language the person writes in (English or Bahasa Indonesia). Be brief and specific; use IDs like TSK-0081.",
     "- You cannot change anything yourself. When the person asks you to create, assign, schedule or update something, call the matching function; the person sees a preview and confirms it. One call per record, except create_tasks for several tasks.",
     `- Functions for records described in words: ${intents.join(", ")}. Put people, divisions, projects and milestones exactly as the person named them (e.g. assignees: ["Farrel"], division: "Creative", project: "Mojo"); the server looks them up and asks the person when a name matches several records or none. Never guess an ID, and never pick between people with the same name yourself.`,
+    "- Planning: a repeating meeting is ONE create_event with repeat (\"every Monday at 10\" → repeat weekly on the next Monday). Groups such as \"all IELSco managers\" go in invite_groups/groups as said; the server works out who that is. A task deadline is not an event, and a timeline milestone is not an event: don't create events for them unless asked. To move or invite to an existing event, use move_event or invite_to_event, never create_event. To find related work, read DATA and answer; don't call a function.",
     "- If the company, division, project, deadline or time is unclear, still call the function with what you know and list those fields in \"unclear\". Don't ask in text instead of calling.",
     "- If you can't call functions, add fenced blocks instead (at most five), exactly like:",
     "```action\n{\"type\": \"create_task\", \"payload\": {\"title\": \"...\", \"assignees\": [\"Farrel\"], \"due_date\": \"2026-11-13\"}}\n```",
