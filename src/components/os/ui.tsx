@@ -253,3 +253,16 @@ export function KeyValue({ items }: { items: { label: string; value: ReactNode }
     </dl>
   );
 }
+
+/** Done / total tasks, shown as a thin bar. */
+export function Progress({ done, total }: { done: number; total: number }) {
+  if (!total) return <span className="text-xs text-[#8593A3]">No tasks</span>;
+  const pct = Math.round((done / total) * 100);
+  return (
+    <span className="flex items-center gap-2" title={`${done} of ${total} tasks done`}>
+      <span className="h-1.5 w-16 overflow-hidden rounded-full bg-[#E6E9EE]" aria-hidden="true"><span className="block h-full rounded-full bg-[#2F4157]" style={{ width: `${pct}%` }} /></span>
+      <span className="text-xs tabular-nums text-[#66768A]">{done}/{total}</span>
+    </span>
+  );
+}
+
