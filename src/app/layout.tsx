@@ -28,14 +28,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "IELSco | English Community and Speaking Club in Southeast Asia",
   description: "IELSco is an English learning community connecting people, English practice and global opportunities across Southeast Asia: the IELS Circle English speaking club, Elco AI, scholarships, study abroad and career opportunities. Free to join.",
+  // Square icons from the official logo (iels_blue1.png) on a white tile, so they read on light and dark tabs.
+  // No dark-mode white variant: crawlers ignore `media`, and Google picked the white logo (invisible on white).
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/images/logos/iels_blue1.png", media: "(prefers-color-scheme: light)" },
-      { url: "/images/logos/iels_white1.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: "/favicon.ico",
-    apple: "/images/logos/iels_blue1.png",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: { siteName: SITE_NAME, type: "website", locale: "en_US", images: [DEFAULT_OG_IMAGE] },
   twitter: { card: "summary_large_image" },
