@@ -8,6 +8,8 @@ export type ApplicationDraft = {
   university: string;
   academic_year: string; // "1" | "2" | "3"
   batch_year: string; // "" or a year, e.g. "2024"
+  domicile_country: string; // ISO 3166-1 alpha-2, e.g. "ID"
+  domicile_city: string;
   role_id: string;
   role_2_id: string;
   instagram: string;
@@ -25,7 +27,7 @@ export type ApplicationDraft = {
 };
 
 export const EMPTY_DRAFT: ApplicationDraft = {
-  full_name: "", whatsapp: "", university: "", academic_year: "", batch_year: "", role_id: "", role_2_id: "", instagram: "",
+  full_name: "", whatsapp: "", university: "", academic_year: "", batch_year: "", domicile_country: "", domicile_city: "", role_id: "", role_2_id: "", instagram: "",
   linkedin_url: "", motivation: "", portfolio_mode: "link", portfolio_url: "", cv_path: "", cv_name: "", portfolio_path: "",
   portfolio_name: "", tasks: {}, privacy: false, declaration: false,
 };
@@ -72,6 +74,14 @@ export const isHttpsUrl = (raw: string) => /^https:\/\/\S+\.\S+$/i.test((raw || 
 
 export type Errors = Partial<Record<string, string>>;
 
+// Creative roles (Graphic Designer, Video Designer) need a portfolio; for every other role it is optional.
+// Mirrors public.career_roles_need_portfolio().
+export const CREATIVE_ROLE_IDS = ["K1", "K2"];
+export const needsPortfolio = (roleId: string, role2Id: string, creative: string[] = CREATIVE_ROLE_IDS) =>
+  creative.includes(roleId) || (!!role2Id && creative.includes(role2Id));
+export const hasPortfolio = (d: Pick<ApplicationDraft, "portfolio_mode" | "portfolio_path" | "portfolio_url">) =>
+  d.portfolio_mode === "file" ? !!d.portfolio_path : !!d.portfolio_url.trim();
+
 // Field errors for one step (and for "review": every step). roleIds = the valid role ids (17).
 export function validateStep(step: StepId, d: ApplicationDraft, roleIds: string[], taskKeys: string[]): Errors {
   const e: Errors = {};
@@ -84,6 +94,9 @@ export function validateStep(step: StepId, d: ApplicationDraft, roleIds: string[
     if (u.length < 2 || u.length > 200) e.university = "Please enter your university.";
     if (!["1", "2", "3"].includes(d.academic_year)) e.academic_year = "Please choose your current year (1st, 2nd or 3rd).";
     if (d.batch_year && !(/^\d{4}$/.test(d.batch_year) && +d.batch_year >= 2015 && +d.batch_year <= 2030)) e.batch_year = "Please enter the year you started university, e.g. 2024.";
+    if (!/^[A-Z]{2}$/.test(d.domicile_country)) e.domicile_country = "Please choose the country you live in from the list.";
+    const city = d.domicile_city.trim();
+    if (city.length < 2 || city.length > 100) e.domicile_city = "Please enter the city you live in.";
   }
   if (step === "roles" || all) {
     if (!roleIds.includes(d.role_id)) e.role_id = "Please choose your first-choice role.";
@@ -96,8 +109,11 @@ export function validateStep(step: StepId, d: ApplicationDraft, roleIds: string[
     if (m < MOTIVATION_MIN) e.motivation = `Please write at least ${MOTIVATION_MIN} characters about why you want to join.`;
     else if (m > MOTIVATION_MAX) e.motivation = `Please keep it under ${MOTIVATION_MAX} characters.`;
     if (!d.cv_path) e.cv = "Please upload your CV as a PDF (up to 10 MB).";
-    if (d.portfolio_mode === "file" && !d.portfolio_path) e.portfolio = "Please upload your portfolio PDF, or share a link instead.";
-    if (d.portfolio_mode === "link" && !isHttpsUrl(d.portfolio_url)) e.portfolio_url = "Please enter a full portfolio link starting with https://.";
+    // Portfolio: required for Creative roles; for other roles only checked when something was entered.
+    const required = needsPortfolio(d.role_id, d.role_2_id);
+    if (d.portfolio_mode === "file" && !d.portfolio_path && required) e.portfolio = "Creative roles need a portfolio: upload a PDF, or share a link instead.";
+    if (d.portfolio_mode === "link" && d.portfolio_url.trim() && !isHttpsUrl(d.portfolio_url)) e.portfolio_url = "Please enter a full portfolio link starting with https://.";
+    if (d.portfolio_mode === "link" && !d.portfolio_url.trim() && required) e.portfolio_url = "Creative roles need a portfolio: share a link (starting with https://) or upload a PDF.";
   }
   if (step === "tasks" || all) {
     if (!taskKeys.every((k) => d.tasks[k])) e.tasks = "Please complete and tick all the campaign tasks.";
@@ -132,6 +148,7 @@ export function sanitizeDraft(raw: unknown): ApplicationDraft {
 // The database error message → which step to send the applicant back to, and what to say.
 const FIELD_STEP: Record<string, StepId> = {
   full_name: "about", whatsapp: "about", university: "about", academic_year: "about", batch_year: "about",
+  domicile_country: "about", domicile_city: "about",
   role: "roles", role_2: "roles", instagram: "profiles", linkedin_url: "profiles", motivation: "profiles", cv: "profiles",
   cv_missing: "profiles", portfolio: "profiles", portfolio_missing: "profiles", portfolio_url: "profiles", tasks: "tasks",
   privacy: "review", declaration: "review", email: "account",

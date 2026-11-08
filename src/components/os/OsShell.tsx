@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
-  Home, Inbox, LogOut, Megaphone, Menu, ScrollText, Settings, Shield, Target, Users, X,
+  Home, Inbox, LogOut, Megaphone, Menu, ScrollText, Settings, Shield, Target, UserPlus, Users, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
@@ -15,6 +15,7 @@ import { OsProvider, useOs } from "./OsProvider";
 import { Avatar, Empty, Loading, btn, btnPrimary, ring } from "./ui";
 import { ChoiceProvider } from "./dialogs";
 import { NotificationsButton } from "./notifications";
+import { useRecruitmentAccess } from "./recruitment-access";
 
 // The Company OS frame: a persistent, collapsible sidebar on desktop and a drawer on phones. Navigation only lists
 // modules that exist; Admin shows for founders. What each page shows is decided by RLS, not by this menu.
@@ -142,7 +143,12 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
     }
     return pathname === base || pathname.startsWith(`${base}/`);
   };
-  const groups = [...NAV, ...(isFounder ? [{ group: "Founders", items: [{ href: "/os/admin", label: "Admin", icon: Shield }] }] : [])];
+  // Recruitment shows only for the recruitment team and people assigned to evaluate a candidate.
+  const recruit = useRecruitmentAccess();
+  const nav = recruit && (recruit.team || recruit.assigned > 0)
+    ? NAV.map((g) => (g.group === "Performance" ? { ...g, items: [...g.items, { href: "/os/recruitment", label: "Recruitment", icon: UserPlus }] } : g))
+    : NAV;
+  const groups = [...nav, ...(isFounder ? [{ group: "Founders", items: [{ href: "/os/admin", label: "Admin", icon: Shield }] }] : [])];
 
   return (
     <div className="flex h-full flex-col">

@@ -16,7 +16,7 @@ type App = {
   id: string; full_name: string; email: string; whatsapp: string; university: string; academic_year: number; division: string;
   role_id: string | null; instagram_url: string; linkedin_url: string; cv_path: string; portfolio_path: string | null;
   portfolio_url: string | null; motivation: string | null; status: string; campaign_verification: string; admin_notes: string | null; created_at: string;
-  role_2_id: string | null; batch_year: number | null; campaign_tasks: Record<string, string> | null; user_id: string | null;
+  role_2_id: string | null; batch_year: number | null; domicile_country: string | null; domicile_city: string | null; campaign_tasks: Record<string, string> | null; user_id: string | null;
   submitted_at: string | null; updated_at: string; tasks_confirmed_at: string | null; privacy_accepted_at: string | null; declaration_accepted_at: string | null;
 };
 const STATUSES = ["submitted", "under_review", "invited", "shortlisted", "accepted", "reserve", "rejected", "withdrawn"];
@@ -26,9 +26,13 @@ const roleTitle = (id: string | null) => (id ? roleById(id)?.title ?? id : null)
 const TASK_LABEL: Record<string, string> = { pending: "To check", verified: "Verified", not_found: "Not found" };
 
 function csv(rows: App[]) {
-  const cols: (keyof App)[] = ["created_at", "full_name", "email", "whatsapp", "university", "academic_year", "division", "role_id", "instagram_url", "linkedin_url", "portfolio_url", "status", "campaign_verification", "motivation", "admin_notes"];
-  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  return [cols.join(","), ...rows.map((r) => cols.map((c) => esc(r[c])).join(","))].join("\n");
+  const cols: (keyof App)[] = ["submitted_at", "full_name", "email", "whatsapp", "university", "academic_year", "batch_year", "domicile_country", "domicile_city",
+    "division", "role_id", "role_2_id", "instagram_url", "linkedin_url", "portfolio_url", "status", "campaign_verification", "motivation", "admin_notes",
+    "privacy_accepted_at", "declaration_accepted_at"];
+  // Spreadsheet-safe: a cell starting with = + - @ is prefixed so it can't run as a formula.
+  const esc = (v: unknown) => { const t = String(v ?? ""); return `"${(/^[=+\-@]/.test(t) ? `'${t}` : t).replace(/"/g, '""')}"`; };
+  const header = [...cols, ...CAMPAIGN_TASKS.map((t) => `task_${t.key}`)];
+  return [header.join(","), ...rows.map((r) => [...cols.map((c) => esc(r[c])), ...CAMPAIGN_TASKS.map((t) => esc(r.campaign_tasks?.[t.key] ?? "pending"))].join(","))].join("\n");
 }
 
 export function CareerApplications({ supabase }: { supabase: SupabaseClient }) {
@@ -94,7 +98,7 @@ export function CareerApplications({ supabase }: { supabase: SupabaseClient }) {
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="text-base font-semibold text-[#1A2534]">{r.full_name} · <a className="underline" href={`mailto:${r.email}`}>{r.email}</a></p>
-                <p className="mt-0.5 text-[#2F4157]/70">{divisionTitle(r.division)}{roleTitle(r.role_id) ? ` · 1st: ${roleTitle(r.role_id)}` : ""}{r.role_2_id ? ` · 2nd: ${roleTitle(r.role_2_id)} (${divisionTitle(roleById(r.role_2_id)?.division ?? "")})` : ""} · {r.university} · year {r.academic_year}{r.batch_year ? ` (batch ${r.batch_year})` : ""} · <a className="underline" href={`https://wa.me/${r.whatsapp.replace(/^\+/, "")}`} target="_blank" rel="noopener noreferrer">{r.whatsapp}</a> · {dateTimeWib(r.submitted_at ?? r.created_at)}{r.user_id ? "" : " · no account"}</p>
+                <p className="mt-0.5 text-[#2F4157]/70">{divisionTitle(r.division)}{roleTitle(r.role_id) ? ` · 1st: ${roleTitle(r.role_id)}` : ""}{r.role_2_id ? ` · 2nd: ${roleTitle(r.role_2_id)} (${divisionTitle(roleById(r.role_2_id)?.division ?? "")})` : ""} · {r.university} · year {r.academic_year}{r.batch_year ? ` (batch ${r.batch_year})` : ""}{r.domicile_city ? ` · lives in ${r.domicile_city}, ${r.domicile_country ?? ""}` : ""} · <a className="underline" href={`https://wa.me/${r.whatsapp.replace(/^\+/, "")}`} target="_blank" rel="noopener noreferrer">{r.whatsapp}</a> · {dateTimeWib(r.submitted_at ?? r.created_at)}{r.user_id ? "" : " · no account"}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <select value={r.status} onChange={(e) => update(r.id, { status: e.target.value })} className={cn(inputClass, "w-auto py-1.5 text-sm")} aria-label="Application status">

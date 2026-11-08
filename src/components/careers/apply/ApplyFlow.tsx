@@ -18,10 +18,12 @@ import { cn } from "@/lib/utils";
 import { ROLE_COUNT, allRoles, divisions, roleById, type LeadKey } from "@/data/careers/divisions";
 import { APPLY_PATH, CAMPAIGN_TASKS, DECLARATION, RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
 import {
-  EMPTY_DRAFT, MAX_FILE_BYTES, MOTIVATION_MAX, MOTIVATION_MIN, STEPS, explainSubmitError, instagramHandle, linkedinUrl,
-  normalizeWhatsapp, sanitizeDraft, validateStep, type ApplicationDraft, type Errors, type StepId,
+  EMPTY_DRAFT, MAX_FILE_BYTES, MOTIVATION_MAX, MOTIVATION_MIN, STEPS, explainSubmitError, hasPortfolio, instagramHandle, linkedinUrl,
+  needsPortfolio, normalizeWhatsapp, sanitizeDraft, validateStep, type ApplicationDraft, type Errors, type StepId,
 } from "@/lib/careers/application";
 import { ApplicationStatus, type MyApplication } from "./ApplicationStatus";
+import { CountryField } from "./CountryField";
+import { codeForName, countryName, isCountryCode } from "@/lib/dashboard/countries";
 
 // Careers 2027 application: the signed-in member (Elco-Pass = their IELSco account) fills a six-step form. Progress is
 // saved to public.career_application_drafts (own row, RLS); PDFs go to the private bucket career-applications under
@@ -84,6 +86,7 @@ export function ApplyFlow() {
           instagram: profile?.instagram_url ?? "",
           linkedin_url: profile?.linkedin_url ?? "",
           portfolio_url: profile?.portfolio_url ?? "",
+          domicile_country: profile?.country ? (isCountryCode(profile.country) ? profile.country : codeForName(profile.country) ?? "") : "",
         };
       }
       setLoaded({ user, app, draft, step, fromDraft });
@@ -132,7 +135,7 @@ function fromApplication(a: MyApplication): ApplicationDraft {
   return {
     ...EMPTY_DRAFT,
     full_name: a.full_name, whatsapp: a.whatsapp, university: a.university, academic_year: String(a.academic_year),
-    batch_year: a.batch_year ? String(a.batch_year) : "", role_id: a.role_id ?? "", role_2_id: a.role_2_id ?? "",
+    batch_year: a.batch_year ? String(a.batch_year) : "", domicile_country: a.domicile_country ?? "", domicile_city: a.domicile_city ?? "", role_id: a.role_id ?? "", role_2_id: a.role_2_id ?? "",
     instagram: a.instagram_url, linkedin_url: a.linkedin_url, motivation: a.motivation ?? "",
     portfolio_mode: a.portfolio_path ? "file" : "link", portfolio_url: a.portfolio_url ?? "",
     cv_path: a.cv_path, cv_name: "CV already on your application.pdf", portfolio_path: a.portfolio_path ?? "",
@@ -205,7 +208,8 @@ function Wizard({ supabase, user, initial, initialStep, fromDraft, updating, onC
       p_batch_year: d.batch_year ? Number(d.batch_year) : null, p_role_id: d.role_id, p_role_2_id: d.role_2_id || null,
       p_instagram: d.instagram, p_linkedin_url: d.linkedin_url, p_cv_path: d.cv_path,
       p_portfolio_path: d.portfolio_mode === "file" ? d.portfolio_path || null : null,
-      p_portfolio_url: d.portfolio_mode === "link" ? d.portfolio_url.trim() : null, p_motivation: d.motivation.trim(),
+      p_portfolio_url: d.portfolio_mode === "link" ? d.portfolio_url.trim() || null : null, p_motivation: d.motivation.trim(),
+      p_domicile_country: d.domicile_country, p_domicile_city: d.domicile_city.trim(),
       p_tasks_confirmed: TASK_KEYS.every((k) => d.tasks[k]), p_privacy_accepted: d.privacy, p_declaration_accepted: d.declaration,
     });
     setSubmitting(false);
@@ -364,6 +368,14 @@ function AboutStep({ d, set, errors, email }: StepProps & { email: string }) {
           <Err id="e-batch" msg={errors.batch_year} />
         </label>
       </div>
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <CountryField value={d.domicile_country} onChange={(c) => set("domicile_country", c)} error={errors.domicile_country} />
+        <label className={label}>City you live in
+          <input value={d.domicile_city} onChange={(e) => set("domicile_city", e.target.value)} maxLength={100} autoComplete="address-level2" placeholder="e.g. Surabaya" className={input} aria-invalid={!!errors.domicile_city} aria-describedby="e-city h-city" data-testid="f-city" />
+          <span id="h-city" className={hint}>Just the city. We don&apos;t ask for your address.</span>
+          <Err id="e-city" msg={errors.domicile_city} />
+        </label>
+      </div>
     </div>
   );
 }
@@ -461,7 +473,9 @@ function ProfilesStep({ d, set, errors, supabase, userId, setErrors }: StepProps
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         <FileBox title="CV / résumé" help="Required · PDF, up to 10 MB" name={d.cv_name} busy={busy === "cv"} error={errors.cv} onFile={(f) => upload("cv", f)} onClear={() => { set("cv_path", ""); set("cv_name", ""); }} testId="f-cv" />
         <div>
-          <p className={label} id="pf-label">Portfolio</p>
+          <p className={label} id="pf-label">Portfolio {needsPortfolio(d.role_id, d.role_2_id)
+            ? <span className="font-normal text-[#C04C4E]" data-testid="pf-required">(required for Creative roles)</span>
+            : <span className="font-normal text-[#2F4157]/60" data-testid="pf-optional">(optional)</span>}</p>
           <span className={hint}>Work you&apos;re proud of: designs, videos, writing, projects, events or class work.</span>
           <div className="mt-2 inline-flex rounded-full border border-[#D5DBE3] p-1" role="group" aria-labelledby="pf-label">
             {(["link", "file"] as const).map((m) => (
@@ -471,7 +485,7 @@ function ProfilesStep({ d, set, errors, supabase, userId, setErrors }: StepProps
           </div>
           <div className="mt-3">
             {d.portfolio_mode === "file"
-              ? <FileBox title="Portfolio PDF" help="PDF, up to 10 MB" name={d.portfolio_name} busy={busy === "portfolio"} error={errors.portfolio} onFile={(f) => upload("portfolio", f)} onClear={() => { set("portfolio_path", ""); set("portfolio_name", ""); }} testId="f-portfolio" />
+              ? <FileBox title="Portfolio PDF" help={needsPortfolio(d.role_id, d.role_2_id) ? "Required · PDF, up to 10 MB" : "Optional · PDF, up to 10 MB"} name={d.portfolio_name} busy={busy === "portfolio"} error={errors.portfolio} onFile={(f) => upload("portfolio", f)} onClear={() => { set("portfolio_path", ""); set("portfolio_name", ""); }} testId="f-portfolio" />
               : <label className="block"><span className="sr-only">Portfolio link</span>
                   <input value={d.portfolio_url} onChange={(e) => set("portfolio_url", e.target.value)} type="url" maxLength={500} placeholder="https://drive.google.com/…" className={cn(input, "mt-0")} aria-invalid={!!errors.portfolio_url} aria-describedby="e-pf" data-testid="f-portfolio-url" />
                   <span className={hint}>Google Drive, Behance, YouTube, a website… Make sure anyone with the link can view it.</span>
@@ -570,6 +584,7 @@ function ReviewStep({ d, set, errors, email, onEdit, supabase }: StepProps & { e
         <Section title="About you" step="about">
           <Row k="Full name" v={d.full_name} /><Row k="Email" v={email} /><Row k="WhatsApp" v={normalizeWhatsapp(d.whatsapp) ?? d.whatsapp} /><Row k="University" v={d.university} />
           <Row k="Year" v={`${ordinal(d.academic_year)} year${d.batch_year ? ` · batch ${d.batch_year}` : ""}`} />
+          <Row k="Lives in" v={`${d.domicile_city.trim()}${d.domicile_country ? `, ${countryName(d.domicile_country)}` : ""}`} />
         </Section>
         <Section title="Roles" step="roles">
           <Row k="1st choice" v={r1 ? `${r1.title} · ${r1.divisionTitle}` : "—"} /><Row k="2nd choice" v={r2 ? `${r2.title} · ${r2.divisionTitle}` : "None"} />
@@ -577,7 +592,7 @@ function ReviewStep({ d, set, errors, email, onEdit, supabase }: StepProps & { e
         <Section title="Profiles and documents" step="profiles">
           <Row k="Instagram" v={instagramHandle(d.instagram) ? `@${instagramHandle(d.instagram)}` : d.instagram} /><Row k="LinkedIn" v={linkedinUrl(d.linkedin_url) ?? d.linkedin_url} />
           <Row k="CV" v={d.cv_path.startsWith("applicants/") ? <button type="button" onClick={() => openFile(d.cv_path)} className="font-semibold underline">{d.cv_name || "CV (PDF)"}</button> : d.cv_name} />
-          <Row k="Portfolio" v={d.portfolio_mode === "link" ? d.portfolio_url : d.portfolio_path.startsWith("applicants/") ? <button type="button" onClick={() => openFile(d.portfolio_path)} className="font-semibold underline">{d.portfolio_name || "Portfolio (PDF)"}</button> : d.portfolio_name} />
+          <Row k="Portfolio" v={!hasPortfolio(d) ? "None (optional for your roles)" : d.portfolio_mode === "link" ? d.portfolio_url : d.portfolio_path.startsWith("applicants/") ? <button type="button" onClick={() => openFile(d.portfolio_path)} className="font-semibold underline">{d.portfolio_name || "Portfolio (PDF)"}</button> : d.portfolio_name} />
           <Row k="Motivation" v={<span className="whitespace-pre-line">{d.motivation}</span>} />
         </Section>
         <Section title="Campaign tasks" step="tasks">

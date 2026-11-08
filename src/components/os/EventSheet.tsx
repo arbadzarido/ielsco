@@ -29,17 +29,17 @@ import { cn } from "@/lib/utils";
 
 export interface EventRow {
   id: string; company_code: string; division_id: string | null; project_id: string | null; task_id: string | null; timeline_item_id: string | null;
-  campaign_id: string | null; partnership_id: string | null; recurrence: Recurrence | null; series_id: string | null; google_invites: boolean;
+  campaign_id: string | null; partnership_id: string | null; candidate_id?: string | null; recurrence: Recurrence | null; series_id: string | null; google_invites: boolean;
   title: string; description: string | null; category: string; starts_at: string; ends_at: string; all_day: boolean; timezone: string;
   location: string | null; meeting_url: string | null; sensitivity: string; status: string; created_by: string | null;
   google_synced_by: string | null; google_event_id: string | null; sync_state: string; sync_error: string | null;
 }
-export const EVENT_COLUMNS = "id, company_code, division_id, project_id, task_id, timeline_item_id, campaign_id, partnership_id, recurrence, series_id, google_invites, title, description, category, starts_at, ends_at, all_day, timezone, location, meeting_url, sensitivity, status, created_by, google_synced_by, google_event_id, sync_state, sync_error";
+export const EVENT_COLUMNS = "id, company_code, division_id, project_id, task_id, timeline_item_id, campaign_id, partnership_id, candidate_id, recurrence, series_id, google_invites, title, description, category, starts_at, ends_at, all_day, timezone, location, meeting_url, sensitivity, status, created_by, google_synced_by, google_event_id, sync_state, sync_error";
 
 /** One occurrence of a recurring event, as the calendar shows it. */
 export interface OccurrenceRef { occurrence_start: string; starts_at: string; ends_at: string; index: number; exception: { title?: string | null; description?: string | null; location?: string | null; meeting_url?: string | null } | null }
 
-export type EventDefaults = Partial<Pick<EventRow, "company_code" | "division_id" | "project_id" | "task_id" | "timeline_item_id" | "campaign_id" | "partnership_id" | "category" | "title">> & { date?: string; startTime?: string; endTime?: string };
+export type EventDefaults = Partial<Pick<EventRow, "company_code" | "division_id" | "project_id" | "task_id" | "timeline_item_id" | "campaign_id" | "partnership_id" | "candidate_id" | "category" | "title" | "sensitivity">> & { date?: string; startTime?: string; endTime?: string };
 export type GoogleStatus = { configured: boolean; connected: boolean; email: string | null; timezone: string | null } | null;
 
 const SYNC_LABEL: Record<string, string> = { synced: "In your Google Calendar", pending: "Changed here, not yet sent to Google", conflict: "Changed in Google too", error: "Last sync failed", deleted_remote: "Deleted in Google Calendar" };
@@ -89,7 +89,7 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
       const d = itemDays(s, e, src.all_day, src.timezone);
       const r = src.recurrence;
       return { title: dupOf ? `Copy of ${src.title}`.slice(0, 200) : occ?.exception?.title ?? src.title, category: src.category, company: src.company_code, division: src.division_id ?? "",
-        project: src.project_id ?? "", milestone: src.timeline_item_id ?? "", campaign: src.campaign_id ?? "", partnership: src.partnership_id ?? "",
+        project: src.project_id ?? "", milestone: src.timeline_item_id ?? "", campaign: src.campaign_id ?? "", partnership: src.partnership_id ?? "", candidate: src.candidate_id ?? "",
         allDay: src.all_day, startDate: d.first, startTime: zonedParts(s, src.timezone).time, endDate: src.all_day ? d.last : zonedParts(e, src.timezone).date,
         endTime: zonedParts(e, src.timezone).time, location: occ?.exception?.location ?? src.location ?? "", url: occ?.exception?.meeting_url ?? src.meeting_url ?? "",
         description: occ?.exception?.description ?? src.description ?? "", sensitivity: src.sensitivity, status: src.status, googleInvites: src.google_invites,
@@ -98,8 +98,8 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
     }
     const date = defaults?.date ?? zonedParts(new Date(), tz).date;
     return { title: defaults?.title ?? "", category: defaults?.category ?? "Meeting", company: defaults?.company_code ?? defCompany, division: defaults?.division_id ?? "", project: defaults?.project_id ?? "",
-      milestone: defaults?.timeline_item_id ?? "", campaign: defaults?.campaign_id ?? "", partnership: defaults?.partnership_id ?? "",
-      allDay: false, startDate: date, startTime: defaults?.startTime ?? "10:00", endDate: date, endTime: defaults?.endTime ?? "11:00", location: "", url: "", description: "", sensitivity: "Internal",
+      milestone: defaults?.timeline_item_id ?? "", campaign: defaults?.campaign_id ?? "", partnership: defaults?.partnership_id ?? "", candidate: defaults?.candidate_id ?? "",
+      allDay: false, startDate: date, startTime: defaults?.startTime ?? "10:00", endDate: date, endTime: defaults?.endTime ?? "11:00", location: "", url: "", description: "", sensitivity: defaults?.sensitivity ?? "Internal",
       status: "Scheduled", googleInvites: false, preset: "none" as PresetKey, rule: null as Recurrence | null, endMode: "never" as "never" | "until" | "count", until: "", count: "10" };
   }, [src, occ, dupOf, defaults, defCompany, tz]);
   const [f, setF] = useState(init);
@@ -182,7 +182,9 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
 
   const row = () => ({
     title: f.title.trim(), category: f.category, division_id: f.division || null, project_id: f.project || null, timeline_item_id: f.milestone || null,
-    campaign_id: f.campaign || null, partnership_id: f.partnership || null, all_day: f.allDay, timezone: tz, location: f.location.trim() || null,
+    campaign_id: f.campaign || null, partnership_id: f.partnership || null,
+    // Recruitment interviews: linked to the candidate; the database keeps them Restricted.
+    ...(f.candidate ? { candidate_id: f.candidate } : {}), all_day: f.allDay, timezone: tz, location: f.location.trim() || null,
     meeting_url: f.url.trim() || null, description: f.description.trim() || null, sensitivity: f.sensitivity, status: f.status, google_invites: f.googleInvites,
   });
 

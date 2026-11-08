@@ -13,9 +13,9 @@ import { DEFAULT_TZ, zonedParts } from "@/lib/os/calendar";
 import { describeRule } from "@/lib/os/recurrence";
 import { cn } from "@/lib/utils";
 
-export type LinkType = "project" | "task" | "campaign" | "partnership" | "timeline";
-const COLUMN: Record<Exclude<LinkType, "task">, string> = { project: "project_id", campaign: "campaign_id", partnership: "partnership_id", timeline: "timeline_item_id" };
-const DEFAULT_KEY: Record<LinkType, keyof EventDefaults> = { project: "project_id", task: "task_id", campaign: "campaign_id", partnership: "partnership_id", timeline: "timeline_item_id" };
+export type LinkType = "project" | "task" | "campaign" | "partnership" | "timeline" | "candidate";
+const COLUMN: Record<Exclude<LinkType, "task">, string> = { project: "project_id", campaign: "campaign_id", partnership: "partnership_id", timeline: "timeline_item_id", candidate: "candidate_id" };
+const DEFAULT_KEY: Record<LinkType, keyof EventDefaults> = { project: "project_id", task: "task_id", campaign: "campaign_id", partnership: "partnership_id", timeline: "timeline_item_id", candidate: "candidate_id" };
 
 export function LinkedEvents({ type, id, company, defaults }: { type: LinkType; id: string; company: string; defaults?: EventDefaults }) {
   const events = useQuery<EventRow[]>(async (s) => {

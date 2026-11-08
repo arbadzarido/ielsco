@@ -3,6 +3,7 @@
 
 import { usePathname } from "next/navigation";
 import Header from "@/components/header";
+import { RecruitmentPopup } from "@/components/careers/RecruitmentPopup";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -40,6 +41,8 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       <main className={shouldRemovePadding ? "pt-0" : "pt-24"}>
         {children}
       </main>
+      {/* Open Recruitment 2027 poster (once per session; see lib/careers/popup.ts for where it never shows). */}
+      <RecruitmentPopup />
     </>
   );
 }

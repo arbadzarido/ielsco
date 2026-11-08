@@ -57,6 +57,15 @@ export async function gatherContext(supabase: SupabaseClient, personId: string, 
   if (agent === "growth") {
     jobs.campaign_items = q(co(supabase.from("os_campaign_items").select("id, campaign, title, channel, status, planned_publish_date, actual_publish_date, owner_person_id, results")).order("planned_publish_date", { ascending: false, nullsFirst: false }).limit(40));
   }
+  // Recruitment, only when asked about it (candidate data is sensitive and costs tokens). RLS returns rows only to the
+  // recruitment team; interviewers get their own assignments. No contact details are passed to the model.
+  if (/\b(recruit\w*|candidates?|applicants?|applications?|interviews?|screening|cv|pelamar|kandidat|rekrutmen|wawancara)\b/i.test(message)) {
+    jobs.recruitment_candidates = q(supabase.from("career_applications").select("id, full_name, university, academic_year, domicile_city, domicile_country, role_id, role_2_id, campaign_verification, submitted_at").eq("cohort", "2027").order("submitted_at", { ascending: false }).limit(80));
+    jobs.recruitment_pipeline = q(supabase.from("os_recruitment_candidates").select("application_id, stage, reviewer_person_id, stage_changed_at, employee_person_id").limit(400));
+    jobs.recruitment_assigned_to_me = q(supabase.rpc("os_recruitment_my_assignments"));
+    jobs.recruitment_interviews = q(supabase.from("os_events").select("id, title, starts_at, candidate_id, status").not("candidate_id", "is", null).gte("starts_at", `${plus(t, -7)}T00:00:00+07:00`).order("starts_at").limit(40));
+    jobs.recruitment_tasks = q(supabase.from("os_tasks").select("id, title, status, owner_person_id, due_date, candidate_id").not("candidate_id", "is", null).not("status", "in", "(Done,Cancelled)").limit(60));
+  }
   for (const term of searchTerms(message)) {
     const pat = `%${term}%`;
     jobs[`match_projects_${term}`] = q(supabase.from("os_projects").select("id, name, status, due_date, owner_person_id").ilike("name", pat).limit(8));
@@ -83,6 +92,17 @@ export async function gatherContext(supabase: SupabaseClient, personId: string, 
     if (cp.length) ctx.related_project_campaigns = cp;
   }
   if (ctx.kpis) ctx.kpis = ctx.kpis.map((k) => (k.values_restricted ? { ...k, sheet_latest_value: "restricted" } : k));
+  // Recruitment workflows that look unfinished, so the agent can point them out (IDs and counts, no judgement).
+  if (ctx.recruitment_pipeline?.length) {
+    const withInterview = new Set((ctx.recruitment_interviews ?? []).map((e) => String(e.candidate_id)));
+    const p = ctx.recruitment_pipeline;
+    ctx.recruitment_incomplete = [{
+      past_new_without_reviewer: p.filter((r) => r.stage !== "new" && !r.reviewer_person_id).map((r) => r.application_id),
+      interview_stage_without_scheduled_interview: p.filter((r) => r.stage === "interview" && !withInterview.has(String(r.application_id))).map((r) => r.application_id),
+      accepted_without_person_record: p.filter((r) => r.stage === "accepted" && !r.employee_person_id).map((r) => r.application_id),
+      campaign_not_verified: (ctx.recruitment_candidates ?? []).filter((c) => c.campaign_verification !== "verified").length,
+    }];
+  }
   return { today: t, company: company ?? "all companies the person works in", data: ctx };
 }
 
@@ -98,6 +118,25 @@ export async function executeAction(supabase: SupabaseClient, type: SimpleAction
     case "add_comment": return done(await supabase.from("os_comments").insert(p).select("id").maybeSingle());
     case "log_kpi_value": return done(await supabase.from("os_kpi_values").insert(p).select("id").maybeSingle());
     case "create_partnership": return done(await supabase.from("os_partnerships").insert({ ...p, stage: "1 Identified" }).select("id").maybeSingle());
+    case "create_recruitment_task": {
+      const [{ data: me }, { data: brief }] = await Promise.all([supabase.rpc("os_current_person"), supabase.rpc("os_recruitment_candidate_brief", { p_app: p.candidate_id })]);
+      if (!brief) return { ok: false, error: "You don't have recruitment access to that candidate." };
+      return done(await supabase.from("os_tasks").insert({ company_code: "HQ", title: `${p.kind}: ${(brief as { full_name: string }).full_name}`.slice(0, 200), owner_person_id: p.owner_person_id,
+        reviewer_person_id: me ?? null, due_date: p.due_date ?? null, status: "Ready", candidate_id: p.candidate_id }).select("id").maybeSingle());
+    }
+    case "schedule_interview": {
+      const { data: brief } = await supabase.rpc("os_recruitment_candidate_brief", { p_app: p.candidate_id });
+      if (!brief) return { ok: false, error: "You don't have recruitment access to that candidate." };
+      const start = new Date(String(p.starts_at));
+      const end = new Date(start.getTime() + Number(p.minutes) * 60_000);
+      const ev = await supabase.from("os_events").insert({ company_code: "HQ", title: `Interview: ${(brief as { full_name: string }).full_name}`.slice(0, 200), category: "Meeting",
+        starts_at: start.toISOString(), ends_at: end.toISOString(), timezone: "Asia/Jakarta", meeting_url: p.meeting_url ?? null, sensitivity: "Restricted", candidate_id: p.candidate_id }).select("id").maybeSingle();
+      if (ev.error || !ev.data) return done(ev);
+      const evId = (ev.data as { id: string }).id;
+      const inv = await supabase.from("os_event_attendees").insert((p.interviewer_ids as string[]).map((person_id) => ({ event_id: evId, person_id })));
+      if (inv.error) return { ok: false, error: `The interview was created (${evId}) but inviting failed: ${inv.error.message.slice(0, 120)}` };
+      return done(ev);
+    }
   }
 }
 
