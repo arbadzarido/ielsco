@@ -189,6 +189,12 @@ export default function RegisterPage() {
         <AuthNotice message={popup || null} tone={/success|resent|redirecting|verified|created/i.test(popup) ? "success" : "error"} />
         {!isVerifying ? (
           <div className="animate-in fade-in duration-500">
+            {nextUrl.startsWith("/dashboard/careers") && (
+              <div className="mb-[20px] rounded-[16px] border border-[#E3E7ED] bg-[#F7F8FA] p-[16px] text-[14px] leading-relaxed text-[#2F4157]" data-testid="auth-careers-note">
+                <p className="font-semibold text-[#1A2534]">Open Recruitment 2027</p>
+                <p className="mt-[4px]">Create your Elco-Pass, one account for IELSco and Elco AI, then you&apos;ll go straight to the application. Already have an account? Sign in instead.</p>
+              </div>
+            )}
             <GoogleButton onClick={handleGoogleSignUp} disabled={loading} />
             <AuthDivider />
             <Form {...form}>

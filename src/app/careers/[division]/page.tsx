@@ -7,8 +7,8 @@ import Footer from "@/components/footer";
 import { body, btnPrimary, btnSecondary, card, container, eyebrow, focusRing, h1, h2, lead, pill, siteRoot, textLink } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
-import { LEADS, divisions } from "@/data/careers/divisions";
-import { RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
+import { LEADS, divisions, placesLabel } from "@/data/careers/divisions";
+import { APPLY_PATH, RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
 
 export const revalidate = 600;
 
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ division:
   const { division } = await params;
   const d = divisions.find((x) => x.slug === division);
   if (!d) return { title: "Division not found | IELSco" };
-  return pageMetadata({ title: `${d.title} division: volunteer roles at IELSco & Elco AI`, description: d.description, path: `/careers/${d.slug}` });
+  return pageMetadata({ title: `${d.title} division: roles at IELSco & Elco AI`, description: d.description, path: `/careers/${d.slug}` });
 }
 
 const list = "mt-2 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-[#2F4157]/80";
@@ -52,8 +52,8 @@ export default async function DivisionPage({ params }: { params: Promise<{ divis
                   <details className={cn(card, "group p-6")} open={i === 0} data-testid={`role-${r.id}`}>
                     <summary className={cn("flex cursor-pointer list-none items-start justify-between gap-4 [&::-webkit-details-marker]:hidden", focusRing)}>
                       <span>
-                        <span className="block text-[18px] font-bold text-[#1A2534]">{r.title}</span>
-                        <span className="mt-1 block text-[14px] text-[#2F4157]/65">{r.scope} · Remote · {r.places === 1 ? "1 place" : `Up to ${r.places} places`}</span>
+                        <span className="flex flex-wrap items-center gap-2 text-[18px] font-bold text-[#1A2534]">{r.title}{r.isNew && <span className="rounded-full bg-[#F9E15B] px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-wide text-[#1A2534]">New</span>}</span>
+                        <span className="mt-1 block text-[14px] text-[#2F4157]/65">{[r.scope, "Remote", placesLabel(r)].filter(Boolean).join(" · ")}</span>
                         <span className={cn(body, "mt-2 block text-[15px]")}>{r.summary}</span>
                       </span>
                       <ChevronDown size={18} className="mt-1 shrink-0 text-[#577E90] transition-transform group-open:rotate-180" aria-hidden="true" />
@@ -100,8 +100,8 @@ export default async function DivisionPage({ params }: { params: Promise<{ divis
               ) : (
                 <>
                   <p className="text-[17px] font-bold text-[#1A2534]">{phase === "open" ? "Ready to apply?" : `Applications open ${RECRUITMENT.opensLabel}`}</p>
-                  <p className={cn(body, "mt-2 text-[15px]")}>Complete the five Instagram campaign tasks, then choose {d.title} in the form.</p>
-                  <Link href="/careers#apply" className={cn(btnPrimary, "mt-5 w-full")}>{phase === "open" ? "Apply" : "How to apply"} <ArrowRight size={18} aria-hidden="true" /></Link>
+                  <p className={cn(body, "mt-2 text-[15px]")}>Sign in with your Elco-Pass, choose up to two roles (any division) and complete the Instagram campaign tasks.</p>
+                  <Link href={phase === "open" ? APPLY_PATH : "/careers#apply"} className={cn(btnPrimary, "mt-5 w-full")} data-testid="division-apply">{phase === "open" ? "Apply now" : "How to apply"} <ArrowRight size={18} aria-hidden="true" /></Link>
                 </>
               )}
             </div>

@@ -1,5 +1,6 @@
-// Divisions and roles for the 2027 volunteer cohort: the 16 roles of DOC-0055 Volunteer Staffing & Recruitment Workbook,
-// Role_Matrix (founder update, 1 Nov 2026). Internal references (task codes, owner names, partner names that are not yet
+// Divisions and roles for the 2027 cohort: the 16 roles of DOC-0055 Volunteer Staffing & Recruitment Workbook,
+// Role_Matrix (founder update, 1 Nov 2026), plus Content Creator (G4, added by the founder on 9 Nov 2026; 17 roles).
+// Role ids are also listed in public.career_role_division() (migration 20261111000000); change both together. Internal references (task codes, owner names, partner names that are not yet
 // confirmed) are left out of the public text. Role ids match the workbook so applications map back to it.
 // Divisions are led by the two founders: Growth, Creative, Community and Courses & Learning by Arbadza (CEO);
 // Partnerships, Operations and People by Farrel (COO).
@@ -16,8 +17,10 @@ export type Role = {
   title: string;
   // Brand / scope served, from the workbook's "Business unit served" column.
   scope: "IELSco" | "Elco AI" | "IELSco & Elco AI";
-  // Maximum number of places in the cohort (workbook "Maximum").
-  places: number;
+  // Maximum number of places in the cohort (workbook "Maximum"). Not set when the workbook has no number yet.
+  places?: number;
+  // Added for the 2027 cohort after the workbook (shown with a "New" tag).
+  isNew?: boolean;
   summary: string;
   responsibilities: string[];
   deliverables?: string[];
@@ -60,6 +63,13 @@ export const divisions: Division[] = [
         summary: "Create content for Elco AI and coordinate with KOLs (key opinion leaders) and UGC creators.",
         responsibilities: ["Create content for Elco AI", "Coordinate with KOLs and UGC creators", "Track how creator content performs"],
         required: "Spreadsheets and UTM basics", preferred: "Analytics tools",
+      },
+      {
+        // New role (founder, 9 Nov 2026). Text kept to what existing materials say (the Growth division brief and the
+        // "paid UGC and content creation" incentive); details are agreed with the team, like Media Partnerships.
+        id: "G4", title: "Content Creator", scope: "IELSco & Elco AI", isNew: true,
+        summary: "Create content for IELSco and Elco AI with the Growth team.",
+        responsibilities: ["Create content for IELSco and Elco AI", "Work with the Growth and Creative teams on campaigns", "Scope is confirmed with the team after the first cycle"],
       },
     ],
   },
@@ -203,4 +213,7 @@ export const divisions: Division[] = [
 ];
 
 export const ROLE_COUNT = divisions.reduce((n, d) => n + d.roles.length, 0);
+export const allRoles = divisions.flatMap((d) => d.roles.map((r) => ({ ...r, division: d.slug, divisionTitle: d.title })));
+export const roleById = (id: string | null | undefined) => (id ? allRoles.find((r) => r.id === id) ?? null : null);
+export const placesLabel = (r: Role) => (r.places == null ? null : r.places === 1 ? "1 place" : `Up to ${r.places} places`);
 export const divisionsLedBy = (lead: LeadKey) => divisions.filter((d) => d.lead === lead);
