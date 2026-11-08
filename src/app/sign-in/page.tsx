@@ -84,6 +84,12 @@ function SignInContent() {
 
   return (
     <div>
+      {nextUrl.startsWith("/dashboard/careers") && (
+        <div className="mb-[20px] rounded-[16px] border border-[#E3E7ED] bg-[#F7F8FA] p-[16px] text-[14px] leading-relaxed text-[#2F4157]" data-testid="auth-careers-note">
+          <p className="font-semibold text-[#1A2534]">Open Recruitment 2027</p>
+          <p className="mt-[4px]">Sign in with your Elco-Pass, the one account for IELSco and Elco AI, to apply. New here? Sign up below; it takes a minute.</p>
+        </div>
+      )}
       <GoogleButton onClick={handleGoogleSignIn} busy={googleBusy} disabled={loading} />
       <AuthDivider />
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-[16px]" noValidate data-testid="sign-in-form">
