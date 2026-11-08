@@ -65,11 +65,13 @@ export const divisions: Division[] = [
         required: "Spreadsheets and UTM basics", preferred: "Analytics tools",
       },
       {
-        // New role (founder, 9 Nov 2026). Text kept to what existing materials say (the Growth division brief and the
-        // "paid UGC and content creation" incentive); details are agreed with the team, like Media Partnerships.
+        // New for 2027 (founder, 9 Nov 2026). Text from the 2026 recruitment's Content Creator role; its batch rule is
+        // replaced by the cohort-wide eligibility. Places are not set yet.
         id: "G4", title: "Content Creator", scope: "IELSco & Elco AI", isNew: true,
-        summary: "Create content for IELSco and Elco AI with the Growth team.",
-        responsibilities: ["Create content for IELSco and Elco AI", "Work with the Growth and Creative teams on campaigns", "Scope is confirmed with the team after the first cycle"],
+        summary: "Handle end-to-end content production: engaging short-form videos that fit the brand voice and campaign goals.",
+        responsibilities: ["Scripting, filming, editing and caption writing", "Produce and publish 1–2 Reels or TikTok videos a week", "Stay up to date with trends, formats and platform best practices", "Track basic content performance to keep improving"],
+        deliverables: ["1–2 Reels or TikTok videos a week"],
+        required: "A proper camera, confidence with CapCut and strong English communication",
       },
     ],
   },

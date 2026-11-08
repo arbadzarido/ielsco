@@ -9,8 +9,9 @@ dashboard recruitment card, and the recruitment team's review screen.
   (17 roles). Divisions are grouped by lead: Growth, Creative, Community and Courses & Learning under Arbadza (CEO,
   arbadza@ielsco.com); Partnerships, Operations and People under Farrel (COO, farrel@ielsco.com). Data:
   `src/data/careers/divisions.ts` (roles, leads) and `src/data/careers/recruitment.ts` (dates, timeline, the seven
-  campaign tasks, declaration, status copy). KOL & UGC Manager (G3), Media Partnerships (R2) and Content Creator (G4)
-  have only short descriptions; extend them there and here.
+  campaign tasks, declaration, status copy). Content Creator's text comes from the 2026 recruitment's Content Creator
+  role (its places are not set yet). KOL & UGC Manager (G3) and Media Partnerships (R2) have only short descriptions;
+  extend them there and here.
 - Program structure, benefits, eligibility: founder brief of 1 Nov 2026. Campaign art: MKT-0008 (approved v3, Figma
   November file, section 2048:602); photos and slides are in `public/images/careers/2027/`.
 
