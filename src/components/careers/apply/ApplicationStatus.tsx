@@ -7,12 +7,14 @@ import { CheckCircle2, Circle, Clock, FileText, Mail, Pencil, XCircle } from "lu
 import { cn } from "@/lib/utils";
 import { dateTimeWib } from "@/lib/format";
 import { roleById } from "@/data/careers/divisions";
+import { countryName } from "@/lib/dashboard/countries";
 import { CAMPAIGN_TASKS, RECRUITMENT, STATUS_COPY } from "@/data/careers/recruitment";
 
 // The applicant's own application (from public.my_career_application(): no admin notes) with its status, the per-task
 // Instagram verification and the next dates. Shown right after submitting and whenever they come back.
 export type MyApplication = {
   id: string; full_name: string; email: string; whatsapp: string; university: string; academic_year: number; batch_year: number | null;
+  domicile_country: string | null; domicile_city: string | null;
   division: string; role_id: string | null; role_2_id: string | null; instagram_url: string; linkedin_url: string; cv_path: string;
   portfolio_path: string | null; portfolio_url: string | null; motivation: string | null; status: string; campaign_verification: string;
   campaign_tasks: Record<string, string>; tasks_confirmed_at: string | null; privacy_accepted_at: string | null;
@@ -87,6 +89,7 @@ export function ApplicationStatus({ app, supabase, onEdit }: { app: MyApplicatio
           <div><dt className="text-[13px] text-[#2F4157]/60">1st choice</dt><dd className="font-semibold text-[#1A2534]" data-testid="application-role-1">{r1 ? `${r1.title} · ${r1.divisionTitle}` : "—"}</dd></div>
           <div><dt className="text-[13px] text-[#2F4157]/60">2nd choice</dt><dd className="font-semibold text-[#1A2534]" data-testid="application-role-2">{r2 ? `${r2.title} · ${r2.divisionTitle}` : "None"}</dd></div>
           <div><dt className="text-[13px] text-[#2F4157]/60">Name</dt><dd className="text-[#1A2534]">{app.full_name}</dd></div>
+          <div><dt className="text-[13px] text-[#2F4157]/60">Lives in</dt><dd className="text-[#1A2534]" data-testid="application-domicile">{app.domicile_city ? `${app.domicile_city}, ${app.domicile_country ? countryName(app.domicile_country) : ""}` : "Not given yet"}</dd></div>
           <div><dt className="text-[13px] text-[#2F4157]/60">University</dt><dd className="text-[#1A2534]">{app.university} · year {app.academic_year}{app.batch_year ? ` · batch ${app.batch_year}` : ""}</dd></div>
           <div><dt className="text-[13px] text-[#2F4157]/60">Documents</dt><dd className="flex flex-wrap gap-x-3 text-[#1A2534]">
             {ownFile(app.cv_path) ? <button type="button" onClick={() => open(app.cv_path)} className="inline-flex items-center gap-1 font-semibold underline"><FileText size={14} aria-hidden="true" />CV</button> : <span>CV received</span>}

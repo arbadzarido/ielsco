@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 type Note = { id: number; kind: string; entity_type: string; entity_id: string; title: string; body: string | null; created_at: string; read_at: string | null };
 type Attention = { key: string; text: string; href: string; tone: "red" | "amber" };
 
-const hrefFor = (n: { entity_type: string; entity_id: string }) => (n.entity_type === "event" ? `/os/calendar?event=${n.entity_id}` : `/os/tasks/${n.entity_id}`);
+const hrefFor = (n: { entity_type: string; entity_id: string }) => (n.entity_type === "event" ? `/os/calendar?event=${n.entity_id}` : n.entity_type === "candidate" ? `/os/recruitment/${n.entity_id}` : `/os/tasks/${n.entity_id}`);
 const when = (iso: string) => { const p = zonedParts(iso, DEFAULT_TZ); return `${new Date(`${p.date}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} ${p.time}`; };
 
 export function NotificationsButton({ compact }: { compact?: boolean }) {

@@ -1,6 +1,5 @@
 "use client";
 
-import { RecruitmentCard } from "./RecruitmentCard";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -227,7 +226,6 @@ export function HomeView({ user, profile, storage, supabase }: DashboardCtx) {
           <Link href="/dashboard/profile#about" data-testid="origin-prompt-link" className={btnLink}>{t("home.originPromptLink")}</Link>
         </Notice>
       )}
-      <RecruitmentCard supabase={supabase} userId={user.id} />
       <Highlights supabase={supabase} />
       <UpcomingIelsco userId={user.id} />
       <ExplorePrograms />

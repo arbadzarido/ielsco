@@ -4,7 +4,7 @@ import { z } from "zod";
 import { INTENT_SCHEMAS, dateContext, isIntent, type IntentType } from "./ai-intents.ts";
 
 export type AgentKey = "assistant" | "operations" | "partnerships" | "growth";
-export type SimpleActionType = "update_task_status" | "create_project" | "add_comment" | "log_kpi_value" | "create_partnership";
+export type SimpleActionType = "update_task_status" | "create_project" | "add_comment" | "log_kpi_value" | "create_partnership" | "create_recruitment_task" | "schedule_interview";
 // Intents (tasks, assignments, events, milestones) name people and records in words and are resolved on the server;
 // simple actions carry IDs the model has seen in DATA and are validated as they are.
 export type ActionType = SimpleActionType | IntentType;
@@ -13,12 +13,12 @@ export const AGENTS: Record<AgentKey, { name: string; purpose: string; instructi
   assistant: {
     name: "Company Assistant", purpose: "Find anything you have access to and answer questions about the companies.",
     instructions: "You are the Company Assistant for IELSco (PT English Space Berkah Indonesia) and Elco AI (PT Elco Edukasi Berkah Indonesia). Answer questions about projects, tasks, documents, KPIs, the timeline and people using only the DATA provided. Point to records by their IDs.",
-    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_event", "move_event", "invite_to_event", "create_timeline_item", "create_campaign", "create_content_items", "add_comment"],
+    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_event", "move_event", "invite_to_event", "create_timeline_item", "create_campaign", "create_content_items", "add_comment", "create_recruitment_task", "schedule_interview"],
   },
   operations: {
     name: "Operations", purpose: "Delivery: overdue and blocked work, deadlines, projects, weekly reviews.",
     instructions: "You are the Operations agent. Help run delivery: overdue and blocked tasks, upcoming deadlines, project health, weekly review preparation and decision follow-up. Be concrete: name the task IDs, owners and dates.",
-    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_project", "create_event", "move_event", "invite_to_event", "create_timeline_item", "add_comment", "log_kpi_value"],
+    actions: ["create_task", "create_tasks", "assign_task", "update_task_status", "create_project", "create_event", "move_event", "invite_to_event", "create_timeline_item", "add_comment", "log_kpi_value", "create_recruitment_task", "schedule_interview"],
   },
   partnerships: {
     name: "Partnerships", purpose: "Partner pipeline, follow-ups and outreach drafts.",
@@ -64,6 +64,10 @@ export const ACTION_SCHEMAS = {
   add_comment: z.object({ entity_type: z.enum(["project", "task", "document", "partnership", "kpi"]), entity_id: z.string().regex(/^[A-Z]{2,4}-[0-9]{3,}$/), body: z.string().min(1).max(2000) }).strict(),
   log_kpi_value: z.object({ kpi_id: id("KPI"), period_label: z.string().min(1).max(40), period_end: date, value: z.number().finite(), value_basis: z.string().max(300).optional() }).strict(),
   create_partnership: z.object({ organisation: z.string().min(1).max(200), company_code: company, opportunity_type: z.string().max(80).optional(), next_action: z.string().max(300).optional(), follow_up_date: date.optional() }).strict(),
+  // Recruitment (people with recruitment access only; the database refuses everyone else). Candidate IDs come from
+  // DATA.recruitment_candidates; the AI never moves stages or records decisions.
+  create_recruitment_task: z.object({ candidate_id: z.string().uuid(), kind: z.enum(["CV screening", "Interview preparation", "Candidate evaluation", "Follow-up with candidate"]), owner_person_id: z.string().regex(/^PPL-[0-9]{4}$/), due_date: date.optional() }).strict(),
+  schedule_interview: z.object({ candidate_id: z.string().uuid(), starts_at: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z)$/), minutes: z.number().int().min(15).max(180), interviewer_ids: z.array(z.string().regex(/^PPL-[0-9]{4}$/)).min(1).max(6), meeting_url: z.string().url().startsWith("https://").max(500).optional() }).strict(),
 } satisfies Record<SimpleActionType, z.ZodType>;
 
 /** The schema for any action type: intents validate the draft, simple actions their exact payload. */
@@ -76,6 +80,8 @@ export function previewFor(type: SimpleActionType, p: Record<string, unknown>): 
     case "add_comment": return `Comment on ${p.entity_id}: "${String(p.body).slice(0, 120)}"`;
     case "log_kpi_value": return `Log ${p.value} for ${p.kpi_id}, period ${p.period_label} (ends ${p.period_end})`;
     case "create_partnership": return `Add opportunity "${p.organisation}" in ${p.company_code}${p.next_action ? `: ${p.next_action}` : ""}`;
+    case "create_recruitment_task": return `Create a Restricted "${p.kind}" task for candidate ${String(p.candidate_id).slice(0, 8)}…, owner ${p.owner_person_id}${p.due_date ? `, due ${p.due_date}` : ""}`;
+    case "schedule_interview": return `Schedule a ${p.minutes}-minute interview at ${p.starts_at} for candidate ${String(p.candidate_id).slice(0, 8)}… with ${(p.interviewer_ids as string[]).join(", ")} (Restricted event)`;
   }
 }
 
@@ -113,7 +119,8 @@ export function systemPrompt(agent: AgentKey, today?: string): string {
     "- If the company, division, project, deadline or time is unclear, still call the function with what you know and list those fields in \"unclear\". Don't ask in text instead of calling.",
     "- If you can't call functions, add fenced blocks instead (at most five), exactly like:",
     "```action\n{\"type\": \"create_task\", \"payload\": {\"title\": \"...\", \"assignees\": [\"Farrel\"], \"due_date\": \"2026-11-13\"}}\n```",
-    `- Other action types (IDs from DATA only): ${a.actions.filter((x) => !isIntent(x)).join(", ")}. Payload fields: update_task_status {task_id, status}; create_project {name, company_code, division_id?, due_date?, description?}; add_comment {entity_type, entity_id, body}; log_kpi_value {kpi_id, period_label, period_end, value}; create_partnership {organisation, company_code, opportunity_type?, next_action?, follow_up_date?}.`,
+    `- Other action types (IDs from DATA only): ${a.actions.filter((x) => !isIntent(x)).join(", ")}. Payload fields: update_task_status {task_id, status}; create_project {name, company_code, division_id?, due_date?, description?}; add_comment {entity_type, entity_id, body}; log_kpi_value {kpi_id, period_label, period_end, value}; create_partnership {organisation, company_code, opportunity_type?, next_action?, follow_up_date?}; create_recruitment_task {candidate_id, kind ("CV screening" | "Interview preparation" | "Candidate evaluation" | "Follow-up with candidate"), owner_person_id, due_date?}; schedule_interview {candidate_id, starts_at (ISO with +07:00), minutes, interviewer_ids, meeting_url?}.`,
+    "- Recruitment: DATA.recruitment_* holds only candidates the person may see. Summarise and organise; never rank or score candidates, and never recommend who to hire or reject: hiring decisions are made by people. Don't repeat contact details.",
     "- Don't propose an action unless they asked for a change or it clearly helps. Never propose sending, signing, publishing or approving anything.",
   ].join("\n");
 }
