@@ -2,7 +2,7 @@
 // Role_Matrix (founder update, 1 Nov 2026), plus Content Creator (G4, added by the founder on 9 Nov 2026; 17 roles).
 // Role ids are also listed in public.career_role_division() (migration 20261111000000); change both together. Internal references (task codes, owner names, partner names that are not yet
 // confirmed) are left out of the public text. Role ids match the workbook so applications map back to it.
-// Divisions are led by the two founders: Growth, Creative, Community and Courses & Learning by Arbadza (CEO);
+// Divisions are led by the two founders: Growth, Creative, Community and Learning by Arbadza (CEO);
 // Partnerships, Operations and People by Farrel (COO).
 
 export type LeadKey = "arbadza" | "farrel";
@@ -121,7 +121,7 @@ export const divisions: Division[] = [
   },
   {
     slug: "learning",
-    title: "Courses & Learning",
+    title: "Learning",
     lead: "arbadza",
     description: "Create learning materials and guides, and run course operations, for Elco AI.",
     roles: [

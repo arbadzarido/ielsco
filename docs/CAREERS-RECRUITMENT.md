@@ -6,7 +6,7 @@ popup, and the recruitment pipeline in Company OS (`/os/recruitment`).
 ## Sources of truth
 - Roles and divisions: the 16 roles of DOC-0055 Volunteer Staffing & Recruitment Workbook, Role_Matrix (founder update,
   1 Nov 2026), with each role's maximum places, plus **Content Creator (G4, Growth)** added by the founder on 9 Nov 2026
-  (17 roles). Divisions are grouped by lead: Growth, Creative, Community and Courses & Learning under Arbadza (CEO,
+  (17 roles). Divisions are grouped by lead: Growth, Creative, Community and Learning under Arbadza (CEO,
   arbadza@ielsco.com); Partnerships, Operations and People under Farrel (COO, farrel@ielsco.com). Data:
   `src/data/careers/divisions.ts` (roles, leads) and `src/data/careers/recruitment.ts` (dates, timeline, the seven
   campaign tasks, declaration, status copy). Content Creator's text comes from the 2026 recruitment's Content Creator
@@ -93,8 +93,12 @@ private).
 ## Changing things
 - **Dates:** `opensAt`/`closesAt` in `recruitment.ts` **and** `public.career_applications_open()` (new migration), and the
   Elco popup's dates.
-- **Campaign post / Twibbon:** set `RECRUITMENT.instagram.campaignPostUrl` and `twibbonUrl` once they exist (until then
-  the tasks point to @iels.co and to the approved recruitment Story download).
+- **Campaign post / Add Yours:** `RECRUITMENT.instagram.campaignPostUrl` is the published carousel (comment + tag, share to
+  Story, repost) and `twibbonUrl` the official Add Yours Story template; tasks link to them via `campaignTaskLink()`.
+- **Campaign artwork:** the published carousel (MKT-0008, as posted) is in `public/images/careers/2027/published/`
+  (`slide-01` is the poster used by the popups and the Careers page). LinkedIn company pages are in `RECRUITMENT.linkedin`
+  (discovery only, not a campaign task). Logos: `public/images/logos/iels_blue1.png` and the Elco eye mark
+  `public/images/logos/elco-mark.svg` (from the founder's file `elco-mark.png`).
 - **Roles:** edit `divisions.ts` **and** `public.career_role_division()` (new migration). Creative roles needing a
   portfolio: `CREATIVE_ROLE_IDS` in `lib/careers/application.ts` and `career_roles_need_portfolio()`.
 - **Recruiters:** a founder adds an Access grant in Company OS Admin (type `recruitment`, resource `2027`).
