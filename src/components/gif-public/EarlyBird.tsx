@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EARLY_BIRD_END, GIF_REGISTER_URL } from "@/lib/gif-summer-2027";
 
-// GIF Summer 2027 Early Bird window (guidebook): closes 23:59 GMT+7 on 9 November 2026. The page is statically built,
-// so the status is re-checked in the browser after mount and switches by itself once the window has closed.
-export const EARLY_BIRD_END = "2026-11-09T23:59:00+07:00";
+// The page is statically built, so the Early Bird status is re-checked in the browser after mount and switches by itself
+// once the window has closed. Registration goes through the program's Google Form.
 const isOpen = () => Date.now() < Date.parse(EARLY_BIRD_END);
 
 function useEarlyBirdOpen() {
@@ -20,20 +20,18 @@ function useEarlyBirdOpen() {
   return open;
 }
 
-const mailto = (subject: string) => "mailto:arbadza@ielsco.com?subject=" + encodeURIComponent(subject);
-
 /** "Open" until the Early Bird deadline, then "Closed". */
 export function EarlyBirdStatus() {
   const open = useEarlyBirdOpen();
   return <dd className="inline font-bold" data-testid="gif-early-bird-status" suppressHydrationWarning>{open ? "Open" : "Closed"}</dd>;
 }
 
-/** Early Bird application CTA; after the deadline it becomes a general enquiry (general registration is not open yet). */
+/** Registration CTA (the program's form): "Register for Early Bird" until the deadline, then "Register for GIF Summer 2027". */
 export function EarlyBirdCta({ className }: { className: string }) {
   const open = useEarlyBirdOpen();
   return (
-    <a href={mailto(open ? "GIF Summer 2027 Early Bird" : "GIF Summer 2027")} className={className} data-testid="gif-early-bird-cta" suppressHydrationWarning>
-      {open ? "Apply for Early Bird" : "Ask about GIF Summer 2027"}
+    <a href={GIF_REGISTER_URL} target="_blank" rel="noopener noreferrer" className={className} data-testid="gif-early-bird-cta" suppressHydrationWarning>
+      {open ? "Register for Early Bird" : "Register for GIF Summer 2027"}
     </a>
   );
 }

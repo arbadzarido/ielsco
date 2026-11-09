@@ -192,7 +192,7 @@ export const en = {
   },
   gif: {
     bannerDelegate: "Your delegate portal: screening status, submissions and announcements.",
-    bannerPublic: "IELSco's international fellowship program. See what it involves.",
+    bannerPublic: "Singapore, Malaysia and Thailand, July to August 2027. See the program and register.",
     openDashboard: "Open GIF dashboard",
     explore: "Explore GIF",
   },

@@ -1144,7 +1144,7 @@ const handleResetStatus = async () => {
                 Read Self-Funded benefits & pricing <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
-            <Link href="https://ielsco.com/events/gif" target="_blank" className="shrink-0">
+            <Link href="https://www.ielsco.com/events/gif" target="_blank" className="shrink-0">
               <Button className="px-6 py-2.5 rounded-xl font-bold bg-[#914D4D] hover:bg-[#7a3e3e] text-white shadow-md flex items-center gap-2">
                 <Globe className="w-4 h-4" /> Apply Self-Funded <ChevronRight className="w-4 h-4" />
               </Button>
@@ -1499,7 +1499,7 @@ const handleResetStatus = async () => {
                   You can also apply as a Self-Funded delegate — same program, same NUS benchmarking, same GIF experience.
                 </p>
               </div>
-              <Link href="https://ielsco.com/events/gif" target="_blank" className="shrink-0">
+              <Link href="https://www.ielsco.com/events/gif" target="_blank" className="shrink-0">
                 <Button className="px-6 py-2.5 rounded-xl font-bold border-2 border-[#914D4D]/30 text-[#914D4D] hover:bg-[#914D4D]/10 flex items-center gap-2 transition-all">
                   <Globe className="w-4 h-4" /> Self-Funded Info <ChevronRight className="w-4 h-4" />
                 </Button>

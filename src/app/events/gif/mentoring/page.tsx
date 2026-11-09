@@ -494,7 +494,7 @@ export default function SGTripMentoringPage() {
 
             {/* Main CTA */}
             <Button asChild className="w-full bg-[#914D4D] text-white font-bold py-3 h-auto text-xl rounded-full hover:bg-[#7a3e3e] shadow-[0_10px_20px_rgba(145,77,77,0.3)] hover:shadow-[0_15px_30px_rgba(145,77,77,0.5)] transition-all transform hover:-translate-y-1">
-              <Link href="https://ielsco.com/events/gif/mentoring">
+              <Link href="https://www.ielsco.com/events/gif/mentoring">
                 Secure Your Spot Now
               </Link>
             </Button>

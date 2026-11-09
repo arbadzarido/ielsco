@@ -204,7 +204,7 @@ function SignInContent() {
         {/* B2B Provisioning Notice */}
         <div className="mt-8 p-4 bg-gray-50 border border-gray-100 rounded-2xl text-center">
           <p className="text-xs text-[#2F4157] font-medium leading-relaxed">
-            <span className="font-bold text-[#E56668]">Students:</span> This portal is for school administrators and teachers. If you are a student, please log in via the <Link href="https://ielsco.com/sign-in" className="text-[#E56668] font-bold hover:underline">main IELS portal</Link>.
+            <span className="font-bold text-[#E56668]">Students:</span> This portal is for school administrators and teachers. If you are a student, please log in via the <Link href="https://www.ielsco.com/sign-in" className="text-[#E56668] font-bold hover:underline">main IELS portal</Link>.
           </p>
         </div>
 
@@ -212,9 +212,9 @@ function SignInContent() {
         <div className="pt-6 text-center text-[10px] text-gray-400 leading-relaxed space-y-1 border-t border-gray-100">
           <p>
             By signing in, you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-gray-600 transition-colors">Terms of Service</Link>{" "}
+            <Link href="/terms-of-service" className="underline hover:text-gray-600 transition-colors">Terms of Service</Link>{" "}
             and{" "}
-            <Link href="/privacy" className="underline hover:text-gray-600 transition-colors">Privacy Policy</Link>.
+            <Link href="/privacy-policy" className="underline hover:text-gray-600 transition-colors">Privacy Policy</Link>.
           </p>
         </div>
       </div>
