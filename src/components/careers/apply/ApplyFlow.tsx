@@ -16,7 +16,7 @@ import { ELCO_LINK_URL } from "@/data/membership";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { ROLE_COUNT, allRoles, divisions, roleById, type LeadKey } from "@/data/careers/divisions";
-import { APPLY_PATH, CAMPAIGN_TASKS, DECLARATION, RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
+import { APPLY_PATH, CAMPAIGN_TASKS, DECLARATION, RECRUITMENT, campaignTaskLink, recruitmentPhase } from "@/data/careers/recruitment";
 import {
   EMPTY_DRAFT, MAX_FILE_BYTES, MOTIVATION_MAX, MOTIVATION_MIN, STEPS, explainSubmitError, hasPortfolio, instagramHandle, linkedinUrl,
   needsPortfolio, normalizeWhatsapp, sanitizeDraft, validateStep, type ApplicationDraft, type Errors, type StepId,
@@ -522,14 +522,6 @@ function FileBox({ title, help, name, busy, error, onFile, onClear, testId }: { 
 }
 
 // ── Step 5: Instagram campaign tasks ──────────────────────────────────────────────────────────────────────────────
-export function taskLink(kind?: string): { href: string; label: string; download?: boolean } | null {
-  const ig = RECRUITMENT.instagram;
-  if (kind === "ielsco") return { href: ig.ielsco.url, label: ig.ielsco.handle };
-  if (kind === "elco") return { href: ig.elco.url, label: ig.elco.handle };
-  if (kind === "post") return ig.campaignPostUrl ? { href: ig.campaignPostUrl, label: "Open the campaign post" } : { href: ig.ielsco.url, label: `Find the post on ${ig.ielsco.handle}` };
-  if (kind === "twibbon") return ig.twibbonUrl ? { href: ig.twibbonUrl, label: "Open the Twibbon / Add Yours" } : { href: ig.storyTemplate, label: "Download the recruitment Story", download: true };
-  return null;
-}
 
 function TasksStep({ d, set, errors }: StepProps) {
   const done = TASK_KEYS.filter((k) => d.tasks[k]).length;
@@ -539,7 +531,7 @@ function TasksStep({ d, set, errors }: StepProps) {
       <p className="mb-3 text-[14px] font-semibold text-[#577E90]" aria-live="polite">{done} of {TASK_KEYS.length} done</p>
       <ol className="space-y-2.5" data-error={!!errors.tasks} tabIndex={errors.tasks ? -1 : undefined}>
         {CAMPAIGN_TASKS.map((t, i) => {
-          const l = taskLink(t.link);
+          const l = campaignTaskLink(t.link);
           const on = !!d.tasks[t.key];
           return (
             <li key={t.key} className={cn("flex items-start gap-3 rounded-[16px] border p-4 transition-colors", on ? "border-[#CFE3D8] bg-[#F3FAF6]" : "border-[#E6E9EE]")}>

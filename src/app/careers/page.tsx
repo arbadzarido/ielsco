@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Banknote, Briefcase, Check, FileText, Instagram, Languages, Mail, Plane, ShieldCheck } from "lucide-react";
+import { ArrowRight, Banknote, Briefcase, Check, ExternalLink, FileText, Instagram, Languages, Linkedin, Mail, Plane, ShieldCheck } from "lucide-react";
 import Footer from "@/components/footer";
 import { InquiryForm } from "@/components/site/InquiryForm";
 import { Faq } from "@/components/site/Faq";
@@ -11,7 +11,7 @@ import { body, btnPrimary, btnSecondary, card, container, eyebrow, h1, h2, h3, l
 import { cn } from "@/lib/utils";
 import { pageMetadata } from "@/lib/seo";
 import { LEADS, ROLE_COUNT, divisions, divisionsLedBy, type LeadKey } from "@/data/careers/divisions";
-import { APPLY_PATH, CAMPAIGN_TASKS, RECRUITMENT, recruitmentPhase } from "@/data/careers/recruitment";
+import { APPLY_PATH, CAMPAIGN_TASKS, RECRUITMENT, campaignTaskLink, recruitmentPhase } from "@/data/careers/recruitment";
 
 export const metadata: Metadata = pageMetadata({
   title: "Careers at IELSco & Elco AI: Open Recruitment 2027",
@@ -75,14 +75,32 @@ const PREPARE = [
   ["A short motivation", "A few honest sentences on why you want to join and why these roles."],
 ];
 
-const SLIDES = [
-  { n: "01", alt: "Cover: 2027 Team Recruitment, now open." },
-  { n: "02", alt: "One team. Two organisations: IELSco and Elco AI." },
-  { n: "07", alt: "Grow your English. Grow your career." },
-  { n: "08", alt: "Go global: GIF Thailand Summer 2027 and GIF China Winter 2027." },
-  { n: "09", alt: "More than experience: performance-based incentives." },
-  { n: "10", alt: "The program: a 9-month journey." },
+// The published MKT-0008 carousel, in posting order (alt text describes each slide).
+const SLIDE_ALTS = [
+  "Open Recruitment for Associates, now open: application period 9–29 November 2026 at ielsco.com/careers, seven divisions, for 1st–3rd year university students.",
+  "One team, two organisations: IELSco and Elco AI.",
+  "What you'll help build: IELS Circle meetups in Surabaya, Bangkok, Kuala Lumpur, Phnom Penh and Ho Chi Minh City.",
+  "7 divisions, 17 roles: Growth, Creative, Community and Learning, led by Arbadza Rido Adzariyat, Co-Founder and CEO.",
+  "Three more divisions: Partnerships, Operations and People, led by Muhammad Farrel Alrezky, Co-Founder and COO.",
+  "Grow your English and your career: work toward at least B2 (CEFR), with access to 100+ companies across Asia-Pacific.",
+  "Go global: Global Impact Fellowship 2027, GIF Thailand in Summer and GIF China in Winter. Participation may be fully funded, subject to eligibility and selection.",
+  "More than experience: performance-based allowance and profit sharing, referral and sponsorship incentives, paid UGC and content creation.",
+  "The program: a 9-month journey, 3 months of probation then a 6-month organization period, starting 11 January 2027.",
+  "Ready to be part of the IELS team? For 1st–3rd year university students. Apply at ielsco.com/careers until 29 November 2026, 23:59 WIB.",
 ];
+
+// Official company pages (Instagram and LinkedIn). LinkedIn is for discovery only, not a campaign task.
+function SocialLinks({ org, className }: { org: "ielsco" | "elco"; className?: string }) {
+  const ig = RECRUITMENT.instagram[org], li = RECRUITMENT.linkedin[org];
+  const name = org === "ielsco" ? "IELSco" : "Elco AI";
+  const link = "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] transition-colors hover:border-[#2F4157] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90] focus-visible:ring-offset-2";
+  return (
+    <span className={cn("inline-flex gap-2", className)}>
+      <a href={ig.url} target="_blank" rel="noopener noreferrer" className={link} aria-label={`${name} on Instagram (${ig.handle})`} data-testid={`social-${org}-instagram`}><Instagram size={16} aria-hidden="true" /></a>
+      <a href={li.url} target="_blank" rel="noopener noreferrer" className={link} aria-label={li.label} data-testid={`social-${org}-linkedin`}><Linkedin size={16} aria-hidden="true" /></a>
+    </span>
+  );
+}
 
 export default function CareersPage() {
   const phase = recruitmentPhase();
@@ -138,17 +156,31 @@ export default function CareersPage() {
               The team meets online every week and works with members from Indonesia to Vietnam.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className={cn(card, "p-6")}>
-                <p className="text-[13px] font-semibold text-[#577E90]">PT English Space Berkah Indonesia</p>
-                <h3 className={cn(h3, "mt-1")}>IELSco</h3>
-                <p className={cn(body, "mt-2 text-[15px]")}>An inclusive English community that helps Southeast Asian youth reach scholarships, exchanges, internships and work abroad.</p>
-                <Link href="/about" className={cn(textLink, "mt-3 text-[15px]")}>About IELSco <ArrowRight size={16} aria-hidden="true" /></Link>
+              <div className={cn(card, "flex flex-col p-6")} data-testid="org-ielsco">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-[#E6E9EE] bg-white">
+                    <Image src="/images/logos/iels_blue1.png" alt="IELSco logo" width={28} height={30} className="h-[28px] w-auto" />
+                  </span>
+                  <div className="min-w-0"><h3 className={h3}>IELSco</h3><p className="text-[12px] font-semibold text-[#577E90]">PT English Space Berkah Indonesia</p></div>
+                </div>
+                <p className={cn(body, "mt-3 text-[15px]")}>An inclusive English community that helps Southeast Asian youth reach scholarships, exchanges, internships and work abroad.</p>
+                <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                  <Link href="/about" className={cn(textLink, "text-[15px]")}>About IELSco <ArrowRight size={16} aria-hidden="true" /></Link>
+                  <SocialLinks org="ielsco" />
+                </div>
               </div>
-              <div className={cn(card, "p-6")}>
-                <p className="text-[13px] font-semibold text-[#577E90]">PT Elco Edukasi Berkah Indonesia</p>
-                <h3 className={cn(h3, "mt-1")}>Elco AI</h3>
-                <p className={cn(body, "mt-2 text-[15px]")}>An AI-powered English learning platform: personalized practice, live voice calls, interactive lessons and AI feedback.</p>
-                <a href="https://www.elcoai.com/about" target="_blank" rel="noopener noreferrer" className={cn(textLink, "mt-3 text-[15px]")}>About Elco AI <ArrowRight size={16} aria-hidden="true" /></a>
+              <div className={cn(card, "flex flex-col p-6")} data-testid="org-elco">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-[#E6E9EE] bg-white">
+                    <Image src="/images/logos/elco-mark.svg" alt="Elco AI logo" width={28} height={26} className="h-[26px] w-auto" />
+                  </span>
+                  <div className="min-w-0"><h3 className={h3}>Elco AI</h3><p className="text-[12px] font-semibold text-[#577E90]">PT Elco Edukasi Berkah Indonesia</p></div>
+                </div>
+                <p className={cn(body, "mt-3 text-[15px]")}>An AI-powered English learning platform: personalized practice, live voice calls, interactive lessons and AI feedback.</p>
+                <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                  <a href="https://www.elcoai.com/about" target="_blank" rel="noopener noreferrer" className={cn(textLink, "text-[15px]")}>About Elco AI <ArrowRight size={16} aria-hidden="true" /></a>
+                  <SocialLinks org="elco" />
+                </div>
               </div>
             </div>
           </div>
@@ -273,17 +305,19 @@ export default function CareersPage() {
                   <h3 className={h3}>Complete the seven campaign tasks on Instagram</h3>
                   <p className={cn(body, "mt-1.5 text-[15px]")}>All seven are required, with the Instagram account you apply with. No screenshots: the recruitment team checks each one by hand.</p>
                   <ol className="mt-4 grid gap-2.5 sm:grid-cols-2" data-testid="campaign-tasks">
-                    {CAMPAIGN_TASKS.map((t, i) => (
-                      <li key={t.key} className="flex gap-3 rounded-[14px] border border-[#E6E9EE] px-4 py-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7] text-[12px] font-bold text-[#2F4157]">{i + 1}</span>
-                        <span className="text-[14px] leading-snug text-[#1A2534]">{t.detail}</span>
-                      </li>
-                    ))}
+                    {CAMPAIGN_TASKS.map((t, i) => {
+                      const l = campaignTaskLink(t.link);
+                      return (
+                        <li key={t.key} className="flex gap-3 rounded-[14px] border border-[#E6E9EE] px-4 py-3">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7] text-[12px] font-bold text-[#2F4157]">{i + 1}</span>
+                          <span className="min-w-0">
+                            <span className="block text-[14px] leading-snug text-[#1A2534]">{t.detail}</span>
+                            {l && !l.download && <a href={l.href} target="_blank" rel="noopener noreferrer" className={cn(textLink, "mt-1 text-[13px]")} data-testid={`task-link-${t.key}`}>{l.label} <ExternalLink size={12} aria-hidden="true" /></a>}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ol>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-                    <a href={RECRUITMENT.instagram.ielsco.url} target="_blank" rel="noopener noreferrer" className={cn(textLink, "text-[15px]")}><Instagram size={16} aria-hidden="true" />{RECRUITMENT.instagram.ielsco.handle}</a>
-                    <a href={RECRUITMENT.instagram.elco.url} target="_blank" rel="noopener noreferrer" className={cn(textLink, "text-[15px]")}><Instagram size={16} aria-hidden="true" />{RECRUITMENT.instagram.elco.handle}</a>
-                  </div>
                 </div>
               </li>
               <li className="flex gap-5">
@@ -344,12 +378,12 @@ export default function CareersPage() {
               <p className={eyebrow}>The campaign</p>
               <h2 id="campaign-h" className={cn(h2, "mt-3")}>Seen it on Instagram?</h2>
             </div>
-            <a href={RECRUITMENT.instagram.campaignPostUrl ?? RECRUITMENT.instagram.ielsco.url} target="_blank" rel="noopener noreferrer" className={btnSecondary}><Instagram size={18} aria-hidden="true" /> Open on Instagram</a>
+            <a href={RECRUITMENT.instagram.campaignPostUrl ?? RECRUITMENT.instagram.ielsco.url} target="_blank" rel="noopener noreferrer" className={btnSecondary} data-testid="campaign-post-link"><Instagram size={18} aria-hidden="true" /> Open the recruitment post</a>
           </div>
-          <ul className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3" data-testid="campaign-slides" aria-label="Campaign carousel slides">
-            {SLIDES.map((s) => (
-              <li key={s.n} className="relative aspect-[4/5] w-[220px] shrink-0 snap-start overflow-hidden rounded-[18px] border border-[#E6E9EE] sm:w-[250px]">
-                <Image src={`/images/careers/2027/campaign/slide-${s.n}.webp`} alt={s.alt} fill sizes="250px" className="object-cover" />
+          <ul className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3" data-testid="campaign-slides" aria-label="Recruitment carousel as published on Instagram">
+            {RECRUITMENT.slides.map((src, i) => (
+              <li key={src} className="relative aspect-[4/5] w-[220px] shrink-0 snap-start overflow-hidden rounded-[18px] border border-[#E6E9EE] bg-[#F1F4F8] sm:w-[260px]">
+                <Image src={src} alt={SLIDE_ALTS[i] ?? `Recruitment slide ${i + 1}`} fill sizes="260px" className="object-contain" />
               </li>
             ))}
           </ul>
@@ -381,16 +415,23 @@ export default function CareersPage() {
       {phase !== "closed" && (
         <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="close-h">
           <div className={container}>
-            <div className="mx-auto flex max-w-[860px] flex-col items-center rounded-[28px] border border-[#E6E9EE] bg-[#F7F8FA] px-6 py-12 text-center sm:px-12" data-testid="careers-final-cta">
-              <Image src="/images/contents/mascot/poses/happy.png" alt="" width={88} height={88} className="h-[88px] w-[88px] object-contain" />
-              <h2 id="close-h" className={cn(h2, "mt-5")}>Find your role. Join the team.</h2>
-              <p className={cn(lead, "mt-3 max-w-[560px]")}>
-                {open ? `Applications close on ${RECRUITMENT.closesLabel} at 23:59 WIB.` : `Applications open on ${RECRUITMENT.opensLabel}.`} For 1st–3rd year university students.
-              </p>
-              <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
-                <Link href={applyHref} className={btnPrimary} data-testid="careers-cta-close">{applyLabel} <ArrowRight size={18} aria-hidden="true" /></Link>
-                <a href="#roles" className={btnSecondary}>Explore the roles</a>
+            <div className="flex flex-col gap-8 rounded-[28px] border border-[#E6E9EE] bg-[#F7F8FA] p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between" data-testid="careers-final-cta">
+              <div className="flex items-center gap-6">
+                <Image src="/images/contents/mascot/poses/happy.png" alt="" width={80} height={80} className="hidden h-[80px] w-[80px] shrink-0 object-contain sm:block" />
+                <div>
+                  <p className={eyebrow}>{open ? `Applications close ${RECRUITMENT.closesLabel}, 23:59 WIB` : `Applications open ${RECRUITMENT.opensLabel}`}</p>
+                  <h2 id="close-h" className={cn(h2, "mt-2")}>Find your role. Join the team.</h2>
+                  <p className={cn(body, "mt-2 max-w-[520px]")}>For 1st–3rd year university students. Sign in with your Elco-Pass and apply in about 10 minutes.</p>
+                </div>
               </div>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row lg:shrink-0">
+                <Link href={applyHref} className={cn(btnPrimary, "sm:min-w-[168px]")} data-testid="careers-cta-close">{applyLabel} <ArrowRight size={18} aria-hidden="true" /></Link>
+                <a href="#roles" className={cn(btnSecondary, "sm:min-w-[168px]")}>Explore the roles</a>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 text-[14px] text-[#2F4157]/70 sm:flex-row sm:gap-8" data-testid="careers-follow">
+              <span className="flex items-center gap-3">Follow IELSco <SocialLinks org="ielsco" /></span>
+              <span className="flex items-center gap-3">Follow Elco AI <SocialLinks org="elco" /></span>
             </div>
           </div>
         </section>

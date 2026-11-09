@@ -66,11 +66,13 @@ export function RecruitmentPopup() {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[#1A2534]/55 p-3 sm:items-center sm:p-6" onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }} data-testid="recruitment-popup">
-      <div role="dialog" aria-modal="true" aria-labelledby="recruit-popup-title" className="relative grid max-h-[92vh] w-full max-w-[760px] overflow-hidden rounded-[24px] bg-white shadow-[0_24px_60px_rgba(26,37,52,0.3)] sm:grid-cols-[300px_1fr]">
+      <div role="dialog" aria-modal="true" aria-labelledby="recruit-popup-title" className="relative grid max-h-[92vh] w-full max-w-[780px] overflow-y-auto rounded-[24px] bg-white shadow-[0_24px_60px_rgba(26,37,52,0.3)] sm:grid-cols-[320px_1fr] sm:items-center">
         <button ref={closeRef} type="button" onClick={dismiss} aria-label="Close" data-testid="recruitment-popup-close"
           className={cn("absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#1A2534] shadow hover:bg-white", focus)}><X size={18} aria-hidden="true" /></button>
-        <div className="relative h-[34vh] max-h-[260px] bg-[#2F4157] sm:h-auto sm:max-h-none">
-          <Image src="/images/careers/2027/campaign/slide-01.webp" alt="2027 Team Recruitment poster: now open, 9–29 November 2026" fill sizes="(min-width: 640px) 300px, 100vw" className="object-cover object-top" />
+        {/* The published Instagram poster at its own 4:5 proportions (never cropped or stretched). */}
+        <div className="flex justify-center bg-[#EEF1F5] sm:block sm:bg-transparent">
+          <Image src={RECRUITMENT.poster} alt="Open Recruitment 2027 poster: now open, application period 9–29 November 2026 at ielsco.com/careers, for 1st–3rd year university students" width={1080} height={1350}
+            sizes="(min-width: 640px) 320px, 70vw" className="h-[38vh] max-h-[400px] w-auto sm:h-auto sm:max-h-none sm:w-full" data-testid="recruitment-popup-poster" />
         </div>
         <div className="flex flex-col overflow-y-auto p-6 sm:p-8">
           <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#577E90]">IELSco &amp; Elco AI</p>

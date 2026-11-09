@@ -28,15 +28,22 @@ export const RECRUITMENT = {
     ["11 Jan 2027", "First cycle starts", "The cohort starts working together."],
   ] as [string, string, string][],
   instagram: {
-    ielsco: { handle: "@iels.co", url: "https://www.instagram.com/iels.co" },
+    ielsco: { handle: "@iels.co", url: "https://www.instagram.com/iels.co/" },
     elco: { handle: "@elco.ai", url: "https://www.instagram.com/elco.ai/" },
-    // The recruitment campaign post. Set it once the post is live; until then the page points to @iels.co.
-    campaignPostUrl: null as string | null,
-    // The official Twibbon / Add Yours template. No such template exists in the Figma files yet (checked 9 Nov 2026);
-    // until it is set, applicants are pointed to the approved recruitment Story and the @iels.co Stories.
-    twibbonUrl: null as string | null,
+    // The published recruitment carousel (MKT-0008, 9 Nov 2026): comment + tag, share to Story and repost use this post.
+    campaignPostUrl: "https://www.instagram.com/p/Dfg2nDVGZQw/?xtok=MXBrbGoyb2VvbjBpOQ==" as string | null,
+    // The official Add Yours Story template (separate from the carousel post).
+    twibbonUrl: "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTE5OTIwMjg5NTk4ODc1?story_media_id=4026437413693806376&xtok=Mm9iNzFsYmtlbWJw" as string | null,
     storyTemplate: "/images/careers/2027/campaign/story-announcement.jpg",
   },
+  // Official company pages. LinkedIn is for discovery only; it is not a campaign task or a requirement.
+  linkedin: {
+    ielsco: { label: "IELSco on LinkedIn", url: "https://www.linkedin.com/company/iels-co/" },
+    elco: { label: "Elco AI on LinkedIn", url: "https://www.linkedin.com/company/elco-ai/" },
+  },
+  // The published campaign artwork (MKT-0008, as posted on Instagram): slide 01 is the poster.
+  poster: "/images/careers/2027/published/slide-01.webp",
+  slides: Array.from({ length: 10 }, (_, i) => `/images/careers/2027/published/slide-${String(i + 1).padStart(2, "0")}.webp`),
   internationalContacts: ["arbadza@ielsco.com", "careers@ielsco.com"],
 };
 
@@ -57,12 +64,22 @@ export type CampaignTask = { key: string; title: string; detail: string; link?: 
 export const CAMPAIGN_TASKS: CampaignTask[] = [
   { key: "follow_ielsco", title: "Follow @iels.co", detail: "Follow the official IELSco Instagram account.", link: "ielsco" },
   { key: "follow_elco", title: "Follow Elco AI", detail: "Follow the official Elco AI Instagram account, @elco.ai.", link: "elco" },
-  { key: "comment_mention", title: "Comment and mention a friend", detail: "Comment on the recruitment campaign post and mention at least one friend.", link: "post" },
-  { key: "share_story", title: "Share the post to your Story", detail: "Share the recruitment campaign post to your Instagram Story.", link: "post" },
-  { key: "twibbon", title: "Use the official Twibbon / Add Yours", detail: "Post your Story with the official recruitment Twibbon or the Add Yours template.", link: "twibbon" },
-  { key: "story_24h", title: "Keep the Story up for 24 hours", detail: "Don't delete or archive the Story before it expires." },
-  { key: "repost", title: "Repost the campaign post", detail: "Use Instagram's Repost feature on the recruitment campaign post.", link: "post" },
+  { key: "comment_mention", title: "Comment and mention a friend", detail: "Comment on the recruitment post and mention at least one friend.", link: "post" },
+  { key: "share_story", title: "Share the post to your Story", detail: "Share the recruitment post to your Instagram Story.", link: "post" },
+  { key: "twibbon", title: "Post the official Add Yours Story", detail: "Post your Story with the official recruitment Add Yours template.", link: "twibbon" },
+  { key: "story_24h", title: "Keep the Story up for 24 hours", detail: "Keep your Story published for at least 24 hours: don't delete or archive it before it expires." },
+  { key: "repost", title: "Repost the recruitment post", detail: "Use Instagram's Repost feature on the recruitment post.", link: "post" },
 ];
+// Where each campaign task points: the two accounts, the published carousel post, and the Add Yours template.
+export function campaignTaskLink(kind?: CampaignTask["link"]): { href: string; label: string; download?: boolean } | null {
+  const ig = RECRUITMENT.instagram;
+  if (kind === "ielsco") return { href: ig.ielsco.url, label: ig.ielsco.handle };
+  if (kind === "elco") return { href: ig.elco.url, label: ig.elco.handle };
+  if (kind === "post") return ig.campaignPostUrl ? { href: ig.campaignPostUrl, label: "Open the recruitment post" } : { href: ig.ielsco.url, label: `Find the post on ${ig.ielsco.handle}` };
+  if (kind === "twibbon") return ig.twibbonUrl ? { href: ig.twibbonUrl, label: "Open Add Yours template" } : { href: ig.storyTemplate, label: "Download the recruitment Story", download: true };
+  return null;
+}
+
 export const TASK_STATUSES = ["pending", "verified", "not_found"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
