@@ -195,7 +195,7 @@ export const id: DeepPartial<Messages> = {
   },
   gif: {
     bannerDelegate: "Portal delegasimu: status seleksi, pengumpulan tugas, dan pengumuman.",
-    bannerPublic: "Program fellowship internasional IELSco. Lihat isinya.",
+    bannerPublic: "Singapura, Malaysia, dan Thailand, Juli sampai Agustus 2027. Lihat programnya dan daftar.",
     openDashboard: "Buka dasbor GIF",
     explore: "Jelajahi GIF",
   },

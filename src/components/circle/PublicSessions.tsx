@@ -14,7 +14,7 @@ export const CIRCLE_DISCORD_LINK = "https://discord.gg/apFxnhvhWr";
 export function useMainSiteBase() {
   const [base, setBase] = useState("");
   useEffect(() => {
-    if (window.location.hostname.startsWith("circle.")) setBase("https://ielsco.com");
+    if (window.location.hostname.startsWith("circle.")) setBase("https://www.ielsco.com");
   }, []);
   return base;
 }

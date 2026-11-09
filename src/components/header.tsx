@@ -42,11 +42,11 @@ export default function Header() {
 
   // Host detection runs on the client only, so server and first client render agree.
   // prod: the real ielsco.com domains. Elsewhere (localhost, Vercel previews) Circle lives at /circle on the same origin.
-  const [host, setHost] = useState({ school: false, circle: false, local: false, prod: true, main: "https://ielsco.com" });
+  const [host, setHost] = useState({ school: false, circle: false, local: false, prod: true, main: "https://www.ielsco.com" });
   useEffect(() => {
     const h = window.location.hostname;
     const local = h.includes("localhost") || h === "127.0.0.1";
-    setHost({ school: h.includes("school."), circle: h.includes("circle."), local, prod: h.endsWith("ielsco.com"), main: local ? window.location.origin : "https://ielsco.com" });
+    setHost({ school: h.includes("school."), circle: h.includes("circle."), local, prod: h.endsWith("ielsco.com"), main: local ? window.location.origin : "https://www.ielsco.com" });
   }, [pathname]);
 
   useEffect(() => {

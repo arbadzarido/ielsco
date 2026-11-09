@@ -22,7 +22,7 @@ import {
 
 const BOOKING_URL         = "https://calendar.app.google/EjfzbJCDbM4QDosC7";
 const MENTOR_WA           = "https://wa.me/6288297253491";
-const PRODUCTS_URL        = "https://ielsco.com/products/courses";
+const PRODUCTS_URL        = "https://www.ielsco.com/products/courses";
 const CONTRACT_TEMPLATE   = "https://docs.google.com/document/d/1WxaKlpgik-INOJNri-0FAQOUeYK8nts0MhEjHqUfZ-M/edit?usp=sharing";
 const CONTRACT_EMAIL      = "course@ielsco.com";
 const JOURNAL_FORM_BASE   = "https://forms.gle/JOURNAL_FORM_ID";

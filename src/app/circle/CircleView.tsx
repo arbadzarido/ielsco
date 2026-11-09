@@ -13,7 +13,7 @@ import StoryAuthorLine from "@/components/stories/StoryAuthorLine";
 import { cn } from "@/lib/utils";
 import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 
-const ACCOUNT_LINK = "https://ielsco.com/sign-up";
+const ACCOUNT_LINK = "https://www.ielsco.com/sign-up";
 const DISCORD_LINK = CIRCLE_DISCORD_LINK;
 const INSTAGRAM_LINK = "https://instagram.com/iels.co";
 

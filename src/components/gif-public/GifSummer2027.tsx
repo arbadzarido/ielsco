@@ -2,6 +2,7 @@ import Image from "next/image";
 import { container, section, h1, h2, h3, lead, body, eyebrow, card, siteRoot, focusRing } from "@/components/site/ui";
 import Footer from "@/components/footer";
 import { EarlyBirdCta, EarlyBirdStatus } from "./EarlyBird";
+import { EARLY_BIRD_END } from "@/lib/gif-summer-2027";
 
 // Content source: GIF Summer 2027 guidebook. Anything the guidebook does not state is shown as "TBA".
 
@@ -28,7 +29,7 @@ const jsonLd = {
     name: "Early Bird (10 slots)",
     price: "800",
     priceCurrency: "USD",
-    validThrough: "2026-11-09T23:59:00+07:00",
+    validThrough: EARLY_BIRD_END,
     availability: "https://schema.org/LimitedAvailability",
     url: "https://www.ielsco.com/events/gif",
   },
@@ -57,7 +58,7 @@ const stats = [
   ["10", "speaker sessions*", "2 in Singapore, 4 in Malaysia, 4 in Thailand"],
   ["6", "months of incubation", "Mentoring January to June 2027, included in your fee"],
   ["USD 5,000", "project funding pool", "For winners of the competitive Final Pitch"],
-  ["USD 800", "Early Bird fee", "Only 10 slots, USD 300 deposit, until 9 Nov 2026"],
+  ["USD 800", "Early Bird fee", "Only 10 slots, USD 300 deposit, until 20 Nov 2026"],
 ];
 
 const countries = [
@@ -144,9 +145,9 @@ export default function GifSummer2027() {
 
             <div className="mt-8 grid max-w-[760px] gap-4 rounded-[20px] bg-white p-5 text-[#1A2534] sm:grid-cols-[auto_1fr] sm:items-center sm:gap-8 sm:p-6">
               <div className="border-l-[6px] border-[#F9E15B] pl-4">
-                <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-[#7A3B3E]">Early Bird · until 9 Nov 2026</p>
+                <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-[#7A3B3E]">Early Bird · until 20 Nov 2026</p>
                 <p className="text-[44px] font-extrabold leading-none text-[#284055]">USD 800</p>
-                <p className="mt-1 text-[14px] text-[#2F4157]/70">total program fee, USD 1,000 from 10 Nov</p>
+                <p className="mt-1 text-[14px] text-[#2F4157]/70">total program fee, USD 1,000 from 21 Nov</p>
               </div>
               <div className="text-[16px] leading-[1.6]">
                 <p className="text-[19px] font-extrabold text-[#7A3B3E]">Only 10 slots</p>
@@ -384,7 +385,7 @@ export default function GifSummer2027() {
             <h2 id="earlybird" className="mt-3 text-[30px] font-extrabold leading-[1.15] sm:text-[38px]"><span className="block text-[64px] leading-none text-[#F9E15B] sm:text-[84px]">USD 800</span>total Early Bird program fee</h2>
             <p className="mt-4 inline-block rounded-[14px] border border-[#F9E15B] px-4 py-3 text-[16px]">
               <span className="block text-[13px] font-bold uppercase tracking-[0.12em] text-[#F9E15B]">Early Bird ends</span>
-              <strong className="text-[20px]">9 Nov 2026</strong> · then USD 1,000
+              <strong className="text-[20px]">20 Nov 2026</strong> · then USD 1,000
             </p>
             <p className="mt-8 text-[14px] font-bold uppercase tracking-[0.14em]">Only 10 Early Bird slots</p>
             <ol className="mt-3 flex flex-wrap gap-2" aria-label="10 slots">
@@ -404,7 +405,8 @@ export default function GifSummer2027() {
                 <li key={t} className="flex items-start gap-3 text-[17px]"><Check tone="yellow" />{t}</li>
               ))}
             </ul>
-            <Note dark>Early Bird closes 23:59 GMT+7 on 9 November 2026. From the official public launch on 10 November 2026, the program fee is USD 1,000. The deposit secures an Early Bird slot, subject to the official payment terms. International airfare is not included.</Note>
+            <Note dark>Early Bird closes 23:59 GMT+7 on 20 November 2026. From 21 November 2026, the program fee is USD 1,000. The deposit secures an Early Bird slot, subject to the official payment terms. International airfare is not included.</Note>
+            <div className="mt-6"><EarlyBirdCta className={btnYellow} /></div>
           </div>
         </section>
 
@@ -458,8 +460,8 @@ export default function GifSummer2027() {
             <h2 id="steps" className="mt-3 text-[30px] font-extrabold leading-[1.15] sm:text-[38px]">Four steps to your slot</h2>
             <ol className="mt-8 grid gap-4 md:grid-cols-2">
               {[
-                ["Reach out", "Contact the program team at arbadza@ielsco.com to register your interest."],
-                ["Pay the deposit", "The program team sends payment details by email. Pay the USD 300 deposit by 9 November 2026."],
+                ["Register", "Fill in the GIF Summer 2027 registration form. Questions: arbadza@ielsco.com."],
+                ["Pay the deposit", "The program team sends payment details by email. Pay the USD 300 deposit by 20 November 2026."],
                 ["Confirm", "Send your transfer proof to the program team for confirmation."],
                 ["Get started", "Receive your remaining payment schedule. Incubation begins January 2027."],
               ].map(([k, d], i) => (
@@ -542,7 +544,7 @@ export default function GifSummer2027() {
             <h2 id="cta" className="max-w-[720px] text-[32px] font-extrabold leading-[1.15] sm:text-[44px]">Don&rsquo;t just travel internationally. <span className="text-[#F9E15B]">Build something that matters.</span></h2>
             <div className="mt-8 max-w-[640px] rounded-[20px] bg-[#F9E15B] p-6 text-[#284055]">
               <p className="text-[22px] font-extrabold">10 Early Bird slots · USD 800</p>
-              <p className="mt-1 text-[16px] font-semibold">Secure yours with a USD 300 deposit by 9 November 2026</p>
+              <p className="mt-1 text-[16px] font-semibold">Secure yours with a USD 300 deposit by 20 November 2026</p>
             </div>
             <div className="mt-8 grid gap-8 sm:grid-cols-2">
               <div>

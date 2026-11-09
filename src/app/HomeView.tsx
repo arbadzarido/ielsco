@@ -22,6 +22,7 @@ import { ELCO_PLANS } from "@/data/membership";
 import { Photo } from "@/components/site/Photo";
 import { LandingOpportunities } from "@/components/opportunities/LandingOpportunities";
 import { track } from "@/lib/analytics";
+import { EARLY_BIRD_END } from "@/lib/gif-summer-2027";
 
 // Public landing page. Positioning: IELSco is an English community connecting people, English learning and global
 // opportunities across Southeast Asia; Elco AI is its integrated learning technology. The Elco robot is the shared
@@ -31,7 +32,6 @@ import { track } from "@/lib/analytics";
 // shows a stale "open" state and server/client renders match.
 
 
-const GIF_EARLY_BIRD_END = "2026-11-09T23:59:00+07:00";
 
 function useNow() {
   const [now, setNow] = useState<Date | null>(null);
@@ -232,8 +232,8 @@ function Stories() {
 
 function Opportunities() {
   const now = useNow();
-  // GIF Summer 2027 (guidebook): Early Bird open until 9 Nov 2026 23:59 WIB; general registration coming soon.
-  const earlyBirdOpen = now ? now.getTime() < Date.parse(GIF_EARLY_BIRD_END) : null;
+  // GIF Summer 2027: Early Bird open until 20 Nov 2026 23:59 WIB (EARLY_BIRD_END); general registration coming soon.
+  const earlyBirdOpen = now ? now.getTime() < Date.parse(EARLY_BIRD_END) : null;
   // The next event whose registration is still open, straight from the events data. Nothing shown if there is none.
   const nextEvent = useMemo(() => {
     if (!now) return null;
@@ -263,7 +263,7 @@ function Opportunities() {
               <h3 className={cn(h3, "mt-5")}>GIF Summer 2027: Singapore, Malaysia and Thailand</h3>
               <p className={cn(body, "mt-2")}>An international youth incubation program with university sessions in three countries, six months of mentoring and a Final Pitch.</p>
               <div className="mt-auto flex flex-wrap gap-2 pt-6">
-                {earlyBirdOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Early Bird open until {fmt(new Date(GIF_EARLY_BIRD_END))}</span>}
+                {earlyBirdOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Early Bird open until {fmt(new Date(EARLY_BIRD_END))}</span>}
                 {earlyBirdOpen === false && <span className={pill}>Early Bird closed</span>}
                 <span className={pill}>General registration: coming soon</span>
                 <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">About the fellowship <ArrowRight size={16} aria-hidden="true" /></span>

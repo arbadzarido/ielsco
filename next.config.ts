@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
       { source: "/programs", destination: "/products", permanent: true, has: main },
       { source: "/courses", destination: "/products/courses", permanent: true, has: main },
       { source: "/resources", destination: "/products/resources", permanent: true, has: main },
+      // Short legal paths the school sign-in page used to link to (404 in Search Console).
+      { source: "/terms", destination: "/terms-of-service", permanent: true, has: main },
+      { source: "/privacy", destination: "/privacy-policy", permanent: true, has: main },
       // 2026 cohort divisions that the 2027 structure renamed or retired.
       { source: "/careers/business", destination: "/careers/partnerships", permanent: true, has: main },
       { source: "/careers/talent", destination: "/careers/people", permanent: true, has: main },

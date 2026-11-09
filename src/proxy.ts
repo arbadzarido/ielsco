@@ -11,6 +11,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { unreadableAuthCookies } from '@/lib/supabase/auth-cookie-guard'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isGatedOsPath, isOsHost, isOsPath, osHostRoute } from '@/lib/os/host'
+import { MAIN_SITE, subdomainRoute } from '@/lib/subdomain-routes'
 
 // ── In-memory rate limiter (resets on cold start) ─────────────────────────────
 const requestTracker = new Map<string, { count: number; timestamp: number }>();
@@ -52,6 +53,11 @@ export async function proxy(request: NextRequest) {
     host === 'school.ielsco.com' ||
     host.startsWith('school.localhost');   // untuk dev lokal
 
+  // Production only: a main-site path on a subdomain (e.g. school.ielsco.com/careers) goes to www, not a 404.
+  if (host === 'school.ielsco.com' && subdomainRoute('school', url.pathname) === 'redirect') {
+    return NextResponse.redirect(new URL(`${url.pathname}${url.search}`, MAIN_SITE), 308);
+  }
+
   if (isSchoolSubdomain) {
     // Hanya rewrite kalau path belum dimulai dengan /school
     // (mencegah double-prefix /school/school/...)
@@ -78,6 +84,10 @@ export async function proxy(request: NextRequest) {
   const isCircleSubdomain =
     host === 'circle.ielsco.com' ||
     host.startsWith('circle.localhost');   // untuk dev lokal
+
+  if (host === 'circle.ielsco.com' && subdomainRoute('circle', url.pathname) === 'redirect') {
+    return NextResponse.redirect(new URL(`${url.pathname}${url.search}`, MAIN_SITE), 308);
+  }
 
   if (isCircleSubdomain) {
     // Hanya rewrite kalau path belum dimulai dengan /circle
