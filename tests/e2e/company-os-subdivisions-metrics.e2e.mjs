@@ -75,7 +75,7 @@ let sub, kpi;
   await page.getByTestId("os-metric-save").click(); await settle(page);
   kpi = sql(`select id from public.os_kpis where name = 'Posts published' and division_id = 'DIV-03'`);
   check("the metric is saved for Growth with no target", /^KPI-/.test(kpi) && sql(`select coalesce(target_value::text, 'none') || '|' || target_status || '|' || created_by from public.os_kpis where id = '${kpi}'`) === "none|No approved target|PPL-0051", kpi);
-  check("it lists as not logged", await page.getByTestId("os-ws-metrics").getByText("Not logged").isVisible());
+  check("it lists as not logged", await page.getByTestId("os-ws-metrics").getByRole("table").getByText("Not logged").isVisible());
   await page.screenshot({ path: `${OUT}/sub-01-metrics-manager.png` });
 }
 
@@ -85,14 +85,14 @@ const member = await signIn({ email: "req.growth@ielsco.test" });
   const { page } = member;
   await go(page, "/os/d/gro?tab=metrics");
   check("a member can't add metrics", !(await page.getByRole("button", { name: "Add metric" }).count()));
-  await page.getByTestId("os-ws-metrics").getByRole("button", { name: "Log value" }).click();
+  await page.getByTestId("os-ws-metrics").getByRole("table").getByRole("button", { name: "Log value" }).click();
   await page.getByTestId("os-metric-log-save").click();
   check("an empty value is refused, never saved as zero", await page.getByText("Enter the value as a number.").isVisible() && sql(`select count(*) from public.os_kpi_values where kpi_id = '${kpi}'`) === "0");
   await page.getByTestId("os-metric-value").fill("12");
   await page.getByTestId("os-metric-log-save").click(); await settle(page);
   check("the value is logged by the member for the current week", /^PPL-0031\|12\|\d{4}-W\d{2}$/.test(sql(`select recorded_by || '|' || value::int || '|' || period_label from public.os_kpi_values where kpi_id = '${kpi}'`)));
-  check("the list shows the latest value", await page.getByTestId("os-ws-metrics").getByText(/^12\s*\(/).isVisible());
-  await page.getByTestId("os-ws-metrics").getByRole("button", { name: "Log value" }).click();
+  check("the list shows the latest value", await page.getByTestId("os-ws-metrics").getByRole("table").getByText(/^12\s*\(/).isVisible());
+  await page.getByTestId("os-ws-metrics").getByRole("table").getByRole("button", { name: "Log value" }).click();
   await page.getByTestId("os-metric-value").fill("15");
   await page.getByTestId("os-metric-log-save").click(); await settle(page);
   check("a second value for the same period is refused", await page.getByText("A value is already logged for that period.").isVisible() && sql(`select count(*) from public.os_kpi_values where kpi_id = '${kpi}'`) === "1");
@@ -103,7 +103,7 @@ const member = await signIn({ email: "req.growth@ielsco.test" });
   await page.getByTestId("os-task-save").click(); await settle(page);
   check("the task is tagged with the subdivision", sql(`select subdivision_id from public.os_tasks where id = 'TSK-9801'`) === sub);
   await go(page, "/os/d/gro?tab=tasks");
-  const list = page.getByTestId("os-ws-tasks");
+  const list = page.getByTestId("os-ws-tasks").getByRole("table");
   check("the workspace task list shows the tag", await list.getByText("Social media").isVisible());
   await page.getByLabel("Subdivision").selectOption({ label: "Social media" }); await page.waitForTimeout(300);
   check("filtering by subdivision narrows the list", await list.getByText("Plan the reel shoot").isVisible() && !(await list.getByText("Untagged Growth task").count()));
@@ -117,7 +117,7 @@ const ops = await signIn({ email: "req.ops@ielsco.test" });
 {
   const { page } = ops;
   await go(page, "/os/d/gro?tab=metrics");
-  check("someone outside Growth doesn't get its workspace", await page.getByTestId("os-ws-locked").isVisible() && !(await page.getByTestId("os-ws-metrics").count()));
+  check("someone outside Growth doesn't get its workspace", await page.getByTestId("os-ws-locked").isVisible() && !(await page.getByTestId("os-ws-metrics").getByRole("table").count()));
   await go(page, `/os/kpis/${kpi}`);
   if (await page.getByTestId("os-kpi-log").count()) {
     await page.getByLabel("Period", { exact: true }).fill("2026-W01");
