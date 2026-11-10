@@ -8,12 +8,13 @@ import { useOsMe } from "./OsProvider";
 import { useDirectory, useQuery } from "./data";
 import { CompanySelect, useDefaultCompany } from "./pickers";
 import { useMyWorkspaces } from "./workspaces";
+import { RelatedSelect } from "./legal";
 import { Badge, Empty, ErrorLine, Field, RowList, Select, Sheet, btn, btnPrimary, input, muted } from "./ui";
 import { PRIORITIES, addDays, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
 import { requestStage, sendableTypes, type RequestRow, type RequestType } from "@/lib/os/requests";
 import { cn } from "@/lib/utils";
 
-const OWN = /^(Only Company OS staff can send requests|Unknown request type|Only people in the requesting division can send this request|The deadline must be today or later|This request is not waiting for approval|You can't approve your own request|Give a reason for declining|This request is not waiting for triage|Choose an owner who works in the receiving division|Say what is missing or why|This request can no longer be edited|This request can't be started now|This request can't be delivered now|Only delivered work can be accepted|Only delivered work can be sent back|Say what needs to change|This request can't be cancelled now|Tasks are added once a request is accepted|Give the task a title)$/;
+const OWN = /^(Only Company OS staff can send requests|Unknown request type|Only people in the requesting division can send this request|The deadline must be today or later|This request is not waiting for approval|You can't approve your own request|Give a reason for declining|This request is not waiting for triage|Choose an owner who works in the receiving division|Say what is missing or why|This request can no longer be edited|This request can't be started now|This request can't be delivered now|Only delivered work can be accepted|Only delivered work can be sent back|Say what needs to change|This request can't be cancelled now|Tasks are added once a request is accepted|Give the task a title|That linked record isn't visible to you)$/;
 /** The database's own refusals are written for people; anything else becomes one generic line. */
 export function requestError(message: string | null | undefined): string | null {
   if (!message) return null;
@@ -71,12 +72,14 @@ export function NewRequestSheet({ open, onClose, defaultType }: { open: boolean;
   const [brief, setBrief] = useState("");
   const [priority, setPriority] = useState("P3 Normal");
   const [due, setDue] = useState(addDays(today, 7));
+  const [related, setRelated] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const chosen = options.find((t) => t.code === type);
   const submit = async () => {
     setBusy(true); setErr(null);
-    const { data, error } = await supabase.rpc("os_request_submit", { p_type: type, p_company: co, p_title: title, p_brief: brief, p_priority: priority, p_due: due });
+    const [rt, rid] = related ? related.split(":") : [null, null];
+    const { data, error } = await supabase.rpc("os_request_submit", { p_type: type, p_company: co, p_title: title, p_brief: brief, p_priority: priority, p_due: due, p_related_type: rt, p_related_id: rid });
     setBusy(false);
     if (error) return setErr(requestError(error.message));
     onClose(); router.push(`/os/requests/${data}`);
@@ -98,13 +101,14 @@ export function NewRequestSheet({ open, onClose, defaultType }: { open: boolean;
               {chosen.needs_approval ? " Your division's lead approves it first." : ""} {chosen.description}
             </p>
           )}
-          <Field label="Company">{(id) => <CompanySelect id={id} value={co} onChange={setCo} />}</Field>
+          <Field label="Company">{(id) => <CompanySelect id={id} value={co} onChange={(v) => { setCo(v); setRelated(""); }} />}</Field>
           <Field label="Title">{(id) => <input id={id} className={input} value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} />}</Field>
           <Field label="Brief" hint="What you need, for whom, and what done looks like. Link files from Drive after sending.">{(id) => <textarea id={id} className={cn(input, "min-h-32")} value={brief} maxLength={5000} onChange={(e) => setBrief(e.target.value)} />}</Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Priority">{(id) => <Select id={id} value={priority} onChange={setPriority} options={PRIORITIES} />}</Field>
             <Field label="Deadline">{(id) => <input id={id} type="date" className={input} value={due} min={today} onChange={(e) => setDue(e.target.value)} />}</Field>
           </div>
+          <RelatedSelect value={related} onChange={setRelated} company={co} />
           <ErrorLine message={err} />
         </form>
       )}

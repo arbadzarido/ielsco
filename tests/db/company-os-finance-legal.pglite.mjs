@@ -183,6 +183,7 @@ await te("reconciling needs a statement reference", () => fin(FO, e1, "reconcile
 await t("Finance reconciles it", () => fin(FO, e1, "reconcile", { ref: "STMT-2026-11" }), is("reconciled"));
 await t("the history has every step", () => one(OP, "select string_agg(action, ',' order by id) from public.os_record_events where entity_type = 'transaction' and entity_id = $1", [e1]),
   is("submitted,updated,approve,verify,pay,reconcile"));
+await t("bank and statement references stay out of the history the requester reads", () => one(OP, "select count(*)::int from public.os_record_events where entity_id = $1 and (note like '%BCA%' or note like '%STMT%')", [e1]), is(0));
 await t("the requester was told at each step", async () => (await svc("select count(*)::int c from public.os_notifications where person_id = 'PPL-9012' and entity_id = $1", [e1])).rows[0].c, is(4));
 
 // Payment details

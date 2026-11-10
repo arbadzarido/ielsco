@@ -11,8 +11,13 @@ export interface RequestRow {
   requester_person_id: string; owner_person_id: string | null; title: string; brief: string; priority: string; due_date: string;
   approval_status: ApprovalStatus; status: RequestStatus; revision_rounds: number;
   delivered_at: string | null; accepted_at: string | null; closed_at: string | null; created_at: string; updated_at: string;
+  related_type: "project" | "partnership" | null; related_id: string | null;
 }
-export const REQUEST_COLUMNS = "id, type_code, company_code, from_division_id, to_division_id, requester_person_id, owner_person_id, title, brief, priority, due_date, approval_status, status, revision_rounds, delivered_at, accepted_at, closed_at, created_at, updated_at";
+export const REQUEST_COLUMNS = "id, type_code, company_code, from_division_id, to_division_id, requester_person_id, owner_person_id, title, brief, priority, due_date, approval_status, status, revision_rounds, delivered_at, accepted_at, closed_at, created_at, updated_at, related_type, related_id";
+
+/** Routes whose work is money (Finance records an expense from them) or a legal document (Legal drafts it). */
+export const MONEY_ROUTES = ["budget", "campaign_expense"];
+export const LEGAL_ROUTES = ["contract_review", "employment_document"];
 
 export interface RequestType { code: string; name: string; description: string | null; from_division_id: string; to_division_id: string; needs_approval: boolean; active: boolean; sort_order: number }
 

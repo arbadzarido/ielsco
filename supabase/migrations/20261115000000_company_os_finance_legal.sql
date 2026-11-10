@@ -312,7 +312,8 @@ begin
     update public.os_fin_transactions set status = nxt, closed_reason = note, updated_at = now() where id = t.id;
   else raise exception 'Unknown action' using errcode = '22023';
   end if;
-  perform public.os_fl_log('transaction', t.id, p_action, prev, nxt, coalesce(note, case when p_action = 'reconcile' then trim(p_reference) end));
+  -- Bank and statement references stay out of the history: requesters and division leads can read it.
+  perform public.os_fl_log('transaction', t.id, p_action, prev, nxt, note);
   perform public.os_fl_tell(case when p_action = 'approve' then 'fin_operators' end, t.requested_by, 'finance_update', 'transaction', t.id,
     initcap(nxt) || ': ' || left(t.description, 80), coalesce(note, 'IDR ' || t.amount || '.'));
   return nxt;
