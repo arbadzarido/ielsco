@@ -6,7 +6,10 @@ import { AGENTS, costUsd, extractActions, pickTier, previewFor, searchTerms, sys
 test("routine model by default, complex for analysis, long messages or when asked", () => {
   assert.equal(pickTier("what are my tasks today", false), "routine");
   assert.equal(pickTier("analyse the overdue work for Growth", false), "complex");
-  assert.equal(pickTier("x".repeat(700), false), "complex");
+  assert.equal(pickTier("x".repeat(2600), false), "complex");
+  // A long list of concrete work items is many simple records: the light model, with a larger output allowance.
+  const list = ["Create these:", ...Array.from({ length: 20 }, (_, i) => `- Task ${i + 1}`)].join("\n");
+  assert.equal(pickTier(list, false), "routine");
   assert.equal(pickTier("hi", true), "complex");
 });
 
@@ -27,13 +30,13 @@ test("only valid, allowed actions are extracted", () => {
   const reply = [
     "Here you go.",
     "```action\n{\"type\":\"create_task\",\"payload\":{\"title\":\"Call venue\",\"company_code\":\"IEL\",\"due_date\":\"2026-11-20\"}}\n```",
-    "```action\n{\"type\":\"create_project\",\"payload\":{\"name\":\"Not allowed for assistant\",\"company_code\":\"IEL\"}}\n```",
+    "```action\n{\"type\":\"log_kpi_value\",\"payload\":{\"kpi_id\":\"KPI-001\",\"period_label\":\"Nov\",\"period_end\":\"2026-11-30\",\"value\":3}}\n```",
     "```action\n{\"type\":\"create_task\",\"payload\":{\"title\":\"x\",\"company_code\":\"IEL\",\"owner_person_id\":\"PPL-0001\",\"status\":\"Done\"}}\n```",
     "```action\nnot json\n```",
   ].join("\n");
   const { text, actions } = extractActions(reply, AGENTS.assistant.actions);
   assert.equal(text, "Here you go.");
-  // create_project isn't the assistant's; the task drafts keep only declared fields (IDs and status never pass through).
+  // log_kpi_value isn't the assistant's; the task drafts keep only declared fields (IDs and status never pass through).
   assert.equal(actions.length, 2);
   assert.equal(actions[0].type, "create_task");
   assert.equal(actions[0].payload.title, "Call venue");

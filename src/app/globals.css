@@ -252,3 +252,11 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   .elco .elco-float, .elco .elco-eyes, .elco .elco-arm { animation: none !important; }
 }
+
+/* Company OS: Elco Assistant's docked panel sits beside the page on wide screens instead of covering it. */
+@media (min-width: 1024px) {
+  html[data-elco-panel] #os-main { padding-right: 400px; }
+  /* …which leaves too little room for wide tables: lists show as cards while the panel is open. */
+  html[data-elco-panel] #os-main .os-rows-table { display: none; }
+  html[data-elco-panel] #os-main .os-rows-cards { display: block; }
+}

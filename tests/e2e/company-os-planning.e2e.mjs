@@ -210,7 +210,8 @@ const founder = await signIn({ email: "founder@ielsco.test", aal2: true });
     await page.waitForFunction((n) => document.querySelectorAll("[data-testid=os-ai-action]").length > n || document.querySelectorAll("[data-testid=os-error]").length > 0, before, { timeout: 30000 }).catch(() => {});
     return page.getByTestId("os-ai-action").nth(before);
   };
-  const confirm = async (card) => { await card.getByRole("button", { name: "Confirm & Create" }).click(); await card.getByTestId("os-ai-created").waitFor({ timeout: 15000 }).catch(() => {}); };
+  // Ordinary task work runs at once (the card arrives already done); everything else waits for Confirm.
+  const confirm = async (card) => { const b = card.getByRole("button", { name: "Confirm & Create" }); if (await b.count()) await b.click(); await card.getByTestId("os-ai-created").waitFor({ timeout: 15000 }).catch(() => {}); };
   await page.goto(`${OS}/os/assistant`);
   let card = await askAi("Create a weekly Growth meeting every Monday at 10 AM", { calls: [{ name: "create_event", args: { title: "Growth Monday meeting", company: "IELSco", date: mon, start_time: "10:00", end_time: "11:00", division: "Growth", invite_division: true, repeat: "weekly" } }] });
   check("assistant: the weekly meeting preview says it repeats every Monday", /Repeats[\s\S]*Monday/.test(await card.innerText()), (await card.innerText()).slice(0, 300));

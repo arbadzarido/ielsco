@@ -41,6 +41,10 @@ export function useDirectory(): Directory | null {
 
 export function invalidateDirectory(supabase: SupabaseClient) { cache.delete(supabase); }
 
+export const DATA_CHANGED = "os-data-changed";
+/** Tell every open list on the page that records changed (after the assistant created or updated something). */
+export function announceDataChanged() { try { window.dispatchEvent(new Event(DATA_CHANGED)); } catch { /* server */ } }
+
 /** Run a query function and keep {data, error, loading}; reload() re-runs it. */
 export function useQuery<T>(fn: (s: SupabaseClient) => PromiseLike<{ data: T | null; error: { message: string } | null }>, deps: unknown[]) {
   const { supabase } = useOsMe();
@@ -57,6 +61,12 @@ export function useQuery<T>(fn: (s: SupabaseClient) => PromiseLike<{ data: T | n
     );
     return () => { live = false; };
   }, [run, supabase, tick]);
+  // Elco Assistant announces changes it made, so the page behind the panel shows them without a reload.
+  useEffect(() => {
+    const again = () => setTick((t) => t + 1);
+    window.addEventListener(DATA_CHANGED, again);
+    return () => window.removeEventListener(DATA_CHANGED, again);
+  }, []);
   return { ...state, reload: () => setTick((t) => t + 1) };
 }
 

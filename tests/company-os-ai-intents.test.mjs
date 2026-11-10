@@ -83,12 +83,16 @@ test("a batch of tasks is listed in full and each is resolved", () => {
   assert.equal(items.length, 3);
   assert.equal(items.filter((i) => i.issues.length).length, 1);
   assert.match(intentPreview("create_tasks", items), /Create 3 tasks \(needs your input\)/);
-  assert.equal(draftsOf("create_tasks", { tasks: Array.from({ length: 11 }, (_, i) => ({ title: `T${i}` })) }), null);
+  // Up to 30 in one batch (long work lists are no longer split); more is refused.
+  assert.equal(draftsOf("create_tasks", { tasks: Array.from({ length: 30 }, (_, i) => ({ title: `T${i}` })) }).length, 30);
+  assert.equal(draftsOf("create_tasks", { tasks: Array.from({ length: 31 }, (_, i) => ({ title: `T${i}` })) }), null);
 });
 
-test("a duplicate open task is flagged", () => {
+test("a duplicate open task is not created again: the existing one is reported", () => {
   const [t] = resolveIntent("create_task", draftsOf("create_task", { title: "design poster" }), dir);
-  assert.ok(t.warnings.some((w) => w.includes("TSK-0010")));
+  assert.equal(t.insert, null);
+  assert.equal(t.skip.existing, "TSK-0010");
+  assert.match(intentPreview("create_task", [t]), /already exists \(TSK-0010\)/);
 });
 
 test("a meeting at 2 PM Jakarta time, inviting the Growth division", () => {

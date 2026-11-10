@@ -1,5 +1,6 @@
 "use client";
 
+import { usePublishAssistantContext } from "@/components/os/assistant/page-context";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ExternalLink, Plus, Search } from "lucide-react";
@@ -24,6 +25,7 @@ export default function DocumentsPage() {
   const [drift, setDrift] = useState(false);
   const [creating, setCreating] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(params.get("new") === "1");
+  usePublishAssistantContext({ filters: { search: q, company, division, doc_type: type, status, sensitivity: sens, category } });
   const docs = useQuery<DocRow[]>((s) => s.from("os_documents").select(DOC_COLUMNS).order("updated_at", { ascending: false }).limit(1000), []);
   const all = docs.data ?? [];
   const categories = Array.from(new Set(all.map((d) => d.category).filter(Boolean) as string[])).sort();

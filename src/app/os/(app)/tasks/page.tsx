@@ -1,5 +1,6 @@
 "use client";
 
+import { usePublishAssistantContext } from "@/components/os/assistant/page-context";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -35,6 +36,7 @@ export default function TasksPage() {
   const [showDone, setShowDone] = useState(false);
   const [creating, setCreating] = useState(params.get("new") === "1");
   const [err, setErr] = useState<string | null>(null);
+  usePublishAssistantContext({ filters: { view, search: q, status, priority, company, show_done: showDone ? "yes" : "" } });
 
   const tasks = useQuery<TaskRow[]>((s) => s.from("os_tasks").select(TASK_COLUMNS).is("parent_task_id", null).order("due_date", { ascending: true, nullsFirst: false }).limit(1000), []);
   const assigns = useQuery<{ task_id: string; person_id: string }[]>((s) => s.from("os_task_assignees").select("task_id, person_id"), []);

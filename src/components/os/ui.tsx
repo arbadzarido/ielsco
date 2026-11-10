@@ -180,7 +180,8 @@ export function Sheet({ open, onClose, title, children, footer, wide }: { open: 
   );
 }
 
-/** A row list that reads as a table on wide screens and as stacked cards on phones (no horizontal scrolling). */
+/** A row list that reads as a table on wide screens and as stacked cards on phones (no horizontal scrolling). With the
+ *  Elco Assistant panel open the page is narrower, so it shows the cards there too (see globals.css). */
 export function RowList<T>({ rows, columns, rowKey, rowHref, empty, testId }: {
   rows: T[];
   columns: { key: string; label: string; render: (r: T) => ReactNode; className?: string; primary?: boolean; hideOnMobile?: boolean }[];
@@ -189,7 +190,7 @@ export function RowList<T>({ rows, columns, rowKey, rowHref, empty, testId }: {
   if (!rows.length) return <>{empty ?? <Empty title="Nothing here yet" compact />}</>;
   return (
     <div className={cn(panel, "overflow-hidden")} data-testid={testId}>
-      <table className="hidden w-full table-fixed text-sm md:table">
+      <table className="os-rows-table hidden w-full table-fixed text-sm md:table">
         <thead className="border-b border-[#E6E9EE] bg-[#FAFBFC] text-left text-xs font-medium text-[#66768A]">
           <tr>{columns.map((c) => <th key={c.key} scope="col" className={cn("px-3 py-2 font-medium", c.className)}>{c.label}</th>)}</tr>
         </thead>
@@ -205,7 +206,7 @@ export function RowList<T>({ rows, columns, rowKey, rowHref, empty, testId }: {
           ))}
         </tbody>
       </table>
-      <ul className="divide-y divide-[#F0F2F5] md:hidden">
+      <ul className="os-rows-cards divide-y divide-[#F0F2F5] md:hidden">
         {rows.map((r) => {
           const primary = columns.find((c) => c.primary) ?? columns[0];
           const rest = columns.filter((c) => c !== primary && !c.hideOnMobile);
