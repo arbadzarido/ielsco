@@ -178,6 +178,15 @@ async function selectList(db, table, select) {
 }
 const returning = (select) => (select || "*").split(",").map((c) => (c.trim() === "*" ? "*" : ident(c.trim().split(":").pop()))).join(", ");
 const param = (v) => (typeof v === "object" && v !== null ? JSON.stringify(v) : v);
+// Like PostgREST: a JSON array written to an array column (text[] and so on) becomes a Postgres array, not JSON text.
+const arrayCols = new Map();
+async function arrayColumns(db, name) {
+  if (!arrayCols.has(name)) {
+    const r = await db.query("select column_name from information_schema.columns where table_schema = 'public' and table_name = $1 and data_type = 'ARRAY'", [name]);
+    arrayCols.set(name, new Set(r.rows.map((x) => x.column_name)));
+  }
+  return arrayCols.get(name);
+}
 
 async function rest(req, res, url, body) {
   const token = req.headers.authorization?.replace(/^Bearer /, "") || req.headers.apikey;
@@ -221,14 +230,16 @@ async function rest(req, res, url, body) {
       } else if (req.method === "POST") {
         const rows = Array.isArray(body) ? body : [body];
         rowsOut = [];
+        const arr = await arrayColumns(db, tname);
         for (const row of rows) {
-          const keys = Object.keys(row); const vals = keys.map((k) => { args.push(param(row[k])); return `$${args.length}`; });
+          const keys = Object.keys(row); const vals = keys.map((k) => { args.push(arr.has(k) && Array.isArray(row[k]) ? row[k] : param(row[k])); return `$${args.length}`; });
           const r = await db.query(`insert into ${table} (${keys.map(ident).join(", ")}) values (${vals.join(", ")}) returning ${returning(select)}`, args.splice(0));
           rowsOut.push(...r.rows);
         }
         status = 201;
       } else if (req.method === "PATCH") {
-        const sets = Object.keys(body).map((k) => { args.push(param(body[k])); return `${ident(k)} = $${args.length}`; });
+        const arr = await arrayColumns(db, tname);
+        const sets = Object.keys(body).map((k) => { args.push(arr.has(k) && Array.isArray(body[k]) ? body[k] : param(body[k])); return `${ident(k)} = $${args.length}`; });
         const r = await db.query(`update ${table} t set ${sets.join(", ")}${where(url.searchParams, args, "t")} returning ${returning(select).split(", ").map((c) => (c === "*" ? "t.*" : `t.${c}`)).join(", ")}`, args);
         rowsOut = r.rows; status = 204;
       } else if (req.method === "DELETE") {

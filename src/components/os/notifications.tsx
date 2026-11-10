@@ -20,7 +20,10 @@ type Attention = { key: string; text: string; href: string; tone: "red" | "amber
 const hrefFor = (n: { entity_type: string; entity_id: string }) => (n.entity_type === "event" ? `/os/calendar?event=${n.entity_id}` : n.entity_type === "candidate" ? `/os/recruitment/${n.entity_id}`
   : n.entity_type === "access_request" ? `/os/access?focus=${n.entity_id}` : n.entity_type === "request" ? `/os/requests/${n.entity_id}`
   : n.entity_type === "transaction" ? `/os/finance/${n.entity_id}` : n.entity_type === "budget" ? "/os/d/fin?tab=budgets"
-  : n.entity_type === "letter" || n.entity_type === "agreement" ? `/os/legal/${n.entity_id}` : n.entity_type === "compliance" ? "/os/d/leg?tab=compliance" : `/os/tasks/${n.entity_id}`);
+  : n.entity_type === "letter" || n.entity_type === "agreement" ? `/os/legal/${n.entity_id}` : n.entity_type === "compliance" ? "/os/d/leg?tab=compliance"
+  : n.entity_type === "meeting" ? `/os/meetings/${n.entity_id}` : n.entity_type === "project" ? `/os/projects/${n.entity_id}` : n.entity_type === "document" ? `/os/documents/${n.entity_id}`
+  : n.entity_type === "kpi" ? `/os/kpis/${n.entity_id}` : n.entity_type === "timeline" ? `/os/timeline/${n.entity_id}` : n.entity_type === "campaign_plan" ? `/os/campaigns/${n.entity_id}`
+  : n.entity_type === "partnership" ? "/os/partnerships" : ["decision", "objective", "product", "campaign"].includes(n.entity_type) ? "/os" : `/os/tasks/${n.entity_id}`);
 const when = (iso: string) => { const p = zonedParts(iso, DEFAULT_TZ); return `${new Date(`${p.date}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} ${p.time}`; };
 
 export function NotificationsButton({ compact }: { compact?: boolean }) {

@@ -15,6 +15,7 @@ import { useMyWorkspaces } from "@/components/os/workspaces";
 import { Avatar, Badge, Empty, ErrorLine, Field, Loading, RowList, Section, Select, Stat, StatusBadge, Tabs, btn, btnDanger, btnPrimary, input, muted, panel } from "@/components/os/ui";
 import { addDays, companyName, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
 import { REQUEST_COLUMNS, isOpen, queueOrder, type RequestRow } from "@/lib/os/requests";
+import { WorkspaceMeetings } from "@/components/os/meetings";
 import { ROLE_LABELS, SECTION_LABEL, accessLabel, grantableRoles, workspaceHref, workspaceSections, type MyWorkspace, type WsRole, type WsSection } from "@/lib/os/workspaces";
 import { FinanceBudgets, FinanceCashflow, FinanceLedger, FinanceOverview, FinanceSetup } from "@/components/os/finance-workspace";
 import { LegalAgreements, LegalCompliance, LegalLetters, LegalNumbering, LegalOverview } from "@/components/os/legal";
@@ -68,6 +69,7 @@ export default function DivisionWorkspacePage({ params }: { params: Promise<{ co
       {tab === "numbering" && <LegalNumbering />}
       {tab === "projects" && <Projects ws={ws} />}
       {tab === "tasks" && <Tasks ws={ws} />}
+      {tab === "meetings" && <WorkspaceMeetings ws={ws} />}
       {tab === "documents" && <Documents ws={ws} />}
       {tab === "requests" && <Requests ws={ws} />}
       {tab === "access" && <MembersAndAccess ws={ws} onChange={reload} />}
