@@ -250,7 +250,7 @@ function WorkspaceGroup({ code, collapsed, onNavigate, recruitment }: { code: st
   const pathname = usePathname();
   const search = useSearchParams();
   const ws = list?.find((w) => w.code === code);
-  const items = ws ? workspaceNav(ws, { recruitment, requests: false }) : [];
+  const items = ws ? workspaceNav(ws, { recruitment, requests: true }) : [];
   const tab = search.get("tab") ?? "overview";
   const on = (i: WsNavItem) => (i.href.startsWith("/os/d/") ? pathname.startsWith(`/os/d/${code.toLowerCase()}`) && tab === i.key : pathname.startsWith(i.href));
   return (
@@ -285,6 +285,7 @@ function DivisionList({ collapsed, onNavigate, current }: { collapsed: boolean; 
             </Link>
           </li>
         ))}
+        <li><NavLink href="/os/requests" label="Requests" icon={Inbox} on={pathname.startsWith("/os/requests")} collapsed={false} onNavigate={onNavigate} testId="os-requests-link" /></li>
         <li><NavLink href="/os/access" label="Access requests" icon={KeyRound} on={pathname.startsWith("/os/access")} collapsed={false} onNavigate={onNavigate} testId="os-access-link" /></li>
       </ul>
     </div>

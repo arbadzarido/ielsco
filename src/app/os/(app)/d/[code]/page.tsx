@@ -10,9 +10,11 @@ import { ACCESS_REQUEST_COLUMNS, AccessRequestList, RequestAccessForm, useReques
 import { DOC_COLUMNS, type DocRow } from "@/components/os/doc-forms";
 import { PersonSelect } from "@/components/os/pickers";
 import { PROJECT_COLUMNS, TASK_COLUMNS, type ProjectRow, type TaskRow } from "@/components/os/work-forms";
+import { NewRequestSheet, RequestList, useRequestTypes } from "@/components/os/requests";
 import { useMyWorkspaces } from "@/components/os/workspaces";
 import { Avatar, Badge, Empty, ErrorLine, Field, Loading, RowList, Section, Select, Stat, StatusBadge, Tabs, btn, btnDanger, btnPrimary, input, muted, panel } from "@/components/os/ui";
 import { addDays, companyName, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
+import { REQUEST_COLUMNS, isOpen, queueOrder, type RequestRow } from "@/lib/os/requests";
 import { ROLE_LABELS, accessLabel, grantableRoles, workspaceHref, workspaceSections, type MyWorkspace, type WsRole, type WsSection } from "@/lib/os/workspaces";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +41,7 @@ export default function DivisionWorkspacePage({ params }: { params: Promise<{ co
       </div>
     );
   }
-  const sections = workspaceSections(ws);
+  const sections = workspaceSections(ws, { requests: true });
   const tab = (sections as string[]).includes(search.get("tab") ?? "") ? (search.get("tab") as WsSection) : "overview";
 
   return (
@@ -57,6 +59,7 @@ export default function DivisionWorkspacePage({ params }: { params: Promise<{ co
       {tab === "projects" && <Projects ws={ws} />}
       {tab === "tasks" && <Tasks ws={ws} />}
       {tab === "documents" && <Documents ws={ws} />}
+      {tab === "requests" && <Requests ws={ws} />}
       {tab === "access" && <MembersAndAccess ws={ws} onChange={reload} />}
     </div>
   );
@@ -141,6 +144,30 @@ function Documents({ ws }: { ws: MyWorkspace }) {
           { key: "s", label: "Status", className: "w-28", render: (d) => <StatusBadge value={d.status} /> },
         ]} />
     </Section>
+  );
+}
+
+// Requests this division receives (its queue, by deadline and priority) and the ones it has sent. RLS decides which
+// appear: a requester's teammates never see a request to a restricted division.
+function Requests({ ws }: { ws: MyWorkspace }) {
+  const incoming = useQuery<RequestRow[]>((s) => s.from("os_requests").select(REQUEST_COLUMNS).eq("to_division_id", ws.division_id).order("due_date").limit(300), [ws.division_id]);
+  const outgoing = useQuery<RequestRow[]>((s) => s.from("os_requests").select(REQUEST_COLUMNS).eq("from_division_id", ws.division_id).order("created_at", { ascending: false }).limit(300), [ws.division_id]);
+  const types = useRequestTypes();
+  const typeMap = new Map((types.data ?? []).map((t) => [t.code, t]));
+  const sendable = (types.data ?? []).filter((t) => t.active && t.from_division_id === ws.division_id);
+  const [creating, setCreating] = useState(false);
+  const queue = queueOrder((incoming.data ?? []).filter((r) => r.approval_status !== "pending"));
+  return (
+    <div className="space-y-6">
+      <Section title={`Incoming (${queue.filter(isOpen).length} open)`}>
+        <ErrorLine message={incoming.error} />
+        {incoming.data ? <RequestList rows={queue} types={typeMap} empty="No requests for this division" testId="os-ws-requests-in" /> : <Loading />}
+      </Section>
+      <Section title="Sent by this division" action={ws.access === "edit" && sendable.length ? <button type="button" className={btn} onClick={() => setCreating(true)}>New request</button> : undefined}>
+        {outgoing.data ? <RequestList rows={outgoing.data} types={typeMap} empty="This division hasn't sent requests" testId="os-ws-requests-out" /> : <Loading />}
+      </Section>
+      {creating && <NewRequestSheet open onClose={() => setCreating(false)} defaultType={sendable[0]?.code} />}
+    </div>
   );
 }
 
