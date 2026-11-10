@@ -15,12 +15,14 @@ import { useMyWorkspaces } from "@/components/os/workspaces";
 import { Avatar, Badge, Empty, ErrorLine, Field, Loading, RowList, Section, Select, Stat, StatusBadge, Tabs, btn, btnDanger, btnPrimary, input, muted, panel } from "@/components/os/ui";
 import { addDays, companyName, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
 import { REQUEST_COLUMNS, isOpen, queueOrder, type RequestRow } from "@/lib/os/requests";
-import { ROLE_LABELS, accessLabel, grantableRoles, workspaceHref, workspaceSections, type MyWorkspace, type WsRole, type WsSection } from "@/lib/os/workspaces";
+import { ROLE_LABELS, SECTION_LABEL, accessLabel, grantableRoles, workspaceHref, workspaceSections, type MyWorkspace, type WsRole, type WsSection } from "@/lib/os/workspaces";
+import { FinanceBudgets, FinanceCashflow, FinanceLedger, FinanceOverview, FinanceSetup } from "@/components/os/finance-workspace";
+import { LegalAgreements, LegalCompliance, LegalLetters, LegalNumbering, LegalOverview } from "@/components/os/legal";
 import { cn } from "@/lib/utils";
 
 // One division's workspace. Every list below is an ordinary query as the signed-in person, so RLS decides what appears;
 // a restricted workspace (Finance, Legal) returns nothing to someone without a role or grant there.
-const TAB_LABEL: Record<WsSection, string> = { overview: "Overview", projects: "Projects", tasks: "Tasks", documents: "Documents", requests: "Requests", access: "Members and access" };
+const TAB_LABEL = SECTION_LABEL;
 
 export default function DivisionWorkspacePage({ params }: { params: Promise<{ code: string }> }) {
   const { code: raw } = use(params);
@@ -55,7 +57,15 @@ export default function DivisionWorkspacePage({ params }: { params: Promise<{ co
         </div>
       </header>
       <Tabs label={`${ws.name} sections`} tabs={sections.map((s) => ({ key: s, label: TAB_LABEL[s] }))} current={tab} hrefFor={(k) => workspaceHref(ws.code, k as WsSection)} />
-      {tab === "overview" && <Overview ws={ws} />}
+      {tab === "overview" && (ws.code === "FIN" ? <FinanceOverview /> : ws.code === "LEG" ? <LegalOverview /> : <Overview ws={ws} />)}
+      {tab === "ledger" && <FinanceLedger initialStatus={search.get("status")} queue={search.get("queue")} />}
+      {tab === "budgets" && <FinanceBudgets />}
+      {tab === "cashflow" && <FinanceCashflow />}
+      {tab === "setup" && <FinanceSetup />}
+      {tab === "letters" && <LegalLetters />}
+      {tab === "agreements" && <LegalAgreements />}
+      {tab === "compliance" && <LegalCompliance />}
+      {tab === "numbering" && <LegalNumbering />}
       {tab === "projects" && <Projects ws={ws} />}
       {tab === "tasks" && <Tasks ws={ws} />}
       {tab === "documents" && <Documents ws={ws} />}

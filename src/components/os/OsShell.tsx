@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft, BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
-  Home, Inbox, KeyRound, Layers, LogOut, Megaphone, Menu, ScrollText, Settings, Shield, Target, UserPlus, Users, X,
+  Hash, Home, Inbox, KeyRound, Layers, LineChart, LogOut, Mail, Megaphone, Menu, PenLine, PiggyBank, ScrollText, Settings, Shield, Target, UserPlus, Users, Wallet, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
@@ -22,6 +22,7 @@ import { accessLabel, workspaceFromPath, workspaceHref, workspaceNav, type WsNav
 const WS_ICON: Record<WsNavItem["icon"], typeof Home> = {
   home: Home, briefcase: Briefcase, check: CheckSquare, file: FileText, inbox: Inbox, shield: Shield, megaphone: Megaphone,
   handshake: Handshake, users: Users, userplus: UserPlus, scroll: ScrollText,
+  wallet: Wallet, piggy: PiggyBank, chart: LineChart, settings: Settings, mail: Mail, signature: PenLine, calendar: CalendarDays, hash: Hash,
 };
 
 // The Company OS frame: a persistent, collapsible sidebar on desktop and a drawer on phones. Navigation only lists
@@ -286,6 +287,7 @@ function DivisionList({ collapsed, onNavigate, current }: { collapsed: boolean; 
           </li>
         ))}
         <li><NavLink href="/os/requests" label="Requests" icon={Inbox} on={pathname.startsWith("/os/requests")} collapsed={false} onNavigate={onNavigate} testId="os-requests-link" /></li>
+        <li><NavLink href="/os/finance" label="Expenses and income" icon={Wallet} on={pathname.startsWith("/os/finance")} collapsed={false} onNavigate={onNavigate} testId="os-money-link" /></li>
         <li><NavLink href="/os/access" label="Access requests" icon={KeyRound} on={pathname.startsWith("/os/access")} collapsed={false} onNavigate={onNavigate} testId="os-access-link" /></li>
       </ul>
     </div>

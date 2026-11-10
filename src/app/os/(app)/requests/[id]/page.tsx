@@ -8,9 +8,12 @@ import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
 import { PersonSelect } from "@/components/os/pickers";
 import { requestError, useRequestScope, useRequestTypes } from "@/components/os/requests";
+import { NewTrxSheet, TrxList, useFinRoles } from "@/components/os/finance";
+import { useLegRoles } from "@/components/os/legal";
+import { TRX_COLUMNS, type TrxRow } from "@/lib/os/finance";
 import { Badge, Empty, ErrorLine, Field, KeyValue, Loading, PageTitle, Section, Select, StatusBadge, btn, btnDanger, btnPrimary, input, muted, panel } from "@/components/os/ui";
 import { PRIORITIES, companyName, fmtDate, fmtDateTime, personLabel, todayJakarta } from "@/lib/os/meta";
-import { APPROVAL_LABEL, EVENT_LABEL, REQUEST_COLUMNS, requestActions, requestStage, type RequestAction, type RequestRow } from "@/lib/os/requests";
+import { APPROVAL_LABEL, EVENT_LABEL, LEGAL_ROUTES, MONEY_ROUTES, REQUEST_COLUMNS, requestActions, requestStage, type RequestAction, type RequestRow } from "@/lib/os/requests";
 import { cn } from "@/lib/utils";
 
 type Event = { id: number; at: string; actor_person_id: string | null; action: string; note: string | null };
@@ -49,6 +52,8 @@ export default function RequestPage({ params }: { params: Promise<{ id: string }
             <p className={cn(panel, "whitespace-pre-wrap break-words p-4 text-sm")} data-testid="os-request-brief">{r.brief}</p>
           </Section>
           {actions.length > 0 && <Actions r={r} actions={actions} onDone={reload} />}
+          {MONEY_ROUTES.includes(r.type_code) && <MoneyFollowUp r={r} />}
+          {LEGAL_ROUTES.includes(r.type_code) && <LegalFollowUp />}
           <Section title="Tasks">
             {tasks.data?.length ? (
               <ul className={cn(panel, "divide-y divide-[#F0F2F5]")} data-testid="os-request-tasks">
@@ -68,6 +73,7 @@ export default function RequestPage({ params }: { params: Promise<{ id: string }
         <aside className="space-y-6">
           <KeyValue items={[
             { label: "Requester", value: personLabel(people, r.requester_person_id) },
+            ...(r.related_type && r.related_id ? [{ label: "About", value: <Link className="underline" href={r.related_type === "project" ? `/os/projects/${r.related_id}` : `/os/partnerships/${r.related_id}`}>{r.related_id}</Link> }] : []),
             { label: "Owner", value: personLabel(people, r.owner_person_id, "Not assigned") },
             { label: "Priority", value: r.priority },
             { label: "Deadline", value: fmtDate(r.due_date) },
@@ -194,5 +200,29 @@ function EditRequest({ r, onDone }: { r: RequestRow; onDone: () => void }) {
       <ErrorLine message={err} />
       <button type="submit" className={btnPrimary} disabled={busy || title.trim().length < 3 || brief.trim().length < 10} data-testid="os-request-edit-save">{r.status === "info_needed" ? "Send back to them" : "Save"}</button>
     </form>
+  );
+}
+
+/** A money request: the expenses recorded from it, and a way to ask for one (the requester) or record one (Finance).
+ * Nothing is paid from here: the expense goes through approval, verification and payment like any other. */
+function MoneyFollowUp({ r }: { r: RequestRow }) {
+  const { me } = useOsMe();
+  const fin = useFinRoles();
+  const lines = useQuery<TrxRow[]>((s) => s.from("os_fin_transactions").select(TRX_COLUMNS).eq("request_id", r.id).order("created_at"), [r.id]);
+  const [open, setOpen] = useState(false);
+  const can = r.approval_status !== "pending" && !["declined", "cancelled"].includes(r.status) && (fin.operate || r.requester_person_id === me.person.id);
+  return (
+    <Section title="Money" action={can ? <button type="button" className={btn} onClick={() => setOpen(true)} data-testid="os-request-expense">{fin.operate ? "Record an expense from this request" : "Ask for the expense"}</button> : undefined}>
+      {lines.data?.length ? <TrxList rows={lines.data} testId="os-request-trx" /> : <p className={cn("text-sm", muted)}>No expense recorded from this request yet. Approval here doesn&apos;t pay anything: the expense is approved, verified and paid in Finance.</p>}
+      {open && <NewTrxSheet open fin={fin} request={r.id} division={r.from_division_id} onClose={() => { setOpen(false); lines.reload(); }} />}
+    </Section>
+  );
+}
+
+function LegalFollowUp() {
+  const leg = useLegRoles();
+  if (!leg.operate) return null;
+  return (
+    <p className={cn(panel, "p-3 text-sm")}>Draft the document in <Link href="/os/d/leg?tab=agreements" className="font-medium underline">Agreements</Link> or <Link href="/os/d/leg?tab=letters" className="font-medium underline">Letters</Link> and choose this request under About. Its number is issued when a signatory approves it.</p>
   );
 }
