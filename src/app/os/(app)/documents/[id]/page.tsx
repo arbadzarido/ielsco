@@ -5,6 +5,7 @@ import { use, useState } from "react";
 import { AlertTriangle, ExternalLink, ShieldCheck } from "lucide-react";
 import { useOsMe } from "@/components/os/OsProvider";
 import { friendlyError, useDirectory, useQuery } from "@/components/os/data";
+import { AskForAccess } from "@/components/os/access-requests";
 import { EntityFeed } from "@/components/os/feed";
 import { DivisionSelect, PersonSelect } from "@/components/os/pickers";
 import { Badge, Empty, ErrorLine, Field, KeyValue, Loading, PageTitle, Section, Select, Sheet, StatusBadge, btn, btnPrimary, input, linkCls, muted, panel } from "@/components/os/ui";
@@ -37,7 +38,7 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
 
   if (doc.loading && !doc.data) return <Loading />;
   const d = doc.data;
-  if (!d) return <Empty title="Document not found" body="It doesn't exist, or you don't have access to it." action={<Link href="/os/documents" className={btn}>Back to documents</Link>} />;
+  if (!d) return <><Empty title="Document not found" body="It doesn't exist, or you don't have access to it." action={<Link href="/os/documents" className={btn}>Back to documents</Link>} /><AskForAccess type="document" id={id} /></>;
 
   async function setStatus(status: string) {
     setErr(null);

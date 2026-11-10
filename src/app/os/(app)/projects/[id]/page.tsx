@@ -5,6 +5,7 @@ import { use, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useOsMe } from "@/components/os/OsProvider";
 import { friendlyError, useDirectory, useQuery } from "@/components/os/data";
+import { AskForAccess } from "@/components/os/access-requests";
 import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
 import { LinkedEvents } from "@/components/os/linked-events";
@@ -32,7 +33,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
   if (project.loading && !project.data) return <Loading />;
   const p = project.data;
-  if (!p) return <Empty title="Project not found" body="It doesn't exist, or you don't have access to it." action={<Link href="/os/projects" className={btn}>Back to projects</Link>} />;
+  if (!p) return <><Empty title="Project not found" body="It doesn't exist, or you don't have access to it." action={<Link href="/os/projects" className={btn}>Back to projects</Link>} /><AskForAccess type="project" id={id} /></>;
   const live = (tasks.data ?? []).filter((t) => t.status !== "Cancelled");
   const done = live.filter((t) => t.status === "Done").length;
   const overdue = live.filter((t) => isOpenTask(t.status) && relativeDue(t.due_date)?.overdue).length;

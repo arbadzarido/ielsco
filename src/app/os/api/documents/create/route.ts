@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 // folder is ever created and no sharing is changed.
 const TYPES = ["GOV", "POL", "SOP", "TPL", "PLN", "RPT", "MIN", "PRP", "CTR", "FIN", "REF", "LET", "MOM"];
 const SENS = ["Internal", "Confidential", "Restricted"];
-const LINKABLE = ["project", "task", "meeting", "partnership", "decision", "campaign", "objective", "kpi"];
+const LINKABLE = ["project", "task", "meeting", "partnership", "decision", "campaign", "objective", "kpi", "request", "transaction", "budget", "letter", "agreement", "compliance"];
 const MAX_UPLOAD = 25 * 1024 * 1024;
 
 

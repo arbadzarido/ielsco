@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
-  Home, Inbox, LogOut, Megaphone, Menu, ScrollText, Settings, Shield, Target, UserPlus, Users, X,
+  ArrowLeft, BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
+  Hash, Home, Inbox, KeyRound, Layers, LineChart, LogOut, Mail, Megaphone, Menu, PenLine, PiggyBank, ScrollText, Settings, Shield, Target, UserPlus, Users, Wallet, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
@@ -16,6 +16,14 @@ import { Avatar, Empty, Loading, btn, btnPrimary, ring } from "./ui";
 import { ChoiceProvider } from "./dialogs";
 import { NotificationsButton } from "./notifications";
 import { useRecruitmentAccess } from "./recruitment-access";
+import { useMyWorkspaces } from "./workspaces";
+import { accessLabel, workspaceFromPath, workspaceHref, workspaceNav, type WsNavItem } from "@/lib/os/workspaces";
+
+const WS_ICON: Record<WsNavItem["icon"], typeof Home> = {
+  home: Home, briefcase: Briefcase, check: CheckSquare, file: FileText, inbox: Inbox, shield: Shield, megaphone: Megaphone,
+  handshake: Handshake, users: Users, userplus: UserPlus, scroll: ScrollText,
+  wallet: Wallet, piggy: PiggyBank, chart: LineChart, settings: Settings, mail: Mail, signature: PenLine, calendar: CalendarDays, hash: Hash,
+};
 
 // The Company OS frame: a persistent, collapsible sidebar on desktop and a drawer on phones. Navigation only lists
 // modules that exist; Admin shows for founders. What each page shows is decided by RLS, not by this menu.
@@ -149,6 +157,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
     ? NAV.map((g) => (g.group === "Performance" ? { ...g, items: [...g.items, { href: "/os/recruitment", label: "Recruitment", icon: UserPlus }] } : g))
     : NAV;
   const groups = [...nav, ...(isFounder ? [{ group: "Founders", items: [{ href: "/os/admin", label: "Admin", icon: Shield }] }] : [])];
+  const wsCode = workspaceFromPath(pathname);
 
   return (
     <div className="flex h-full flex-col">
@@ -160,7 +169,8 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
       </div>
       {me && <div className="px-2 pb-2"><WorkspaceSwitcher collapsed={collapsed} onNavigate={onNavigate} /></div>}
       <nav aria-label="Company OS" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        {me && groups.map((g, i) => (
+        {me && wsCode && <WorkspaceGroup code={wsCode} collapsed={collapsed} onNavigate={onNavigate} recruitment={Boolean(recruit && (recruit.team || recruit.assigned > 0))} />}
+        {me && !wsCode && groups.map((g, i) => (
           <div key={g.group ?? i} className="mt-2">
             {g.group && !collapsed && <p className="px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-[#8593A3]">{g.group}</p>}
             {g.group && collapsed && <div className="mx-2 my-2 border-t border-[#E6E9EE]" />}
@@ -198,6 +208,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
             </ul>
           </div>
         )}
+        {me && <DivisionList collapsed={collapsed} onNavigate={onNavigate} current={wsCode} />}
       </nav>
       {me && (
         <div className={cn("border-t border-[#E6E9EE] p-2", collapsed && "flex flex-col items-center gap-1")}>
@@ -218,6 +229,67 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
           </form>
         </div>
       )}
+    </div>
+  );
+}
+
+function NavLink({ href, label, icon: Icon, on, collapsed, onNavigate, testId }: { href: string; label: string; icon: typeof Home; on: boolean; collapsed: boolean; onNavigate: () => void; testId?: string }) {
+  return (
+    <Link href={href} onClick={onNavigate} aria-current={on ? "page" : undefined} title={collapsed ? label : undefined} data-testid={testId}
+      className={cn("flex min-h-10 items-center gap-2.5 rounded-lg px-2 text-sm md:min-h-8", ring, collapsed && "justify-center",
+        on ? "bg-[#E4E9EF] font-semibold text-[#1F2D3D]" : "text-[#3A4B60] hover:bg-[#EDF0F4]")}>
+      <Icon size={17} aria-hidden="true" className={on ? "text-[#2F4157]" : "text-[#66768A]"} />
+      {!collapsed && <span className="truncate">{label}</span>}
+    </Link>
+  );
+}
+
+// Inside a division workspace the sidebar is that workspace's: its sections and its division's modules, only those the
+// person can open. The rest of Company OS is one link away.
+function WorkspaceGroup({ code, collapsed, onNavigate, recruitment }: { code: string; collapsed: boolean; onNavigate: () => void; recruitment: boolean }) {
+  const { list } = useMyWorkspaces();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const ws = list?.find((w) => w.code === code);
+  const items = ws ? workspaceNav(ws, { recruitment, requests: true }) : [];
+  const tab = search.get("tab") ?? "overview";
+  const on = (i: WsNavItem) => (i.href.startsWith("/os/d/") ? pathname.startsWith(`/os/d/${code.toLowerCase()}`) && tab === i.key : pathname.startsWith(i.href));
+  return (
+    <div className="mt-2" data-testid="os-ws-nav">
+      <NavLink href="/os" label="Company OS" icon={ArrowLeft} on={false} collapsed={collapsed} onNavigate={onNavigate} testId="os-ws-back" />
+      {!collapsed && <p className="px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-[#8593A3]">{ws?.name ?? code} workspace</p>}
+      {collapsed && <div className="mx-2 my-2 border-t border-[#E6E9EE]" />}
+      <ul className="space-y-0.5">
+        {items.map((i) => <li key={i.key}><NavLink href={i.href} label={i.label} icon={WS_ICON[i.icon]} on={on(i)} collapsed={collapsed} onNavigate={onNavigate} testId={`os-ws-nav-${i.key.replace(/[^a-z]/g, "")}`} /></li>)}
+      </ul>
+    </div>
+  );
+}
+
+function DivisionList({ collapsed, onNavigate, current }: { collapsed: boolean; onNavigate: () => void; current: string | null }) {
+  const { list } = useMyWorkspaces();
+  const pathname = usePathname();
+  const mine = (list ?? []).filter((w) => w.access !== "none");
+  if (collapsed || !list) return null;
+  return (
+    <div className="mt-4" data-testid="os-divisions">
+      <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#8593A3]">Divisions</p>
+      <ul className="space-y-0.5">
+        {mine.map((w) => (
+          <li key={w.code}>
+            <Link href={workspaceHref(w.code)} onClick={onNavigate} aria-current={current === w.code ? "page" : undefined} data-testid={`os-division-${w.code.toLowerCase()}`}
+              className={cn("flex min-h-10 items-center gap-2.5 rounded-lg px-2 text-sm md:min-h-8", ring,
+                current === w.code ? "bg-[#E4E9EF] font-semibold text-[#1F2D3D]" : "text-[#3A4B60] hover:bg-[#EDF0F4]")}>
+              <Layers size={16} aria-hidden="true" className="text-[#66768A]" />
+              <span className="min-w-0 flex-1 truncate">{w.name}</span>
+              <span className="text-[11px] text-[#8593A3]">{accessLabel(w)}</span>
+            </Link>
+          </li>
+        ))}
+        <li><NavLink href="/os/requests" label="Requests" icon={Inbox} on={pathname.startsWith("/os/requests")} collapsed={false} onNavigate={onNavigate} testId="os-requests-link" /></li>
+        <li><NavLink href="/os/finance" label="Expenses and income" icon={Wallet} on={pathname.startsWith("/os/finance")} collapsed={false} onNavigate={onNavigate} testId="os-money-link" /></li>
+        <li><NavLink href="/os/access" label="Access requests" icon={KeyRound} on={pathname.startsWith("/os/access")} collapsed={false} onNavigate={onNavigate} testId="os-access-link" /></li>
+      </ul>
     </div>
   );
 }
