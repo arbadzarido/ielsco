@@ -125,6 +125,10 @@ Limits to know:
   live session still counts until it expires.
 - Location comes from the IP and can be wrong (VPNs, mobile carriers).
 
+## Documents
+
+Documents are generated template-first: the template decides company, division, type, sensitivity, readers and folder. See `docs/COMPANY-OS-DOCUMENTS.md` (audit, route architecture, how it works) and `docs/MANAGER-AGREEMENT-LEGAL-REVIEW.md` (the Manager Offering Letter's legal checklist).
+
 ## Tests
 
 ```bash
@@ -132,6 +136,7 @@ npm test                                                        # includes tests
 npm i --no-save @electric-sql/pglite                            # once
 node tests/db/company-os.pglite.mjs supabase/migrations          # access rules
 node tests/db/company-os-work.pglite.mjs supabase/migrations     # work, KPI, OKR, timeline, people, reviews, AI: 124 checks
+node tests/db/company-os-document-templates.pglite.mjs supabase/migrations   # template registry, named readers, draft guard: 55 checks
 # Browser end-to-end against a real Postgres, desktop and 360 px phones (130 checks): see tests/e2e/company-os/README.md
 ```
 

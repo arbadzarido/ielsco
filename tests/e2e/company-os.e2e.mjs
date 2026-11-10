@@ -221,6 +221,7 @@ const member = await signIn({ email: "member.iel@ielsco.test" });
   // Documents: register an existing Drive file (no Drive call; the file stays where it is)
   await page.goto(`${OS}/os/documents`);
   await page.getByTestId("os-new-doc").click();
+  await page.getByTestId("os-add-file").click();
   const sheet = page.getByRole("dialog", { name: "New document" });
   await sheet.getByRole("radio", { name: "Existing file" }).click();
   await sheet.getByPlaceholder("https://docs.google.com/…").fill("https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit");

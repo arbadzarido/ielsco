@@ -18,6 +18,7 @@ type Doc = {
   next_review_date: string | null; notes: string | null; drive_file_id: string | null; drive_url: string | null; drive_mime_type: string | null;
   template_file_id: string | null; drive_modified_at: string | null; drive_checked_at: string | null; created_at: string; updated_at: string;
   drift_findings: { code: string; severity: "high" | "medium" | "low"; message: string }[];
+  generation_status: "internal_draft" | "execution_ready" | null; access_mode: "standard" | "named"; template_id: string | null; template_version: number | null;
 };
 const ENTITY_HREF: Record<string, (id: string) => string | null> = {
   project: (id) => `/os/projects/${id}`, task: (id) => `/os/tasks/${id}`, partnership: (id) => `/os/partnerships?open=${id}`,
@@ -67,6 +68,8 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
           {d.drive_url && <a href={d.drive_url} target="_blank" rel="noopener noreferrer" className={btnPrimary}><ExternalLink size={15} aria-hidden="true" />Open in Drive</a>}
         </>} />
       <ErrorLine message={err} />
+      {d.generation_status === "internal_draft" && <p className="mb-4 rounded-lg border border-[#F2D9A6] bg-[#FFF8EC] px-3 py-2 text-sm text-[#7A4300]" role="note" data-testid="os-doc-draft-banner"><b>Draft — pending legal review.</b> Made from template version {d.template_version}. For internal review only; not for signature, and it can&apos;t be marked Approved until the template is legally approved.</p>}
+      {d.access_mode === "named" && <p className="mb-4 rounded-lg border border-[#DDD6F5] bg-[#F6F3FD] px-3 py-2 text-sm text-[#3F2A91]" role="note">Named readers only: founders, the people authorised for this template, and the person it is about once it is approved. Drive sharing is separate and is not changed by Company OS.</p>}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-6">

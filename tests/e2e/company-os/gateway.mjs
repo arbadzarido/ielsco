@@ -293,7 +293,7 @@ function drive(req, res, url, body, path) {
   const id = m[1] && decodeURIComponent(m[1]);
   if (!id && req.method === "POST") {
     const fid = `TESTFILE${String(driveFiles.size + 1).padStart(24, "0")}`;
-    const f = { id: fid, name: body.name, mimeType: body.mimeType, parents: body.parents ?? [], appProperties: body.appProperties ?? {}, trashed: false,
+    const f = { id: fid, name: body.name, mimeType: body.mimeType, parents: body.parents ?? [], appProperties: body.appProperties ?? {}, trashed: false, media: body.__media,
       owners: [{ emailAddress: driveMode === "other_owner" ? "someone.else@example.test" : "drive.writer@ielsco.test" }], webViewLink: `https://docs.google.com/document/d/${fid}/edit`, capabilities: { canAddChildren: true } };
     driveFiles.set(fid, f); return send(res, 200, f);
   }
@@ -410,7 +410,15 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   let raw = ""; for await (const c of req) raw += c;
   let body = {};
-  if (raw) {
+  const ctype = req.headers["content-type"] ?? "";
+  if (raw && /multipart\/related/.test(ctype)) {
+    // googleapis' files.create with media: part 1 is the JSON metadata, part 2 the file content.
+    const boundary = (/boundary=("?)([^";]+)\1/.exec(ctype) ?? [])[2] ?? "";
+    const parts = raw.split(`--${boundary}`).filter((p) => /content-type/i.test(p));
+    try { body = JSON.parse((parts[0] ?? "").split(/\r?\n\r?\n/)[1] ?? "{}"); } catch { body = {}; }
+    body.__media = (parts[1] ?? "").split(/\r?\n\r?\n/).slice(1).join("\n\n");
+    url.pathname = url.pathname.replace(/^(\/__google)?\/upload\//, "$1/");
+  } else if (raw) {
     try { body = JSON.parse(raw); } catch { body = Object.fromEntries(new URLSearchParams(raw)); }
   }
   try {

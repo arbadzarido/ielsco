@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ExternalLink, Plus, Search } from "lucide-react";
 import { useDirectory, useQuery } from "@/components/os/data";
 import { DOC_COLUMNS, NewDocumentSheet, type DocRow } from "@/components/os/doc-forms";
+import { GenerateDocumentSheet } from "@/components/os/doc-generate";
 import { Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, btnGhost, btnPrimary, input } from "@/components/os/ui";
 import { DOC_STATUSES, DOC_TYPES, SENSITIVITIES, WORKSPACES, companyName, fmtDate, personLabel } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,8 @@ export default function DocumentsPage() {
   const [sens, setSens] = useState("");
   const [category, setCategory] = useState("");
   const [drift, setDrift] = useState(false);
-  const [creating, setCreating] = useState(params.get("new") === "1");
+  const [creating, setCreating] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(params.get("new") === "1");
   const docs = useQuery<DocRow[]>((s) => s.from("os_documents").select(DOC_COLUMNS).order("updated_at", { ascending: false }).limit(1000), []);
   const all = docs.data ?? [];
   const categories = Array.from(new Set(all.map((d) => d.category).filter(Boolean) as string[])).sort();
@@ -33,7 +35,7 @@ export default function DocumentsPage() {
   return (
     <div>
       <PageTitle title="Documents" description="The register of company documents. Files live in Google Drive; Drive's own sharing decides who can open them."
-        actions={<button type="button" className={btnPrimary} onClick={() => setCreating(true)} data-testid="os-new-doc"><Plus size={16} aria-hidden="true" />New document</button>} />
+        actions={<button type="button" className={btnPrimary} onClick={() => setCatalogOpen(true)} data-testid="os-new-doc"><Plus size={16} aria-hidden="true" />New document</button>} />
       <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
         <label className="relative col-span-2 md:w-64">
           <span className="sr-only">Search documents</span>
@@ -53,7 +55,7 @@ export default function DocumentsPage() {
         <RowList testId="os-doc-list" rows={rows} rowKey={(d) => d.id} rowHref={(d) => `/os/documents/${d.id}`}
           empty={<Empty title={all.length ? "No documents match" : "No documents registered yet"}
             body={all.length ? "Clear the filters to see more." : "Create one from a Master Template, upload a file, or register a file that's already in Drive."}
-            action={<button type="button" className={btnPrimary} onClick={() => setCreating(true)}>New document</button>} />}
+            action={<button type="button" className={btnPrimary} onClick={() => setCatalogOpen(true)}>New document</button>} />}
           columns={[
             { key: "t", label: "Document", primary: true, className: "w-[36%]", render: (d) => (
               <span className="flex min-w-0 items-center gap-1.5">
@@ -68,6 +70,7 @@ export default function DocumentsPage() {
             { key: "x", label: "", className: "w-12", hideOnMobile: true, render: (d) => d.drive_url ? <a href={d.drive_url} target="_blank" rel="noopener noreferrer" className={btnGhost} aria-label={`Open ${d.title} in Google Drive`} onClick={(e) => e.stopPropagation()}><ExternalLink size={14} aria-hidden="true" /></a> : null },
           ]} />
       )}
+      <GenerateDocumentSheet open={catalogOpen} onClose={() => setCatalogOpen(false)} onCreated={(id) => router.push(`/os/documents/${id}`)} onAddFile={() => { setCatalogOpen(false); setCreating(true); }} />
       <NewDocumentSheet open={creating} defaults={{ company_code: company || undefined, division_id: division || undefined }} onClose={() => setCreating(false)} onCreated={(id) => router.push(`/os/documents/${id}`)} />
     </div>
   );
