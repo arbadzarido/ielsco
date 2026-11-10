@@ -1,7 +1,9 @@
 import "server-only";
+import { randomBytes } from "node:crypto";
 import { google, type drive_v3 } from "googleapis";
 import { normalizePrivateKey } from "./pem";
-import { writerDrive } from "./drive-oauth";
+import { writerAuth, writerDrive } from "./drive-oauth";
+import { oauthEndpoints } from "./google-oauth";
 import { classifyGoogleError } from "./google-errors";
 
 // Google Drive for Company OS, server side only. Uses the existing service account (GOOGLE_CLIENT_EMAIL /
@@ -87,6 +89,26 @@ export async function uploadFile(name: string, mimeType: string, body: NodeJS.Re
     requestBody: { name, parents: [folderId] }, media: { mimeType, body },
   });
   return { id: res.data.id!, webViewLink: res.data.webViewLink!, mimeType: res.data.mimeType!, modifiedTime: res.data.modifiedTime ?? null };
+}
+
+/**
+ * Creates a Google Doc from HTML (Drive converts it) in an existing folder, owned by the connected account. This is
+ * Drive's standard multipart upload, sent with the account's own OAuth client, so it behaves the same against Google
+ * and against the local test stand-in (googleapis' media helper ignores a custom API root).
+ */
+export async function createDocFromHtml(name: string, html: string, folderId: string): Promise<DriveFileInfo> {
+  const auth = await writerAuth();
+  if (!auth) throw new DriveUnavailable("Creating files in Drive needs a founder to connect Google Drive first (Admin → Integration health).");
+  const boundary = `os-${randomBytes(12).toString("hex")}`;
+  const meta = JSON.stringify({ name, parents: [folderId], mimeType: "application/vnd.google-apps.document" });
+  const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n--${boundary}--`;
+  const root = oauthEndpoints()?.apiRoot ?? "https://www.googleapis.com/";
+  const res = await auth.request<{ id?: string; webViewLink?: string; mimeType?: string; modifiedTime?: string }>({
+    url: `${root}upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=${encodeURIComponent("id,webViewLink,mimeType,modifiedTime")}`,
+    method: "POST", headers: { "Content-Type": `multipart/related; boundary=${boundary}` }, body, responseType: "json",
+  });
+  if (!res.data.id) throw new Error("drive-no-file");
+  return { id: res.data.id, webViewLink: res.data.webViewLink ?? `https://docs.google.com/document/d/${res.data.id}/edit`, mimeType: res.data.mimeType ?? "application/vnd.google-apps.document", modifiedTime: res.data.modifiedTime ?? null };
 }
 
 async function requireWriter(): Promise<drive_v3.Drive> {

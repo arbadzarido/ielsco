@@ -8,6 +8,7 @@ import { EmptyState, PageHeader } from "@/components/dashboard/PageStates";
 import { btnSecondary, focusRing } from "@/components/dashboard/ui";
 import { PeopleAdmin } from "@/components/os/admin/PeopleAdmin";
 import { AuditLog, GrantsAdmin, RoutesAdmin } from "@/components/os/admin/AccessAdmin";
+import { TemplatesAdmin } from "@/components/os/admin/TemplatesAdmin";
 import { SecurityAdmin } from "@/components/os/admin/SecurityAdmin";
 import { AiAdmin, DivisionsAdmin, HealthAdmin } from "@/components/os/admin/SystemAdmin";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ const TABS = [
   { key: "divisions", label: "Divisions" },
   { key: "security", label: "Security & sessions" },
   { key: "access", label: "Access grants" },
+  { key: "templates", label: "Document templates" },
   { key: "routes", label: "Drive folder routes" },
   { key: "ai", label: "AI usage & budget" },
   { key: "health", label: "Integration health" },
@@ -53,6 +55,7 @@ function OsAdmin() {
       {tab === "people" && <PeopleAdmin supabase={supabase} />}
       {tab === "security" && <SecurityAdmin supabase={supabase} />}
       {tab === "access" && <GrantsAdmin supabase={supabase} />}
+      {tab === "templates" && <TemplatesAdmin supabase={supabase} />}
       {tab === "routes" && <RoutesAdmin supabase={supabase} />}
       {tab === "divisions" && <DivisionsAdmin />}
       {tab === "ai" && <AiAdmin />}

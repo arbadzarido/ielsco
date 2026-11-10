@@ -29,7 +29,7 @@ export async function driveConnection(): Promise<(DriveConnection & { token_seal
   return (data as (DriveConnection & { token_sealed: string }) | null) ?? null;
 }
 
-let cached: { sealed: string; drive: drive_v3.Drive } | null = null;
+let cached: { sealed: string; drive: drive_v3.Drive; auth: ReturnType<typeof oauthClient> } | null = null;
 export async function writerDrive(): Promise<drive_v3.Drive | null> {
   if (!oauthConfigured()) return null;
   const c = await driveConnection();
@@ -38,8 +38,13 @@ export async function writerDrive(): Promise<drive_v3.Drive | null> {
   const auth = oauthClient();
   auth.setCredentials({ refresh_token: unseal(c.token_sealed, sealingSecret()) });
   const e = oauthEndpoints();
-  cached = { sealed: c.token_sealed, drive: google.drive({ version: "v3", auth, ...(e ? { rootUrl: e.apiRoot } : {}) }) };
+  cached = { sealed: c.token_sealed, auth, drive: google.drive({ version: "v3", auth, ...(e ? { rootUrl: e.apiRoot } : {}) }) };
   return cached.drive;
+}
+
+/** The connected account's OAuth client, for the few calls googleapis cannot send through a stand-in (media uploads). */
+export async function writerAuth() {
+  return (await writerDrive()) ? cached!.auth : null;
 }
 
 export async function saveDriveConnection(email: string, refreshToken: string, scopes: string, personId: string): Promise<boolean> {

@@ -36,7 +36,8 @@ async function signIn(google) {
 }
 const settle = (page) => page.waitForLoadState("networkidle").then(() => page.waitForTimeout(500));
 
-sql(`delete from public.os_drive_connection; delete from public.os_calendar_connections;`);
+// Start with no approved route (an earlier suite may have approved one): the folders row is tested against that.
+sql(`delete from public.os_drive_connection; delete from public.os_calendar_connections; update public.os_folder_routes set status = 'proposed' where status = 'approved';`);
 await mock({});
 await fetch(`${GW}/__test/google-redirects`, { method: "POST", body: JSON.stringify({ uris: [DRIVE_CB, CAL_CB] }) });
 
