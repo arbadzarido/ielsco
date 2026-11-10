@@ -16,6 +16,8 @@ import { Avatar, Badge, Empty, ErrorLine, Field, Loading, RowList, Section, Sele
 import { addDays, companyName, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
 import { REQUEST_COLUMNS, isOpen, queueOrder, type RequestRow } from "@/lib/os/requests";
 import { WorkspaceMeetings } from "@/components/os/meetings";
+import { WorkspaceMetrics } from "@/components/os/division-metrics";
+import { Subdivisions, useSubdivisions } from "@/components/os/subdivisions";
 import { ROLE_LABELS, SECTION_LABEL, accessLabel, grantableRoles, workspaceHref, workspaceSections, type MyWorkspace, type WsRole, type WsSection } from "@/lib/os/workspaces";
 import { FinanceBudgets, FinanceCashflow, FinanceLedger, FinanceOverview, FinanceSetup } from "@/components/os/finance-workspace";
 import { LegalAgreements, LegalCompliance, LegalLetters, LegalNumbering, LegalOverview } from "@/components/os/legal";
@@ -70,6 +72,7 @@ export default function DivisionWorkspacePage({ params }: { params: Promise<{ co
       {tab === "projects" && <Projects ws={ws} />}
       {tab === "tasks" && <Tasks ws={ws} />}
       {tab === "meetings" && <WorkspaceMeetings ws={ws} />}
+      {tab === "metrics" && <WorkspaceMetrics ws={ws} />}
       {tab === "documents" && <Documents ws={ws} />}
       {tab === "requests" && <Requests ws={ws} />}
       {tab === "access" && <MembersAndAccess ws={ws} onChange={reload} />}
@@ -124,16 +127,25 @@ function Projects({ ws }: { ws: MyWorkspace }) {
   );
 }
 
+type WsTask = TaskRow & { subdivision_id: number | null };
+
 function Tasks({ ws }: { ws: MyWorkspace }) {
   const dir = useDirectory();
-  const rows = useQuery<TaskRow[]>((s) => s.from("os_tasks").select(TASK_COLUMNS).eq("division_id", ws.division_id).not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(300), [ws.division_id]);
+  const rows = useQuery<WsTask[]>((s) => s.from("os_tasks").select(`${TASK_COLUMNS}, subdivision_id`).eq("division_id", ws.division_id).not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(300), [ws.division_id]);
+  const subs = useSubdivisions(ws.division_id);
+  const subName = new Map((subs.data ?? []).map((s) => [s.id, s.name]));
+  const [sub, setSub] = useState("");
+  const shown = (rows.data ?? []).filter((t) => !sub || (sub === "none" ? t.subdivision_id === null : String(t.subdivision_id) === sub));
   return (
-    <Section title="Open tasks">
+    <Section title="Open tasks" action={subs.data?.length ? (
+      <Select ariaLabel="Subdivision" value={sub} onChange={setSub} placeholder="All subdivisions" className="w-48"
+        options={[...subs.data.map((s) => ({ value: String(s.id), label: s.name })), { value: "none", label: "No subdivision" }]} />
+    ) : undefined}>
       <ErrorLine message={rows.error} />
-      <RowList rows={rows.data ?? []} rowKey={(t) => t.id} rowHref={(t) => `/os/tasks/${t.id}`} testId="os-ws-tasks"
-        empty={rows.data ? <Empty compact title="No open tasks in this division" /> : <Loading />}
+      <RowList rows={shown} rowKey={(t) => t.id} rowHref={(t) => `/os/tasks/${t.id}`} testId="os-ws-tasks"
+        empty={rows.data ? <Empty compact title={sub ? "No open tasks in this subdivision" : "No open tasks in this division"} /> : <Loading />}
         columns={[
-          { key: "n", label: "Task", primary: true, className: "w-[42%]", render: (t) => <span className="truncate">{t.title}</span> },
+          { key: "n", label: "Task", primary: true, className: "w-[42%]", render: (t) => <span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{t.title}</span>{t.subdivision_id !== null && subName.has(t.subdivision_id) && <Badge className="shrink-0">{subName.get(t.subdivision_id)}</Badge>}</span> },
           { key: "s", label: "Status", className: "w-28", render: (t) => <StatusBadge value={t.status} /> },
           { key: "o", label: "Owner", className: "w-32", render: (t) => personLabel(dir?.peopleById ?? new Map(), t.owner_person_id) },
           { key: "d", label: "Due", className: "w-28", render: (t) => { const r = relativeDue(t.due_date); return <span className={cn("text-xs", r?.overdue && "font-medium text-[#A12D2F]")}>{r?.overdue ? r.label : fmtDate(t.due_date)}</span>; } },
@@ -223,6 +235,7 @@ function MembersAndAccess({ ws, onChange }: { ws: MyWorkspace; onChange: () => v
         ) : <p className={cn("text-sm", muted)}>No one is a member of this division. {ws.privacy === "restricted" ? "Give people a workspace role below." : ""}</p>}
         <p className={cn("mt-2 text-xs", muted)}>Division membership is set by founders in Admin → People.</p>
       </Section>
+      <Subdivisions ws={ws} people={Array.from(new Set([...(members.data ?? []).map((m) => m.person_id), ...live.map((r) => r.person_id)]))} />
       <Section title="Workspace roles">
         <ErrorLine message={err} />
         {!roles.data ? <Loading /> : live.length ? (

@@ -68,7 +68,7 @@ export function friendlyError(message: string): string {
   if (/violates foreign key|23503|Unknown project|Unknown parent/i.test(message)) return "A linked record doesn't exist or you can't see it.";
   if (/Failed to fetch|NetworkError/i.test(message)) return "Couldn't reach the server. Check your connection and try again.";
   // Our own trigger messages are written for people already.
-  if (/^(Only|A |The |Values|Subtasks|Grants|Comment)/.test(message)) return message;
+  if (/^(Only|A |The |Values|Subtasks|Grants|Comment|This subdivision|That subdivision)/.test(message)) return message;
   return "Something went wrong. Please try again.";
 }
 

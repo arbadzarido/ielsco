@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { friendlyError, useQuery } from "./data";
 import { useOsMe } from "./OsProvider";
 import { CompanySelect, DivisionSelect, PersonSelect, useDefaultCompany } from "./pickers";
+import { useSubdivisions } from "./subdivisions";
 import { ErrorLine, Field, Select, Sheet, btn, btnPrimary, input } from "./ui";
 import { PRIORITIES, PROJECT_STATUSES, PROJECT_TYPES, SENSITIVITIES, TASK_STATUSES } from "@/lib/os/meta";
 
@@ -99,11 +100,23 @@ export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
   const [f, setF] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Subdivisions of the task's division, when it has any; the task's own tag is read here because lists don't load it.
+  const subs = useSubdivisions(open ? f.division_id || null : null);
+  const activeSubs = (subs.data ?? []).filter((s) => s.active || String(s.id) === f.subdivision_id);
+  useEffect(() => {
+    if (!open || !task) return;
+    let live = true;
+    supabase.from("os_tasks").select("subdivision_id").eq("id", task.id).maybeSingle().then(({ data }) => {
+      const id = (data as { subdivision_id: number | null } | null)?.subdivision_id;
+      if (live && id != null) setF((x) => ({ ...x, subdivision_id: String(id) }));
+    });
+    return () => { live = false; };
+  }, [open, task, supabase]);
   useEffect(() => {
     if (!open) return;
     setErr(null);
     setF({
-      title: task?.title ?? "", project_id: task?.project_id ?? defaults?.project_id ?? "", company_code: task?.company_code ?? defaults?.company_code ?? defCompany,
+      subdivision_id: "", title: task?.title ?? "", project_id: task?.project_id ?? defaults?.project_id ?? "", company_code: task?.company_code ?? defaults?.company_code ?? defCompany,
       division_id: task?.division_id ?? defaults?.division_id ?? "", owner_person_id: task?.owner_person_id ?? defaults?.owner_person_id ?? me.person.id,
       reviewer_person_id: task?.reviewer_person_id ?? "", status: task?.status ?? "Backlog", priority: task?.priority ?? "P3 Normal",
       due_date: task?.due_date ?? "", description: task?.description ?? "", definition_of_done: task?.definition_of_done ?? "",
@@ -122,6 +135,8 @@ export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
       blocker: blank(f.blocker), sensitivity: f.sensitivity, division_id: blank(f.division_id),
     };
     if (!isSub) row.project_id = blank(f.project_id);
+    // Sent only when the division has subdivisions, so nothing changes for divisions without them.
+    if (activeSubs.length) row.subdivision_id = activeSubs.some((s) => String(s.id) === f.subdivision_id) ? Number(f.subdivision_id) : null;
     const res = task
       ? await supabase.from("os_tasks").update(row).eq("id", task.id).select("id").maybeSingle()
       : await supabase.from("os_tasks").insert({ ...row, company_code: f.company_code, parent_task_id: defaults?.parent_task_id ?? null }).select("id").single();
@@ -139,6 +154,7 @@ export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
           <Select id={id} value={f.project_id ?? ""} onChange={set("project_id")} placeholder="No project" options={(projects.data ?? []).map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} />}</Field>}
         {!isSub && !f.project_id && !task && <Field label="Company">{(id) => <CompanySelect id={id} value={f.company_code ?? ""} onChange={set("company_code")} />}</Field>}
         {!isSub && !f.project_id && <Field label="Division">{(id) => <DivisionSelect id={id} value={f.division_id ?? ""} onChange={set("division_id")} />}</Field>}
+        {activeSubs.length > 0 && <Field label="Subdivision">{(id) => <Select id={id} value={f.subdivision_id ?? ""} onChange={set("subdivision_id")} placeholder="None" options={activeSubs.map((s) => ({ value: String(s.id), label: s.name }))} />}</Field>}
         <Field label="Owner">{(id) => <PersonSelect id={id} value={f.owner_person_id ?? ""} onChange={set("owner_person_id")} />}</Field>
         <Field label="Reviewer">{(id) => <PersonSelect id={id} value={f.reviewer_person_id ?? ""} onChange={set("reviewer_person_id")} placeholder="None" />}</Field>
         <Field label="Status">{(id) => <Select id={id} value={f.status ?? ""} onChange={set("status")} options={TASK_STATUSES} />}</Field>

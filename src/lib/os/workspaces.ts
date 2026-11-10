@@ -9,7 +9,7 @@ export interface MyWorkspace {
   is_member: boolean; is_manager: boolean; is_lead: boolean;
 }
 
-export type WsSection = "overview" | "projects" | "tasks" | "meetings" | "documents" | "requests" | "access"
+export type WsSection = "overview" | "projects" | "tasks" | "meetings" | "metrics" | "documents" | "requests" | "access"
   | "ledger" | "budgets" | "cashflow" | "setup" | "letters" | "agreements" | "compliance" | "numbering";
 export interface WsNavItem { key: string; label: string; href: string; icon: "home" | "briefcase" | "check" | "file" | "inbox" | "shield" | "megaphone" | "handshake" | "users" | "userplus" | "scroll"
   | "wallet" | "piggy" | "chart" | "settings" | "mail" | "signature" | "calendar" | "hash" }
@@ -19,6 +19,7 @@ const SECTION: Record<WsSection, { label: string; icon: WsNavItem["icon"] }> = {
   projects: { label: "Projects", icon: "briefcase" },
   tasks: { label: "Tasks", icon: "check" },
   meetings: { label: "Meetings", icon: "users" },
+  metrics: { label: "Metrics", icon: "chart" },
   documents: { label: "Documents", icon: "file" },
   requests: { label: "Requests", icon: "inbox" },
   access: { label: "Members and access", icon: "shield" },
@@ -47,11 +48,11 @@ const DIVISION_MODULES: Record<string, { label: string; href: string; icon: WsNa
 export const workspaceHref = (code: string, section: WsSection = "overview") => `/os/d/${code.toLowerCase()}${section === "overview" ? "" : `?tab=${section}`}`;
 
 /** Sections of a workspace, in sidebar order. Finance and Legal have their registers instead of project and task lists;
- * another restricted workspace has documents only. `requests` appears once the request system exists. */
+ * another restricted workspace has documents only. Metrics are for open divisions: Finance figures stay in Finance. `requests` appears once the request system exists. */
 export function workspaceSections(ws: Pick<MyWorkspace, "privacy"> & { code?: string }, opts: { requests?: boolean } = {}): WsSection[] {
   const base: WsSection[] = ws.code === "FIN" ? ["overview", "ledger", "budgets", "cashflow", "meetings", "documents"]
     : ws.code === "LEG" ? ["overview", "letters", "agreements", "compliance", "meetings", "documents"]
-    : ws.privacy === "restricted" ? ["overview", "meetings", "documents"] : ["overview", "projects", "tasks", "meetings", "documents"];
+    : ws.privacy === "restricted" ? ["overview", "meetings", "documents"] : ["overview", "projects", "tasks", "meetings", "metrics", "documents"];
   const tail: WsSection[] = ws.code === "FIN" ? ["setup"] : ws.code === "LEG" ? ["numbering"] : [];
   return [...base, ...(opts.requests ? ["requests" as const] : []), ...tail, "access"];
 }
