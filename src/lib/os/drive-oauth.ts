@@ -3,6 +3,7 @@ import { google, type drive_v3 } from "googleapis";
 import { osServiceClient } from "./server";
 import { seal, unseal } from "./seal";
 import { oauthEndpoints } from "./google-oauth";
+import { classifyGoogleError, failureLog, type GoogleFailure } from "./google-errors";
 
 // The founder-connected Google account Company OS writes new Drive files with. Server only: the refresh token is
 // sealed before it is stored, read only with the service role, and never sent to the browser.
@@ -56,4 +57,31 @@ export async function removeDriveConnection(): Promise<void> {
     await osServiceClient()?.from("os_drive_connection").delete().eq("id", true);
   }
   cached = null;
+}
+
+export type WriterCheck =
+  | { ok: true; email: string | null }
+  | { ok: false; stage: "unseal" | "token" | "api"; failure: GoogleFailure };
+
+/**
+ * Tests the whole write path with nothing cached: decrypt the stored refresh token, exchange it for an access token at
+ * Google, then make one harmless Drive call (about.get) as that account. Reports which stage failed and Google's
+ * classified error; the token itself is never returned or logged. Needs a stored connection.
+ */
+export async function checkWriter(): Promise<WriterCheck> {
+  const c = await driveConnection();
+  const fail = (stage: "unseal" | "token" | "api", failure: GoogleFailure): WriterCheck => { console.error(failureLog(`drive writer ${stage}`, failure)); return { ok: false, stage, failure }; };
+  if (!c) return fail("unseal", { code: "unknown", status: null, reason: "not_connected", project: null });
+  let refresh: string;
+  try { refresh = unseal(c.token_sealed, sealingSecret()); }
+  catch { return fail("unseal", { code: "cannot_decrypt", status: null, reason: null, project: null }); }
+  const auth = oauthClient();
+  auth.setCredentials({ refresh_token: refresh });
+  try { await auth.getAccessToken(); } catch (e) { return fail("token", classifyGoogleError(e)); }
+  try {
+    const e = oauthEndpoints();
+    const drive = google.drive({ version: "v3", auth, ...(e ? { rootUrl: e.apiRoot } : {}) });
+    const r = await drive.about.get({ fields: "user(emailAddress)" });
+    return { ok: true, email: r.data.user?.emailAddress?.toLowerCase() ?? null };
+  } catch (e) { return fail("api", classifyGoogleError(e)); }
 }

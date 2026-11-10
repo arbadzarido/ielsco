@@ -2,6 +2,7 @@ import "server-only";
 import { google, type drive_v3 } from "googleapis";
 import { normalizePrivateKey } from "./pem";
 import { writerDrive } from "./drive-oauth";
+import { classifyGoogleError } from "./google-errors";
 
 // Google Drive for Company OS, server side only. Uses the existing service account (GOOGLE_CLIENT_EMAIL /
 // GOOGLE_PRIVATE_KEY); the key never reaches the browser.
@@ -41,9 +42,17 @@ export function driveError(e: unknown): string {
   const msg = String((e as { message?: string })?.message ?? "");
   if (/storage quota/i.test(msg)) return "Google Drive refused to store the file for the service account. A founder needs to connect Google Drive in Admin → Integration health.";
   if (/invalid_grant/i.test(msg)) return "The Google Drive connection has expired or was removed. A founder needs to connect Google Drive again in Admin → Integration health.";
+  // Setup problems say what to fix instead of a vague "didn't respond" (the Admin health page names the exact code).
+  const f = classifyGoogleError(e);
+  if (f.code === "api_disabled" || f.code === "invalid_client" || f.code === "insufficient_scope") return `Google Drive refused the request (${f.code}). A founder can see what to change in Admin → Integration health.`;
   const code = (e as { code?: number })?.code;
   if (code === 404 || code === 403) return "The Company OS service account can't reach that Drive folder or file. A founder needs to share it with the service account.";
   return "Google Drive didn't respond. Try again in a moment.";
+}
+
+/** Whether the service account can open a file (informational). Reads one field of one file. */
+export async function serviceCanRead(fileId: string): Promise<boolean> {
+  try { await drive().files.get({ fileId, fields: "id", supportsAllDrives: true }); return true; } catch { return false; }
 }
 
 export interface DriveTemplate { id: string; name: string; mimeType: string; description: string | null; modifiedTime: string | null }
