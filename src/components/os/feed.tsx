@@ -106,7 +106,7 @@ export function EntityFeed({ type, id }: { type: string; id: string }) {
         )}
         <div className="relative mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
           <label className="sr-only" htmlFor={`cb-${id}`}>Add a comment</label>
-          <textarea id={`cb-${id}`} rows={2} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a comment. Type @ to mention someone." className={input} maxLength={5000} />
+          <textarea id={`cb-${id}`} rows={2} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a comment…" title="Type @ and a name to mention someone" className={input} maxLength={5000} />
           <button type="button" className={btnPrimary} onClick={post} disabled={busy || !body.trim()}>{busy ? "Posting…" : replyTo ? "Reply" : "Comment"}</button>
           {suggestions.length > 0 && (
             <ul className="absolute bottom-full left-0 z-10 mb-1 w-64 max-w-full rounded-lg border border-[#E1E5EB] bg-white py-1 shadow-lg" data-testid="os-mention-list" aria-label="People to mention">
@@ -121,6 +121,7 @@ export function EntityFeed({ type, id }: { type: string; id: string }) {
             </ul>
           )}
         </div>
+        <p className={`mt-1 text-xs ${muted}`}>Type @ and a name to mention someone.</p>
       </section>
       <section aria-labelledby={`a-${id}`}>
         <h2 id={`a-${id}`} className="mb-2 text-sm font-semibold">Activity</h2>

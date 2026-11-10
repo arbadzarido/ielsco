@@ -21,10 +21,10 @@ const sql = (q) => execFileSync("sudo", ["-u", "postgres", "psql", "-d", "os_e2e
 sql(`insert into public.os_people (id, full_name, short_name, org_role, status, google_account) values
     ('PPL-0031', 'Request Growth', null, 'member', 'active', 'req.growth@ielsco.test'),
     ('PPL-0033', 'Request Ops', null, 'member', 'active', 'req.ops@ielsco.test'),
-    ('PPL-0041', 'Foundation Growth Manager', 'Gina', 'manager', 'active', 'fnd.manager@ielsco.test')
+    ('PPL-0051', 'Foundation Growth Manager', 'Gina', 'manager', 'active', 'fnd.manager@ielsco.test')
   on conflict (id) do update set status = 'active', sessions_revoked_at = null, short_name = excluded.short_name;
-  insert into public.os_person_companies values ('PPL-0031','IEL'),('PPL-0033','IEL'),('PPL-0041','IEL') on conflict do nothing;
-  insert into public.os_person_divisions values ('PPL-0031','DIV-03',false),('PPL-0033','DIV-02',false),('PPL-0041','DIV-03',true) on conflict do nothing;`);
+  insert into public.os_person_companies values ('PPL-0031','IEL'),('PPL-0033','IEL'),('PPL-0051','IEL') on conflict do nothing;
+  insert into public.os_person_divisions values ('PPL-0031','DIV-03',false),('PPL-0033','DIV-02',false),('PPL-0051','DIV-03',true) on conflict do nothing;`);
 
 const browser = await chromium.launch();
 async function signIn(google, viewport = { width: 1280, height: 900 }) {
@@ -57,7 +57,7 @@ let mtg;
   await settle(page);
   mtg = sql(`select id from public.os_meetings where title = 'Growth weekly sync' order by created_at desc limit 1`);
   check("the meeting is saved in Growth as Held (dated today)", sql(`select division_id || '|' || status || '|' || sensitivity from public.os_meetings where id = '${mtg}'`) === "DIV-03|Held|Confidential");
-  await page.getByTestId("os-meetings").getByText("Growth weekly sync").click();
+  await page.getByTestId("os-meetings").getByRole("link", { name: "Growth weekly sync" }).first().click();
   await page.waitForURL(`**/os/meetings/${mtg}`); await settle(page);
   check("no review step before minutes exist", !(await page.getByTestId("os-meeting-submit").count()));
   await page.getByLabel("Discussion notes").fill("We agreed three posts for next week and one reel.");
@@ -75,8 +75,8 @@ let mtg;
   await page.getByTestId("os-mention-list").getByText("Gina").click();
   await page.getByRole("button", { name: "Comment", exact: true }).click(); await settle(page);
   check("the mention is stored and the manager notified without any record text",
-    sql(`select array_to_string(mentions, ',') from public.os_comments where entity_id = '${mtg}'`) === "PPL-0041"
-    && sql(`select title || '|' || coalesce(body, '') from public.os_notifications where person_id = 'PPL-0041' and kind = 'mention' and entity_id = '${mtg}'`) === "Request Growth mentioned you in a comment|");
+    sql(`select array_to_string(mentions, ',') from public.os_comments where entity_id = '${mtg}'`) === "PPL-0051"
+    && sql(`select title || '|' || coalesce(body, '') from public.os_notifications where person_id = 'PPL-0051' and kind = 'mention' and entity_id = '${mtg}'`) === "Request Growth mentioned you in a comment|");
   await page.getByTestId("os-meeting-submit").click(); await settle(page);
   check("minutes are in review and the author can't approve them", sql(`select status from public.os_meetings where id = '${mtg}'`) === "In review" && !(await page.getByTestId("os-meeting-approve").count()));
   await page.screenshot({ path: `${OUT}/meeting-in-review.png`, fullPage: true });
@@ -87,7 +87,7 @@ const ops = await signIn({ email: "req.ops@ielsco.test" });
 {
   const { page } = ops;
   await go(page, `/os/meetings/${mtg}`);
-  const text = await page.locator("main").innerText();
+  const text = await page.locator("#os-main").innerText();
   check("Operations sees 'not found', with no title or minutes", /Meeting not found/.test(text) && !/Growth weekly sync|three posts/.test(text));
 }
 
@@ -102,7 +102,7 @@ const manager = await signIn({ email: "fnd.manager@ielsco.test" });
   check("the reply is threaded under the comment and its author is told",
     (await page.getByTestId("os-comment-reply").count()) === 1 && sql(`select count(*) from public.os_notifications where person_id = 'PPL-0031' and kind = 'comment_reply' and entity_id = '${mtg}'`) === "1");
   await page.getByTestId("os-meeting-approve").click(); await settle(page);
-  check("the manager approved the minutes", sql(`select status || '|' || minutes_approved_by from public.os_meetings where id = '${mtg}'`) === "Approved|PPL-0041");
+  check("the manager approved the minutes", sql(`select status || '|' || minutes_approved_by from public.os_meetings where id = '${mtg}'`) === "Approved|PPL-0051");
   check("approved minutes are read-only", !(await page.getByLabel("Discussion notes").count()));
   await page.screenshot({ path: `${OUT}/meeting-approved.png`, fullPage: true });
 }
