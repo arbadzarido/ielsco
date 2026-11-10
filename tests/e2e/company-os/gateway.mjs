@@ -278,6 +278,32 @@ function cors(req, extra = {}) {
 // for the client ("redirect_uri_mismatch"), the token endpoint exchanges a code once, tokeninfo names the account.
 let googleRedirects = [];                 // the "Authorized redirect URIs" of the stub client, set by the test
 const googleCodes = new Map();            // code -> { scope }
+// Failure modes and a small Drive for the integration-health and write-test suites (set with /__test/google-drive):
+//   driveMode: ok | api_disabled | scope | invalid_grant | invalid_client | other_owner;  calendarMode: ok | api_disabled
+let driveMode = "ok", calendarMode = "ok";
+const driveFiles = new Map();             // id -> file
+const driveError = (res, status, error) => send(res, status, { error });
+function drive(req, res, url, body, path) {
+  if (driveMode === "api_disabled") return driveError(res, 403, { code: 403, message: "Google Drive API has not been used in project 163195263995 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=163195263995 then retry.",
+    status: "PERMISSION_DENIED", errors: [{ message: "x", domain: "usageLimits", reason: "accessNotConfigured" }], details: [{ "@type": "type.googleapis.com/google.rpc.ErrorInfo", reason: "SERVICE_DISABLED", metadata: { consumer: "projects/163195263995", service: "drive.googleapis.com" } }] });
+  if (driveMode === "scope") return driveError(res, 403, { code: 403, message: "Request had insufficient authentication scopes.", status: "PERMISSION_DENIED", errors: [{ reason: "insufficientPermissions" }] });
+  if (path === "/about") return send(res, 200, { user: { emailAddress: "drive.writer@ielsco.test" } });
+  const m = path.match(/^\/files(?:\/([^/]+))?$/);
+  if (!m) return send(res, 404, { error: { code: 404 } });
+  const id = m[1] && decodeURIComponent(m[1]);
+  if (!id && req.method === "POST") {
+    const fid = `TESTFILE${String(driveFiles.size + 1).padStart(24, "0")}`;
+    const f = { id: fid, name: body.name, mimeType: body.mimeType, parents: body.parents ?? [], appProperties: body.appProperties ?? {}, trashed: false,
+      owners: [{ emailAddress: driveMode === "other_owner" ? "someone.else@example.test" : "drive.writer@ielsco.test" }], webViewLink: `https://docs.google.com/document/d/${fid}/edit`, capabilities: { canAddChildren: true } };
+    driveFiles.set(fid, f); return send(res, 200, f);
+  }
+  const f = driveFiles.get(id);
+  if (!f) return send(res, 404, { error: { code: 404, message: "File not found", errors: [{ reason: "notFound" }] } });
+  if (req.method === "GET") return send(res, 200, f);
+  if (req.method === "DELETE") { driveFiles.delete(id); res.writeHead(204); return res.end(); }
+  if (req.method === "PATCH") { Object.assign(f, body); return send(res, 200, f); }
+  return send(res, 405, {});
+}
 function google(req, res, url, body) {
   const path = url.pathname.replace(/^\/__google/, "");
   if (path === "/o/oauth2/v2/auth") {
@@ -297,12 +323,14 @@ function google(req, res, url, body) {
       if (!c || !googleRedirects.includes(body.redirect_uri)) return send(res, 400, { error: "invalid_grant" });
       return send(res, 200, { access_token: "e2e-google-access", refresh_token: "e2e-google-refresh-SECRET", scope: c.scope, expires_in: 3600, token_type: "Bearer" });
     }
+    if (body.grant_type === "refresh_token" && driveMode === "invalid_grant") return send(res, 400, { error: "invalid_grant", error_description: "Token has been expired or revoked." });
+    if (body.grant_type === "refresh_token" && driveMode === "invalid_client") return send(res, 401, { error: "invalid_client", error_description: "Unauthorized" });
     if (body.grant_type === "refresh_token") return send(res, 200, { access_token: "e2e-google-access-2", expires_in: 3600, token_type: "Bearer", scope: "https://www.googleapis.com/auth/drive" });
     return send(res, 400, { error: "unsupported_grant_type" });
   }
   if (path === "/tokeninfo") return send(res, 200, { email: "drive.writer@ielsco.test", email_verified: "true", scope: "https://www.googleapis.com/auth/drive openid email", expires_in: 3599 });
   if (path === "/revoke") return send(res, 200, {});
-  if (path === "/drive/v3/about") return send(res, 200, { user: { emailAddress: "drive.writer@ielsco.test" } });
+  if (path.startsWith("/drive/v3/")) return drive(req, res, url, body, path.slice("/drive/v3".length));
   if (path.startsWith("/calendar/v3/")) return calendar(req, res, url, body, path.slice("/calendar/v3".length));
   return send(res, 404, { error: "not simulated" });
 }
@@ -314,6 +342,7 @@ let gcalSeq = 0;
 const etag = () => `"e${++gcalSeq}"`;
 function calendar(req, res, url, body, path) {
   if (!/^Bearer e2e-google-access/.test(req.headers.authorization ?? "")) return send(res, 401, { error: { code: 401 } });
+  if (calendarMode === "api_disabled") return send(res, 403, { error: { code: 403, message: "Google Calendar API has not been used in project 163195263995 before or it is disabled.", status: "PERMISSION_DENIED", errors: [{ reason: "accessNotConfigured" }] } });
   if (path === "/users/me/settings/timezone") return send(res, 200, { value: "Asia/Jakarta" });
   const m = path.match(/^\/calendars\/primary\/events(?:\/([^/]+))?$/);
   if (!m) return send(res, 404, { error: { code: 404 } });
@@ -387,6 +416,12 @@ http.createServer(async (req, res) => {
   try {
     if (url.pathname === "/__test/next-google") { nextGoogle = body; return send(res, 200, { ok: true }); }
     if (url.pathname === "/__test/google-redirects") { googleRedirects = body.uris ?? []; return send(res, 200, { ok: true }); }
+    if (url.pathname === "/__test/google-drive") {
+      driveMode = body.mode ?? "ok"; calendarMode = body.calendar ?? "ok"; driveFiles.clear();
+      for (const f of body.folders ?? []) driveFiles.set(f.id, { id: f.id, name: f.name, mimeType: "application/vnd.google-apps.folder", trashed: false, parents: [], capabilities: { canAddChildren: f.canAdd !== false }, owners: [{ emailAddress: "drive.writer@ielsco.test" }] });
+      return send(res, 200, { ok: true });
+    }
+    if (url.pathname === "/__test/google-drive-files") return send(res, 200, { files: [...driveFiles.values()].filter((f) => f.mimeType !== "application/vnd.google-apps.folder") });
     if (url.pathname === "/__test/gemini") { geminiQueue.push(body); return send(res, 200, { ok: true }); }
     if (url.pathname === "/__test/gemini-last") return send(res, 200, geminiLast ?? {});
     if (url.pathname === "/__test/gcal" && req.method === "GET") return send(res, 200, { items: [...gcal.values()] });

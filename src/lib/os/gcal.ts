@@ -4,6 +4,7 @@ import { seal, unseal } from "./seal";
 import { sealingSecret } from "./drive-oauth";
 import { oauthClientInfo, oauthEndpoints } from "./google-oauth";
 import type { GoogleEventLike } from "./calendar";
+import { classifyGoogleResponse, failureLog, type GoogleFailure } from "./google-errors";
 
 // Google Calendar for Company OS, server side only. Each person connects their OWN calendar (per-user OAuth); this is
 // separate from the Drive service account and from the founder's Drive connection: its own consent, callback, state
@@ -143,4 +144,37 @@ export function calendarErrorText(e: unknown): string {
     case "gone": return "This event no longer exists in Google Calendar.";
     default: return "Google Calendar didn't respond. Try again in a moment.";
   }
+}
+
+export type CalendarCheck = { ok: true; email: string } | { ok: false; stage: "unseal" | "token" | "api"; failure: GoogleFailure };
+
+/**
+ * Integration health for ONE person's calendar connection: decrypt the stored token, exchange it at Google, then read
+ * one event from their calendar (the calendar.events permission covers reading and writing events). Reports the stage
+ * and Google's classified error; nothing from Google's reply is returned except the classification. Null when the
+ * person has no connection.
+ */
+export async function checkCalendar(personId: string): Promise<CalendarCheck | null> {
+  const c = await calendarConnection(personId);
+  if (!c) return null;
+  const fail = (stage: "unseal" | "token" | "api", failure: GoogleFailure): CalendarCheck => { console.error(failureLog(`calendar ${stage}`, failure)); return { ok: false, stage, failure }; };
+  let refresh: string;
+  try { refresh = unseal(c.token_sealed, sealingSecret()); }
+  catch { return fail("unseal", { code: "cannot_decrypt", status: null, reason: null, project: null }); }
+  const network: GoogleFailure = { code: "network", status: null, reason: null, project: null };
+  let access: string;
+  try {
+    const r = await fetch(TOKEN_URL(), { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: oauthClientInfo().clientId!, client_secret: clientSecret()!, grant_type: "refresh_token", refresh_token: refresh }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return fail("token", classifyGoogleResponse(r.status, j));
+    access = String((j as { access_token?: string }).access_token ?? "");
+    if (!access) return fail("token", { code: "unknown", status: r.status, reason: null, project: null });
+  } catch { return fail("token", network); }
+  try {
+    const q = new URLSearchParams({ maxResults: "1", timeMin: new Date().toISOString(), singleEvents: "true", fields: "items(id)" });
+    const r = await fetch(`${API()}/calendars/${encodeURIComponent(c.calendar_id)}/events?${q}`, { headers: { authorization: `Bearer ${access}` } });
+    if (!r.ok) return fail("api", classifyGoogleResponse(r.status, await r.json().catch(() => ({}))));
+    return { ok: true, email: c.google_email };
+  } catch { return fail("api", network); }
 }

@@ -106,23 +106,36 @@ export function AiAdmin() {
 }
 
 export function HealthAdmin() {
-  type Health = { checks: { key: string; label: string; ok: boolean; detail: string }[]; at: string; drive?: { configured: boolean; connected: boolean; email: string | null };
+  type Health = { checks: { key: string; label: string; ok: boolean; detail: string }[]; at: string; drive?: { configured: boolean; connected: boolean; email: string | null; write_ok?: boolean; ready?: boolean };
     oauth?: { client_id: string | null; client_source: string | null; has_secret: boolean; redirect_uris: Record<string, string> } };
   const [data, setData] = useState<Health | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const run = () => { setErr(null); fetch("/os/api/admin/health").then(async (r) => { const j = await r.json().catch(() => ({})); if (r.ok) setData(j); else setErr(j.error ?? "The check didn't run."); }).catch(() => setErr("Couldn't reach the server.")); };
   useEffect(run, []);
+  const [returned, setReturned] = useState<string | null>(null);
+  useEffect(() => { setReturned(new URLSearchParams(window.location.search).get("drive")); }, []);
   useEffect(() => {
-    const r = new URLSearchParams(window.location.search).get("drive");
+    const r = returned;
+    // Coming back from Google only proves a permission was stored; what the result says depends on the live check below.
     const words: Record<string, string> = {
-      connected: "Google Drive is connected. New documents are created with that account.",
+      connected: !data ? "Google accepted the sign-in. Checking that Drive writing works…" : data.drive?.write_ok ? `Google Drive writing works for ${data.drive.email}.` : "Google accepted the sign-in, but creating files doesn't work yet. The reason is under “Google Drive: creating files” below.",
       cancelled: "Connecting Google Drive was cancelled.", expired: "The Google sign-in took too long or came from another session. Try again.",
       scope: "Google didn't grant full Drive access. Try again and allow Drive access.", failed: "Connecting Google Drive didn't work. Try again.",
       denied: "Only founders can connect Google Drive.",
     };
     if (r && words[r]) setNote(words[r]);
-  }, []);
+  }, [returned, data]);
+  const [folder, setFolder] = useState("");
+  const [test, setTest] = useState<{ ok: boolean; steps: { label: string; ok: boolean; detail: string }[]; file?: { id: string; url: string; cleanup: string }; error?: string } | null>(null);
+  const [testing, setTesting] = useState(false);
+  const runTest = async () => {
+    setTesting(true); setTest(null);
+    const r = await fetch("/os/api/admin/drive/test", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ folder }) }).catch(() => null);
+    const j = r ? await r.json().catch(() => ({})) : {};
+    setTest(r && (r.ok || j.steps) ? j : { ok: false, steps: [], error: j.error ?? "The test didn't run." });
+    setTesting(false);
+  };
   const disconnect = async () => {
     if (!window.confirm("Disconnect Google Drive? Existing files stay in Drive; new documents can't be created until a founder connects again.")) return;
     const r = await fetch("/os/api/admin/drive/disconnect", { method: "POST" });
@@ -147,6 +160,23 @@ export function HealthAdmin() {
               )}
             </li>
           ))}
+          {data.drive?.connected && (
+            <li className="px-3 py-2.5 text-sm" data-testid="os-drive-test">
+              <span className="font-medium">Write test</span>
+              <span className={cn("block", muted)}>Creates one empty Google Doc in a test folder, checks who owns it and that it reads back, then deletes it. Use a folder whose name contains &ldquo;test&rdquo;, not a division or route folder.</span>
+              <span className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input className={input} aria-label="Test folder link or ID" placeholder="Test folder link or ID" value={folder} onChange={(e) => setFolder(e.target.value)} />
+                <button type="button" className={btn} onClick={runTest} disabled={testing || !folder.trim()} data-testid="os-drive-test-run">{testing ? "Testing…" : "Run write test"}</button>
+              </span>
+              {test && (
+                <span className="mt-2 block" data-testid="os-drive-test-result" role="status">
+                  {test.error && <span className="block text-[#A12D2F]">{test.error}</span>}
+                  {test.steps.map((x) => <span key={x.label} className="flex items-start gap-1.5">{x.ok ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#2E7D4F]" aria-label="Passed" /> : <XCircle size={14} className="mt-0.5 shrink-0 text-[#A12D2F]" aria-label="Failed" />}<span><span className="font-medium">{x.label}.</span> <span className={muted}>{x.detail}</span></span></span>)}
+                  {test.file && <span className={cn("mt-1 block text-xs", muted)}>File ID {test.file.id}{test.file.url ? <> · <a className="underline" href={test.file.url} target="_blank" rel="noopener noreferrer">URL</a> (gone once deleted)</> : null}</span>}
+                </span>
+              )}
+            </li>
+          )}
           {data.oauth && (
             <li className="px-3 py-2.5 text-sm" data-testid="os-oauth-setup">
               <span className="font-medium">Google sign-in for Drive file creation</span>
