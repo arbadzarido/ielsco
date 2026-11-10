@@ -18,7 +18,9 @@ type Note = { id: number; kind: string; entity_type: string; entity_id: string; 
 type Attention = { key: string; text: string; href: string; tone: "red" | "amber" };
 
 const hrefFor = (n: { entity_type: string; entity_id: string }) => (n.entity_type === "event" ? `/os/calendar?event=${n.entity_id}` : n.entity_type === "candidate" ? `/os/recruitment/${n.entity_id}`
-  : n.entity_type === "access_request" ? `/os/access?focus=${n.entity_id}` : `/os/tasks/${n.entity_id}`);
+  : n.entity_type === "access_request" ? `/os/access?focus=${n.entity_id}` : n.entity_type === "request" ? `/os/requests/${n.entity_id}`
+  : n.entity_type === "transaction" ? `/os/finance/${n.entity_id}` : n.entity_type === "budget" ? "/os/d/fin?tab=budgets"
+  : n.entity_type === "letter" || n.entity_type === "agreement" ? `/os/legal/${n.entity_id}` : n.entity_type === "compliance" ? "/os/d/leg?tab=compliance" : `/os/tasks/${n.entity_id}`);
 const when = (iso: string) => { const p = zonedParts(iso, DEFAULT_TZ); return `${new Date(`${p.date}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} ${p.time}`; };
 
 export function NotificationsButton({ compact }: { compact?: boolean }) {
@@ -28,10 +30,14 @@ export function NotificationsButton({ compact }: { compact?: boolean }) {
   const [attention, setAttention] = useState<Attention[]>([]);
   const unread = notes.filter((n) => !n.read_at).length;
 
+  // Legal reminders (60, 30 and 7 days before a deadline, and overdue) are written for the viewer here, once each,
+  // so no scheduler is needed. It does nothing for anyone without Legal records to be reminded of.
+  const remind = useCallback(async () => { if (me.person.org_role !== "guest") await supabase.rpc("os_legal_reminders"); }, [supabase, me.person.org_role]);
   const load = useCallback(async () => {
+    await remind();
     const { data } = await supabase.from("os_notifications").select("id, kind, entity_type, entity_id, title, body, created_at, read_at").order("created_at", { ascending: false }).limit(50);
     setNotes((data ?? []) as Note[]);
-  }, [supabase]);
+  }, [supabase, remind]);
   useEffect(() => { load(); const t = setInterval(load, 120_000); return () => clearInterval(t); }, [load]);
 
   const loadAttention = useCallback(async () => {

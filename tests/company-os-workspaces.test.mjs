@@ -11,8 +11,10 @@ test("no access means an empty sidebar", () => {
   assert.deepEqual(workspaceNav(ws("GRO", { access: "none" })), []);
 });
 
-test("restricted workspaces have no project or task lists", () => {
-  assert.deepEqual(workspaceSections(ws("FIN", { privacy: "restricted" })), ["overview", "documents", "access"]);
+test("restricted workspaces have no project or task lists; Finance and Legal have their registers", () => {
+  assert.deepEqual(workspaceSections(ws("XYZ", { privacy: "restricted" })), ["overview", "documents", "access"]);
+  assert.deepEqual(workspaceSections(ws("FIN", { privacy: "restricted" }), { requests: true }), ["overview", "ledger", "budgets", "cashflow", "documents", "requests", "setup", "access"]);
+  assert.deepEqual(workspaceSections(ws("LEG", { privacy: "restricted" }), { requests: true }), ["overview", "letters", "agreements", "compliance", "documents", "requests", "numbering", "access"]);
   assert.deepEqual(workspaceSections(ws("OPS")), ["overview", "projects", "tasks", "documents", "access"]);
   assert.deepEqual(workspaceSections(ws("OPS"), { requests: true }), ["overview", "projects", "tasks", "documents", "requests", "access"]);
 });

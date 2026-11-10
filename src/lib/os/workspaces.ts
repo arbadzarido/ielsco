@@ -9,8 +9,10 @@ export interface MyWorkspace {
   is_member: boolean; is_manager: boolean; is_lead: boolean;
 }
 
-export type WsSection = "overview" | "projects" | "tasks" | "documents" | "requests" | "access";
-export interface WsNavItem { key: string; label: string; href: string; icon: "home" | "briefcase" | "check" | "file" | "inbox" | "shield" | "megaphone" | "handshake" | "users" | "userplus" | "scroll" }
+export type WsSection = "overview" | "projects" | "tasks" | "documents" | "requests" | "access"
+  | "ledger" | "budgets" | "cashflow" | "setup" | "letters" | "agreements" | "compliance" | "numbering";
+export interface WsNavItem { key: string; label: string; href: string; icon: "home" | "briefcase" | "check" | "file" | "inbox" | "shield" | "megaphone" | "handshake" | "users" | "userplus" | "scroll"
+  | "wallet" | "piggy" | "chart" | "settings" | "mail" | "signature" | "calendar" | "hash" }
 
 const SECTION: Record<WsSection, { label: string; icon: WsNavItem["icon"] }> = {
   overview: { label: "Overview", icon: "home" },
@@ -19,7 +21,16 @@ const SECTION: Record<WsSection, { label: string; icon: WsNavItem["icon"] }> = {
   documents: { label: "Documents", icon: "file" },
   requests: { label: "Requests", icon: "inbox" },
   access: { label: "Members and access", icon: "shield" },
+  ledger: { label: "Transactions", icon: "wallet" },
+  budgets: { label: "Budgets", icon: "piggy" },
+  cashflow: { label: "Cash flow and reports", icon: "chart" },
+  setup: { label: "Categories and accounts", icon: "settings" },
+  letters: { label: "Letters", icon: "mail" },
+  agreements: { label: "Agreements", icon: "signature" },
+  compliance: { label: "Compliance calendar", icon: "calendar" },
+  numbering: { label: "Numbering", icon: "hash" },
 };
+export const SECTION_LABEL: Record<WsSection, string> = Object.fromEntries(Object.entries(SECTION).map(([k, v]) => [k, v.label])) as Record<WsSection, string>;
 
 /** Existing Company OS modules that belong to one division's workspace. */
 const DIVISION_MODULES: Record<string, { label: string; href: string; icon: WsNavItem["icon"]; needs?: "recruitment" }[]> = {
@@ -34,11 +45,14 @@ const DIVISION_MODULES: Record<string, { label: string; href: string; icon: WsNa
 
 export const workspaceHref = (code: string, section: WsSection = "overview") => `/os/d/${code.toLowerCase()}${section === "overview" ? "" : `?tab=${section}`}`;
 
-/** Sections of a workspace, in sidebar order. Restricted workspaces (Finance, Legal) have no project or task lists of
- * their own yet; their registers arrive in phase 3. `requests` appears once the request system exists. */
-export function workspaceSections(ws: Pick<MyWorkspace, "privacy">, opts: { requests?: boolean } = {}): WsSection[] {
-  const base: WsSection[] = ws.privacy === "restricted" ? ["overview", "documents"] : ["overview", "projects", "tasks", "documents"];
-  return [...base, ...(opts.requests ? ["requests" as const] : []), "access"];
+/** Sections of a workspace, in sidebar order. Finance and Legal have their registers instead of project and task lists;
+ * another restricted workspace has documents only. `requests` appears once the request system exists. */
+export function workspaceSections(ws: Pick<MyWorkspace, "privacy"> & { code?: string }, opts: { requests?: boolean } = {}): WsSection[] {
+  const base: WsSection[] = ws.code === "FIN" ? ["overview", "ledger", "budgets", "cashflow", "documents"]
+    : ws.code === "LEG" ? ["overview", "letters", "agreements", "compliance", "documents"]
+    : ws.privacy === "restricted" ? ["overview", "documents"] : ["overview", "projects", "tasks", "documents"];
+  const tail: WsSection[] = ws.code === "FIN" ? ["setup"] : ws.code === "LEG" ? ["numbering"] : [];
+  return [...base, ...(opts.requests ? ["requests" as const] : []), ...tail, "access"];
 }
 
 /** The sidebar for one workspace, or nothing when the person has no access to it. */
