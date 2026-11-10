@@ -15,13 +15,13 @@ test("restricted workspaces have no project or task lists; Finance and Legal hav
   assert.deepEqual(workspaceSections(ws("XYZ", { privacy: "restricted" })), ["overview", "meetings", "documents", "access"]);
   assert.deepEqual(workspaceSections(ws("FIN", { privacy: "restricted" }), { requests: true }), ["overview", "ledger", "budgets", "cashflow", "meetings", "documents", "requests", "setup", "access"]);
   assert.deepEqual(workspaceSections(ws("LEG", { privacy: "restricted" }), { requests: true }), ["overview", "letters", "agreements", "compliance", "meetings", "documents", "requests", "numbering", "access"]);
-  assert.deepEqual(workspaceSections(ws("OPS")), ["overview", "projects", "tasks", "meetings", "documents", "access"]);
-  assert.deepEqual(workspaceSections(ws("OPS"), { requests: true }), ["overview", "projects", "tasks", "meetings", "documents", "requests", "access"]);
+  assert.deepEqual(workspaceSections(ws("OPS")), ["overview", "projects", "tasks", "meetings", "metrics", "documents", "access"]);
+  assert.deepEqual(workspaceSections(ws("OPS"), { requests: true }), ["overview", "projects", "tasks", "meetings", "metrics", "documents", "requests", "access"]);
 });
 
 test("division modules sit before Members and access", () => {
   const nav = workspaceNav(ws("GRO"));
-  assert.deepEqual(nav.map((i) => i.label), ["Overview", "Projects", "Tasks", "Meetings", "Documents", "Campaigns", "Members and access"]);
+  assert.deepEqual(nav.map((i) => i.label), ["Overview", "Projects", "Tasks", "Meetings", "Metrics", "Documents", "Campaigns", "Members and access"]);
   assert.equal(nav[0].href, "/os/d/gro");
   assert.equal(nav[1].href, "/os/d/gro?tab=projects");
 });
