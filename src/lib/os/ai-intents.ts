@@ -15,7 +15,7 @@ import { CATEGORIES, DEFAULT_TZ, addDays, weekday, zonedInstant, zonedParts } fr
 import { WEEKDAYS, describeRule, expandSeries, presetRule, ruleProblem, type ExceptionLike, type Occurrence, type Recurrence } from "./recurrence.ts";
 import { groupLabel, resolveInvitations, type Candidate, type GroupSpec, type RoleGroup } from "./groups.ts";
 
-export const INTENT_TYPES = ["create_task", "create_tasks", "assign_task", "create_event", "create_timeline_item", "create_campaign", "create_content_items", "move_event", "invite_to_event"] as const;
+export const INTENT_TYPES = ["create_task", "create_tasks", "assign_task", "update_tasks", "create_project", "create_event", "create_timeline_item", "create_campaign", "create_content_items", "move_event", "invite_to_event"] as const;
 export type IntentType = (typeof INTENT_TYPES)[number];
 export const isIntent = (t: string): t is IntentType => (INTENT_TYPES as readonly string[]).includes(t);
 
@@ -55,13 +55,34 @@ export const ContentDraft = z.object({
   pillar: z.string().max(80).optional(), dates: z.array(date).max(31).optional(), from: date.optional(), to: date.optional(), pattern: z.enum(["daily", "weekdays", "weekly"]).optional(),
   time: time.optional(), creator: ref.optional(), reviewer: ref.optional(), unclear,
 }).strip();
+export const ProjectDraft = z.object({
+  name: z.string().trim().min(1).max(200), company: ref.optional(), company_code: ref.optional(), division: ref.optional(), owner: ref.optional(),
+  due_date: date.optional(), description: z.string().max(4000).optional(), unclear,
+}).strip();
+const TASK_STATUSES = ["Backlog", "Ready", "In Progress", "In Review", "Blocked", "Done", "Cancelled"] as const;
+export const UpdateDraft = z.object({
+  task: ref, title: z.string().trim().min(1).max(300).optional(), due_date: date.optional(), clear_due_date: z.boolean().optional(),
+  priority: z.enum(PRIORITIES).optional(), status: z.enum(TASK_STATUSES).optional(), project: ref.optional(),
+  add_assignees: z.array(ref).max(10).optional(), assignees: z.array(ref).max(10).optional(), unclear,
+}).strip();
+/** The model may send one change for many tasks ({tasks: [...], due_date}); each task becomes its own update. */
+const UpdateTasks = z.preprocess((v) => {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return v;
+  const o = v as Record<string, unknown>;
+  if (Array.isArray(o.updates)) return o;
+  if (Array.isArray(o.tasks)) { const { tasks, ...rest } = o; return { updates: (tasks as unknown[]).map((task) => ({ ...rest, task })) }; }
+  if (typeof o.task === "string") return { updates: [o] };
+  return v;
+}, z.object({ updates: z.array(UpdateDraft).min(1).max(50) }).strip());
 export const MoveDraft = z.object({ event: ref, from_date: date.optional(), to_date: date, start_time: time.optional(), end_time: time.optional(), scope: z.enum(["this", "following", "all"]).optional(), unclear }).strip();
 export const InviteDraft = z.object({ event: ref, people: z.array(ref).max(30).optional(), groups: z.array(ref).max(6).optional(), unclear }).strip();
 
 export const INTENT_SCHEMAS = {
   create_task: TaskDraft,
-  create_tasks: z.object({ tasks: z.array(TaskDraft).min(1).max(10) }).strip(),
+  create_tasks: z.object({ tasks: z.array(TaskDraft).min(1).max(30) }).strip(),
   assign_task: AssignDraft,
+  update_tasks: UpdateTasks,
+  create_project: ProjectDraft,
   create_event: EventDraft,
   create_timeline_item: MilestoneDraft,
   create_campaign: CampaignDraft,
@@ -78,15 +99,23 @@ export type CampaignDraftT = z.infer<typeof CampaignDraft>;
 export type ContentDraftT = z.infer<typeof ContentDraft>;
 export type MoveDraftT = z.infer<typeof MoveDraft>;
 export type InviteDraftT = z.infer<typeof InviteDraft>;
-export type AnyDraft = TaskDraftT | EventDraftT | MilestoneDraftT | AssignDraftT | CampaignDraftT | ContentDraftT | MoveDraftT | InviteDraftT;
+export type ProjectDraftT = z.infer<typeof ProjectDraft>;
+export type UpdateDraftT = z.infer<typeof UpdateDraft>;
+export type AnyDraft = TaskDraftT | EventDraftT | MilestoneDraftT | AssignDraftT | CampaignDraftT | ContentDraftT | MoveDraftT | InviteDraftT | ProjectDraftT | UpdateDraftT;
 
 /** Each intent as a list of single-record drafts (create_tasks is several tasks; everything else one). */
 export function draftsOf(type: IntentType, payload: unknown): AnyDraft[] | null {
   const r = INTENT_SCHEMAS[type].safeParse(payload);
   if (!r.success) return null;
-  return type === "create_tasks" ? (r.data as { tasks: TaskDraftT[] }).tasks : [r.data as AnyDraft];
+  return type === "create_tasks" ? (r.data as { tasks: TaskDraftT[] }).tasks : type === "update_tasks" ? (r.data as { updates: UpdateDraftT[] }).updates : [r.data as AnyDraft];
 }
-export const kindOf = (type: IntentType): ResolvedItem["kind"] => (({ create_event: "event", create_timeline_item: "milestone", assign_task: "assignment", create_campaign: "campaign", create_content_items: "content", move_event: "move", invite_to_event: "invitation" } as Record<string, ResolvedItem["kind"]>)[type] ?? "task");
+/** The stored payload for a list of single-record drafts (the inverse of draftsOf). */
+export function payloadFor(type: IntentType, drafts: unknown[]): unknown {
+  return type === "create_tasks" ? { tasks: drafts } : type === "update_tasks" ? { updates: drafts } : drafts[0];
+}
+/** Intents that hold several records, each its own item on the card. */
+export const isBatch = (type: IntentType) => type === "create_tasks" || type === "update_tasks";
+export const kindOf = (type: IntentType): ResolvedItem["kind"] => (({ create_event: "event", create_timeline_item: "milestone", assign_task: "assignment", update_tasks: "update", create_project: "project", create_campaign: "campaign", create_content_items: "content", move_event: "move", invite_to_event: "invitation" } as Record<string, ResolvedItem["kind"]>)[type] ?? "task");
 
 // ── The directory: what the person can see, read with their own session ────────────────────────────────────────────
 
@@ -99,21 +128,27 @@ export interface Directory {
   projects: { id: string; name: string; company_code: string; division_id: string | null; status: string }[];
   workstreams: { code: string; name: string; company_code: string }[];
   milestones: { id: string; title: string; company_code: string }[];
-  tasks: { id: string; title: string; company_code: string; project_id: string | null; status: string }[];
+  tasks: { id: string; title: string; company_code: string; project_id: string | null; status: string; due_date?: string | null; priority?: string | null }[];
   events?: DirEvent[];
   campaigns?: { id: string; name: string; company_code: string; project_id: string | null; timeline_item_id: string | null; status: string }[];
   partnerships?: { id: string; organisation: string; company_code: string }[];
+  /** Projects proposed earlier in the same turn: tasks may name them before they exist (they run after the project). */
+  pendingProjects?: { name: string; company_code: string; division_id: string | null }[];
 }
 
 export interface Choice { value: string; label: string }
 export interface Issue { field: string; query?: string; kind: "missing" | "ambiguous" | "not_found" | "invalid"; message: string; choices?: Choice[] }
 export interface ResolvedItem {
-  kind: "task" | "event" | "milestone" | "assignment" | "campaign" | "content" | "move" | "invitation";
+  kind: "task" | "event" | "milestone" | "assignment" | "campaign" | "content" | "move" | "invitation" | "project" | "update";
   draft: AnyDraft;              // the draft with every resolved reference replaced by its ID (resolving again is a no-op)
   fields: { label: string; value: string }[];
   issues: Issue[];
   warnings: string[];
   insert: Record<string, unknown> | null; // the record to write, only when there are no issues
+  /** Nothing to write because the record already exists (an open task or project with the same name). */
+  skip?: { existing: string; reason: string };
+  /** Waits for a project proposed in the same turn; resolved again once that project exists. */
+  waitsFor?: string;
 }
 
 const COMPANY_NAMES: Record<string, string> = { hq: "HQ", "hq office": "HQ", founders: "HQ", iel: "IEL", ielsco: "IEL", "ielsco indonesia": "IEL", "english space": "IEL", elc: "ELC", elco: "ELC", "elco ai": "ELC", elcoai: "ELC" };
@@ -153,7 +188,8 @@ export function resolveDivision(q: string | undefined, dir: Directory, field = "
   return { issue: { field, kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${q}” matches more than one division.` : `There's no division called “${q}”.`, choices } };
 }
 
-export function resolveProject(q: string | undefined, dir: Directory, company?: string): { project?: Directory["projects"][number]; issue?: Issue } {
+export const PENDING = "new:";
+export function resolveProject(q: string | undefined, dir: Directory, company?: string, allowPending = false): { project?: Directory["projects"][number]; issue?: Issue } {
   if (!q) return {};
   if (idLike(q, "PRJ")) {
     const p = dir.projects.find((x) => x.id === q.trim().toUpperCase());
@@ -164,6 +200,11 @@ export function resolveProject(q: string | undefined, dir: Directory, company?: 
   const open = hits.filter((p) => !["Completed", "Cancelled"].includes(p.status));
   if (open.length) hits = open;
   if (hits.length === 1) return { project: hits[0] };
+  if (!hits.length && allowPending) {
+    // A project proposed earlier in this turn: the task waits for it and is resolved again once it exists.
+    const pend = (dir.pendingProjects ?? []).filter((p) => (!company || p.company_code === company) && norm(p.name) === norm(q.replace(/\b(project|proyek|program)\b/gi, "")));
+    if (pend.length === 1) return { project: { id: `${PENDING}${pend[0].name}`, name: pend[0].name, company_code: pend[0].company_code, division_id: pend[0].division_id, status: "Proposed" } };
+  }
   return { issue: { field: "project", kind: hits.length ? "ambiguous" : "not_found",
     message: hits.length ? `“${q}” matches ${hits.length} projects. Choose one.` : `No project you can see is called “${q}”${company ? ` in ${COMPANY_DISPLAY[company]}` : ""}. Choose one, or remove the project.`,
     choices: (hits.length ? hits : pool.filter((p) => !["Completed", "Cancelled"].includes(p.status)).slice(0, 12)).map((p) => ({ value: p.id, label: `${p.name} (${p.id})` })) } };
@@ -215,7 +256,7 @@ function companyFor(q: string | undefined, dir: Directory, fromProject?: string)
 
 export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
   const issues: Issue[] = [], warnings: string[] = [];
-  const pr = resolveProject(d.project, dir, undefined);
+  const pr = resolveProject(d.project, dir, undefined, true);
   if (pr.issue) issues.push(pr.issue);
   const co = companyFor(d.company, dir, pr.project?.company_code);
   if (co.issue) issues.push(co.issue);
@@ -233,8 +274,11 @@ export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
   const ev = d.event ? resolveEventRef(d.event, dir) : null;
   if (ev?.issue) issues.push(ev.issue);
   if (d.due_date && d.due_date < dir.today) warnings.push(`The deadline ${d.due_date} is in the past.`);
-  const dup = dir.tasks.find((t) => norm(t.title) === norm(d.title) && t.company_code === co.code && (t.project_id ?? null) === (pr.project?.id ?? null) && !["Done", "Cancelled"].includes(t.status));
-  if (dup) warnings.push(`An open task with this title already exists: ${dup.id}.`);
+  // An open task with the same title in the same project (or, without a project, the same company) already exists:
+  // nothing is created and the existing one is reported, so repeating an instruction never makes duplicates.
+  const dup = dir.tasks.find((t) => norm(t.title) === norm(d.title) && !["Done", "Cancelled"].includes(t.status)
+    && (pr.project ? t.project_id === pr.project.id : t.company_code === co.code && !t.project_id));
+  const pending = pr.project?.id.startsWith(PENDING) ? pr.project.name : undefined;
   const draft: TaskDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, milestone: milestone?.id ?? d.milestone, assignees: ppl.issues.length ? d.assignees : ppl.ids, event: ev?.event?.id ?? d.event, unclear: issues.length ? d.unclear : undefined };
   if (ev?.event && d.due_date && d.due_date > zonedParts(ev.event.starts_at, ev.event.timezone).date && !ev.event.recurrence) warnings.push(`The deadline is after “${ev.event.title}”.`);
   const fields = [
@@ -242,18 +286,20 @@ export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
     ...(ev?.event ? [{ label: "For event", value: `${ev.event.title} (${ev.event.id}, ${dayLabel(zonedParts(ev.event.starts_at, ev.event.timezone).date)})` }] : []),
     { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
     ...(division ? [{ label: "Division", value: divName(dir, division) }] : []),
-    ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
+    ...(pr.project ? [{ label: "Project", value: pending ? `${pr.project.name} (new, created first)` : `${pr.project.name} (${pr.project.id})` }] : []),
     ...(milestone ? [{ label: "Milestone", value: `${milestone.title} (${milestone.id})` }] : []),
     { label: "Assignee", value: ppl.ids.length ? ppl.ids.map((i) => `${nameOf(dir, i)} (${i})`).join(", ") : d.assignees?.length ? "Needs your choice" : "Nobody yet" },
     { label: "Deadline", value: d.due_date ? dayLabel(d.due_date) : "No deadline" },
     { label: "Priority", value: d.priority ?? "P3 Normal" },
   ];
-  const insert = issues.length ? null : {
+  if (pending) draft.project = pending;
+  if (dup) return { kind: "task", draft, fields, issues: [], warnings: [], insert: null, skip: { existing: dup.id, reason: `Already exists as ${dup.id}; not created again.` } };
+  const insert = issues.length || pending ? null : {
     title: d.title, company_code: co.code, division_id: division ?? null, project_id: pr.project?.id ?? null, timeline_item_id: milestone?.id ?? null,
     owner_person_id: ppl.ids[0] ?? null, assignees: ppl.ids, due_date: d.due_date ?? null, priority: d.priority ?? "P3 Normal", description: d.description ?? null,
     event_id: ev?.event?.id ?? null,
   };
-  return { kind: "task", draft, fields, issues, warnings, insert };
+  return { kind: "task", draft, fields, issues, warnings, insert, ...(pending && !issues.length ? { waitsFor: pending } : {}) };
 }
 
 export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): ResolvedItem {
@@ -376,6 +422,69 @@ export function resolveAssign(d: AssignDraftT, dir: Directory): ResolvedItem {
   const draft: AssignDraftT = { ...d, task: task?.id ?? d.task, assignees: ppl.issues.length ? d.assignees : ppl.ids, unclear: undefined };
   const fields = [{ label: "Task", value: task ? `${task.title} (${task.id})` : "?" }, { label: d.replace ? "Assignees become" : "Add assignee", value: ppl.ids.map((i) => `${nameOf(dir, i)} (${i})`).join(", ") || "?" }];
   return { kind: "assignment", draft, fields, issues, warnings: [], insert: issues.length || !task ? null : { task_id: task.id, assignees: ppl.ids, replace: Boolean(d.replace) } };
+}
+
+export function resolveProjectDraft(d: ProjectDraftT, dir: Directory): ResolvedItem {
+  const issues: Issue[] = [], warnings: string[] = [];
+  const co = companyFor(d.company ?? d.company_code, dir);
+  if (co.issue) issues.push(co.issue);
+  const dv = resolveDivision(d.division, dir);
+  if (dv.issue) issues.push(dv.issue);
+  const owner = d.owner ? resolvePeople([d.owner], dir, co.code, "owner") : { ids: [dir.me], issues: [] };
+  issues.push(...owner.issues, ...unclearIssues(d.unclear, { company: "company", division: "division", due_date: "deadline" }));
+  const draft: ProjectDraftT = { ...d, company: co.code ?? d.company, company_code: undefined, division: dv.id ?? d.division, owner: owner.issues.length ? d.owner : owner.ids[0], unclear: issues.length ? d.unclear : undefined };
+  const fields = [
+    { label: "Project", value: d.name }, { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
+    ...(dv.id ? [{ label: "Division", value: divName(dir, dv.id) }] : []),
+    { label: "Owner", value: owner.ids[0] ? `${nameOf(dir, owner.ids[0])} (${owner.ids[0]})` : "?" },
+    ...(d.due_date ? [{ label: "Due", value: dayLabel(d.due_date) }] : []),
+  ];
+  // Reuse beats duplication: a live project with the same name in the same company is reported, not created again.
+  const same = dir.projects.find((p) => norm(p.name) === norm(d.name) && (!co.code || p.company_code === co.code) && !["Completed", "Cancelled"].includes(p.status));
+  if (same) return { kind: "project", draft, fields, issues: [], warnings, insert: null, skip: { existing: same.id, reason: `${same.name} already exists as ${same.id}; it is used instead.` } };
+  const insert = issues.length ? null : { name: d.name, company_code: co.code, division_id: dv.id ?? null, owner_person_id: owner.ids[0] ?? null, due_date: d.due_date ?? null, description: d.description ?? null, status: "Active" };
+  return { kind: "project", draft, fields, issues, warnings, insert };
+}
+
+const SENSITIVE_STATUSES = new Set(["Done", "Cancelled"]);
+export function resolveUpdate(d: UpdateDraftT, dir: Directory): ResolvedItem {
+  const issues: Issue[] = [], warnings: string[] = [];
+  const open = dir.tasks.filter((t) => !["Done", "Cancelled"].includes(t.status));
+  const hits = idLike(d.task, "TSK") ? dir.tasks.filter((t) => t.id === d.task.trim().toUpperCase()) : byName(open, d.task, (t) => [t.title]);
+  const task = hits.length === 1 ? hits[0] : undefined;
+  if (!task) issues.push({ field: "task", query: d.task, kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${d.task}” matches ${hits.length} tasks. Choose one.` : `No task you can see matches “${d.task}”.`, choices: hits.slice(0, 12).map((t) => ({ value: t.id, label: `${t.title} (${t.id})` })) });
+  const pr = d.project ? resolveProject(d.project, dir, undefined, true) : {};
+  if (pr.issue) issues.push(pr.issue);
+  if (pr.project?.id.startsWith(PENDING)) warnings.push(`${pr.project.name} is created first.`);
+  const company = pr.project?.company_code ?? task?.company_code;
+  const add = resolvePeople(d.add_assignees, dir, company, "add_assignees");
+  const rep = resolvePeople(d.assignees, dir, company, "assignees");
+  issues.push(...add.issues, ...rep.issues);
+  const set: Record<string, unknown> = {};
+  if (d.title) set.title = d.title;
+  if (d.due_date) set.due_date = d.due_date; else if (d.clear_due_date) set.due_date = null;
+  if (d.priority) set.priority = d.priority;
+  if (d.status) set.status = d.status;
+  if (pr.project && !pr.project.id.startsWith(PENDING)) set.project_id = pr.project.id;
+  const assign = rep.ids.length ? { people: rep.ids, replace: true } : add.ids.length ? { people: add.ids, replace: false } : null;
+  if (task && !Object.keys(set).length && !assign && !pr.project && !issues.length) issues.push({ field: "task", kind: "invalid", message: `Nothing would change on ${task.id}.` });
+  if (d.due_date && d.due_date < dir.today) warnings.push(`The new deadline ${d.due_date} is in the past.`);
+  if (d.status && SENSITIVE_STATUSES.has(d.status)) warnings.push(`This marks the task ${d.status}.`);
+  const from = (v: unknown) => (v === null || v === undefined || v === "" ? "none" : String(v));
+  const fields = [
+    { label: "Task", value: task ? `${task.title} (${task.id})` : "?" },
+    ...(d.title ? [{ label: "Title", value: `→ ${d.title}` }] : []),
+    ...("due_date" in set ? [{ label: "Deadline", value: `${from(task?.due_date)} → ${set.due_date ? dayLabel(String(set.due_date)) : "none"}` }] : []),
+    ...(d.priority ? [{ label: "Priority", value: `${from(task?.priority)} → ${d.priority}` }] : []),
+    ...(d.status ? [{ label: "Status", value: `${from(task?.status)} → ${d.status}` }] : []),
+    ...(pr.project ? [{ label: "Project", value: pr.project.id.startsWith(PENDING) ? `${pr.project.name} (new)` : `${pr.project.name} (${pr.project.id})` }] : []),
+    ...(assign ? [{ label: assign.replace ? "Assignees become" : "Add assignee", value: assign.people.map((i) => `${nameOf(dir, i)} (${i})`).join(", ") }] : []),
+  ];
+  const draft: UpdateDraftT = { ...d, task: task?.id ?? d.task, project: pr.project && !pr.project.id.startsWith(PENDING) ? pr.project.id : d.project,
+    add_assignees: add.issues.length ? d.add_assignees : add.ids.length ? add.ids : undefined, assignees: rep.issues.length ? d.assignees : rep.ids.length ? rep.ids : undefined, unclear: undefined };
+  const pending = pr.project?.id.startsWith(PENDING) ? pr.project.name : undefined;
+  const insert = issues.length || !task || pending ? null : { task_id: task.id, set, assign };
+  return { kind: "update", draft, fields, issues, warnings, insert, ...(pending && !issues.length ? { waitsFor: pending } : {}) };
 }
 
 // ── Planning intents: references, groups, repeats ───────────────────────────────────────────────────────────────
@@ -584,7 +693,22 @@ export function resolveInvite(d: InviteDraftT, dir: Directory): ResolvedItem {
 }
 
 export function resolveIntent(type: IntentType, drafts: AnyDraft[], dir: Directory, tz = DEFAULT_TZ): ResolvedItem[] {
+  const items = resolveEach(type, drafts, dir, tz);
+  if (type !== "create_tasks" && type !== "create_task") return items;
+  // The same task twice in one instruction is created once.
+  const seen = new Map<string, number>();
+  return items.map((it, n) => {
+    const ins = it.insert, key = `${norm(String((it.draft as TaskDraftT).title))}|${(it.draft as TaskDraftT).project ?? ""}|${(it.draft as TaskDraftT).company ?? ""}`;
+    if (it.skip || it.issues.length) return it;
+    if (seen.has(key)) return { ...it, insert: null, waitsFor: undefined, skip: { existing: `#${(seen.get(key) ?? 0) + 1}`, reason: `Same as item ${(seen.get(key) ?? 0) + 1} in this list; created once.` } };
+    seen.set(key, n);
+    return { ...it, insert: ins };
+  });
+}
+function resolveEach(type: IntentType, drafts: AnyDraft[], dir: Directory, tz: string): ResolvedItem[] {
   return drafts.map((d) => type === "create_event" ? resolveEvent(d as EventDraftT, dir, tz)
+    : type === "create_project" ? resolveProjectDraft(d as ProjectDraftT, dir)
+    : type === "update_tasks" ? resolveUpdate(d as UpdateDraftT, dir)
     : type === "create_campaign" ? resolveCampaign(d as CampaignDraftT, dir)
     : type === "create_content_items" ? resolveContent(d as ContentDraftT, dir, tz)
     : type === "move_event" ? resolveMove(d as MoveDraftT, dir)
@@ -596,7 +720,11 @@ export function resolveIntent(type: IntentType, drafts: AnyDraft[], dir: Directo
 
 export function intentPreview(type: IntentType, items: ResolvedItem[]): string {
   const ready = items.every((i) => i.issues.length === 0);
-  const what = type === "create_tasks" || (type === "create_task" && items.length > 1) ? `Create ${items.length} tasks` : type === "create_task" ? `Create task “${items[0]?.fields[0]?.value}”`
+  const skipped = items.filter((i) => i.skip).length;
+  const n = items.length - skipped;
+  const what = type === "update_tasks" ? `Update ${items.length} task${items.length === 1 ? "" : "s"}`
+    : type === "create_project" ? (items[0]?.skip ? `Use existing project ${items[0].skip.existing}` : `Create project “${items[0]?.fields[0]?.value}”`)
+    : type === "create_tasks" || (type === "create_task" && items.length > 1) ? `Create ${n} task${n === 1 ? "" : "s"}${skipped ? ` (${skipped} already exist${skipped === 1 ? "s" : ""})` : ""}` : type === "create_task" ? (items[0]?.skip ? `“${items[0]?.fields[0]?.value}” already exists (${items[0].skip.existing})` : `Create task “${items[0]?.fields[0]?.value}”`)
     : type === "create_event" ? `Schedule “${items[0]?.fields[0]?.value}”` : type === "create_timeline_item" ? `Add milestone “${items[0]?.fields[0]?.value}”`
     : type === "create_campaign" ? `Create campaign “${items[0]?.fields[0]?.value}”` : type === "create_content_items" ? `Plan ${items[0]?.fields.find((f) => f.label === "Slots")?.value ?? "content"}`
     : type === "move_event" ? `Move ${items[0]?.fields[0]?.value}` : type === "invite_to_event" ? `Invite people to ${items[0]?.fields[0]?.value}` : `Assign ${items[0]?.fields[0]?.value}`;
@@ -625,8 +753,16 @@ const taskProps = {
   unclear: S("ARRAY", "Fields the instruction left unclear", { items: S("STRING") }),
 };
 export const FUNCTION_DECLARATIONS = [
-  { name: "create_task", description: "Propose one new task. The person reviews it before anything is created.", parameters: S("OBJECT", undefined, { properties: taskProps, required: ["title"] }) },
-  { name: "create_tasks", description: "Propose several new tasks at once (up to 10), e.g. 'three Growth tasks'.", parameters: S("OBJECT", undefined, { properties: { tasks: S("ARRAY", undefined, { items: S("OBJECT", undefined, { properties: taskProps, required: ["title"] }) }) }, required: ["tasks"] }) },
+  { name: "create_task", description: "Create one new task.", parameters: S("OBJECT", undefined, { properties: taskProps, required: ["title"] }) },
+  { name: "create_project", description: "Create a project when the person asks for one or the work needs a project that does not exist yet (check DATA.projects first; an existing project with that name is reused, never duplicated). Tasks in the same reply may name it as their project.", parameters: S("OBJECT", undefined, { properties: {
+    name: S("STRING"), company: S("STRING", "HQ, IELSco or Elco AI"), division: S("STRING"), owner: S("STRING", "Person by name; default the person asking"), due_date: S("STRING", "YYYY-MM-DD"), description: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["name"] }) },
+  { name: "update_tasks", description: "Change EXISTING tasks: deadline, priority, status, title, project or assignees. One call can change many tasks the same way, e.g. 'move all those deadlines to Friday' or 'assign those to Arba'. Use TSK-IDs from DATA (conversation_records, page, matches) whenever you can.", parameters: S("OBJECT", undefined, { properties: {
+    tasks: S("ARRAY", "TSK-IDs (preferred) or exact task titles", { items: S("STRING") }), due_date: S("STRING", "New deadline YYYY-MM-DD"), clear_due_date: S("BOOLEAN"),
+    priority: S("STRING", undefined, { enum: [...PRIORITIES], format: "enum" }), status: S("STRING", "Only when the person asked to change the status", { enum: ["Backlog", "Ready", "In Progress", "In Review", "Blocked", "Done", "Cancelled"], format: "enum" }),
+    title: S("STRING", "New title (one task only)"), project: S("STRING", "Move to this project (name or PRJ-ID)"),
+    add_assignees: S("ARRAY", "People to add, by name", { items: S("STRING") }), assignees: S("ARRAY", "Replace all assignees with these people", { items: S("STRING") }),
+    unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["tasks"] }) },
+  { name: "create_tasks", description: "Create several new tasks at once (up to 30). Put EVERY task the person listed in ONE call; never stop part-way. Existing open tasks with the same title in the same project are skipped automatically.", parameters: S("OBJECT", undefined, { properties: { tasks: S("ARRAY", undefined, { items: S("OBJECT", undefined, { properties: taskProps, required: ["title"] }) }) }, required: ["tasks"] }) },
   { name: "assign_task", description: "Propose assigning people to an EXISTING task.", parameters: S("OBJECT", undefined, { properties: { task: S("STRING", "TSK-ID or the task title"), assignees: S("ARRAY", undefined, { items: S("STRING") }), replace: S("BOOLEAN", "true to replace current assignees") }, required: ["task", "assignees"] }) },
   { name: "create_event", description: "Propose a calendar event (meeting, activity, deadline, campaign date…).", parameters: S("OBJECT", undefined, { properties: {
     title: S("STRING"), category: S("STRING", undefined, { enum: [...CATEGORIES], format: "enum" }), date: S("STRING", "YYYY-MM-DD"), end_date: S("STRING", "Last day, YYYY-MM-DD, for multi-day events"),
@@ -660,4 +796,4 @@ export const FUNCTION_DECLARATIONS = [
 ] as const;
 
 /** What the confirmation card shows: everything except the insert payload. */
-export const cardItems = (items: ResolvedItem[]) => ({ items: items.map((i) => ({ kind: i.kind, draft: i.draft, fields: i.fields, issues: i.issues, warnings: i.warnings })) });
+export const cardItems = (items: ResolvedItem[]) => ({ items: items.map((i) => ({ kind: i.kind, draft: i.draft, fields: i.fields, issues: i.issues, warnings: i.warnings, ...(i.skip ? { skip: i.skip } : {}), ...(i.waitsFor ? { waitsFor: i.waitsFor } : {}) })) });

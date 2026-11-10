@@ -14,6 +14,8 @@ import { WORKSPACES, workspaceByCode } from "@/lib/os/meta";
 import { OsProvider, useOs } from "./OsProvider";
 import { Avatar, Empty, Loading, btn, btnPrimary, ring } from "./ui";
 import { ChoiceProvider } from "./dialogs";
+import { ElcoAssistant } from "./assistant/ElcoAssistant";
+import { AssistantPageProvider } from "./assistant/page-context";
 import { NotificationsButton } from "./notifications";
 import { useRecruitmentAccess } from "./recruitment-access";
 import { useMyWorkspaces } from "./workspaces";
@@ -33,7 +35,7 @@ const NAV: { group?: string; items: NavItem[] }[] = [
   { items: [
     { href: "/os", label: "Home", icon: Home, match: /^\/os\/?$/ },
     { href: "/os/tasks?view=mine", label: "My tasks", icon: Inbox },
-    { href: "/os/assistant", label: "Assistant", icon: Bot },
+    { href: "/os/assistant", label: "Elco Assistant", icon: Bot },
   ] },
   { group: "Work", items: [
     { href: "/os/projects", label: "Projects", icon: Briefcase },
@@ -353,6 +355,7 @@ function Frame({ children }: { children: ReactNode }) {
           <Gate>{children}</Gate>
         </div>
       </main>
+      <ElcoAssistant />
     </div>
   );
 }
@@ -366,7 +369,9 @@ export function OsShell({ children }: { children: ReactNode }) {
   return (
     <OsProvider>
       <ChoiceProvider>
-        <Frame>{children}</Frame>
+        <AssistantPageProvider>
+          <Frame>{children}</Frame>
+        </AssistantPageProvider>
       </ChoiceProvider>
     </OsProvider>
   );

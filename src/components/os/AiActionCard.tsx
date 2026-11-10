@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils";
 
 type Draft = Record<string, unknown>;
 interface Issue { field: string; query?: string; kind: string; message: string; choices?: { value: string; label: string }[] }
-interface Item { kind: string; draft: Draft; fields: { label: string; value: string }[]; issues: Issue[]; warnings: string[] }
-export interface Created { id: string; kind: string; title: string; assignee: string | null; deadline: string | null; link: string; push?: string[] }
-export interface AiAction { id: string; action_type: string; preview: string; status: string; details?: { items: Item[] } | null; result?: { ref?: string; error?: string; created?: Created[] } | null }
+interface Item { kind: string; draft: Draft; fields: { label: string; value: string }[]; issues: Issue[]; warnings: string[]; skip?: { existing: string; reason: string }; waitsFor?: string }
+export interface Created { id: string; kind: string; title: string; assignee: string | null; deadline: string | null; link: string; push?: string[]; note?: string }
+interface Failed { id: string; title: string; error: string }
+export interface AiAction { id: string; action_type: string; preview: string; status: string; details?: { items: Item[] } | null; result?: { ref?: string; error?: string; created?: Created[]; failed?: Failed[] } | null }
 
 const EDITABLE: Record<string, { key: string; label: string; type: string }[]> = {
   task: [{ key: "title", label: "Title", type: "text" }, { key: "due_date", label: "Deadline", type: "date" }, { key: "priority", label: "Priority", type: "priority" }],
@@ -26,8 +27,10 @@ const EDITABLE: Record<string, { key: string; label: string; type: string }[]> =
   content: [{ key: "title", label: "Content", type: "text" }, { key: "from", label: "From", type: "date" }, { key: "to", label: "To", type: "date" }, { key: "time", label: "Publish time", type: "time" }, { key: "channel", label: "Channel", type: "text" }],
   move: [{ key: "to_date", label: "New date", type: "date" }, { key: "start_time", label: "New start", type: "time" }],
   invitation: [],
+  project: [{ key: "name", label: "Project", type: "text" }, { key: "due_date", label: "Due", type: "date" }],
+  update: [{ key: "due_date", label: "New deadline", type: "date" }, { key: "priority", label: "Priority", type: "priority" }],
 };
-const ARRAY_FIELDS = new Set(["assignees", "attendees", "people", "tasks", "invite_groups", "groups"]);
+const ARRAY_FIELDS = new Set(["assignees", "add_assignees", "attendees", "people", "tasks", "invite_groups", "groups"]);
 const fmtWhen = (c: Created) => (c.deadline ? (c.kind === "event" || c.kind === "move" ? new Date(c.deadline).toLocaleString("en-GB", { timeZone: "Asia/Jakarta", dateStyle: "medium", timeStyle: "short" }) + " WIB" : c.deadline) : null);
 
 /** Apply a choice to a draft: replace the ambiguous name in a list, or set the field. "" removes it. */
@@ -63,7 +66,7 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
     if (!r.ok && !j.status) return setErr(j.error ?? "That didn't work.");
     // A moved event that is in the person's own Google Calendar is sent to Google now (never someone else's copy).
     for (const c of (j.created ?? []) as Created[]) for (const id of c.push ?? []) await syncEvent(id, "push").catch(() => null);
-    onChange({ ...action, status: j.status, result: j.created ? { created: j.created, ref: j.ref } : j.ref ? { ref: j.ref } : j.error ? { error: j.error } : null });
+    onChange({ ...action, status: j.status, result: j.created ? { created: j.created, failed: j.failed, ref: j.ref } : j.ref ? { ref: j.ref } : j.error ? { error: j.error, failed: j.failed } : null });
   }
 
   const pick = (n: number, issue: Issue, value: string) => {
@@ -79,14 +82,19 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
   }));
 
   const created = action.result?.created;
+  const failed = action.result?.failed ?? [];
+  const head = action.status === "proposed" ? "Waiting for you · nothing changes until you confirm" : action.status === "executed" ? (failed.length ? "Partly done" : "Done") : action.status === "failed" ? "Not done" : action.status === "rejected" ? "Cancelled" : "Suggested change";
+  const verb = (c: Created) => (c.note === "already existed" ? "already existed" : c.kind === "update" ? "updated" : "");
   return (
-    <div className="rounded-xl border border-[#D9E2EA] bg-white p-3 text-sm" data-testid="os-ai-action">
-      <p className="text-xs font-medium text-[#66768A]">{action.status === "proposed" ? "Suggested change · nothing is created until you confirm" : "Suggested change"}</p>
+    <div className="rounded-xl border border-[#D9E2EA] bg-white p-3 text-sm" data-testid="os-ai-action" data-status={action.status}>
+      <p className={cn("text-xs font-medium", action.status === "executed" && !failed.length ? "text-[#1D6B4F]" : action.status === "failed" || failed.length ? "text-[#A12D2F]" : "text-[#66768A]")}>{head}</p>
       <p className="mt-1 font-medium text-[#1F2D3D]" data-testid="os-ai-action-preview">{action.preview}</p>
 
       {items && action.status === "proposed" && items.map((it, n) => (
-        <div key={n} className={cn("mt-2 rounded-lg border p-2", it.issues.length ? "border-[#F1D9A8] bg-[#FFFBF2]" : "border-[#E6E9EE] bg-[#FAFBFC]")} data-testid="os-ai-item">
+        <div key={n} className={cn("mt-2 rounded-lg border p-2", it.issues.length ? "border-[#F1D9A8] bg-[#FFFBF2]" : it.skip ? "border-[#E6E9EE] bg-[#F5F7FA] opacity-80" : "border-[#E6E9EE] bg-[#FAFBFC]")} data-testid="os-ai-item">
           {items.length > 1 && <p className="mb-1 text-xs font-semibold text-[#3A4B60]">{n + 1} of {items.length}</p>}
+          {it.skip && <p className="mb-1 text-xs font-medium text-[#3A4B60]" data-testid="os-ai-skip">{it.skip.reason}</p>}
+          {it.waitsFor && <p className="mb-1 text-xs text-[#3A4B60]">Created after the project “{it.waitsFor}”. Confirm that one first.</p>}
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5">
             {it.fields.map((f) => <div key={f.label} className="contents"><dt className={cn(muted, "text-xs")}>{f.label}</dt><dd className="break-words text-xs text-[#1F2D3D]">{f.value}</dd></div>)}
           </dl>
@@ -122,7 +130,7 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
         <>
           {err && <p role="alert" className="mt-2 text-xs text-[#A12D2F]">{err}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" className={btnPrimary} disabled={busy || (items !== null && !ready && !editing)} onClick={() => send("confirm", drafts ?? undefined)}><Check size={14} aria-hidden="true" />{items ? "Confirm & Create" : "Confirm"}</button>
+            <button type="button" className={btnPrimary} disabled={busy || (items !== null && !ready && !editing)} onClick={() => send("confirm", drafts ?? undefined)}><Check size={14} aria-hidden="true" />{items && !["update_tasks", "assign_task"].includes(action.action_type) ? "Confirm & Create" : "Confirm"}</button>
             <button type="button" className={btnGhost} disabled={busy} onClick={() => send("reject")}><X size={14} aria-hidden="true" />Cancel</button>
             {items && (editing
               ? <button type="button" className={btn} disabled={busy} onClick={() => send("revise", current)}>Check details</button>
@@ -134,13 +142,19 @@ export function AiActionCard({ action, onChange }: { action: AiAction; onChange:
           {created.map((c) => (
             <li key={`${c.kind}-${c.id}`} className="text-xs">
               <Link className="font-medium text-[#2F4157] underline" href={c.link}>{c.id}</Link> {c.title}
-              {c.assignee && <span className={muted}> · {c.kind === "event" || c.kind === "invitation" ? "with" : c.kind === "content" ? "by" : "assigned to"} {c.assignee}</span>}
+              {verb(c) && <span className={muted}> · {verb(c)}</span>}
+              {c.assignee && <span className={muted}> · {c.kind === "event" || c.kind === "invitation" ? "with" : c.kind === "content" ? "by" : c.kind === "project" ? "owner" : "assigned to"} {c.assignee}</span>}
               {fmtWhen(c) && <span className={muted}> · {c.kind === "event" ? "" : c.kind === "move" ? "now " : c.kind === "content" ? "from " : "due "}{fmtWhen(c)}</span>}
+              {c.note && c.note !== "already existed" && <span className={muted}> · {c.note}</span>}
             </li>
           ))}
+          {failed.map((f) => <li key={`f-${f.id}`} className="text-xs text-[#A12D2F]" data-testid="os-ai-failed">{f.id} {f.title}: {f.error}</li>)}
         </ul>
       ) : (
-        <p className={cn("mt-1 text-xs", action.status === "failed" ? "text-[#A12D2F]" : muted)}>{action.status === "executed" ? `Done${action.result?.ref ? `: ${action.result.ref}` : ""}` : action.status === "failed" ? `Not done: ${action.result?.error ?? "not allowed"}` : action.status === "rejected" ? "Cancelled" : action.status}</p>
+        <div className={cn("mt-1 text-xs", action.status === "failed" ? "text-[#A12D2F]" : muted)}>
+          <p>{action.status === "executed" ? `Done${action.result?.ref ? `: ${action.result.ref}` : ""}` : action.status === "failed" ? `Not done: ${action.result?.error ?? "not allowed"}` : action.status === "rejected" ? "Cancelled" : action.status === "expired" ? "Expired" : action.status}</p>
+          {failed.map((f) => <p key={`f-${f.id}`} data-testid="os-ai-failed">{f.id} {f.title}: {f.error}</p>)}
+        </div>
       )}
     </div>
   );

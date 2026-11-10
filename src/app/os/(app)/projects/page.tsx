@@ -1,5 +1,6 @@
 "use client";
 
+import { usePublishAssistantContext } from "@/components/os/assistant/page-context";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search } from "lucide-react";
@@ -19,6 +20,7 @@ export default function ProjectsPage() {
   const [division, setDivision] = useState(params.get("division") ?? "");
   const [showClosed, setShowClosed] = useState(false);
   const [creating, setCreating] = useState(params.get("new") === "1");
+  usePublishAssistantContext({ filters: { search: q, status, company, division, show_closed: showClosed ? "yes" : "" } });
   const projects = useQuery<ProjectRow[]>((s) => s.from("os_projects").select(PROJECT_COLUMNS).order("due_date", { nullsFirst: false }), []);
   const tasks = useQuery<{ project_id: string; status: string }[]>((s) => s.from("os_tasks").select("project_id, status").not("project_id", "is", null), []);
   const counts = useMemo(() => {
