@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { OfficialDeadline } from "@/components/time/LocalTime";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ArrowRight, X } from "lucide-react";
@@ -80,7 +81,7 @@ export function RecruitmentPopup() {
           <p className="mt-3 text-[15px] leading-relaxed text-[#2F4157]/80">Join the team behind IELSco and Elco AI: 17 roles in 7 divisions, fully remote.</p>
           <ul className="mt-4 space-y-1.5 text-[15px] text-[#1A2534]">
             <li><span className="font-semibold">Who:</span> 1st–3rd year university students</li>
-            <li><span className="font-semibold">Apply by:</span> {RECRUITMENT.closesLabel}, 23:59 WIB</li>
+            <li><span className="font-semibold">Apply by:</span> <OfficialDeadline value={RECRUITMENT.closesAt} /></li>
           </ul>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row">
             {/* A full page load on purpose: /careers/apply is a route handler that redirects by sign-in state. */}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import { Suspense } from "react";
 import { ArrowUpRight, BadgeCheck, Check, Link2 } from "lucide-react";
 import { DashboardPage, type DashboardCtx } from "@/components/dashboard/DashboardPage";
@@ -12,7 +13,7 @@ import { useElcoState } from "@/lib/elco-state";
 import { ELCO_LINK_URL, ELCO_PLANS, ELCO_PRICING_URL, HOW_BENEFITS_REACH_IELSCO } from "@/data/membership";
 import { tutorRequestUrl, TUTOR_PRICE_LABEL } from "@/components/tutoring/links";
 import { cn } from "@/lib/utils";
-import { dateWib, idr } from "@/lib/format";
+import { idr } from "@/lib/format";
 
 // IELSco has no membership of its own. Paid benefits come from an Elco AI subscription (Starter / Pro), synced to this
 // account once the Elco account is linked, and are read from public.my_elco_benefits() (via useElcoState). The legacy IELS
@@ -23,11 +24,12 @@ const ORDER_LABEL: Record<string, string> = {
 };
 
 function StatusCard({ linked, active, tier, endsAt }: { linked: boolean; active: boolean; tier?: "starter" | "pro"; endsAt?: string }) {
+  const fmt = useLocalFormat();
   if (active) {
     return (
       <div>
         <p className="flex items-center gap-2 text-lg font-bold text-[#1A2534]"><BadgeCheck className="text-[#2D7A58]" size={22} aria-hidden="true" /> Elco {tier === "pro" ? "Pro" : "Starter"} is active on IELSco</p>
-        <p className="mt-1 text-base text-[#2F4157]/75">Your benefits come from your linked Elco account{endsAt ? <> and run until <strong>{dateWib(endsAt)}</strong></> : ""}.</p>
+        <p className="mt-1 text-base text-[#2F4157]/75">Your benefits come from your linked Elco account{endsAt ? <> and run until <strong>{fmt.date(endsAt)}</strong></> : ""}.</p>
       </div>
     );
   }
@@ -53,6 +55,7 @@ function StatusCard({ linked, active, tier, endsAt }: { linked: boolean; active:
 }
 
 function MembershipView({ supabase, user }: DashboardCtx) {
+  const fmt = useLocalFormat();
   const { status, orders, error } = useMembership(supabase);
   const { elco } = useElcoState(supabase);
   if (!status || !elco) return <LoadingState />;
@@ -75,7 +78,7 @@ function MembershipView({ supabase, user }: DashboardCtx) {
         <section className="space-y-6" aria-labelledby="legacy-h" data-testid="legacy-member">
           <div>
             <h2 id="legacy-h" className="text-xl font-bold text-[#1A2534]">Your earlier IELS Member access</h2>
-            <p className="mt-1 text-base text-[#2F4157]/75">You hold an IELS Member period from before membership moved to Elco AI. It stays active until <strong>{dateWib(status.access_until!)}</strong>. It can&apos;t be renewed; Elco Starter and Pro now carry membership benefits.</p>
+            <p className="mt-1 text-base text-[#2F4157]/75">You hold an IELS Member period from before membership moved to Elco AI. It stays active until <strong>{fmt.date(status.access_until!)}</strong>. It can&apos;t be renewed; Elco Starter and Pro now carry membership benefits.</p>
           </div>
           <FeedbackRequests supabase={supabase} userId={user.id} />
           <BuddyMatching supabase={supabase} userId={user.id} />
@@ -133,7 +136,7 @@ function MembershipView({ supabase, user }: DashboardCtx) {
                     <td className="px-4 py-3">{o.months} months</td>
                     <td className="px-4 py-3">{idr(o.amount_idr)}</td>
                     <td className="px-4 py-3">{ORDER_LABEL[o.status] ?? o.status}</td>
-                    <td className="px-4 py-3">{dateWib(o.paid_at ?? o.created_at)}</td>
+                    <td className="px-4 py-3">{fmt.date(o.paid_at ?? o.created_at)}</td>
                   </tr>
                 ))}
               </tbody>

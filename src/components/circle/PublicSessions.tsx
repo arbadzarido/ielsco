@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CircleScheduleLocal } from "@/components/time/LocalTime";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import { ArrowUpRight, CalendarClock } from "lucide-react";
-import { formatSessionWib, upcomingSessions, type CircleSession } from "@/lib/circle/sessions";
+import { upcomingSessions, type CircleSession } from "@/lib/circle/sessions";
 import { btnPrimary, btnSecondary, card, container, eyebrow, h2, lead } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,7 @@ export function useMainSiteBase() {
 // Public view of the recurring weekly sessions (Wed 19:00 and Sat 13:00 WIB). Computed after mount so the dates are
 // always the viewer's real "next" sessions and server and client renders agree.
 export function PublicSessions() {
+  const fmt = useLocalFormat();
   const [sessions, setSessions] = useState<CircleSession[] | null>(null);
   useEffect(() => setSessions(upcomingSessions(4)), []);
   return (
@@ -32,7 +35,7 @@ export function PublicSessions() {
             <p className={eyebrow}>Every week</p>
             <h2 id="public-sessions-heading" className={cn(h2, "mt-3")}>Weekly Circle sessions</h2>
             <p className={cn(lead, "mt-4")}>
-              Wednesdays at 19:00 and Saturdays at 13:00 WIB (Jakarta time). A new topic each time: English practice,
+              Wednesdays at 19:00 and Saturdays at 13:00 WIB (Jakarta time)<CircleScheduleLocal />. A new topic each time: English practice,
               scholarships, careers and life across Southeast Asia.
             </p>
           </div>
@@ -46,7 +49,7 @@ export function PublicSessions() {
         <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite">
           {sessions === null && [0, 1, 2, 3].map((i) => <li key={i} className="h-[200px] animate-pulse rounded-[20px] bg-[#F1F4F8]" aria-hidden="true" />)}
           {sessions?.map((s, i) => {
-            const { day, time } = formatSessionWib(s.start);
+            const { day, time } = fmt.session(s.start);
             return (
               <li key={s.id} data-testid="public-session" className={cn(card, "flex flex-col p-6", i === 0 && "border-[#2F4157] ring-1 ring-[#2F4157]")}>
                 {i === 0 && <span className="mb-3 self-start rounded-full bg-[#2F4157] px-2.5 py-0.5 text-[12px] font-bold text-white">Next session</span>}

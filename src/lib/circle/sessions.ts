@@ -4,6 +4,7 @@
 // Sessions are computed, never stored as a list. A session is identified by its UTC start instant (ISO string), which
 // is also what circle_session_checkins.session_start stores (timestamptz). The database checks the same slots in
 // Asia/Jakarta (supabase/migrations/20261017030000_circle_session_checkins.sql). Dependency-free for unit tests.
+import { zoneLabel } from "../time/zone.ts";
 
 export const CIRCLE_TIMEZONE = "Asia/Jakarta";
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
@@ -90,9 +91,12 @@ export function isCircleSlot(iso: string): boolean {
   return CIRCLE_SLOTS.some((s) => s.isoDow === isoDow && wib.getUTCHours() === s.hour && wib.getUTCMinutes() === s.minute && wib.getUTCSeconds() === 0 && wib.getUTCMilliseconds() === 0);
 }
 
-// Display in WIB regardless of the viewer's own timezone.
-export function formatSessionWib(start: Date, locale = "en-GB") {
-  const day = new Intl.DateTimeFormat(locale, { timeZone: CIRCLE_TIMEZONE, weekday: "long", day: "numeric", month: "long" }).format(start);
-  const time = new Intl.DateTimeFormat(locale, { timeZone: CIRCLE_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(start);
-  return { day, time: `${time} WIB` };
+// Display a session in a zone (the viewer's, from useViewerZone()), always labelled: { day, time: "20:00 GMT+8" }.
+export function formatSession(start: Date, zone: string = CIRCLE_TIMEZONE, locale = "en-GB") {
+  const day = new Intl.DateTimeFormat(locale, { timeZone: zone, weekday: "long", day: "numeric", month: "long" }).format(start);
+  const time = new Intl.DateTimeFormat(locale, { timeZone: zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(start);
+  return { day, time: `${time} ${zoneLabel(zone, start)}` };
 }
+
+// Display in WIB regardless of the viewer's own timezone.
+export const formatSessionWib = (start: Date, locale = "en-GB") => formatSession(start, CIRCLE_TIMEZONE, locale);

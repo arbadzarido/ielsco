@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CheckCircle2, Circle, Clock, FileText, Mail, Pencil, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { dateTimeWib } from "@/lib/format";
 import { roleById } from "@/data/careers/divisions";
 import { countryName } from "@/lib/dashboard/countries";
 import { CAMPAIGN_TASKS, RECRUITMENT, STATUS_COPY } from "@/data/careers/recruitment";
@@ -31,6 +31,7 @@ const stageIndex = (status: string) =>
   ({ submitted: 0, under_review: 1, invited: 2, shortlisted: 2, accepted: 3, reserve: 3, rejected: 3, withdrawn: 0 } as Record<string, number>)[status] ?? 0;
 
 export function ApplicationStatus({ app, supabase, onEdit }: { app: MyApplication; supabase: SupabaseClient; onEdit?: () => void }) {
+  const fmt = useLocalFormat();
   const copy = STATUS_COPY[app.status] ?? STATUS_COPY.submitted;
   const at = stageIndex(app.status);
   const r1 = roleById(app.role_id), r2 = roleById(app.role_2_id);
@@ -95,7 +96,7 @@ export function ApplicationStatus({ app, supabase, onEdit }: { app: MyApplicatio
             {ownFile(app.cv_path) ? <button type="button" onClick={() => open(app.cv_path)} className="inline-flex items-center gap-1 font-semibold underline"><FileText size={14} aria-hidden="true" />CV</button> : <span>CV received</span>}
             {app.portfolio_url ? <a href={app.portfolio_url} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Portfolio link</a> : ownFile(app.portfolio_path) ? <button type="button" onClick={() => open(app.portfolio_path!)} className="font-semibold underline">Portfolio</button> : app.portfolio_path ? <span>Portfolio received</span> : null}
           </dd></div>
-          <div><dt className="text-[13px] text-[#2F4157]/60">Submitted</dt><dd className="text-[#1A2534]" data-testid="application-submitted-at">{dateTimeWib(app.submitted_at)}{app.updated_at && app.updated_at !== app.submitted_at ? <span className="block text-[13px] text-[#2F4157]/60">Last updated {dateTimeWib(app.updated_at)}</span> : null}</dd></div>
+          <div><dt className="text-[13px] text-[#2F4157]/60">Submitted</dt><dd className="text-[#1A2534]" data-testid="application-submitted-at">{fmt.dateTime(app.submitted_at)}{app.updated_at && app.updated_at !== app.submitted_at ? <span className="block text-[13px] text-[#2F4157]/60">Last updated {fmt.dateTime(app.updated_at)}</span> : null}</dd></div>
         </dl>
         {!onEdit && app.status === "submitted" && <p className="mt-4 text-[13px] text-[#2F4157]/60">Applications are closed, so it can&apos;t be changed here any more.</p>}
       </section>

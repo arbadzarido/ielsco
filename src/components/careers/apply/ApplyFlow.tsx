@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { OfficialDeadline } from "@/components/time/LocalTime";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -116,7 +117,7 @@ export function ApplyFlow() {
       <div className={panel} data-testid={phase === "upcoming" ? "apply-upcoming" : "apply-closed"}>
         <p className="text-[22px] font-bold text-[#1A2534]">{phase === "upcoming" ? `Applications open on ${RECRUITMENT.opensLabel}` : "Applications for 2027 are closed"}</p>
         <p className="mt-2 text-[16px] leading-relaxed text-[#2F4157]/75">
-          {phase === "upcoming" ? `You can apply here from ${RECRUITMENT.opensLabel} until ${RECRUITMENT.closesLabel}, 23:59 WIB.` : `Applications closed on ${RECRUITMENT.closesLabel}. We'll share the next intake on the careers page.`}
+          {phase === "upcoming" ? <>You can apply here from {RECRUITMENT.opensLabel} until <OfficialDeadline value={RECRUITMENT.closesAt} />.</> : `Applications closed on ${RECRUITMENT.closesLabel}. We'll share the next intake on the careers page.`}
         </p>
         <Link href="/careers" className={cn(btnSecondary, "mt-6")}>Back to Careers</Link>
       </div>

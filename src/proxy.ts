@@ -14,7 +14,30 @@ import { isGatedOsPath, isOsHost, isOsPath, osHostRoute } from '@/lib/os/host'
 import { MAIN_SITE, subdomainRoute } from '@/lib/subdomain-routes'
 
 // ── In-memory rate limiter (resets on cold start) ─────────────────────────────
+// This is a per-instance backstop against a single noisy client, not DDoS protection: volumetric attacks are absorbed
+// by Vercel's platform DDoS mitigation and the Vercel Firewall (WAF rules / Attack Challenge Mode) before they get here.
+// Limits are set for real-world shared networks: campus Wi-Fi, offices and mobile carriers (CGNAT) put many people
+// behind one public IP, so a per-IP limit has to be generous enough for a classroom loading the site at once.
 const requestTracker = new Map<string, { count: number; timestamp: number }>();
+const TRACKER_MAX = 50_000;
+
+// Fixed-window counter. Returns true when the key is over `max` requests within `windowMs`.
+function overLimit(key: string, max: number, windowMs: number) {
+  const now = Date.now();
+  const record = requestTracker.get(key);
+  if (!record || now - record.timestamp > windowMs) {
+    if (requestTracker.size >= TRACKER_MAX) requestTracker.clear(); // bounded memory under a flood of unique IPs
+    requestTracker.set(key, { count: 1, timestamp: now });
+    return false;
+  }
+  record.count++;
+  return record.count > max;
+}
+
+// The client's IP. On Vercel, x-real-ip / the first x-forwarded-for entry is the connecting client set by the edge.
+function clientIp(request: NextRequest) {
+  return request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown-ip';
+}
 
 export async function proxy(request: NextRequest) {
 
@@ -131,7 +154,7 @@ export async function proxy(request: NextRequest) {
   // ===========================================================================
 
   const userAgent = request.headers.get('user-agent') || '';
-  const ip        = request.headers.get('x-forwarded-for') || 'unknown-ip';
+  const ip        = clientIp(request);
 
   const blockedAgents = ['hey/0.0.1', 'curl', 'PostmanRuntime', 'python-requests'];
   const isBot = blockedAgents.some((bot) => userAgent.toLowerCase().includes(bot.toLowerCase()));
@@ -142,26 +165,12 @@ export async function proxy(request: NextRequest) {
   }
 
   // ===========================================================================
-  // STEP 4 — HOMEPAGE RATE LIMIT (max 5 req / 5 sec per IP)
+  // STEP 4 — HOMEPAGE RATE LIMIT (max 60 req / 10 sec per IP)
+  // Was 5 per 5 seconds, which a single classroom or mobile-carrier IP (CGNAT) shared by many visitors exceeds.
   // ===========================================================================
 
-  if (request.nextUrl.pathname === '/') {
-    const now       = Date.now();
-    const homeKey   = `home-${ip}`;
-    const homeRecord = requestTracker.get(homeKey) || { count: 0, timestamp: now };
-
-    if (now - homeRecord.timestamp < 5000) {
-      homeRecord.count++;
-    } else {
-      homeRecord.count    = 1;
-      homeRecord.timestamp = now;
-    }
-
-    requestTracker.set(homeKey, homeRecord);
-
-    if (homeRecord.count > 5) {
-      return new NextResponse('Too many requests. Please slow down.', { status: 429 });
-    }
+  if (request.nextUrl.pathname === '/' && overLimit(`home-${ip}`, 60, 10_000)) {
+    return new NextResponse('Too many requests. Please wait a few seconds and try again.', { status: 429, headers: { 'Retry-After': '10' } });
   }
 
   // ===========================================================================
@@ -170,18 +179,14 @@ export async function proxy(request: NextRequest) {
   // ===========================================================================
 
   if (isOsSubdomain && (request.nextUrl.pathname === '/os/login' || request.nextUrl.pathname.startsWith('/os/auth/'))) {
-    const now = Date.now();
-    const key = `os-auth-${ip}`;
-    const record = requestTracker.get(key) || { count: 0, timestamp: now };
-    if (now - record.timestamp > 60_000) { record.count = 1; record.timestamp = now; } else { record.count++; }
-    requestTracker.set(key, record);
-    if (record.count > (Number(process.env.OS_SIGNIN_RATE_LIMIT) || 10)) {
-      return new NextResponse('Too many sign-in attempts. Please wait a minute and try again.', { status: 429 });
+    if (overLimit(`os-auth-${ip}`, Number(process.env.OS_SIGNIN_RATE_LIMIT) || 10, 60_000)) {
+      return new NextResponse('Too many sign-in attempts. Please wait a minute and try again.', { status: 429, headers: { 'Retry-After': '60' } });
     }
   }
 
   // ===========================================================================
-  // STEP 5 — API RATE LIMIT (max 20 req / 10 sec per IP)
+  // STEP 5 — API RATE LIMIT (max 60 req / 10 sec per IP; was 20, too low for shared networks)
+  // Sensitive endpoints (inquiries, opportunity interest, Elco authorize) add their own stricter per-route limits.
   // ===========================================================================
 
   if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -191,29 +196,17 @@ export async function proxy(request: NextRequest) {
     const isElcoServerCall = /^\/api\/integrations\/elco\/(exchange|goals|summary|revoke|benefits)$/.test(request.nextUrl.pathname);
     // Midtrans sends every merchant's notifications from a few shared IPs; the route verifies each signature itself.
     const isPaymentNotification = request.nextUrl.pathname === '/api/payments/midtrans/notification';
-    const now        = Date.now();
-    const WINDOW_MS  = 10_000;
-    const MAX_REQ    = isElcoServerCall || isPaymentNotification ? 60 : 20;
-    const bucket     = isElcoServerCall ? `elco-int-${ip}` : isPaymentNotification ? `midtrans-${ip}` : ip;
-    const record     = requestTracker.get(bucket) || { count: 0, timestamp: now };
+    const MAX_REQ    = isElcoServerCall || isPaymentNotification ? 120 : 60;
+    const bucket     = isElcoServerCall ? `elco-int-${ip}` : isPaymentNotification ? `midtrans-${ip}` : `api-${ip}`;
 
-    if (now - record.timestamp > WINDOW_MS) {
-      record.count     = 1;
-      record.timestamp = now;
-    } else {
-      record.count++;
-    }
-
-    requestTracker.set(bucket, record);
-
-    if (record.count > MAX_REQ) {
+    if (overLimit(bucket, MAX_REQ, 10_000)) {
       console.warn(`[SECURITY ALERT] API spam blocked — IP: ${ip}`);
       return new NextResponse(
         JSON.stringify({
           success: false,
           error:   'Too many requests. System blocked this action to prevent abuse.',
         }),
-        { status: 429, headers: { 'Content-Type': 'application/json' } }
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '10' } }
       );
     }
   }

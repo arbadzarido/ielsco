@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { useEffect, useState } from "react";
+import { allZones, isValidZone, zoneOptionLabel } from "@/lib/time/zone";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { 
@@ -13,6 +14,10 @@ import {
   AlertCircle, Loader2, CheckCircle2, X, Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// public.users.timezone holds an IANA zone. Older builds offered WIB/WITA/WIT; read those as their IANA names.
+const LEGACY_ZONES: Record<string, string> = { WIB: "Asia/Jakarta", WITA: "Asia/Makassar", WIT: "Asia/Jayapura" };
+const SCHOOL_ZONES = Array.from(new Set(["Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura", ...allZones()]));
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -24,7 +29,7 @@ export default function SettingsPage() {
   
   // Form states
   const [language, setLanguage] = useState("en");
-  const [timezone, setTimezone] = useState("WIB");
+  const [timezone, setTimezone] = useState("Asia/Jakarta");
   
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
@@ -61,7 +66,7 @@ export default function SettingsPage() {
 
       // Update Form States
       setLanguage(dbUser?.language || "en");
-      setTimezone(dbUser?.timezone || "WIB");
+      setTimezone(LEGACY_ZONES[dbUser?.timezone] ?? (isValidZone(dbUser?.timezone) ? dbUser.timezone : "Asia/Jakarta"));
 
       // Set internal state
       setUserData({
@@ -328,9 +333,7 @@ export default function SettingsPage() {
                       onChange={(e) => setTimezone(e.target.value)}
                       className="w-full sm:w-auto bg-white border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-[#E56668] transition-colors sm:min-w-[180px]"
                     >
-                      <option value="WIB">WIB (UTC+7)</option>
-                      <option value="WITA">WITA (UTC+8)</option>
-                      <option value="WIT">WIT (UTC+9)</option>
+                      {Array.from(new Set([timezone, ...SCHOOL_ZONES])).map((z) => <option key={z} value={z}>{zoneOptionLabel(z)}</option>)}
                     </select>
                   </div>
                 </div>

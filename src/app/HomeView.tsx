@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ArrowUpRight, CalendarClock, Compass, FileText, Globe2, GraduationCap, Mic, Sparkles, Users } from "lucide-react";
@@ -10,7 +11,7 @@ import { body, btnPrimary, btnSecondary, card, cardLink, container, eyebrow, h1,
 import { cn } from "@/lib/utils";
 import { usePublishedStories } from "@/lib/stories/usePublishedStories";
 import { eventsData } from "@/data/events";
-import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
+import { upcomingSessions } from "@/lib/circle/sessions";
 import { generateSlug } from "@/utils/slug";
 import { wibDeadline } from "@/lib/events/deadline";
 import { ELCO_MASCOT, elcoHref } from "@/lib/elco";
@@ -155,6 +156,7 @@ function HowItWorks() {
 }
 
 function CircleSessions() {
+  const fmt = useLocalFormat();
   const now = useNow();
   const sessions = useMemo(() => (now ? upcomingSessions(2, now) : []), [now]);
   return (
@@ -173,7 +175,7 @@ function CircleSessions() {
           <ul className="mt-8 space-y-3" aria-live="polite">
             {sessions.length === 0 && <li className="h-[76px] animate-pulse rounded-[18px] bg-[#F1F4F8]" aria-hidden="true" />}
             {sessions.map((s) => {
-              const f = formatSessionWib(s.start);
+              const f = fmt.session(s.start);
               return (
                 <li key={s.id} className={cn(card, "flex items-start gap-4 p-4")}>
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7] text-[#2F4157]"><CalendarClock size={20} aria-hidden="true" /></span>

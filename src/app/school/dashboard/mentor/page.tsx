@@ -71,7 +71,7 @@ function fmtDate(iso: string | null) {
 function fmtDateTime(iso: string | null) {
   if (!iso) return "—";
   const d = new Date(iso);
-  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} WIB`;
+  return `${d.toLocaleDateString("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })} · ${d.toLocaleTimeString("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })} WIB`;
 }
 
 function daysUntil(iso: string | null) {
