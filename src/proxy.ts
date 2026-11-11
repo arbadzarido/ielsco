@@ -34,9 +34,12 @@ function overLimit(key: string, max: number, windowMs: number) {
   return record.count > max;
 }
 
-// The client's IP. On Vercel, x-real-ip / the first x-forwarded-for entry is the connecting client set by the edge.
+// The client's IP. Vercel's edge overwrites x-vercel-forwarded-for / x-real-ip / x-forwarded-for with the connecting
+// client's address and drops values the client sent, so these can't be spoofed on Vercel. x-vercel-forwarded-for comes
+// first because it also survives a proxy placed in front of Vercel. Locally (no edge) every request shares one bucket.
 function clientIp(request: NextRequest) {
-  return request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown-ip';
+  const first = (v: string | null) => v?.split(',')[0]?.trim() || null;
+  return first(request.headers.get('x-vercel-forwarded-for')) || first(request.headers.get('x-real-ip')) || first(request.headers.get('x-forwarded-for')) || 'unknown-ip';
 }
 
 export async function proxy(request: NextRequest) {
