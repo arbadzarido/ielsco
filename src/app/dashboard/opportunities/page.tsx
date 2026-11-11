@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, ExternalLink, Trash2 } from "lucide-react";
 import { DashboardPage, type DashboardCtx } from "@/components/dashboard/DashboardPage";
 import { EmptyState, LoadingState, PageHeader } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, cardGloss, focusRing, inputClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
-import { dateWib } from "@/lib/format";
 import { track } from "@/lib/analytics";
 import { CATEGORY_LABEL, deadlineState, type Category } from "@/lib/opportunities";
 import { FREE_TRACKER_LIMIT } from "@/data/membership";
@@ -25,6 +25,7 @@ const STATUSES: [string, string][] = [
 ];
 
 function Tracker({ supabase, user }: DashboardCtx) {
+  const fmt = useLocalFormat();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [opps, setOpps] = useState<Record<string, Opp>>({});
   const [isMember, setIsMember] = useState(false);
@@ -110,7 +111,7 @@ function Tracker({ supabase, user }: DashboardCtx) {
                     {o && <span className="text-sm font-semibold text-[#577E90]">{CATEGORY_LABEL[o.category]}</span>}
                     <p className="text-lg font-bold text-[#1A2534]">{o ? <Link href={`/opportunities/${o.slug}`} className={cn("rounded hover:underline", focusRing)}>{o.title}</Link> : "Opportunity no longer listed"}</p>
                     {o && <p className="text-sm text-[#2F4157]/65">{o.organizer}</p>}
-                    {d && <span className={cn(tag, "mt-2", deadlineState(d) === "soon" && "bg-[#FFF3E0] text-[#8A5A00]")}>{r.personal_deadline ? "My deadline" : "Deadline"}: {dateWib(d)}</span>}
+                    {d && <span className={cn(tag, "mt-2", deadlineState(d) === "soon" && "bg-[#FFF3E0] text-[#8A5A00]")}>{r.personal_deadline ? "My deadline" : "Deadline"}: {fmt.date(d)}</span>}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {o && <a href={o.official_url} target="_blank" rel="noopener noreferrer" className={cn(btnSecondary, "px-3 py-2 text-sm")} aria-label={`Official page for ${o.title}`}><ExternalLink size={16} aria-hidden="true" /></a>}

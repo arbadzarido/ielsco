@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { CircleScheduleLocal } from "@/components/time/LocalTime";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import { useEffect, useState } from "react";
 import { ArrowRight, CalendarDays, Lock, Mic, Plus, Users } from "lucide-react";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
@@ -10,7 +12,7 @@ import { ActivityList } from "@/components/dashboard/me/ActivityList";
 import { useMyRecords } from "@/components/dashboard/useMyRecords";
 import { ACCENTS, btnLink, btnPrimary, btnSecondary, cardGloss, focusRing, tag } from "@/components/dashboard/ui";
 import { ElcoPractice } from "@/components/elco/ElcoCallout";
-import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
+import { upcomingSessions } from "@/lib/circle/sessions";
 import { connectApi } from "@/lib/connect/api";
 import { formatInZone } from "@/lib/connect/time";
 import type { Room } from "@/lib/connect/types";
@@ -34,6 +36,7 @@ function TabButton({ id, tab, setTab, children }: { id: Tab; tab: Tab; setTab: (
 }
 
 function Explore({ supabase }: { supabase: SupabaseClient }) {
+  const fmt = useLocalFormat();
   const [tab, setTab] = useState<Tab>("ielsco");
   const [rooms, setRooms] = useState<Room[] | null>(null);
   const [sessions, setSessions] = useState<MemberSession[] | null>(null);
@@ -80,10 +83,10 @@ function Explore({ supabase }: { supabase: SupabaseClient }) {
 
       {tab === "circle" && (
         <div role="tabpanel" id="events-panel-circle" aria-labelledby="events-tab-circle" className="space-y-4">
-          <p className="max-w-2xl text-[16px] text-[#2F4157]/70">Open speaking sessions every Wednesday 19:00 and Saturday 13:00 WIB, each with a theme. Check in so the hosts know you&apos;re coming.</p>
+          <p className="max-w-2xl text-[16px] text-[#2F4157]/70">Open speaking sessions every Wednesday 19:00 and Saturday 13:00 WIB<CircleScheduleLocal />, each with a theme. Check in so the hosts know you&apos;re coming.</p>
           <ul className="grid gap-3 md:grid-cols-2">
             {circle.map((s) => {
-              const { day, time } = formatSessionWib(s.start);
+              const { day, time } = fmt.session(s.start);
               return (
                 <li key={s.id} className={cn(cardGloss, "flex gap-3 p-4")}>
                   <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", ACCENTS.teal.soft, ACCENTS.teal.text)}><Mic size={20} aria-hidden="true" /></span>

@@ -5,6 +5,7 @@ import "./globals.css";
 
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { TimeZoneProvider } from "@/components/time/TimeZoneProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -87,9 +88,11 @@ export default function RootLayout({
         {/* --- SEO SCHEMA MARKUP END --- */}
 
         <I18nProvider>
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
+          <TimeZoneProvider>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+          </TimeZoneProvider>
         </I18nProvider>
         {/* Cookieless Vercel Web Analytics; only when the project has it switched on (NEXT_PUBLIC_ANALYTICS_ENABLED). */}
         {process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true" && <Analytics />}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { OfficialDeadline } from "@/components/time/LocalTime";
 import { ArrowUpRight, Lock } from "lucide-react";
 import type { EventData } from "@/data/events";
 import { wibDeadline } from "@/lib/events/deadline";
@@ -13,14 +14,13 @@ export function EventCta({ event, className }: { event: EventData; className?: s
   const closesAt = wibDeadline(event.registrationDateDeadline, event.registrationTimeDeadline);
   const [open, setOpen] = useState(() => Date.parse(closesAt) > Date.now());
   useEffect(() => setOpen(Date.parse(closesAt) > Date.now()), [closesAt]);
-  const date = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(closesAt));
   const link = event.registrationLink;
   const usable = link && link !== "#";
 
   if (!open || !usable) {
     return (
       <p className={cn(pill, "px-4 py-2 text-[14px] text-[#2F4157]/75", className)} data-testid="event-closed">
-        <Lock size={14} aria-hidden="true" /> {open ? "Registration details coming soon" : `Registration closed on ${date} WIB`}
+        <Lock size={14} aria-hidden="true" /> {open ? "Registration details coming soon" : <>Registration closed on <OfficialDeadline value={closesAt} /></>}
       </p>
     );
   }
@@ -30,7 +30,7 @@ export function EventCta({ event, className }: { event: EventData; className?: s
       <a href={link} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={btnAccent} data-testid="event-register">
         Register {external && <ArrowUpRight size={18} aria-hidden="true" />}
       </a>
-      <p className="text-[14px] text-[#2F4157]/65">Registration closes {date} WIB</p>
+      <p className="text-[14px] text-[#2F4157]/65">Registration closes <OfficialDeadline value={closesAt} /></p>
     </div>
   );
 }

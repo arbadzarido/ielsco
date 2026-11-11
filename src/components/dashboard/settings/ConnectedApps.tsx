@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ArrowUpRight, CheckCircle2, Link2 } from "lucide-react";
 import { btnPrimary, btnSecondary, cardGloss, tag } from "../ui";
 import { ELCO_URL } from "@/lib/elco";
 import { EXAM_NAMES, elcoConnectUrl, elcoNextStep, useElcoState } from "@/lib/elco-state";
 import { isMissingRelation } from "@/lib/dashboard/profile";
-import { dateWib } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface Link { id: string; scopes: string[]; created_at: string; elco_display_name: string | null }
@@ -21,6 +21,7 @@ const SCOPE: Record<string, string> = { "goals:read": "Reads your goals", "summa
 // signed authorization-code flow and returns here) or in Elco Settings. Unlinking keeps every Elco purchase and record;
 // Elco plan benefits on IELSco (Speaking Club, mentoring) pause until an account is connected again.
 export function ConnectedApps({ supabase }: { supabase: SupabaseClient }) {
+  const fmt = useLocalFormat();
   const [state, setState] = useState<State>({ s: "loading" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -79,14 +80,14 @@ export function ConnectedApps({ supabase }: { supabase: SupabaseClient }) {
           <div className="flex flex-wrap items-center gap-2">
             <CheckCircle2 size={18} className="text-[#2D7A58]" aria-hidden="true" />
             <span className="font-semibold" data-testid="elco-linked-as">Connected to Elco{state.link.elco_display_name ? `: ${state.link.elco_display_name}` : ""}</span>
-            <span className={tag}>since {dateWib(state.link.created_at)}</span>
+            <span className={tag}>since {fmt.date(state.link.created_at)}</span>
             {state.link.scopes.map((s) => <span key={s} className={tag}>{SCOPE[s] ?? s}</span>)}
           </div>
           {elco && (elco.active || elco.exams.length > 0) && (
             <div className="rounded-xl border border-[#E3E7ED] bg-white p-4 text-base" data-testid="elco-access">
               <p className="mb-1 text-sm font-semibold uppercase tracking-[0.12em] text-[#577E90]">From your Elco plan</p>
-              {elco.active && <p>Elco {elco.tier === "pro" ? "Pro" : "Starter"} until {dateWib(elco.ends_at!)}: {elco.speaking_club_per_month == null ? "Daily Speaking Club" : `${Math.max(0, elco.speaking_club_per_month - (elco.speaking_club_used ?? 0))} of ${elco.speaking_club_per_month} Speaking Club sessions left this month`}{elco.mentoring_per_month ? `, ${Math.max(0, elco.mentoring_per_month - (elco.mentoring_used ?? 0))} of ${elco.mentoring_per_month} mentoring sessions left` : ""}. <a href="/dashboard/membership" className="font-semibold text-[#577E90] underline-offset-4 hover:underline">Book sessions</a></p>}
-              {elco.exams.map((e) => <p key={e.ends_at + e.modes.join()}>Exam preparation in Elco: {e.modes.map((m) => EXAM_NAMES[m] || m).join(", ")} until {dateWib(e.ends_at)}.</p>)}
+              {elco.active && <p>Elco {elco.tier === "pro" ? "Pro" : "Starter"} until {fmt.date(elco.ends_at!)}: {elco.speaking_club_per_month == null ? "Daily Speaking Club" : `${Math.max(0, elco.speaking_club_per_month - (elco.speaking_club_used ?? 0))} of ${elco.speaking_club_per_month} Speaking Club sessions left this month`}{elco.mentoring_per_month ? `, ${Math.max(0, elco.mentoring_per_month - (elco.mentoring_used ?? 0))} of ${elco.mentoring_per_month} mentoring sessions left` : ""}. <a href="/dashboard/membership" className="font-semibold text-[#577E90] underline-offset-4 hover:underline">Book sessions</a></p>}
+              {elco.exams.map((e) => <p key={e.ends_at + e.modes.join()}>Exam preparation in Elco: {e.modes.map((m) => EXAM_NAMES[m] || m).join(", ")} until {fmt.date(e.ends_at)}.</p>)}
             </div>
           )}
           {state.summary && (

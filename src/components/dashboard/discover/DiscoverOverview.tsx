@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ArrowRight, Award, BriefcaseBusiness, Globe2, GraduationCap, Library, Lightbulb, Plane, Search, Trophy, Users } from "lucide-react";
@@ -15,7 +16,6 @@ import { loadStoriesFeed } from "@/lib/content/stories-feed";
 import { CATEGORY_LABEL, deadlineState, recommendOpportunities, type Category } from "@/lib/opportunities";
 import { DEMO_RESOURCES } from "@/data/dashboard/resources";
 import { featuredCollectionFor } from "@/data/dashboard/collections";
-import { dateWib } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 // Discover overview (docs/IELSCO-PRODUCT-ARCHITECTURE.md §3): Opportunities first, then News & Stories and Learning
@@ -33,6 +33,7 @@ const TILES: Tile[] = [
 ];
 
 export function DiscoverOverview({ supabase, profile }: DashboardCtx) {
+  const fmt = useLocalFormat();
   const router = useRouter();
   const [q, setQ] = useState("");
   const data = useLoad(async () => {
@@ -89,7 +90,7 @@ export function DiscoverOverview({ supabase, profile }: DashboardCtx) {
                   <Link href={`/opportunities/${o.slug}`} className={cn(cardGloss, "flex h-full flex-col gap-1 p-5 hover:border-[#577E90]", focusRing)}>
                     <span className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[#577E90]">{CATEGORY_LABEL[o.category]}{reason ? ` · ${reason}` : ""}</span>
                     <span className="text-[17px] font-semibold leading-snug">{o.title}</span>
-                    <span className="text-[14px] text-[#2F4157]/65">{o.organizer}{o.deadline ? ` · Deadline ${dateWib(o.deadline)}` : ""}</span>
+                    <span className="text-[14px] text-[#2F4157]/65">{o.organizer}{o.deadline ? ` · Deadline ${fmt.date(o.deadline)}` : ""}</span>
                   </Link>
                 </li>
               ))}

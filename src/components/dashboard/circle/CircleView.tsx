@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { CircleScheduleLocal } from "@/components/time/LocalTime";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import Link from "next/link";
 import { Avatar } from "../Avatar";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -11,7 +13,7 @@ import { btnPrimary, btnSecondary, cardGloss, focusRing, tag } from "../ui";
 import { LINKS } from "@/data/dashboard/config";
 import { CIRCLE_COHORT } from "@/data/dashboard/circle";
 import { usePublishedStories } from "@/lib/stories/usePublishedStories";
-import { formatSessionWib, upcomingSessions, type CircleSession } from "@/lib/circle/sessions";
+import { upcomingSessions, type CircleSession } from "@/lib/circle/sessions";
 import { cancelCheckIn, checkIn, loadCheckins, type CheckinState } from "@/lib/circle/checkins";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
@@ -23,7 +25,8 @@ const SESSIONS_SHOWN = 4;
 function SessionCard({ session, featured, state, busy, onToggle }: {
   session: CircleSession; featured: boolean; state: CheckinState; busy: boolean; onToggle: () => void;
 }) {
-  const { day, time } = formatSessionWib(session.start);
+  const fmt = useLocalFormat();
+  const { day, time } = fmt.session(session.start);
   const checked = state.status === "ready" && state.mine.has(session.id);
   const count = state.status === "ready" ? state.counts?.get(session.id) ?? 0 : null;
   return (
@@ -115,6 +118,7 @@ function Stories() {
 // sessions (Wed 19:00 / Sat 13:00 WIB) with check-ins, member stories and community channels. The current cohort's
 // agenda stays available as a link. The 2025 IELS Circle event is a past event and is not used as this page's identity.
 export function CircleView({ supabase }: { supabase: SupabaseClient }) {
+  const fmt = useLocalFormat();
   const { t } = useI18n();
   const sessions = useMemo(() => upcomingSessions(SESSIONS_SHOWN), []);
   const ids = useMemo(() => sessions.map((s) => s.id), [sessions]);
@@ -137,7 +141,7 @@ export function CircleView({ supabase }: { supabase: SupabaseClient }) {
       else await checkIn(supabase, session.id);
       invalidateMyRecords();
       await reload();
-      const { day, time } = formatSessionWib(session.start);
+      const { day, time } = fmt.session(session.start);
       setMessage({ ok: true, text: checked ? `Check-in cancelled for ${day}.` : `You're checked in for ${day}, ${time}.` });
     } catch (e) {
       setMessage({ ok: false, text: (e as Error).message });
@@ -159,7 +163,7 @@ export function CircleView({ supabase }: { supabase: SupabaseClient }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="sessions-heading" className="text-[24px] font-bold">Weekly sessions</h2>
-            <p className="text-[15px] text-[#2F4157]/65">Every Wednesday 19:00 and Saturday 13:00 WIB (Jakarta time). Check in so organisers know you&apos;re coming.</p>
+            <p className="text-[15px] text-[#2F4157]/65">Every Wednesday 19:00 and Saturday 13:00 WIB (Jakarta time)<CircleScheduleLocal />. Check in so organisers know you&apos;re coming.</p>
           </div>
           <a href={LINKS.circleDiscord} target="_blank" rel="noopener noreferrer" className={btnPrimary}>
             Sessions run on Discord <ExternalLink size={15} aria-hidden="true" />

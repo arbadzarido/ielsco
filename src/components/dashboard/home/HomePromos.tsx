@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
-import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
+import { upcomingSessions } from "@/lib/circle/sessions";
 import { trackInfo, type CourseTrack } from "@/data/dashboard/courses";
 import { TUTOR_PRICE_LABEL } from "@/components/tutoring/links";
 import { btnLink, focusRing } from "../ui";
@@ -11,8 +12,9 @@ import { cn } from "@/lib/utils";
 
 // Next weekly Circle session (Wed 19:00 / Sat 13:00 WIB). Check-in happens on the Circle page.
 export function CircleActivityBanner() {
+  const fmt = useLocalFormat();
   const [session] = upcomingSessions(1);
-  const { day, time } = formatSessionWib(session.start);
+  const { day, time } = fmt.session(session.start);
   return (
     <section data-testid="circle-activity-banner" className="grid gap-6 rounded-3xl bg-[#2F4157] p-6 text-white md:grid-cols-[auto_1fr_auto] md:items-center md:p-8">
       <CalendarDays size={28} className="text-white/70" aria-hidden="true" />

@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AlertTriangle, CalendarClock, ExternalLink, Loader2, MessageCircle, PauseCircle, UserPlus, FileText } from "lucide-react";
 import { btnPrimary, btnSecondary, card, cardGloss, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
-import { dateTimeWib, dateWib, idr } from "@/lib/format";
+import { idr } from "@/lib/format";
 import { loadSnap, type Checkout, type Plan } from "./useMembership";
 import { track } from "@/lib/analytics";
 import { FEEDBACK_WINDOW_DAYS } from "@/data/membership";
@@ -73,6 +74,7 @@ export function useElcoBenefit(supabase: SupabaseClient) {
 export const elcoKinds = (b: ElcoBenefit | null) => (!b?.active ? [] : b.mentoring_per_month ? ["speaking_club", "mentoring"] : ["speaking_club"]);
 
 export function ElcoBenefitCard({ benefit }: { benefit: ElcoBenefit }) {
+  const fmt = useLocalFormat();
   if (!benefit.active) return null;
   const sc = benefit.speaking_club_per_month;
   return (
@@ -82,12 +84,13 @@ export function ElcoBenefitCard({ benefit }: { benefit: ElcoBenefit }) {
         <li data-testid="elco-speaking">Daily Speaking Club: {sc == null ? "every session, no monthly limit" : `${Math.max(0, sc - (benefit.speaking_club_used ?? 0))} of ${sc} sessions left this month`}</li>
         {!!benefit.mentoring_per_month && <li data-testid="elco-mentoring">Mentoring: {Math.max(0, benefit.mentoring_per_month - (benefit.mentoring_used ?? 0))} of {benefit.mentoring_per_month} sessions left this month</li>}
       </ul>
-      <p className="mt-3 text-sm text-[#2F4157]/65">Until {dateWib(benefit.ends_at!)}, from your linked Elco account. Monthly counts renew on the 1st (WIB). These sessions don&apos;t include other member tools.</p>
+      <p className="mt-3 text-sm text-[#2F4157]/65">Until {fmt.date(benefit.ends_at!)}, from your linked Elco account. Monthly counts renew on the 1st (WIB). These sessions don&apos;t include other member tools.</p>
     </section>
   );
 }
 
 export function MemberSessions({ supabase, isMember, elco = [] }: { supabase: SupabaseClient; isMember: boolean; elco?: string[] }) {
+  const fmt = useLocalFormat();
   const [rows, setRows] = useState<Session[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -116,7 +119,7 @@ export function MemberSessions({ supabase, isMember, elco = [] }: { supabase: Su
               <li key={s.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="font-semibold text-[#1A2534]">{s.title}</p>
-                  <p className="text-sm text-[#2F4157]/70">{dateTimeWib(s.starts_at)} · {s.duration_min} min{s.host_name ? ` · with ${s.host_name}` : ""}</p>
+                  <p className="text-sm text-[#2F4157]/70">{fmt.dateTime(s.starts_at)} · {s.duration_min} min{s.host_name ? ` · with ${s.host_name}` : ""}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {s.members_only && <span className={tag}>Members</span>}
                     {s.seats_left !== null && <span className={tag}>{s.seats_left} seats left</span>}
@@ -140,6 +143,7 @@ type Feedback = { id: string; doc_type: string; doc_url: string; target: string 
 const DOC = { cv: "CV", motivation_letter: "Motivation letter", essay: "Scholarship essay", interview_answers: "Interview answers" } as Record<string, string>;
 
 export function FeedbackRequests({ supabase, userId }: { supabase: SupabaseClient; userId: string }) {
+  const fmt = useLocalFormat();
   const [rows, setRows] = useState<Feedback[] | null>(null);
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -166,8 +170,8 @@ export function FeedbackRequests({ supabase, userId }: { supabase: SupabaseClien
     <Section icon={FileText} title="Feedback on an application document" testId="member-feedback">
       {recent ? (
         <p className="text-base text-[#2F4157]/80">
-          Your current review: <strong>{DOC[recent.doc_type]}</strong>{recent.target ? ` for ${recent.target}` : ""}, sent {dateWib(recent.created_at)}.
-          Your next review is available from {dateWib(new Date(Date.parse(recent.created_at) + FEEDBACK_WINDOW_DAYS * 864e5))}.
+          Your current review: <strong>{DOC[recent.doc_type]}</strong>{recent.target ? ` for ${recent.target}` : ""}, sent {fmt.date(recent.created_at)}.
+          Your next review is available from {fmt.date(new Date(Date.parse(recent.created_at) + FEEDBACK_WINDOW_DAYS * 864e5))}.
         </p>
       ) : (
         <form onSubmit={submit} className="space-y-4">
@@ -204,6 +208,7 @@ export function FeedbackRequests({ supabase, userId }: { supabase: SupabaseClien
 type Buddy = { status: "waiting" | "matched" | "paused"; preferences: string | null; match_note: string | null; matched_at: string | null };
 
 export function BuddyMatching({ supabase, userId }: { supabase: SupabaseClient; userId: string }) {
+  const fmt = useLocalFormat();
   const [row, setRow] = useState<Buddy | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -229,7 +234,7 @@ export function BuddyMatching({ supabase, userId }: { supabase: SupabaseClient; 
       {row === undefined ? <p className="text-base text-[#2F4157]/60">Loading…</p>
         : row && row.status === "matched" ? (
           <div className="space-y-3">
-            <span className={tag}>Matched{row.matched_at ? ` on ${dateWib(row.matched_at)}` : ""}</span>
+            <span className={tag}>Matched{row.matched_at ? ` on ${fmt.date(row.matched_at)}` : ""}</span>
             {row.match_note && <p className="whitespace-pre-line rounded-xl bg-[#F7F8FA] p-4 text-base text-[#2F4157]">{row.match_note}</p>}
           </div>
         ) : row && row.status === "waiting" ? (

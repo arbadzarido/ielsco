@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useLocalFormat } from "@/components/time/TimeZoneProvider";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,12 +17,11 @@ import { btnLink, btnPrimary, cardGloss, focusRing, tag } from "../ui";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { currentOrNextActivity, formatRange } from "@/data/dashboard/circle";
 import { PROGRAMS } from "@/data/dashboard/programs";
-import { formatSessionWib, upcomingSessions } from "@/lib/circle/sessions";
+import { upcomingSessions } from "@/lib/circle/sessions";
 import { eventDayLabel, officialEvents } from "@/lib/events/catalog";
 import { loadStoriesFeed, type FeedStory } from "@/lib/content/stories-feed";
 import { CATEGORY_LABEL, recommendOpportunities, type Opportunity } from "@/lib/opportunities";
 import { loadOpportunities } from "@/lib/pulse";
-import { dateWib } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { opportunityCover } from "@/lib/covers";
 
@@ -79,6 +79,7 @@ function Highlights({ supabase }: { supabase: DashboardCtx["supabase"] }) {
 }
 
 function UpcomingIelsco({ userId }: { userId: string }) {
+  const fmt = useLocalFormat();
   const { state } = useMyRecords(userId);
   const registered = new Set(state.s === "ready" ? state.data.activities.filter((a) => a.eventId).map((a) => a.eventId!) : []);
   const checkedIn = new Set(state.s === "ready" ? state.data.activities.filter((a) => a.kind === "circle_session").map((a) => a.start.toISOString()) : []);
@@ -124,7 +125,7 @@ function UpcomingIelsco({ userId }: { userId: string }) {
                 </div>
                 <ul className="divide-y divide-[#E3E7ED]">
                   {sessions.map((s) => {
-                    const { day, time } = formatSessionWib(s.start);
+                    const { day, time } = fmt.session(s.start);
                     const mine = checkedIn.has(s.start.toISOString());
                     return (
                       <li key={s.id} className="flex items-start gap-3 py-2">
@@ -162,6 +163,7 @@ function ExplorePrograms() {
 }
 
 function ExploreOpportunities({ profile, supabase }: Pick<DashboardCtx, "profile" | "supabase">) {
+  const fmt = useLocalFormat();
   const [opps, setOpps] = useState<Opportunity[] | null>(null);
   useEffect(() => { loadOpportunities(supabase).then(setOpps); }, [supabase]);
   const picks = useMemo(() => (opps ? recommendOpportunities(opps, profile, 3, new Date(), true) : []), [opps, profile]);
@@ -182,7 +184,7 @@ function ExploreOpportunities({ profile, supabase }: Pick<DashboardCtx, "profile
                 <span className="flex flex-wrap items-center gap-2"><span className={tag}>{CATEGORY_LABEL[o.category]}</span>{reason && <span className="text-[13px] font-semibold text-[#0B6E64]">{reason}</span>}</span>
                 <span className="text-[17px] font-semibold leading-snug text-[#1A2534]">{o.title}</span>
                 <span className="text-[14px] text-[#2F4157]/65">{o.organizer}</span>
-                <span className="mt-auto text-[14px] font-medium text-[#2F4157]/75">{o.deadline ? `Deadline ${dateWib(o.deadline)}` : o.deadline_note || "Check the official page for dates"}</span>
+                <span className="mt-auto text-[14px] font-medium text-[#2F4157]/75">{o.deadline ? `Deadline ${fmt.date(o.deadline)}` : o.deadline_note || "Check the official page for dates"}</span>
               </Link>
             </li>
           ))}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OfficialDeadline } from "@/components/time/LocalTime";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Banknote, Briefcase, Check, ExternalLink, FileText, Instagram, Languages, Linkedin, Mail, Plane, ShieldCheck } from "lucide-react";
@@ -121,7 +122,7 @@ export default function CareersPage() {
               grow our communities and products, and work in English every week.
             </p>
             <div className="mt-6" data-testid="recruitment-status">
-              {open && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Now open · until {RECRUITMENT.closesLabel}, 23:59 WIB</span>}
+              {open && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Now open · until <OfficialDeadline value={RECRUITMENT.closesAt} /></span>}
               {phase === "upcoming" && <span className={cn(pill, "border-[#577E90]/30 text-[#577E90]")}>Applications open {RECRUITMENT.opensLabel} – {RECRUITMENT.closesLabel}</span>}
               {phase === "closed" && <span className={pill}>Applications for the 2027 cohort closed on {RECRUITMENT.closesLabel}</span>}
             </div>
@@ -419,7 +420,7 @@ export default function CareersPage() {
               <div className="flex items-center gap-6">
                 <Image src="/images/contents/mascot/poses/happy.png" alt="" width={80} height={80} className="hidden h-[80px] w-[80px] shrink-0 object-contain sm:block" />
                 <div>
-                  <p className={eyebrow}>{open ? `Applications close ${RECRUITMENT.closesLabel}, 23:59 WIB` : `Applications open ${RECRUITMENT.opensLabel}`}</p>
+                  <p className={eyebrow}>{open ? <>Applications close <OfficialDeadline value={RECRUITMENT.closesAt} /></> : `Applications open ${RECRUITMENT.opensLabel}`}</p>
                   <h2 id="close-h" className={cn(h2, "mt-2")}>Find your role. Join the team.</h2>
                   <p className={cn(body, "mt-2 max-w-[520px]")}>For 1st–3rd year university students. Sign in with your Elco-Pass and apply in about 10 minutes.</p>
                 </div>

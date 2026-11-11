@@ -83,8 +83,9 @@ function formatIDR(n: number) {
 function formatDateTime(iso: string | null) {
   if (!iso) return "–";
   const d = new Date(iso);
-  const datePart = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  const timePart = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  // Sessions are scheduled in WIB (the admin form's "Time (WIB)"), so show them in Asia/Jakarta whatever the browser zone.
+  const datePart = d.toLocaleDateString("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", year: "numeric" });
+  const timePart = d.toLocaleTimeString("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
   // if time is exactly 00:00 and we didn't explicitly set it, we could hide it, but we force time input now.
   return `${datePart} at ${timePart} WIB`;
 }

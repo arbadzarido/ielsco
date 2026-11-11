@@ -13,12 +13,11 @@ import { ConnectedApps } from "@/components/dashboard/settings/ConnectedApps";
 import { ELCO_ENABLED } from "@/lib/elco";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
+import { useTimeZone } from "@/components/time/TimeZoneProvider";
+import { allZones, formatDateTime, isValidZone, zoneOptionLabel } from "@/lib/time/zone";
 
-const TIMEZONES = [
-  { value: "WIB", label: "WIB (UTC+7)" },
-  { value: "WITA", label: "WITA (UTC+8)" },
-  { value: "WIT", label: "WIT (UTC+9)" },
-];
+// "" = automatic (follow this browser's zone). Anything else is an IANA zone saved to public.users.timezone.
+const AUTO = "";
 
 type Status = { ok: boolean; text: string } | null;
 
@@ -69,9 +68,11 @@ function PasswordField({ id, label, value, onChange, autoComplete }: { id: strin
 function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient }) {
   const router = useRouter();
   const { t } = useI18n();
-  const [timezone, setTimezone] = useState("WIB");
-  // public.users.timezone does not exist in every database (it is missing in production as of 2026-10-17).
-  // The control is only shown once a read confirms the column exists, so members never get a failing save.
+  const tzCtx = useTimeZone();
+  const [timezone, setTimezone] = useState<string>(AUTO);
+  const [zones, setZones] = useState<string[]>([]);
+  // The control is only shown once a read confirms public.users.timezone exists (added 2026-11-20), so a database
+  // without the column never produces a failing save.
   const [tzAvailable, setTzAvailable] = useState(false);
   const [tzStatus, setTzStatus] = useState<Status>(null);
   const [tzSaving, setTzSaving] = useState(false);
@@ -85,8 +86,9 @@ function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient
   useEffect(() => {
     supabase.from("users").select("timezone").eq("id", user.id).maybeSingle().then(({ data, error }) => {
       if (error) return;
+      setZones(allZones());
       setTzAvailable(true);
-      if (data?.timezone) setTimezone(data.timezone);
+      setTimezone(isValidZone(data?.timezone) ? data.timezone : AUTO);
     });
   }, [supabase, user.id]);
 
@@ -95,12 +97,16 @@ function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient
     setTimezone(value);
     setTzSaving(true);
     setTzStatus(null);
-    const { error } = await supabase.from("users").update({ timezone: value, updated_at: new Date().toISOString() }).eq("id", user.id);
+    const saved = value === AUTO ? null : value;
+    const { error } = await supabase.from("users").update({ timezone: saved, updated_at: new Date().toISOString() }).eq("id", user.id);
     setTzSaving(false);
     if (error) {
       setTimezone(previous);
       setTzStatus({ ok: false, text: `Couldn't save your time zone: ${error.message}` });
-    } else setTzStatus({ ok: true, text: "Time zone saved." });
+    } else {
+      tzCtx.setPreferred(saved);
+      setTzStatus({ ok: true, text: saved ? "Time zone saved." : "Time zone set to automatic." });
+    }
   };
 
   const changePassword = async (e: FormEvent) => {
@@ -166,9 +172,12 @@ function SettingsView({ user, supabase }: { user: User; supabase: SupabaseClient
             {tzAvailable && <div>
               <label htmlFor="settings-timezone" className={labelClass}>Time zone</label>
               <select id="settings-timezone" data-testid="settings-timezone" value={timezone} disabled={tzSaving} onChange={(e) => saveTimezone(e.target.value)} className={inputClass}>
-                {TIMEZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+                <option value={AUTO}>Automatic: {zoneOptionLabel(tzCtx.detected)}</option>
+                {zones.map((z) => <option key={z} value={z}>{zoneOptionLabel(z)}</option>)}
               </select>
-              <p className="mt-2 text-sm text-[#2F4157]/60">Used for course session times.</p>
+              <p className="mt-2 text-sm text-[#2F4157]/60" data-testid="settings-timezone-now">
+                Events, sessions and deadlines are shown in this zone. Now: {formatDateTime(new Date(), tzCtx.zone)}.
+              </p>
             </div>}
           </div>
           <div className="mt-4"><StatusLine status={tzStatus} testId="settings-timezone-status" /></div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Footer from "@/components/footer";
+import { CircleScheduleLocal } from "@/components/time/LocalTime";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -209,7 +210,7 @@ export default function IELSCirclePage() {
               <a href="#sessions" className={btnPrimary} data-testid="circle-hero-sessions">Join a weekly session</a>
               <Link href="/circle/stories" className={btnSecondary}>Read member stories</Link>
             </div>
-            <p className="mt-6 text-[14px] text-[#2F4157]/60">Free to join · Two live speaking sessions every week · Wednesdays 19:00 and Saturdays 13:00 WIB</p>
+            <p className="mt-6 text-[14px] text-[#2F4157]/60">Free to join · Two live speaking sessions every week · Wednesdays 19:00 and Saturdays 13:00 WIB<CircleScheduleLocal /></p>
           </div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#E6E9EE]">
             <Image src="/images/site/online-cohort.webp" alt="An online IELS Circle session on a video call" fill priority sizes="(min-width: 1024px) 600px, 92vw" className="object-cover" />
