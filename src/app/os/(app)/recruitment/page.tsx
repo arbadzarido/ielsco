@@ -19,7 +19,7 @@ type Milestone = { id: string; title: string; planned_start: string | null; due_
 const TASK_KEYS = CAMPAIGN_TASKS.map((t) => t.key);
 const roleLabel = (id: string | null) => roleById(id)?.title ?? "—";
 
-// /os/recruitment: the daily list for the recruitment team (founders and people with a recruitment grant), and
+// /os/recruitment: the daily list for the recruitment team (founders, managers and people with a recruitment grant), and
 // "Assigned to me" for interviewers and reviewers. Everything is read with the person's own session (RLS).
 export default function RecruitmentPage() {
   const params = useSearchParams();
@@ -56,7 +56,7 @@ export default function RecruitmentPage() {
 
   if (!access) return <Loading />;
   if (!team && !access.assigned) {
-    return <div><PageTitle title="Recruitment" /><Empty title="No recruitment access" body="Candidate information is private to the recruitment team. A founder can give you access, or assign you a candidate to evaluate." /></div>;
+    return <div><PageTitle title="Recruitment" /><Empty title="No recruitment access" body="Candidate information is private to the recruitment team (founders and managers). A founder can give you access, or assign you a candidate to evaluate." /></div>;
   }
 
   const counts = (k: string) => all.filter((a) => (stageOf.get(a.id)?.stage ?? "new") === k).length;
