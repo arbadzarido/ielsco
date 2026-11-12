@@ -32,8 +32,10 @@ sql(`delete from public.career_applications; truncate public.os_audit_log, publi
     ('PPL-0001', 'Founder Test', 'founder', 'active', 'founder@ielsco.test'),
     ('PPL-0002', 'Recruiter Member', 'member', 'active', 'recruiter@ielsco.test'),
     ('PPL-0003', 'Interviewer Member', 'member', 'active', 'interviewer@ielsco.test'),
-    ('PPL-0004', 'Staff No Access', 'manager', 'active', 'staff@ielsco.test');
-  insert into public.os_person_companies values ('PPL-0001','HQ'),('PPL-0001','IEL'),('PPL-0001','ELC'),('PPL-0002','IEL'),('PPL-0003','ELC'),('PPL-0004','IEL');
+    ('PPL-0004', 'Staff No Access', 'member', 'active', 'staff@ielsco.test'),
+    ('PPL-0005', 'Division Manager', 'manager', 'active', 'manager@ielsco.test'),
+    ('PPL-0006', 'Second Founder', 'founder', 'active', 'founder2@ielsco.test');
+  insert into public.os_person_companies values ('PPL-0001','HQ'),('PPL-0001','IEL'),('PPL-0001','ELC'),('PPL-0002','IEL'),('PPL-0003','ELC'),('PPL-0004','IEL'),('PPL-0005','IEL'),('PPL-0006','HQ'),('PPL-0006','IEL');
   insert into public.os_person_divisions values ('PPL-0004','DIV-05',true);
   alter table public.os_grants disable trigger os_grants_before_write;
   insert into public.os_grants (person_id, resource_type, resource_id, level, reason, granted_by) values ('PPL-0002', 'recruitment', '2027', 'edit', 'Recruitment team', 'PPL-0001');
@@ -85,6 +87,22 @@ const restAs = (token, path) => fetch(`${GW}/rest/v1/${path}`, { headers: { apik
   check("no access: the API returns no applications (RLS)", Array.isArray(rows) && rows.length === 0, JSON.stringify(rows).slice(0, 120));
   const pipe = await restAs(token, "os_recruitment_candidates?select=application_id");
   check("no access: no pipeline rows either", Array.isArray(pipe) && pipe.length === 0);
+  await ctx.close();
+}
+
+// ── Every active manager and founder is on the recruitment team by role (no grant, no authenticator code needed) ──
+for (const [who, email] of [["manager", "manager@ielsco.test"], ["founder without an authenticator code", "founder2@ielsco.test"]]) {
+  const { ctx, page } = await signIn(email);
+  await page.goto(`${OS}/os`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(800);
+  check(`${who}: Recruitment is in the menu`, await navHasRecruitment(page));
+  await page.goto(`${OS}/os/recruitment`);
+  await page.getByTestId("os-recruitment-list").waitFor({ timeout: 20000 }).catch(() => {});
+  check(`${who}: the recruitment list opens`, (await page.getByTestId("os-recruitment-list").count()) > 0 && (await page.getByText("No recruitment access").count()) === 0);
+  const token = await accessToken(ctx);
+  const rows = await restAs(token, "career_applications?select=id");
+  check(`${who}: the API returns the applications`, Array.isArray(rows) && rows.length === 3, JSON.stringify(rows).slice(0, 120));
+  const edit = await (await fetch(`${GW}/rest/v1/rpc/os_recruitment_access`, { method: "POST", headers: { apikey: token, authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ p_level: "edit" }) })).json();
+  check(`${who}: can work candidates (edit access)`, edit === true, JSON.stringify(edit));
   await ctx.close();
 }
 

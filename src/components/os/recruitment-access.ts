@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useOs } from "./OsProvider";
 
-// Whether to show Recruitment in the OS menu: the recruitment team (founders, 'recruitment' grant) or anyone assigned to
+// Whether to show Recruitment in the OS menu: the recruitment team (founders, managers, 'recruitment' grant) or anyone assigned to
 // evaluate a candidate. Presentation only; the database decides what each query returns.
 export type RecruitmentAccess = { team: boolean; edit: boolean; assigned: number } | null;
 let cached: Promise<RecruitmentAccess> | null = null;
