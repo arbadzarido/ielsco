@@ -13,24 +13,12 @@ export const metadata: Metadata = pageMetadata({
   path: "/about",
 });
 
-type Leader = { name: string; role: string; image: string; instagram?: string; linkedin?: string; background: string; experience: string; inactive?: boolean };
+type Leader = { name: string; role: string; image: string; instagram?: string; linkedin?: string; background: string; experience: string };
 
-const ADVISORS: Leader[] = [
-  {
-    name: "Alfiandi Imam Mawardi", role: "President Commissioner", image: "/images/people/directors/alfiandi.png",
-    instagram: "https://www.instagram.com/alfiandiimam/", linkedin: "https://www.linkedin.com/in/alfiandi-imam-mawardi-06249893/",
-    background: "Currently serving as the Founder and Commissioner of LANDASI, focusing on startup incubation, bootstrap investment, and fostering digital business ecosystems.",
-    experience: "Brings over 8 years of experience at UPN 'Veteran' Jawa Timur's Innovation & Entrepreneur Center, alongside his past executive role as Founder & CEO of Tapfast Indonesia.",
-  },
-  {
-    name: "Khairi Pandya Adhikara", role: "Strategic Advisor", image: "/images/people/directors/pandya1.png",
-    instagram: "https://www.instagram.com/khairi.pandya/", linkedin: "https://www.linkedin.com/in/khairi-pandya/",
-    background: "Currently serving as Sr. OD Specialist at STAR Capital, focusing on Organizational Development and Structure.",
-    experience: "Former Manager of Organization & Workforce Transformation at Deloitte, managing stakeholder relations and human capital initiatives for over 2 years.",
-  },
-];
-
-const DIRECTORS: Leader[] = [
+// Current leadership and strategic partnership group, effective 13 November 2026 (IELSco's second anniversary).
+// Formal Direksi/Komisaris positions are not shown: the heading is "Leadership & Strategic Partners". The people who
+// built IELSco's first two years are celebrated in /stories/two-years-of-building-together.
+const LEADERSHIP: Leader[] = [
   {
     name: "Arbadza Rido", role: "Co-Founder & CEO, IELSco & Elco AI", image: "/images/people/leadership/arbadza.png",
     instagram: "https://instagram.com/arbadzarido", linkedin: "https://linkedin.com/in/arbadzarido",
@@ -38,17 +26,7 @@ const DIRECTORS: Leader[] = [
     experience: "Former Project Manager at Pertamina Training & Consulting and Tech in Asia, leading cross-functional teams in high-impact corporate projects.",
   },
   {
-    name: "Fadhila Qurotul Aini", role: "Co-Founder of IELSco", image: "/images/people/directors/dhila2.png", inactive: true,
-    instagram: "https://www.instagram.com/fadhilaqa._/", linkedin: "https://linkedin.com/in/fadhilaqa/",
-    background: "Successfully streamlined international outreach and digital operations to connect local talent with high-tier global aesthetic science networks.",
-    experience: "Former Marketing and Operations Intern at IFAAS (International Fellowship In Advanced Aesthetic Science), managing remote global projects for 7 months.",
-  },
-];
-
-// Elco AI is operated by PT Elco Edukasi Berkah Indonesia, a subsidiary of PT English Space Berkah Indonesia.
-const ELCO_LEADERS: Leader[] = [
-  {
-    name: "Muhammad Farrel Alrezky", role: "Co-Founder & COO, Elco AI", image: "/images/people/leadership/farrel.png",
+    name: "Muhammad Farrel Alrezky", role: "Co-Founder & COO", image: "/images/people/leadership/farrel.png",
     instagram: "https://www.instagram.com/farelalres/", linkedin: "https://www.linkedin.com/in/muhammadfarrelalrezky/",
     background: "Business development and B2B enterprise sales, driving revenue and high-value strategic partnerships.",
     experience: "A top national sales performer who has closed enterprise AI and asset projects worth IDR 100 million to more than IDR 10 billion.",
@@ -57,10 +35,15 @@ const ELCO_LEADERS: Leader[] = [
 
 const STRATEGIC_PARTNERS: Leader[] = [
   {
-    name: "Andrew Pandu Sembiring", role: "Strategic Partner", image: "/images/people/leadership/andrew.png",
+    name: "Firmansyah, S.E., M.Sc.", role: "Strategic Partner", image: "/images/people/leadership/firmansyah.png",
+    background: "Director of PT Serangkai Cahaya Timur. Bachelor of Economics (S.E.) from Universitas Trisakti and Master of Science (M.Sc.) from the University of Salford.",
+    experience: "Built his professional career at HSBC Indonesia and previously served as Director of PT Paketku Global Sinergi.",
+  },
+  {
+    name: "Andrew Pandu Sembiring, S.H., MBA", role: "Strategic Partner", image: "/images/people/leadership/andrew.png",
     linkedin: "https://www.linkedin.com/in/andrew-pandu-sembiring-07a627138/",
-    background: "President Director of PT Ficotama Bina Trampil since July 1998.",
-    experience: "More than 20 years of experience in recruitment services for international labour supply, based in Indonesia.",
+    background: "Bachelor of Laws (S.H.) and a Master of Business Administration (MBA) from the University of Pittsburgh.",
+    experience: "President Director of PT Ficotama Bina Trampil since July 1998, with more than 20 years of experience in recruitment services for international labour supply.",
   },
 ];
 
@@ -80,7 +63,6 @@ function LeaderCard({ p }: { p: Leader }) {
         <div className="min-w-0">
           <p className="text-[18px] font-bold text-[#1A2534]">{p.name}</p>
           <p className="text-[15px] font-semibold text-[#577E90]">{p.role}</p>
-          {p.inactive && <span className="mt-1.5 inline-flex rounded-full bg-[#F1F4F8] px-2.5 py-0.5 text-[13px] font-semibold text-[#2F4157]/70">Inactive</span>}
           {(p.instagram || p.linkedin) && <div className="mt-3 flex gap-2">
             {p.instagram && <a href={p.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on Instagram`} className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]", focusRing)}><Instagram size={16} aria-hidden="true" /></a>}
             {p.linkedin && <a href={p.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${p.name} on LinkedIn`} className={cn("flex h-9 w-9 items-center justify-center rounded-full border border-[#E6E9EE] text-[#2F4157] hover:border-[#2F4157]", focusRing)}><Linkedin size={16} aria-hidden="true" /></a>}
@@ -202,28 +184,25 @@ export default function About() {
       <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="leadership-heading">
         <div className={container}>
           <p className={eyebrow}>Leadership</p>
-          <h2 id="leadership-heading" className={cn(h2, "mt-3")}>The people behind IELS</h2>
+          <h2 id="leadership-heading" className={cn(h2, "mt-3")}>Leadership &amp; Strategic Partners</h2>
+          <p className={cn(lead, "mt-3 max-w-[720px]")}>
+            From 13 November 2026, IELSco&rsquo;s second anniversary, IELSco is led by its two co-founders together with two strategic partners who share in its ownership.{" "}
+            <Link href="/stories/ielsco-leadership-and-strategic-partners" className="font-semibold underline underline-offset-4">Read the announcement</Link>.
+          </p>
           <div className="mt-10 grid gap-12 lg:grid-cols-2">
             <div>
-              <h3 className="text-[18px] font-bold text-[#2F4157]">Board of Advisors</h3>
-              <ul className="mt-5 space-y-5">{ADVISORS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
+              <h3 className="text-[18px] font-bold text-[#2F4157]">Leadership</h3>
+              <ul className="mt-5 space-y-5">{LEADERSHIP.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
             </div>
             <div>
-              <h3 className="text-[18px] font-bold text-[#2F4157]">Board of Directors</h3>
-              <ul className="mt-5 space-y-5">{DIRECTORS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
-            </div>
-            <div>
-              <h3 className="text-[18px] font-bold text-[#2F4157]">Elco AI</h3>
-              <p className="mt-1 text-[15px] text-[#2F4157]/70">
-                <a href="https://www.elcoai.com/about" target="_blank" rel="noopener noreferrer" className="font-semibold underline">Elco AI</a> is operated by PT Elco Edukasi Berkah Indonesia, a subsidiary of PT English Space Berkah Indonesia.
-              </p>
-              <ul className="mt-5 space-y-5">{ELCO_LEADERS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
-            </div>
-            <div>
-              <h3 className="text-[18px] font-bold text-[#2F4157]">Strategic Partner</h3>
+              <h3 className="text-[18px] font-bold text-[#2F4157]">Strategic Partners</h3>
               <ul className="mt-5 space-y-5">{STRATEGIC_PARTNERS.map((p) => <LeaderCard key={p.name} p={p} />)}</ul>
             </div>
           </div>
+          <p className="mt-10 text-[15px] text-[#2F4157]/75">
+            IELSco&rsquo;s first two years were built by many people.{" "}
+            <Link href="/stories/two-years-of-building-together" className="font-semibold underline underline-offset-4">Two Years of Building Together</Link> celebrates Fadhila Qurotul Aini and Alfiandi Imam Mawardi.
+          </p>
         </div>
       </section>
 
