@@ -1,6 +1,7 @@
 // src/data/courses.ts
 
-export type MentorId = "arba" | "dhila" | "hana";
+// IELS Courses has one mentor, Arbadza Rido, for every track (from 13 November 2026).
+export type MentorId = "arba";
 export type CourseTrack = "grammar" | "standardized-test" | "speaking" | "work-abroad" | "writing" | "scholarship-essay";
 export type PackageType = "intensive" | "extensive" | "custom";
 
@@ -48,7 +49,7 @@ export const MENTORS: Mentor[] = [
   {
     id: "arba",
     name: "Arbadza Rido",
-    role: "Principal of Operations & Business",
+    role: "Co-Founder & CEO, IELSco",
     image: "/images/people/directors/arba.png",
     instagram: "https://instagram.com/arbadzarido",
     linkedin: "https://linkedin.com/in/arbadzarido",
@@ -58,24 +59,8 @@ export const MENTORS: Mentor[] = [
       { emoji: "🏢", text: "Project Manager, Pertamina Training & Consulting" },
       { emoji: "🎯", text: "IELTS Band 8.0 · TOEFL iBT 110+" },
     ],
-    tracks: ["grammar", "standardized-test"],
-    tagline: "Grammar & Test Prep",
-  },
-  {
-    id: "dhila",
-    name: "Fadhila Qurotul Aini",
-    role: "Principal of Growth & Finance",
-    image: "/images/people/directors/dhila2.png",
-    instagram: "https://www.instagram.com/fadhilaqa._/",
-    linkedin: "https://linkedin.com/in/fadhilaqa/",
-    highlights: [
-      { emoji: "🌏", text: "International ops & outreach across global networks" },
-      { emoji: "💼", text: "Marketing & Ops Intern, IFAAS — 7 months remote" },
-      { emoji: "🗣️", text: "Cross-cultural English communication specialist" },
-      { emoji: "📄", text: "TOEIC 905 · C1 Professional English" },
-    ],
-    tracks: ["speaking", "work-abroad"],
-    tagline: "Speaking & Professional English",
+    tracks: ["grammar", "standardized-test", "speaking", "work-abroad", "writing", "scholarship-essay"],
+    tagline: "Grammar, Test Prep, Speaking & Career English",
   },
 ];
 
@@ -305,7 +290,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   // ── SPEAKING ──
   {
     id: "speaking-intensive", name: "Speaking Fluency", type: "intensive", sessions: 8,
-    mentorId: "dhila", trackId: "speaking", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "speaking", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "8-session intensive to unlock your speaking confidence for real-life conversations, job interviews, and global environments.",
     outcomes: ["Speak confidently in professional settings", "Handle job interviews in English with structure and clarity", "Improve pronunciation and natural flow", "Earn IELS Speaking Certificate"],
@@ -313,7 +298,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   },
   {
     id: "speaking-extensive", name: "Speaking Fluency", type: "extensive", sessions: 21,
-    mentorId: "dhila", trackId: "speaking", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "speaking", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session comprehensive speaking program from pronunciation foundations to leadership-level communication. For those who want to truly think and live in English.",
     outcomes: ["Communicate naturally and confidently in any professional context", "Lead meetings, presentations, and negotiations in English", "Build fluency through reduced translation lag", "Earn IELS Speaking & Professional English Certificate"],
@@ -322,7 +307,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   // ── WORK ABROAD ──
   {
     id: "work-abroad-intensive", name: "Work Abroad & Remote Careers", type: "intensive", sessions: 8,
-    mentorId: "dhila", trackId: "work-abroad", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "work-abroad", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "Purpose-built for professionals targeting global remote companies or international careers. Master async communication, LinkedIn, and cross-cultural teamwork.",
     outcomes: ["Write effective emails, Slack messages, and async updates", "Nail English-language interviews for remote/global roles", "Understand cross-cultural workplace dynamics", "Earn IELS Professional English Certificate"],
@@ -330,7 +315,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   },
   {
     id: "work-abroad-extensive", name: "Work Abroad & Remote Careers", type: "extensive", sessions: 21,
-    mentorId: "dhila", trackId: "work-abroad", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "work-abroad", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session deep program covering everything from application to thriving in a global remote team — cover letters, onboarding, negotiation, leadership, and beyond.",
     outcomes: ["Build a complete professional English career package", "Communicate confidently from application through performance reviews", "Navigate remote team culture, conflict, and leadership", "Earn IELS Work Abroad & Remote Careers Certificate"],
@@ -339,7 +324,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   // ── WRITING ──
   {
     id: "writing-intensive", name: "Writing Excellence", type: "intensive", sessions: 8,
-    mentorId: "hana", trackId: "writing", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "writing", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "8-session writing boot camp covering academic essays, paragraph structure, and professional writing. Build writing confidence fast.",
     outcomes: ["Write clear, structured academic essays", "Apply paragraph models (PEEL/TEEL) consistently", "Master introduction, thesis, and conclusion writing", "Earn IELS Writing Certificate"],
@@ -347,7 +332,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   },
   {
     id: "writing-extensive", name: "Writing Excellence", type: "extensive", sessions: 21,
-    mentorId: "hana", trackId: "writing", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "writing", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session comprehensive writing mastery from foundational essays to scholarship applications, research papers, and professional documents.",
     outcomes: ["Write compelling scholarship essays and motivation letters", "Produce research papers and academic reports confidently", "Develop a professional writing portfolio", "Build lifelong self-editing skills", "Earn IELS Writing & Scholarship Essay Certificate"],
@@ -356,7 +341,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   // ── SCHOLARSHIP ESSAY ──
   {
     id: "scholarship-intensive", name: "Scholarship Essay", type: "intensive", sessions: 8,
-    mentorId: "hana", trackId: "scholarship-essay", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "scholarship-essay", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 8 * PRICE_PER_SESSION,
     description: "Laser-focused 8-session program for scholarship applicants targeting LPDP, Chevening, DAAD, or university programs. Write essays that win.",
     outcomes: ["Write authentic, compelling motivation letters", "Tailor essays to specific scholarship programs", "Master personal statement storytelling", "Earn IELS Scholarship Writing Certificate"],
@@ -364,7 +349,7 @@ export const COURSE_PACKAGES: CoursePackage[] = [
   },
   {
     id: "scholarship-extensive", name: "Scholarship Essay", type: "extensive", sessions: 21,
-    mentorId: "hana", trackId: "scholarship-essay", pricePerSession: PRICE_PER_SESSION,
+    mentorId: "arba", trackId: "scholarship-essay", pricePerSession: PRICE_PER_SESSION,
     loungeAccess: false, loungeValue: 0, totalPrice: 21 * PRICE_PER_SESSION,
     description: "21-session end-to-end scholarship mastery — from story mining and essay writing to interview preparation, recommendation letter briefing, and submission review.",
     outcomes: ["Build a full scholarship application portfolio", "Write tailored essays for LPDP, Chevening, DAAD, and more", "Prepare for panel and 1-on-1 scholarship interviews", "Navigate rejections, deferrals, and reapplication cycles", "Earn IELS Scholarship Essay Certificate"],
@@ -375,12 +360,12 @@ export const COURSE_PACKAGES: CoursePackage[] = [
 // ─── TRACK METADATA ───────────────────────────────────────────────────────────
 
 export const TRACK_META: Record<CourseTrack, { label: string; emoji: string; mentorId: MentorId }> = {
-  "grammar":            { label: "Grammar Mastery",          emoji: "✍️",  mentorId: "arba"  },
-  "standardized-test":  { label: "IELTS / TOEFL / TOEIC",    emoji: "🎯",  mentorId: "arba"  },
-  "speaking":           { label: "Speaking Fluency",          emoji: "🗣️",  mentorId: "dhila" },
-  "work-abroad":        { label: "Work Abroad & Remote",      emoji: "🌍",  mentorId: "dhila" },
-  "writing":            { label: "Writing Excellence",        emoji: "📝",  mentorId: "hana"  },
-  "scholarship-essay":  { label: "Scholarship Essay",         emoji: "🎓",  mentorId: "hana"  },
+  "grammar":            { label: "Grammar Mastery",          emoji: "✍️",  mentorId: "arba" },
+  "standardized-test":  { label: "IELTS / TOEFL / TOEIC",    emoji: "🎯",  mentorId: "arba" },
+  "speaking":           { label: "Speaking Fluency",          emoji: "🗣️",  mentorId: "arba" },
+  "work-abroad":        { label: "Work Abroad & Remote",      emoji: "🌍",  mentorId: "arba" },
+  "writing":            { label: "Writing Excellence",        emoji: "📝",  mentorId: "arba" },
+  "scholarship-essay":  { label: "Scholarship Essay",         emoji: "🎓",  mentorId: "arba" },
 };
 
 export const GOOGLE_FORM_URL = "https://forms.gle/t8xijoi6umFeYAu86";
