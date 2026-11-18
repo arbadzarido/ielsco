@@ -46,9 +46,13 @@ import {
   Mail,
   ArrowRight,
   Sparkles,
+  ClipboardList,
+  IdCard,
+  ShieldCheck,
 } from "lucide-react";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { DelegateAssignments } from "@/components/gif/DelegateAssignments";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -374,6 +378,34 @@ export default function GIFDelegatePortalPage() {
   const [busy, setBusy] = useState<string | null>(null);       // which save/upload is running
   const [notice, setNotice] = useState<{ key: string; ok: boolean; text: string } | null>(null);
 
+  // Tabs: "assignments" (GIF 2026 Assignment & Assessment Portal) and "profile" (biodata, passport, flights…).
+  // Kept in the URL (?tab=profile, ?day=2) so links and the back button work.
+  const [tab, setTab] = useState<"assignments" | "profile">("assignments");
+  const [day, setDay] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("tab") === "profile") setTab("profile");
+    const d = Number(q.get("day"));
+    if (d >= 1 && d <= 14) setDay(d);
+    const onPop = () => {
+      const p = new URLSearchParams(window.location.search);
+      setTab(p.get("tab") === "profile" ? "profile" : "assignments");
+      const n = Number(p.get("day"));
+      setDay(n >= 1 && n <= 14 ? n : null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const go = (t: "assignments" | "profile", d: number | null = null) => {
+    setTab(t); setDay(d);
+    const q = new URLSearchParams();
+    if (t === "profile") q.set("tab", "profile");
+    if (d) q.set("day", String(d));
+    window.history.pushState(null, "", `${window.location.pathname}${q.size ? `?${q}` : ""}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const locked = Date.now() >= EDIT_DEADLINE.getTime();
   const setField = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -423,6 +455,7 @@ export default function GIFDelegatePortalPage() {
 
         setRow(current);
         setForm(formFromRow(current));
+        supabase.rpc("gif_is_admin").then(({ data }) => setIsAdmin(data === true));
 
         const [photo, passport, flight] = await Promise.all([
           sign(current.participant_photo_path), sign(current.passport_document_path), sign(current.flight_document_path),
@@ -770,6 +803,30 @@ export default function GIFDelegatePortalPage() {
         </div>
       </div>
 
+      {/* === TABS === */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#304156]/10 bg-white p-1 shadow-sm sm:inline-grid" role="tablist" aria-label="Delegate portal">
+          {([["assignments", "Assignments", ClipboardList], ["profile", "Profile & travel", IdCard]] as const).map(([t, label, Icon]) => (
+            <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => go(t)} data-testid={`gif-tab-${t}`}
+              className={cn("inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90]",
+                tab === t ? "bg-[#304156] text-white shadow" : "text-[#304156] hover:bg-[#304156]/5")}>
+              <Icon className="w-4 h-4" /> {label}
+            </button>
+          ))}
+        </div>
+        {isAdmin && (
+          <Link href="/dashboard/gif/admin" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#304156]/15 bg-white px-4 py-2.5 text-sm font-bold text-[#304156] hover:border-[#914D4D]/40" data-testid="gif-admin-link">
+            <ShieldCheck className="w-4 h-4" /> Assessment dashboard
+          </Link>
+        )}
+      </div>
+
+      {tab === "assignments" && (
+        <DelegateAssignments supabase={supabase} delegateId={row.id} delegateName={row.preferred_name || row.full_name || profile?.full_name || "Delegate"}
+          day={day} onOpenDay={(d) => go("assignments", d)} />
+      )}
+
+      {tab === "profile" && (<>
       {/* === DEADLINE / LOCKED NOTICE === */}
       {locked ? (
         <div className="bg-[#914D4D]/5 border border-[#914D4D]/20 rounded-2xl p-5 flex items-start gap-4">
@@ -1078,6 +1135,7 @@ export default function GIFDelegatePortalPage() {
           {saveBar("project", projectKeys, "Save project", saveProject)}
         </Card>
       </fieldset>
+      </>)}
 
       {/* === HELP === */}
       <div className="bg-white rounded-2xl border border-[#304156]/10 p-6 shadow-sm">

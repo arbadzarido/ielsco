@@ -6,3 +6,7 @@
 # was removed from the repository and it is intentionally NOT declared, so a deploy never redeploys or changes it.
 # The copy still deployed in production runs without JWT verification and must be switched off manually; see
 # docs/MAYAR-RETIREMENT.md. Elco AI is a separate app; its future payments (Midtrans) do not live here.
+
+[functions.gif-story-retention]
+# Called by Supabase Cron with the x-gif-cron-secret header (checked against Vault inside the function), not a user JWT.
+verify_jwt = false
