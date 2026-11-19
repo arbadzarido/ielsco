@@ -165,7 +165,7 @@ export default function ApplyWizard({ email, initial, initialPathway, open, docs
             </dl>
             <div className="notice">
               <p><strong>What happens after you submit</strong></p>
-              <p>{pw === "fully_funded" ? `Each delegate activates Phase 1 with ${prices.elcoMonths} months of Elco Pro for IDR ${n(prices.elcoPro)} (a product you keep, not an application fee).`
+              <p>{pw === "fully_funded" ? `Each delegate completes Phase 1 with ${prices.elcoMonths} months of Elco Pro for IDR ${n(prices.elcoPro)} (a product you keep, not an application fee) and a few social media tasks, verified by our team.`
                 : pw === "mentoring" ? `Each delegate pays the mentoring fee: IDR ${n(prices.mentoring.IDR)} for Indonesian citizens, USD ${n(prices.mentoring.USD)} for everyone else.`
                 : `Each delegate pays a deposit (IDR ${n(prices.deposit.IDR)} / USD ${n(prices.deposit.USD)}); the seat is confirmed when it is verified. The balance (IDR ${n(prices.balance.IDR)} / USD ${n(prices.balance.USD)}) follows during preparation.`}
                 {" "}Indonesian citizens pay in IDR, everyone else in USD. You pay from your portal; nothing is charged now.</p>

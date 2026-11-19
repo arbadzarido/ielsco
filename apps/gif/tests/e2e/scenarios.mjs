@@ -198,8 +198,36 @@ export async function run({ base, mt, env, db: dbc }) {
       await page.locator("#pay-settlement").click();
       await page.waitForURL(/\/portal\/payments\/return/);
       await page.getByText("Payment verified").waitFor({ timeout: 30_000 });
-      const app2 = await appOf(A.email);
-      check("A paid → Phase 1 Completed", app2.status === "phase_1_completed", app2.status);
+      let app2 = await appOf(A.email);
+      check("A paid but social tasks unverified → Phase 1 not complete yet", app2.status === "submitted", app2.status);
+      // Candidate reports the Phase 1 social media tasks
+      await page.goto("/portal/tasks");
+      await page.getByLabel("Your Instagram username").fill("@ayu.lestari");
+      for (const cb of await page.locator("form.panel").getByRole("checkbox").all()) {
+        for (let i = 0; i < 3 && !(await cb.isChecked()); i++) { await cb.click(); await page.waitForTimeout(150); }
+      }
+      await page.getByRole("button", { name: "Send for verification" }).click();
+      await waitDb(async () => Object.keys((await one("select social_tasks from gif.participants where email = $1", [A.email])).social_tasks).length === 5);
+      check("A submitted 5 social tasks with handle", (await one("select instagram from gif.participants where email = $1", [A.email])).instagram === "ayu.lestari");
+      // Staff verifies each task (one marked not found first, then verified)
+      const vp = await newPage();
+      await login(vp, "owner@example.test", "/admin");
+      await vp.goto(`/admin/applicants/${app2.id}`);
+      const firstRow = vp.locator("tr", { hasText: "Share the post to your Story" });
+      await firstRow.locator("select[name=status]").selectOption("not_found");
+      await firstRow.locator("input[name=note]").fill("Story not visible");
+      await firstRow.getByRole("button", { name: "Save" }).click();
+      await waitDb(async () => (await one("select social_tasks->'share_story'->>'status' as s from gif.participants where email = $1", [A.email])).s === "not_found");
+      check("task marked not found keeps Phase 1 open", (await appOf(A.email)).status === "submitted");
+      await vp.reload();
+      for (const t of ["Follow @iels.co", "Follow @elco.ai", "Like the recruitment post", "Comment and tag 3 friends", "Share the post to your Story"]) {
+        await vp.locator("tr", { hasText: t }).getByRole("button", { name: "Save" }).click();
+        await waitDb(async () => (await one("select count(*)::int as n from gif.audit_log where action = 'social_task_verified'")).n >= ["Follow @iels.co", "Follow @elco.ai", "Like the recruitment post", "Comment and tag 3 friends", "Share the post to your Story"].indexOf(t) + 1);
+        await vp.waitForTimeout(400);
+      }
+      await vp.context().close();
+      app2 = await appOf(A.email);
+      check("all tasks verified + paid → Phase 1 Completed", app2.status === "phase_1_completed", app2.status);
       const pay = await one("select * from gif.payments where order_id = $1", [order1]);
       check("payment linked to participant/application with receipt", pay.status === "paid" && pay.receipt_no && pay.participant_id && pay.application_id === app2.id);
       check("Elco Pro pending activation (not claimed active)", (await one("select status from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.email = $1", [A.email])).status === "pending_activation");

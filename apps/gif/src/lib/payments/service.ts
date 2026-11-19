@@ -12,6 +12,7 @@ import { LEGAL_VERSION, PAYMENT_CONSENTS } from "../legal";
 import { recordServerEvent } from "../analytics";
 import { midtransGateway, paymentsState, type GatewayStatus } from "./gateway";
 import type { Normalized } from "./midtrans";
+import { tasksComplete, type TaskMap } from "../tasks";
 
 // Rules (docs/gif/PAYMENTS.md):
 // - The server decides the obligation, amount and order id. A browser return URL is never proof of payment: payments
@@ -230,7 +231,14 @@ export async function recompute(db: pg.PoolClient, applicationId: string, actor:
   const requiredKind = app.pathway === "fully_funded" ? "elco_pro" : app.pathway === "mentoring" ? "mentoring" : "deposit";
   if (["submitted", "awaiting_payment", "payment_verification"].includes(app.status)) {
     const req = obs.filter((o) => o.kind === requiredKind);
-    if (req.length && req.every(settled)) target = app.pathway === "self_funded" ? "confirmed_participant" : "phase_1_completed";
+    if (req.length && req.every(settled)) {
+      if (app.pathway === "fully_funded") {
+        // Phase 1 = application + Elco Pro + the social media tasks, each verified by the team.
+        const s = (await currentCohort()).settings;
+        const people = (await db.query<{ social_tasks: TaskMap }>("select social_tasks from gif.participants where application_id = $1 and withdrawn_at is null", [applicationId])).rows;
+        target = people.every((p) => tasksComplete(s, p.social_tasks)) ? "phase_1_completed" : "submitted";
+      } else target = app.pathway === "self_funded" ? "confirmed_participant" : "phase_1_completed";
+    }
     else if (req.some((o) => pending.some((p) => p.obligation_id === o.id))) target = "payment_verification";
     else target = "awaiting_payment";
   }

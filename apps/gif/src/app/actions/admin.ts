@@ -211,6 +211,8 @@ const settingsSchema = z.object({
   cashback: z.object({ fully_funded: Money, partial_funded: Money }),
   slots: z.object({ fully_funded: z.number().int().nonnegative(), partial_funded: z.number().int().nonnegative(), capacity: z.number().int().positive() }),
   payments: z.object({ allow_idr_for_international: z.boolean(), bank_transfer_instructions: z.string().min(10).max(1000) }),
+  phase1_tasks: z.object({ enabled: z.boolean(), items: z.array(z.object({ key: z.string().regex(/^[a-z0-9_]{2,40}$/), title: z.string().min(3).max(80), detail: z.string().max(240), link: z.enum(["ielsco", "elco", "post"]).optional() })).max(12) }),
+  instagram: z.object({ ielsco: z.string().url(), elco: z.string().url(), recruitment_post: z.string().url().nullable() }),
   universities: z.array(z.object({ name: z.string().min(2), country: z.string().min(2), status: z.enum(["planned", "confirmed"]) })),
   contact: z.object({ email: z.string().email(), whatsapp: z.string().min(5) }),
 });
@@ -308,4 +310,18 @@ export async function sponsorshipStatusAction(_: AdminResult, fd: FormData): Pro
   await q("update gif.sponsorship_requests set status = $2 where id = $1", [id, status]);
   await audit(a.email, "sponsorship_status", "sponsorship_request", id, { status }, ip);
   return done();
+}
+
+export async function verifyTaskAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
+  const { a, ip } = await staff("review");
+  const pid = String(fd.get("participant_id")), key = String(fd.get("task")), status = String(fd.get("status"));
+  if (!["verified", "not_found"].includes(status)) return { error: "Choose verified or not found." };
+  if (!/^[a-z0-9_]{2,40}$/.test(key)) return { error: "Unknown task." };
+  const p = await one<{ application_id: string }>(
+    `update gif.participants set social_tasks = jsonb_set(social_tasks, array[$2::text], jsonb_build_object('status', $3::text, 'at', now(), 'by', $4::text, 'note', $5::text)), updated_at = now()
+     where id = $1 returning application_id`, [pid, key, status, a.email, String(fd.get("note") ?? "").slice(0, 200) || null]);
+  if (!p) return { error: "Delegate not found." };
+  await audit(a.email, `social_task_${status}`, "participant", pid, { task: key }, ip);
+  await recomputeNow(p.application_id, a.email);
+  return done(status === "verified" ? "Task verified." : "Marked as not found.");
 }

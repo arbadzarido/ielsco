@@ -7,6 +7,7 @@ import { eligibleFor, phaseWindow } from "./phases";
 import { requiredConsents } from "./legal";
 import { formatMoney } from "./pricing";
 import { fmtDate } from "./format";
+import { tasksFor, tasksSummary } from "./tasks";
 
 export type PortalCtx = {
   account: Account; cohort: Cohort;
@@ -44,6 +45,11 @@ export function requiredActions(c: PortalCtx): Action[] {
     out.push({ label: `Pay: ${o.label}`, href: "/portal/payments", detail: `${formatMoney(o.amount, o.currency)}${who && c.isOwner && detail.participants.length > 1 ? ` · ${who.legal_name}` : ""}${o.due_at ? ` · due ${fmtDate(o.due_at)}` : ""}` });
   }
   const s = c.cohort.settings;
+  if (app.pathway === "fully_funded" && me && tasksFor(s).length) {
+    const t = tasksSummary(s, me.social_tasks);
+    if (t.verified < t.total) out.push({ label: t.todo + t.notFound > 0 ? "Do the Phase 1 social media tasks" : "Phase 1 tasks: waiting for verification", href: "/portal/tasks",
+      detail: `${t.verified} of ${t.total} verified${t.notFound ? `, ${t.notFound} not found: please check and resubmit` : ""}`, tone: t.todo + t.notFound > 0 ? "warn" : "info" });
+  }
   for (const phase of [2, 3] as const) {
     if (!eligibleFor(phase, app)) continue;
     const w = phaseWindow(phase, s);

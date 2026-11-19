@@ -3,6 +3,7 @@ import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
 import { ELCO_PRO_FEATURES, SELECTION_CRITERIA } from "@/lib/content";
 import { fmtRange } from "@/lib/format";
+import { tasksFor } from "@/lib/tasks";
 import { DeadlineStrip, Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
 
 export const metadata: Metadata = { title: "Fully Funded application", description: "Compete for 10 Fully Funded and 10 Partial Funded places at GIF Summer 2027 in a three-phase selection." };
@@ -10,6 +11,7 @@ export const revalidate = 300;
 
 export default async function FullyFunded() {
   const s = await currentSettingsSafe();
+  const tasks = tasksFor(s);
   return (
     <>
       <PageHero eyebrow="Pathway A · Fully Funded application" title={<>{s.slots.fully_funded} Fully Funded and {s.slots.partial_funded} Partial Funded places.</>}
@@ -19,10 +21,15 @@ export default async function FullyFunded() {
       <DeadlineStrip s={s} />
       <section className="section">
         <div className="wrap grid split" style={{ alignItems: "start" }}>
-          <div><Eyebrow n="01">Phase 1</Eyebrow><h2>Apply online and start using Elco Pro.</h2><p className="lead" style={{ marginTop: 18 }}>{fmtRange("2026-11-25", "2027-05-10")}</p></div>
+          <div><Eyebrow n="01">Phase 1</Eyebrow><h2>Apply, start using Elco Pro, and share the word.</h2><p className="lead" style={{ marginTop: 18 }}>{fmtRange("2026-11-25", "2027-05-10")}</p></div>
           <div>
             <p className="lead">Phase 1 is your online application plus an Elco Pro subscription: {s.prices.elco_pro_months} months of Elco Pro for <strong>IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}</strong>, a discount on Elco Pro&rsquo;s regular price of IDR 99,000 a month.</p>
             <div className="notice ok"><p><strong>A product, not an application fee.</strong> Elco Pro is IELSco&rsquo;s AI English practice app. You use it to sharpen the English you will pitch in, and you keep it whether or not you are selected.</p></div>
+            {tasks.length > 0 && <>
+              <h3 style={{ margin: "28px 0 12px" }}>Social media tasks</h3>
+              <p>Phase 1 also includes these tasks for every delegate. You report them in your portal and our team verifies each one.</p>
+              <ul>{tasks.map((t) => <li key={t.key}><strong>{t.title}</strong>: {t.detail}</li>)}</ul>
+            </>}
             <h3 style={{ margin: "28px 0 12px" }}>What Elco Pro includes</h3>
             <ul>{ELCO_PRO_FEATURES.map((f) => <li key={f}>{f}</li>)}</ul>
             <p className="small muted">Allowances are those of the Elco Pro plan at <a href="https://www.elcoai.com/pricing" rel="noopener">elcoai.com/pricing</a>. Elco Pro is activated on the Elco account with your email after your payment is verified; we email you when it is active.</p>

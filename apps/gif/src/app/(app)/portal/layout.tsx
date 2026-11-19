@@ -13,7 +13,7 @@ export default async function PortalLayout({ children }: { children: React.React
     { href: "/portal/application", label: "Application" },
     { href: "/portal/payments", label: "Payments" },
     { href: "/portal/documents", label: "Documents" },
-    ...(p === "fully_funded" ? [{ href: "/portal/phase-2", label: "Phase 2" }] : []),
+    ...(p === "fully_funded" ? [{ href: "/portal/tasks", label: "Phase 1 tasks" }, { href: "/portal/phase-2", label: "Phase 2" }] : []),
     ...(p === "fully_funded" || p === "mentoring" ? [{ href: "/portal/phase-3", label: "Phase 3" }, { href: "/portal/results", label: "Results" }] : []),
     ...(p === "mentoring" ? [{ href: "/portal/mentoring", label: "Mentoring" }] : []),
     { href: "/portal/onboarding", label: "Preparation" },

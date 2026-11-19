@@ -110,7 +110,7 @@ export default async function Home() {
             <Link className="btn btn-secondary arrow" href="/fully-funded" style={{ marginTop: 12 }}>How the Fully Funded application works </Link></div>
           <div>
             <ol className="timeline">
-              <li className="key"><div className="when">Phase 1 · {fmtRange("2026-11-25", "2027-05-10")}</div><div className="what">Online application + 3 months of Elco Pro for IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}</div><p className="small muted">A real product you keep, not an application fee: {ELCO_PRO_FEATURES.slice(0, 3).join("; ").toLowerCase()}.</p></li>
+              <li className="key"><div className="when">Phase 1 · {fmtRange("2026-11-25", "2027-05-10")}</div><div className="what">Online application, 3 months of Elco Pro for IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}, and social media tasks</div><p className="small muted">A real product you keep, not an application fee: {ELCO_PRO_FEATURES.slice(0, 3).join("; ").toLowerCase()}.</p></li>
               <li><div className="when">Phase 2 · {fmtRange("2027-05-11", "2027-05-24")}</div><div className="what">Project essay and pitch deck</div></li>
               <li><div className="when">Phase 3 · {fmtRange("2027-05-25", "2027-05-31")}</div><div className="what">Recorded video pitch: 3 days to submit, then 4 days of evaluation</div></li>
               <li className="key"><div className="when">1 June 2027</div><div className="what">Results: Fully Funded, Partial Funded or Not Selected</div></li>

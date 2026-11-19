@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   robots: process.env.GIF_NOINDEX === "true" ? { index: false, follow: false } : undefined,
 };
 
-export const viewport: Viewport = { themeColor: "#284055", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#1B2B3C", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

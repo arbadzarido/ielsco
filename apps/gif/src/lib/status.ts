@@ -71,7 +71,7 @@ const ORDER: Status[] = [...STATUSES];
 const rank = (s: Status) => ORDER.indexOf(s);
 
 // Candidate-facing progress steps per pathway.
-export function progressSteps(pathway: Pathway, status: Status, paid: boolean): Step[] {
+export function progressSteps(pathway: Pathway, status: Status, paid: boolean, tasks?: { done: boolean; required: boolean }): Step[] {
   const r = rank(status);
   const final = ["selected_fully_funded", "selected_partial_funded", "not_selected", "confirmed_participant"].includes(status);
   const mk = (key: string, label: string, detail: string, done: boolean, current: boolean): Step =>
@@ -88,6 +88,9 @@ export function progressSteps(pathway: Pathway, status: Status, paid: boolean): 
     mk("apply", "Application", "Profile, project idea and motivation", r >= rank("submitted"), status === "draft"),
     mk("pay", pathway === "mentoring" ? "Mentoring fee" : "Elco Pro (Phase 1)", pathway === "mentoring" ? "Enrols you in the 15 weekly sessions" : "3 months of Elco Pro, yours to keep", paid, !paid && r >= rank("submitted") && r < rank("phase_1_completed")),
   ];
+  if (pathway === "fully_funded" && tasks?.required) {
+    steps.push(mk("tasks", "Social media tasks (Phase 1)", "Follow, like, comment and share; verified by the team", tasks.done, paid && !tasks.done));
+  }
   if (pathway === "fully_funded") {
     steps.push(mk("p2", "Phase 2", "Project essay and pitch deck, 11–24 May 2027", r >= rank("phase_2_submitted") && status !== "withdrawn", ["phase_1_completed", "phase_2_in_progress"].includes(status)));
   } else {

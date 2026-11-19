@@ -17,7 +17,7 @@ export function layout(b: Block): { html: string; text: string } {
   const html = `<!doctype html><html><body style="margin:0;background:#F4F5F7;font-family:Helvetica,Arial,sans-serif">
 <table role="presentation" width="100%" style="background:#F4F5F7;padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-top:4px solid #5C2D2E">
-<tr><td style="padding:28px 32px 8px;background:#284055;color:#ffffff">
+<tr><td style="padding:28px 32px 8px;background:#1B2B3C;background-image:linear-gradient(160deg,#1B2B3C 0%,#284055 40%,#5C2D2E 85%,#7A3B3E 100%);color:#ffffff">
 <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#DCDFE3">IELSco &middot; Global Impact Fellowship</div>
 <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;padding:6px 0 18px">GIF Summer 2027</div></td></tr>
 <tr><td style="padding:28px 32px 8px;color:#1A2534;font-size:15px;line-height:1.6">

@@ -15,6 +15,8 @@ import { clientIp, userAgent } from "@/lib/request";
 import { requiredConsents, type ConsentCategory } from "@/lib/legal";
 import { formatMoney } from "@/lib/pricing";
 import { overLimit } from "@/lib/ratelimit";
+import { normalizeHandle, tasksFor } from "@/lib/tasks";
+import { q } from "@/lib/db";
 
 export type ActionResult = { ok?: boolean; error?: string; message?: string } | null;
 
@@ -125,4 +127,27 @@ export async function savePhaseAction(phase: 2 | 3, input: { essayText?: string;
   if (!found || !found.isOwner) return { error: "Only the lead applicant can submit for the team." };
   try { await savePhase(account.email, found.app, phase, input, submit, await clientIp()); revalidatePath("/portal", "layout"); return { ok: true as const }; }
   catch (e) { if (e instanceof UserError) return { error: e.message }; throw e; }
+}
+
+// A delegate reports the Phase 1 social media tasks they have done; the team then verifies each one.
+export async function submitTasksAction(_: ActionResult, fd: FormData): Promise<ActionResult> {
+  const { account, found } = await ctx();
+  if (!found?.me || found.app.pathway !== "fully_funded") return { error: "Phase 1 tasks are part of the Fully Funded application." };
+  if (["draft", "withdrawn"].includes(found.app.status)) return { error: "Submit your application first." };
+  const handle = normalizeHandle(String(fd.get("instagram") ?? ""));
+  if (!handle) return { error: "Enter your Instagram username (e.g. @yourname) so we can check the tasks." };
+  const s = (await currentCohort()).settings;
+  const now = new Date().toISOString();
+  const cur = found.me.social_tasks ?? {};
+  const next = { ...cur };
+  let n = 0;
+  for (const t of tasksFor(s)) {
+    if (fd.get(t.key) !== "on" || cur[t.key]?.status === "verified") continue;
+    next[t.key] = { status: "submitted", at: now };
+    n++;
+  }
+  await q("update gif.participants set instagram = $2, social_tasks = $3, updated_at = now() where id = $1", [found.me.id, handle, JSON.stringify(next)]);
+  await audit(account.email, "social_tasks_submitted", "participant", found.me.id, { handle, tasks: n }, await clientIp());
+  revalidatePath("/portal", "layout");
+  return { ok: true, message: n ? "Thanks! The team will check these tasks on Instagram." : "Saved." };
 }

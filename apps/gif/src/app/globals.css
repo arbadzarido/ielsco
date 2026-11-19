@@ -1,14 +1,14 @@
-/* GIF Summer 2027 — IELSco brand: Nightfall #304156, Steel #577E90, Mist #DCDFE3, Scarlet #CB2129; GIF maroon #5C2D2E and
-   navy #284055. No yellow in this palette. Editorial: serif display (Apple Garamond where installed, EB Garamond web font
+/* GIF Summer 2027 — same tokens as the Open Recruitment poster (output/gif-2027/open-recruitment-poster): Ink Navy #1B2B3C,
+   GIF Navy #284055, Nightfall #304156, GIF Maroon #5C2D2E, Wine #7A3B3E, Scarlet #CB2129 (micro-accents only), Steel #577E90,
+   Mist #DCDFE3, Paper #F5F4F2; signature gradient "Summer 2027 Dusk". No yellow in this palette. Editorial: serif display (Apple Garamond where installed, EB Garamond web font
    otherwise), quiet rules instead of boxes, real photographs. */
 :root {
-  --nightfall: #304156; --steel: #577E90; --mist: #DCDFE3; --scarlet: #CB2129; --maroon: #5C2D2E; --navy: #284055;
-  --ink: #17212E; --ink-2: #3D4B5C; --muted: #5F6F80; --paper: #FBFAF8; --paper-2: #F3F1EE; --white: #FFFFFF;
+  --ink-navy: #1B2B3C; --nightfall: #304156; --steel: #577E90; --mist: #DCDFE3; --scarlet: #CB2129; --maroon: #5C2D2E; --wine: #7A3B3E; --navy: #284055;
+  --ink: #1B2B3C; --ink-2: #3D4B5C; --muted: #5F6F80; --paper: #F5F4F2; --paper-2: #ECEAE6; --white: #FFFFFF;
   --line: rgba(40, 64, 85, 0.16); --line-strong: rgba(40, 64, 85, 0.32);
   --ok: #2F6B4F; --ok-bg: #E8F1EC; --warn: #8A4B14; --warn-bg: #F7EEE4; --err: #A3191F; --err-bg: #F9E8E8; --info-bg: #E9EEF2;
-  --grad: linear-gradient(128deg, #284055 0%, #304156 42%, #4A3242 74%, #5C2D2E 100%);
-  --grad-summer: linear-gradient(160deg, #284055 0%, #577E90 55%, #CB2129 140%);
-  --serif: "Apple Garamond", var(--font-garamond), "Garamond", "Georgia", serif;
+  --grad: linear-gradient(160deg, #1B2B3C 0%, #284055 40%, #5C2D2E 85%, #7A3B3E 100%); /* Summer 2027 Dusk */
+    --serif: "Apple Garamond", var(--font-garamond), "Garamond", "Georgia", serif;
   --sans: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
   --wrap: 1200px; --gutter: clamp(16px, 4vw, 40px);
   --r: 3px;
@@ -54,7 +54,7 @@ p { margin: 0 0 1em; }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: var(--r); font: 600 15px/1 var(--sans); text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s; white-space: nowrap; }
 .btn-primary { background: var(--maroon); color: var(--white); }
-.btn-primary:hover { background: #4A2425; color: var(--white); }
+.btn-primary:hover { background: var(--wine); color: var(--white); }
 .btn-secondary { background: transparent; color: var(--nightfall); border-color: var(--line-strong); }
 .btn-secondary:hover { border-color: var(--nightfall); color: var(--ink); }
 .dark .btn-secondary { color: var(--white); border-color: rgba(255,255,255,.45); }
@@ -69,7 +69,7 @@ p { margin: 0 0 1em; }
 .arrow::after { content: "→"; font-family: var(--sans); }
 
 /* Header */
-.site-header { position: sticky; top: 0; z-index: 40; background: rgba(251, 250, 248, 0.94); backdrop-filter: saturate(1.2) blur(8px); border-bottom: 1px solid var(--line); }
+.site-header { position: sticky; top: 0; z-index: 40; background: rgba(245, 244, 242, 0.94); backdrop-filter: saturate(1.2) blur(8px); border-bottom: 1px solid var(--line); }
 .site-header .bar { display: flex; align-items: center; gap: 20px; min-height: 68px; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); flex-shrink: 0; }
 .brand img { height: 26px; width: auto; }
@@ -231,7 +231,7 @@ legend { font-weight: 600; margin-bottom: 10px; padding: 0; }
 .steps-nav li[aria-current="step"] { color: var(--maroon); font-weight: 600; }
 
 /* Footer */
-.site-footer { background: #1B2633; color: #C9D2DB; padding: 64px 0 40px; font-size: 14px; }
+.site-footer { background: var(--ink-navy); color: #C9D2DB; padding: 64px 0 40px; font-size: 14px; }
 .site-footer a { color: #E4E9EE; text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; color: var(--white); }
 .site-footer h4 { color: var(--white); font-size: 18px; margin-bottom: 12px; }

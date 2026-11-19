@@ -4,6 +4,7 @@ import { progressSteps, STATUS_LABEL, PATHWAY_LABEL } from "@/lib/status";
 import { publishedAnnouncements } from "@/lib/cms";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import { Countdown } from "@/components/Client";
+import { tasksComplete, tasksFor } from "@/lib/tasks";
 
 export default async function PortalHome({ searchParams }: { searchParams: Promise<{ submitted?: string; withdrawn?: string }> }) {
   const sp = await searchParams;
@@ -24,7 +25,8 @@ export default async function PortalHome({ searchParams }: { searchParams: Promi
   const actions = requiredActions(c);
   const paidMine = detail.obligations.filter((o) => (c.isOwner || o.participant_id === me?.id) && ["elco_pro", "mentoring", "deposit"].includes(o.kind));
   const paid = paidMine.length > 0 && paidMine.every((o) => o.status === "paid" || o.status === "waived");
-  const steps = progressSteps(app.pathway, app.status, paid || ["phase_1_completed", "phase_2_in_progress", "phase_2_submitted", "phase_3_in_progress", "phase_3_submitted", "under_evaluation", "confirmed_participant"].includes(app.status));
+  const tasks = { required: tasksFor(c.cohort.settings).length > 0, done: detail.participants.filter((p) => !p.withdrawn_at && (c.isOwner || p.id === me?.id)).every((p) => tasksComplete(c.cohort.settings, p.social_tasks)) };
+  const steps = progressSteps(app.pathway, app.status, paid || ["phase_1_completed", "phase_2_in_progress", "phase_2_submitted", "phase_3_in_progress", "phase_3_submitted", "under_evaluation", "confirmed_participant"].includes(app.status), tasks);
   const deadlines = nextDeadlines(c);
   const audience = ["all", app.pathway, ...(app.outcome && app.outcome !== "not_selected" && app.outcome_published_at ? ["selected"] : []), ...(app.status === "confirmed_participant" ? ["confirmed"] : [])];
   const news = await publishedAnnouncements(audience);

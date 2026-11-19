@@ -47,6 +47,10 @@ export interface Settings {
     allow_idr_for_international: boolean;
     bank_transfer_instructions: string; // shown for USD obligations (manual payment verified by finance)
   };
+  // Fully Funded Phase 1 also includes social media tasks, each verified by the team. The exact list awaits founder
+  // confirmation, so it is data: edit or disable it in Admin → Settings.
+  phase1_tasks: { enabled: boolean; items: { key: string; title: string; detail: string; link?: "ielsco" | "elco" | "post" }[] };
+  instagram: { ielsco: string; elco: string; recruitment_post: string | null };
   universities: { name: string; country: string; status: "planned" | "confirmed" }[];
   contact: { email: string; whatsapp: string };
 }
@@ -90,6 +94,17 @@ export const DEFAULT_SETTINGS: Settings = {
     bank_transfer_instructions:
       "International payments in USD are handled by IELSco finance. Request an invoice from your portal and we will send bank transfer details from hello@ielsco.com. Your payment is marked as received only after finance verifies it.",
   },
+  phase1_tasks: {
+    enabled: true,
+    items: [
+      { key: "follow_ielsco", title: "Follow @iels.co", detail: "Follow the official IELSco Instagram account.", link: "ielsco" },
+      { key: "follow_elco", title: "Follow @elco.ai", detail: "Follow the official Elco AI Instagram account.", link: "elco" },
+      { key: "like_post", title: "Like the recruitment post", detail: "Like the GIF Summer 2027 recruitment post.", link: "post" },
+      { key: "comment_tag3", title: "Comment and tag 3 friends", detail: "Comment on the recruitment post and tag three friends.", link: "post" },
+      { key: "share_story", title: "Share the post to your Story", detail: "Share the recruitment post to your Instagram Story.", link: "post" },
+    ],
+  },
+  instagram: { ielsco: "https://www.instagram.com/iels.co", elco: "https://www.instagram.com/elco.ai", recruitment_post: null },
   universities: [
     { name: "National University of Singapore (NUS)", country: "Singapore", status: "planned" },
     { name: "Universiti Malaya", country: "Malaysia", status: "planned" },

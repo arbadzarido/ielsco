@@ -158,3 +158,20 @@ test("emails escape user input", () => {
   assert.ok(!html.includes("<img src=x"));
   assert.ok(text.includes("<img src=x")); // plain text part is not HTML
 });
+
+import { tasksComplete, tasksSummary, normalizeHandle, taskLink, tasksFor } from "../../src/lib/tasks.ts";
+
+test("Phase 1 social tasks: configurable, all must be verified", () => {
+  const s = DEFAULT_SETTINGS;
+  assert.deepEqual(tasksFor(s).map((t) => t.key), ["follow_ielsco", "follow_elco", "like_post", "comment_tag3", "share_story"]);
+  const all = Object.fromEntries(tasksFor(s).map((t) => [t.key, { status: "verified" as const, at: "x" }]));
+  assert.ok(tasksComplete(s, all));
+  assert.ok(!tasksComplete(s, { ...all, share_story: { status: "submitted", at: "x" } }));
+  assert.ok(!tasksComplete(s, {}));
+  assert.ok(tasksComplete(resolveSettings({ phase1_tasks: { enabled: false } }), {}));
+  assert.deepEqual(tasksSummary(s, { like_post: { status: "not_found", at: "x" } }), { total: 5, verified: 0, submitted: 0, notFound: 1, todo: 4 });
+  assert.equal(normalizeHandle("https://instagram.com/Ayu.Lestari/"), "ayu.lestari");
+  assert.equal(normalizeHandle("@ayu_l"), "ayu_l");
+  assert.equal(normalizeHandle("not a handle!"), null);
+  assert.equal(taskLink(s, "post")?.label, "Find the post on @iels.co");
+});

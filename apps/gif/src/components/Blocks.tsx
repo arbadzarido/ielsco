@@ -66,7 +66,7 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
         <div className="price">IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}<span className="small muted serif"> · Phase 1 with {s.prices.elco_pro_months} months of Elco Pro</span></div>
         <ul>
           <li>{s.slots.fully_funded} Fully Funded and {s.slots.partial_funded} Partial Funded places</li>
-          <li>Three phases: application, essay and pitch deck, video pitch</li>
+          <li>Three phases: application with Elco Pro and social media tasks, essay and pitch deck, video pitch</li>
           <li>Phase 1 open until {fmtDate(s.dates.phase1_close, { day: "numeric", month: "long", year: "numeric" })}</li>
           {!compact && <li>Elco Pro is yours to keep, selected or not</li>}
         </ul>

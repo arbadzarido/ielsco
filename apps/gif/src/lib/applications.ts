@@ -21,7 +21,8 @@ export type AppRow = {
 };
 export type ParticipantRow = { id: string; application_id: string; account_id: string | null; role: "leader" | "member"; email: string; legal_name: string; whatsapp: string;
   nationality: string; residence_country: string; date_of_birth: string; institution: string; education_level: string; academic_background: string;
-  country_of_study: string; emergency_name: string; emergency_relation: string; emergency_phone: string; currency: "IDR" | "USD"; seat_status: string; withdrawn_at: string | null };
+  country_of_study: string; emergency_name: string; emergency_relation: string; emergency_phone: string; currency: "IDR" | "USD"; seat_status: string; withdrawn_at: string | null;
+  instagram: string | null; social_tasks: Record<string, { status: "submitted" | "verified" | "not_found"; at: string; by?: string; note?: string }> };
 export type ObligationRow = { id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD"; amount: number; due_at: string | null; status: string; paid_at: string | null };
 export type PaymentRow = { id: string; obligation_id: string; participant_id: string; kind: string; gateway: string; order_id: string; amount: number; currency: "IDR" | "USD";
   status: string; payment_type: string | null; receipt_no: string | null; paid_at: string | null; created_at: string; is_duplicate: boolean; manual_reference: string | null };

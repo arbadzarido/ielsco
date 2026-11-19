@@ -139,6 +139,8 @@ create table gif.participants (
   emergency_relation text not null,
   emergency_phone    text not null,
   currency           text not null check (currency in ('IDR', 'USD')),
+  instagram          text,                -- handle used for the Phase 1 social media tasks (Fully Funded)
+  social_tasks       jsonb not null default '{}'::jsonb check (jsonb_typeof(social_tasks) = 'object' and pg_column_size(social_tasks) < 8000),
   seat_status        text not null default 'none' check (seat_status in ('none', 'confirmed', 'withdrawn')),
   seat_confirmed_at  timestamptz,
   withdrawn_at       timestamptz,

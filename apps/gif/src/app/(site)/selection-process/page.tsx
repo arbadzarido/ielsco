@@ -19,7 +19,7 @@ export default async function Selection() {
         <div className="wrap grid split" style={{ alignItems: "start" }}>
           <div><Eyebrow n="01">Phases</Eyebrow><h2>What happens when.</h2></div>
           <ol className="timeline">
-            <li className="key"><div className="when">Phase 1 · {fmtRange("2026-11-25", "2027-05-10")}</div><div className="what">Online application and Elco Pro</div><p className="muted small">Complete your profile, team, project idea and motivation, then activate Phase 1 with 3 months of Elco Pro (IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}).</p></li>
+            <li className="key"><div className="when">Phase 1 · {fmtRange("2026-11-25", "2027-05-10")}</div><div className="what">Online application, Elco Pro and social media tasks</div><p className="muted small">Complete your profile, team, project idea and motivation, activate Phase 1 with 3 months of Elco Pro (IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}) and complete the social media tasks, each verified by our team.</p></li>
             <li><div className="when">Phase 2 · {fmtRange("2027-05-11", "2027-05-24")}</div><div className="what">Project essay and pitch deck</div><p className="muted small">Following the published guidelines on the <Link href="/fully-funded">Fully Funded page</Link>.</p></li>
             <li><div className="when">Phase 3 · 25–27 May 2027</div><div className="what">Record and submit your video pitch (3 days)</div><p className="muted small">Mentees join here.</p></li>
             <li><div className="when">28–31 May 2027</div><div className="what">Evaluation (4 days)</div></li>

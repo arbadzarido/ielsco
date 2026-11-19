@@ -9,7 +9,9 @@ import { formatMoney } from "@/lib/pricing";
 import { bytes, countryName, fmtDate, fmtDateTime } from "@/lib/format";
 import { ActionForm, DocLink } from "@/components/ActionForm";
 import { addNoteAction, addObligationAction, assignEvaluatorAction, cashbackAction, changeStatusAction, documentLinkAction, elcoActivateAction,
-  manualPaymentAction, missingInfoAction, refundAction, reviewDocumentAction, waiveObligationAction } from "@/app/actions/admin";
+  manualPaymentAction, missingInfoAction, refundAction, reviewDocumentAction, verifyTaskAction, waiveObligationAction } from "@/app/actions/admin";
+import { currentCohort } from "@/lib/cohort";
+import { taskLink, tasksFor } from "@/lib/tasks";
 
 export default async function Applicant({ params }: { params: Promise<{ id: string }> }) {
   const a = await requireStaff("read");
@@ -31,6 +33,8 @@ export default async function Applicant({ params }: { params: Promise<{ id: stri
       "select c.category, c.document_version, c.accepted, c.at, acc.email from gif.consents c join gif.accounts acc on acc.id = c.account_id where c.application_id = $1 or c.participant_id in (select id from gif.participants where application_id = $1) order by c.at desc", [id]),
   ]);
   const role = a.staffRole;
+  const settings = (await currentCohort()).settings;
+  const tasks = app.pathway === "fully_funded" ? tasksFor(settings) : [];
   const pname = (pid: string | null) => d.participants.find((p) => p.id === pid)?.legal_name ?? "—";
   return (
     <>
@@ -56,6 +60,22 @@ export default async function Applicant({ params }: { params: Promise<{ id: stri
           </dl>
         </div>
       ))}</div>
+
+      {tasks.length > 0 && app.status !== "draft" && <>
+        <h2>Phase 1 social media tasks</h2>
+        <p className="small muted">Check each task on Instagram, then verify it or mark it not found (the delegate sees the note). Phase 1 completes when Elco Pro is paid and every task is verified for every delegate.</p>
+        <div className="table-wrap"><table className="t compact"><thead><tr><th>Delegate</th><th>Task</th><th>Status</th><th></th></tr></thead><tbody>
+          {d.participants.filter((p) => !p.withdrawn_at).flatMap((p) => tasks.map((t) => {
+            const st = p.social_tasks?.[t.key];
+            const link = taskLink(settings, t.link);
+            return <tr key={p.id + t.key}><td>{p.legal_name}{p.instagram ? <div className="tiny"><a href={`https://www.instagram.com/${p.instagram}`} target="_blank" rel="noopener noreferrer">@{p.instagram}</a></div> : <div className="tiny muted">no handle yet</div>}</td>
+              <td>{t.title}{link && <div className="tiny"><a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a></div>}</td>
+              <td>{st ? st.status.replace("_", " ") : "not done"}{st?.by && <div className="tiny muted">{st.by}</div>}</td>
+              <td>{can(role, "review") && st && st.status !== "verified" && <ActionForm action={verifyTaskAction} inline submit="Save" className=""><input type="hidden" name="participant_id" value={p.id} /><input type="hidden" name="task" value={t.key} />
+                <select name="status" defaultValue="verified"><option value="verified">Verified</option><option value="not_found">Not found</option></select><input name="note" placeholder="Note" style={{ maxWidth: 140 }} /></ActionForm>}</td></tr>;
+          }))}
+        </tbody></table></div>
+      </>}
 
       {app.status !== "draft" && <>
         <h2>Application</h2>
