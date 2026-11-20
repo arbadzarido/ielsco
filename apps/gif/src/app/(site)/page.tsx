@@ -112,7 +112,7 @@ export default async function Home() {
             <ol className="timeline">
               <li className="key"><div className="when">Phase 1 · {fmtRange("2026-11-25", "2027-05-10")}</div><div className="what">Online application, 3 months of Elco Pro for IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}, and social media tasks</div><p className="small muted">A real product you keep, not an application fee: {ELCO_PRO_FEATURES.slice(0, 3).join("; ").toLowerCase()}.</p></li>
               <li><div className="when">Phase 2 · {fmtRange("2027-05-11", "2027-05-24")}</div><div className="what">Project essay and pitch deck</div></li>
-              <li><div className="when">Phase 3 · {fmtRange("2027-05-25", "2027-05-31")}</div><div className="what">Recorded video pitch: 3 days to submit, then 4 days of evaluation</div></li>
+              <li><div className="when">Phase 3 · {fmtRange("2027-05-25", "2027-05-31")}</div><div className="what">Video presentation (3–5 minutes): 3 days to submit, then 4 days of evaluation</div></li>
               <li className="key"><div className="when">1 June 2027</div><div className="what">Results: Fully Funded, Partial Funded or Not Selected</div></li>
             </ol>
           </div>
@@ -146,7 +146,7 @@ export default async function Home() {
             <div className="item"><span className="kicker">Deposit (confirms your seat)</span><p className="serif" style={{ fontSize: 30 }}><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p></div>
             <div className="item"><span className="kicker">Balance</span><p className="serif" style={{ fontSize: 30 }}><Price idr={bal.IDR} usd={bal.USD} /></p></div>
           </div>
-          <p className="small muted" style={{ marginTop: 20 }}>Indonesian citizens pay in IDR; everyone else in USD. <Link href="/self-funded">What the fee covers and how to pay</Link>.</p>
+          <p className="small muted" style={{ marginTop: 20 }}>Indonesian participants pay the IDR price; international participants pay the USD price. <Link href="/self-funded">What the fee covers and how to pay</Link>.</p>
         </div>
       </section>
 
@@ -155,7 +155,7 @@ export default async function Home() {
         <div className="wrap grid split" style={{ alignItems: "start" }}>
           <div><Eyebrow n="08">Project funding</Eyebrow><h2>Ways to fund your place.</h2></div>
           <div className="grid g2">
-            <div className="item"><h4>Win a funded place</h4><p className="muted">Ten Fully Funded and ten Partial Funded places are awarded through the selection. The award details are confirmed with your result on 1 June 2027.</p><Link href="/fully-funded">Fully Funded application</Link></div>
+            <div className="item"><h4>Win a funded place</h4><p className="muted">Ten Fully Funded and ten Partial Funded places are awarded through the selection. Fully Funded covers the programme fee, accommodation and in-programme transport (not international flights); Partial Funded means a reduced contribution. Final details come with your result on 1 June 2027.</p><Link href="/fully-funded">Fully Funded application</Link></div>
             <div className="item"><h4>Approach a sponsor</h4><p className="muted">Schools, universities, companies and local governments sometimes support students. We prepare the documentation you need to ask. We do not guarantee sponsorship.</p><Link href="/sponsorship">Sponsorship support</Link></div>
             <div className="item"><h4>Mentoring cashback</h4><p className="muted">Mentees who are selected receive a cashback after verification. It is conditional on selection.</p><Link href="/mentoring">Mentoring</Link></div>
             <div className="item"><h4>Pay in two steps</h4><p className="muted">Self-Funded delegates pay a deposit to confirm their seat and the balance later.</p><Link href="/self-funded">Self-Funded</Link></div>

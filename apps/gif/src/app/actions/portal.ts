@@ -16,6 +16,7 @@ import { requiredConsents, type ConsentCategory } from "@/lib/legal";
 import { formatMoney } from "@/lib/pricing";
 import { overLimit } from "@/lib/ratelimit";
 import { normalizeHandle, tasksFor } from "@/lib/tasks";
+import { resendGuardianLink } from "@/lib/guardian";
 import { q } from "@/lib/db";
 
 export type ActionResult = { ok?: boolean; error?: string; message?: string } | null;
@@ -150,4 +151,10 @@ export async function submitTasksAction(_: ActionResult, fd: FormData): Promise<
   await audit(account.email, "social_tasks_submitted", "participant", found.me.id, { handle, tasks: n }, await clientIp());
   revalidatePath("/portal", "layout");
   return { ok: true, message: n ? "Thanks! The team will check these tasks on Instagram." : "Saved." };
+}
+
+export async function resendGuardianAction(participantId: string): Promise<ActionResult> {
+  const account = await requireAccount();
+  const r = await resendGuardianLink(account.id, participantId);
+  return r.ok ? { ok: true, message: "We sent a new consent link to the guardian." } : { error: r.error };
 }

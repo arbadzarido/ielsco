@@ -5,7 +5,8 @@ import { DOCS, requiredConsents } from "@/lib/legal";
 import { EDUCATION_LEVELS } from "@/lib/validation";
 import { STATUS_LABEL, PATHWAY_LABEL } from "@/lib/status";
 import { countryName, fmtDate, fmtDateTime } from "@/lib/format";
-import { TermsForm, WithdrawForm } from "./forms";
+import { LinkIelsco, TermsForm, WithdrawForm } from "./forms";
+import { ielscoSignInAvailable } from "@/lib/auth";
 
 export default async function ApplicationPage() {
   const c = await portalContext("/portal/application");
@@ -52,6 +53,10 @@ export default async function ApplicationPage() {
       <h2 id="terms">Programme terms</h2>
       {missing.length === 0 ? <p className="muted">You accepted the current version of: {docs.map((d) => d.title).join(", ")}. <Link href="/terms-and-conditions">Read them again</Link>.</p>
         : <TermsForm docs={docs.map((d) => ({ slug: d.slug, title: d.title, category: d.category }))} />}
+
+      <h2>Your account</h2>
+      <p className="muted small">Signed in as {c.account.email}. {c.account.ielscoLinked ? "Linked to your IELSco account." : "Not linked to an IELSco account yet."}</p>
+      {!c.account.ielscoLinked && ielscoSignInAvailable() && <LinkIelsco />}
 
       {c.isOwner && !["withdrawn", "confirmed_participant"].includes(app.status) && (
         <>

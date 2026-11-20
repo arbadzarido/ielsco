@@ -13,7 +13,7 @@ Nothing in this branch is live. These are the steps to launch; each one needs th
 
 ## 2. Database migration
 
-`supabase/migrations/20261123000000_gif_programme_platform.sql`. **The Supabase GitHub integration applies new migrations
+`supabase/migrations/20261123000000_gif_programme_platform.sql` (applied to production when PR #50 merged on 20 Nov 2026) and `20261126000000_gif_accounts_guardians_tasks.sql` (additive; applies when its PR merges). **The Supabase GitHub integration applies new migrations
 to production when a PR is merged to `main`**, so merging this PR creates the `gif` schema and the bucket. It is additive
 (new schema only; no existing table is touched). Rollback: `supabase/manual/ROLLBACK-20261123-gif-programme-platform.sql`
 (drops the `gif` schema and bucket — only before real applicants exist). Dry run before merging:

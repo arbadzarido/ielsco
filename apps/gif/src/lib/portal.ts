@@ -8,6 +8,7 @@ import { requiredConsents } from "./legal";
 import { formatMoney } from "./pricing";
 import { fmtDate } from "./format";
 import { tasksFor, tasksSummary } from "./tasks";
+import { guardianBlocks } from "./guardian";
 
 export type PortalCtx = {
   account: Account; cohort: Cohort;
@@ -35,6 +36,9 @@ export function requiredActions(c: PortalCtx): Action[] {
   if (!app || !detail) return [{ label: "Start your application", href: "/apply" }];
   if (app.status === "draft") return [{ label: "Finish and submit your application", href: "/apply", detail: "Your draft is saved." }];
   if (app.status === "withdrawn") return [];
+  for (const p of detail.participants.filter((x) => !x.withdrawn_at && (c.isOwner || x.id === me?.id))) {
+    if (guardianBlocks(p)) out.push({ label: `Waiting for parent or guardian consent${c.isOwner && detail.participants.length > 1 ? `: ${p.legal_name}` : ""}`, href: "/portal#guardian", detail: `We emailed ${p.guardian_email ?? "the guardian"}. Payments open once they consent.`, tone: "warn" });
+  }
   const missing = requiredConsents(app.pathway).filter((k) => !c.consents[k]);
   if (missing.length) out.push({ label: "Accept the programme terms", href: "/portal/application#terms", detail: "Required before payments.", tone: "warn" });
   const mine = detail.obligations.filter((o) => o.status === "open" && (c.isOwner || o.participant_id === me?.id));
@@ -53,7 +57,7 @@ export function requiredActions(c: PortalCtx): Action[] {
   for (const phase of [2, 3] as const) {
     if (!eligibleFor(phase, app)) continue;
     const w = phaseWindow(phase, s);
-    if (w.open) out.push({ label: phase === 2 ? "Submit your Phase 2 essay and pitch deck" : "Record and submit your Phase 3 video pitch", href: `/portal/phase-${phase}`, detail: `Closes ${fmtDate(w.closesAt, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: false })} WIB`, tone: "warn" });
+    if (w.open) out.push({ label: phase === 2 ? "Submit your Phase 2 essay and pitch deck" : "Record and submit your Phase 3 video presentation", href: `/portal/phase-${phase}`, detail: `Closes ${fmtDate(w.closesAt, { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: false })} WIB`, tone: "warn" });
     else if (w.before) out.push({ label: `Prepare for Phase ${phase}`, href: `/portal/phase-${phase}`, detail: `Opens ${fmtDate(w.opensAt, { day: "numeric", month: "long", year: "numeric" })}`, tone: "info" });
   }
   if (["selected_fully_funded", "selected_partial_funded"].includes(app.status) && !app.offer_accepted_at && c.isOwner) out.push({ label: "Accept your offer", href: "/portal/results", tone: "warn" });

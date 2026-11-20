@@ -9,7 +9,8 @@ import { formatMoney } from "@/lib/pricing";
 import { bytes, countryName, fmtDate, fmtDateTime } from "@/lib/format";
 import { ActionForm, DocLink } from "@/components/ActionForm";
 import { addNoteAction, addObligationAction, assignEvaluatorAction, cashbackAction, changeStatusAction, documentLinkAction, elcoActivateAction,
-  manualPaymentAction, missingInfoAction, refundAction, reviewDocumentAction, verifyTaskAction, waiveObligationAction } from "@/app/actions/admin";
+  manualPaymentAction, missingInfoAction, refundAction, reviewDocumentAction, verifyTaskAction, waiveObligationAction, recordGuardianFormAction } from "@/app/actions/admin";
+import { isMinor } from "@/lib/validation";
 import { currentCohort } from "@/lib/cohort";
 import { taskLink, tasksFor } from "@/lib/tasks";
 
@@ -57,7 +58,13 @@ export default async function Applicant({ params }: { params: Promise<{ id: stri
             <dt>Residence</dt><dd>{countryName(p.residence_country)}</dd><dt>DOB</dt><dd>{fmtDate(p.date_of_birth)}</dd><dt>Institution</dt><dd>{p.institution}</dd>
             <dt>Level</dt><dd>{EDUCATION_LEVELS[p.education_level as keyof typeof EDUCATION_LEVELS]}</dd><dt>Background</dt><dd>{p.academic_background}</dd><dt>Studies in</dt><dd>{countryName(p.country_of_study)}</dd>
             <dt>Emergency</dt><dd>{p.emergency_name} ({p.emergency_relation}) {p.emergency_phone}</dd>
+            {isMinor(p.date_of_birth) && <><dt>Under 18</dt><dd>Guardian: {p.guardian_name ?? "—"} ({p.guardian_email ?? "no email"})<br />
+              {p.guardian_consent_at ? <span className="badge ok">Consent {p.guardian_consent_method === "signed_form" ? "(signed form)" : "(online)"} {fmtDateTime(p.guardian_consent_at)}</span> : <span className="badge warn">Consent pending: payments blocked</span>}</dd></>}
           </dl>
+          {isMinor(p.date_of_birth) && !p.guardian_consent_at && can(role, "review") && <details style={{ marginTop: 8 }}><summary className="small">Record a signed paper consent form</summary>
+            <ActionForm action={recordGuardianFormAction} submit="Record consent"><input type="hidden" name="participant_id" value={p.id} />
+              <label className="field"><span className="label">Guardian name (as signed)</span><input name="guardian_name" defaultValue={p.guardian_name ?? ""} /></label>
+              <label className="field"><span className="label">Where the signed form is stored</span><input name="reference" placeholder="e.g. uploaded onboarding document, Drive link" /></label></ActionForm></details>}
         </div>
       ))}</div>
 
@@ -70,9 +77,9 @@ export default async function Applicant({ params }: { params: Promise<{ id: stri
             const link = taskLink(settings, t.link);
             return <tr key={p.id + t.key}><td>{p.legal_name}{p.instagram ? <div className="tiny"><a href={`https://www.instagram.com/${p.instagram}`} target="_blank" rel="noopener noreferrer">@{p.instagram}</a></div> : <div className="tiny muted">no handle yet</div>}</td>
               <td>{t.title}{link && <div className="tiny"><a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a></div>}</td>
-              <td>{st ? st.status.replace("_", " ") : "not done"}{st?.by && <div className="tiny muted">{st.by}</div>}</td>
-              <td>{can(role, "review") && st && st.status !== "verified" && <ActionForm action={verifyTaskAction} inline submit="Save" className=""><input type="hidden" name="participant_id" value={p.id} /><input type="hidden" name="task" value={t.key} />
-                <select name="status" defaultValue="verified"><option value="verified">Verified</option><option value="not_found">Not found</option></select><input name="note" placeholder="Note" style={{ maxWidth: 140 }} /></ActionForm>}</td></tr>;
+              <td>{st ? ({ submitted: "Pending review", verified: "Verified", not_found: "Not found" } as Record<string, string>)[st.status] : "Not reported yet"}{st?.by && <div className="tiny muted">{st.by}</div>}</td>
+              <td>{can(role, "review") && st && <ActionForm action={verifyTaskAction} inline submit="Save" className=""><input type="hidden" name="participant_id" value={p.id} /><input type="hidden" name="task" value={t.key} />
+                <select name="status" defaultValue={st.status === "verified" ? "submitted" : "verified"}><option value="verified">Verified</option><option value="not_found">Not found</option><option value="submitted">Pending review</option></select><input name="note" placeholder="Note" style={{ maxWidth: 140 }} /></ActionForm>}</td></tr>;
           }))}
         </tbody></table></div>
       </>}

@@ -3,7 +3,7 @@ import { Fragment, useCallback, useEffect, useRef, useState, useTransition } fro
 import { useRouter } from "next/navigation";
 import { saveDraftAction, submitApplicationAction } from "@/app/actions/apply";
 import { CountrySelect } from "@/components/Fields";
-import { DISCOVERY_SOURCES, EDUCATION_LEVELS } from "@/lib/validation";
+import { DISCOVERY_SOURCES, EDUCATION_LEVELS, isMinor } from "@/lib/validation";
 import { track } from "@/components/Client";
 
 type Pathway = "fully_funded" | "mentoring" | "self_funded";
@@ -166,9 +166,9 @@ export default function ApplyWizard({ email, initial, initialPathway, open, docs
             <div className="notice">
               <p><strong>What happens after you submit</strong></p>
               <p>{pw === "fully_funded" ? `Each delegate completes Phase 1 with ${prices.elcoMonths} months of Elco Pro for IDR ${n(prices.elcoPro)} (a product you keep, not an application fee) and a few social media tasks, verified by our team.`
-                : pw === "mentoring" ? `Each delegate pays the mentoring fee: IDR ${n(prices.mentoring.IDR)} for Indonesian citizens, USD ${n(prices.mentoring.USD)} for everyone else.`
+                : pw === "mentoring" ? `Each delegate pays the mentoring fee: IDR ${n(prices.mentoring.IDR)} for Indonesian participants, USD ${n(prices.mentoring.USD)} for international participants.`
                 : `Each delegate pays a deposit (IDR ${n(prices.deposit.IDR)} / USD ${n(prices.deposit.USD)}); the seat is confirmed when it is verified. The balance (IDR ${n(prices.balance.IDR)} / USD ${n(prices.balance.USD)}) follows during preparation.`}
-                {" "}Indonesian citizens pay in IDR, everyone else in USD. You pay from your portal; nothing is charged now.</p>
+                {" "}Indonesian participants pay the IDR price; international participants pay the USD price. You pay from your portal; nothing is charged now.</p>
             </div>
             <fieldset><legend>Please read and accept</legend>
               <div style={{ display: "grid", gap: 10 }}>
@@ -212,6 +212,7 @@ function validateStep(step: number, d: Draft): Record<string, string> {
   }
   const person = (p: Person | undefined, prefix: string) => {
     for (const f of PERSON_FIELDS) if (!(p?.[f] ?? "").trim()) e[`${prefix}.${f}`] = "Required.";
+    if (p && isMinor(p.date_of_birth ?? "")) for (const f of ["guardian_name", "guardian_relation", "guardian_email", "guardian_phone"]) if (!(p[f] ?? "").trim()) e[`${prefix}.${f}`] = "Required for applicants under 18.";
   };
   if (step === 1) person(d.leader, "leader");
   if (step === 2 && d.mode === "team") {
@@ -254,7 +255,7 @@ function PersonForm({ p, prefix, errors, onChange, lockedEmail }: { p: Person; p
         {country("nationality", "Nationality (citizenship)")}
         {country("residence_country", "Country of residence")}
       </div>
-      {p.nationality && <p className="small muted">{p.nationality === "ID" ? "Indonesian citizens pay in IDR." : "Non-Indonesian citizens pay in USD (Elco Pro is always IDR)."}</p>}
+      {p.nationality && <p className="small muted">{p.nationality === "ID" ? "Indonesian nationality: you pay the IDR prices." : "International participant: you pay the USD prices (Elco Pro is always IDR)."}</p>}
       <div className="fields-2">
         {inp("institution", "School or university", "text", { maxLength: 160 })}
         <Field label="Education level" error={err("education_level")}>
@@ -270,6 +271,17 @@ function PersonForm({ p, prefix, errors, onChange, lockedEmail }: { p: Person; p
           {inp("emergency_phone", "Phone (with country code)", "tel")}
         </div>
       </fieldset>
+      {isMinor(p.date_of_birth ?? "") && (
+        <fieldset className="notice" style={{ margin: 0 }}><legend>Parent or legal guardian (under 18)</legend>
+          <p className="small">This delegate will be under 18 on 27 July 2027, so a parent or legal guardian must give written consent. We email them a consent form after you submit; payments open once they have consented.</p>
+          <div className="fields-2">
+            {inp("guardian_name", "Guardian full name", "text", { maxLength: 120 })}
+            {inp("guardian_relation", "Relationship", "text", { maxLength: 60, placeholder: "e.g. Mother, legal guardian" })}
+            {inp("guardian_email", "Guardian email", "email")}
+            {inp("guardian_phone", "Guardian phone (with country code)", "tel")}
+          </div>
+        </fieldset>
+      )}
     </div>
   );
 }

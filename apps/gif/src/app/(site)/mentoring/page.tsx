@@ -28,7 +28,7 @@ export default async function Mentoring() {
             <div className="item"><span className="kicker">Early Bird {m.tier === "early" ? "· current" : "· ended"}</span><p className="serif" style={{ fontSize: 34 }}><Price idr={s.prices.mentoring_early.IDR} usd={s.prices.mentoring_early.USD} /></p>
               <p className="small muted">{s.dates.mentoring_early_bird_until ? `Until ${fmtDate(s.dates.mentoring_early_bird_until, { day: "numeric", month: "long", year: "numeric" })}, 23:59 WIB.` : "The Early Bird end date will be announced here in advance."}</p></div>
             <div className="item"><span className="kicker">Regular</span><p className="serif" style={{ fontSize: 34 }}><Price idr={s.prices.mentoring_regular.IDR} usd={s.prices.mentoring_regular.USD} /></p><p className="small muted">After the Early Bird period.</p></div>
-            <div className="item"><span className="kicker">Who pays what</span><p className="small">Indonesian citizens pay in IDR; everyone else in USD. Each team member enrols individually.</p></div>
+            <div className="item"><span className="kicker">Who pays what</span><p className="small">Indonesian participants pay the IDR price; international participants pay the USD price. Each team member enrols individually.</p></div>
           </div>
         </div>
       </section>
@@ -36,13 +36,13 @@ export default async function Mentoring() {
         <div className="wrap grid split" style={{ alignItems: "start" }}>
           <div><Eyebrow n="02">Selection shortcut and cashback</Eyebrow><h2>Straight to Phase 3.</h2></div>
           <div>
-            <p className="lead">You skip Phases 1 and 2. In Phase 3 (25–31 May 2027) you submit your recorded video pitch and are evaluated on the same seven criteria as everyone else.</p>
+            <p className="lead">You skip Phases 1 and 2. In Phase 3 (25–31 May 2027) you submit a 3–5 minute video presentation and are evaluated on the same seven criteria as everyone else.</p>
             <div className="table-wrap" style={{ marginTop: 20 }}><table className="t"><thead><tr><th>If your result is</th><th>Cashback</th></tr></thead><tbody>
               <tr><td>Fully Funded</td><td><Price idr={s.cashback.fully_funded.IDR} usd={s.cashback.fully_funded.USD} /></td></tr>
               <tr><td>Partial Funded</td><td><Price idr={s.cashback.partial_funded.IDR} usd={s.cashback.partial_funded.USD} /></td></tr>
               <tr><td>Not Selected</td><td>No cashback. You keep the complete mentoring programme.</td></tr>
             </tbody></table></div>
-            <p className="small muted" style={{ marginTop: 12 }}>Cashback is conditional on selection and on verification of your identity and payment, and is paid after results are published. See the <Link href="/mentoring-terms">Mentoring Program Terms</Link>.</p>
+            <p className="small muted" style={{ marginTop: 12 }}><strong>Who gets it:</strong> enrolled mentees whose mentoring fee is verified and who are selected on 1 June 2027. <strong>Verification:</strong> we check your identity, enrolment and payment and ask for a bank account in your name (a parent&rsquo;s or guardian&rsquo;s if you are under 18). <strong>When:</strong> by bank transfer after results are published, within 30 days of verification. See the <Link href="/mentoring-terms">Mentoring Program Terms</Link>.</p>
           </div>
         </div>
       </section>

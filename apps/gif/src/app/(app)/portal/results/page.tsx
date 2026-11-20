@@ -24,7 +24,7 @@ export default async function Results() {
       ) : (
         <>
           <div className="notice ok"><p><strong>Selected: {app.outcome === "fully_funded" ? "Fully Funded" : "Partial Funded"}.</strong> Congratulations{app.mode === "team" ? ` to team ${app.team_name}` : ""}!</p></div>
-          <p>Your award details are sent in your result letter by email. {app.outcome === "partial_funded" ? "Any amount you still pay appears on your Payments page after you accept." : ""}</p>
+          <p>{app.outcome === "fully_funded" ? `Your award covers: ${c.cohort.settings.awards.fully_funded_covers.join(", ").toLowerCase()}. Not included: ${c.cohort.settings.awards.not_included.join(", ").toLowerCase()}.` : `Your participant contribution is ${c.cohort.settings.prices.partial_funded_payable ? `USD ${c.cohort.settings.prices.partial_funded_payable.USD} (international) or IDR ${c.cohort.settings.prices.partial_funded_payable.IDR.toLocaleString("en-US")} (Indonesian)` : "shown on your Payments page"}: a deposit within ${c.cohort.settings.dates.deposit_due_days ?? 7} days of accepting secures your seat, and the balance is due by 30 June 2027. ${c.cohort.settings.awards.not_included.join(", ")} are not included.`}</p>
           {app.offer_accepted_at ? <p className="badge ok">Offer accepted {fmtDateTime(app.offer_accepted_at)}</p> : c.isOwner ? <AcceptOffer /> : <p className="muted">Your team leader accepts the offer for the team.</p>}
         </>
       )}

@@ -17,7 +17,7 @@ export function PhasePage({ c, phase }: { c: PortalCtx; phase: 2 | 3 }) {
   return (
     <>
       <div className="eyebrow">{app.code}</div>
-      <h1>Phase {phase}: {phase === 2 ? "project essay and pitch deck" : "recorded video pitch"}</h1>
+      <h1>Phase {phase}: {phase === 2 ? "project essay and pitch deck" : "video presentation (3–5 minutes)"}</h1>
       <p className="lead">Window: {fmtDateTime(w.opensAt)} – {fmtDateTime(w.closesAt)}.{phase === 3 && " Evaluation follows over the next 4 days."}</p>
       {submitted && <div className="notice ok"><p>Submitted {fmtDateTime(sub!.submitted_at)}. Thank you.</p></div>}
       {!submitted && !eligible && <div className="notice"><p>{phase === 3 && app.pathway === "fully_funded" ? "Phase 3 is available after you submit Phase 2." : phase === 2 ? "Phase 2 is available after Phase 1 is complete (your Elco Pro payment is verified)." : "Phase 3 is available once your mentoring enrolment is paid."} Current status: {STATUS_LABEL[app.status]}.</p></div>}
@@ -29,12 +29,12 @@ export function PhasePage({ c, phase }: { c: PortalCtx; phase: 2 | 3 }) {
       {phase === 2 ? (
         <ul>
           <li><strong>Essay</strong> (PDF up to 10 MB, or written below; at least 300 characters, we suggest 800–1,500 words): the problem and who it affects, with evidence; your solution and what is new about it; the impact you expect and how you will measure it; your plan, resources and budget outline; how the project continues after GIF; your team.</li>
-          <li><strong>Pitch deck</strong> (PDF or PPTX up to 25 MB, about 10–12 slides): problem, solution, impact, feasibility, sustainability, team.</li>
+          <li><strong>Pitch deck</strong> (PDF or PPTX up to 25 MB, 10–12 slides): problem, solution, impact, feasibility, sustainability, team.</li>
           <li>Evaluated on: problem identification, innovation, impact, feasibility, sustainability, leadership and teamwork, presentation. See <Link href="/selection-process">Selection Process</Link>.</li>
         </ul>
       ) : (
         <ul>
-          <li>Record a pitch of your project (we suggest 3–5 minutes). Teams may present together.</li>
+          <li>Record a video presentation of your project, 3–5 minutes long. Teams may present together.</li>
           <li>Share an unlisted YouTube, Vimeo, Loom or Google Drive link, or upload MP4/MOV up to 100 MB.</li>
           <li>You have 3 days to record and submit. Evaluators score the same seven criteria as Phase 2.</li>
         </ul>

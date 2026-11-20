@@ -1,5 +1,10 @@
 # GIF payments: Midtrans research and design
 
+> Prices (20 Nov 2026 decision): Self-Funded USD 899 / IDR 14,999,000 (deposit configurable, currently USD 300 / IDR 5,000,000;
+> balance by 30 June 2027); Partial Funded contribution USD 699 / IDR 10,999,000; mentoring USD 79 / IDR 1,199,000 (Early Bird to
+> 31 Dec 2026) then USD 99 / IDR 1,499,000; Elco Pro IDR 98,000. Merchant capabilities (foreign cards, methods enabled) are
+> not verified from this side: only Midtrans can confirm them for our MID, so the site never lists specific methods.
+
 Researched on 20 November 2026 from official Midtrans documentation (docs.midtrans.com). Each fact links to its source.
 **Technical capability** (what the API can do) is kept separate from **account eligibility** (what IELSco's merchant
 account is approved for), which only Midtrans can confirm for PT English Space Berkah Indonesia.
@@ -54,7 +59,10 @@ settlement, deny, pending → expire, amount mismatch, forged return URL, bad/fo
 unknown orders, checkout reuse, duplicate settlement → refund through the gateway, manual USD payments and refusal of
 partial manual payments. No real money is involved.
 
-## 5. Second gateway (USD / international) — recommendation, not integrated
+## 5. Second gateway (USD / international) — not integrated (founder decision 20 Nov 2026)
+
+**Decision: keep Midtrans as the only gateway for now; international delegates pay USD by invoice and bank transfer,
+verified by finance.** The research below is kept for a later decision.
 
 Midtrans cannot charge USD. Options for an Indonesian PT, from official sources:
 

@@ -13,9 +13,16 @@
 | Midtrans production keys + `GIF_MIDTRANS_PRODUCTION_ENABLED=true` | Real payments, only after the sandbox run-through | Vercel env |
 | DNS: `CNAME gif → cname.vercel-dns.com` | gif.ielsco.com | DNS host of ielsco.com |
 | Elco: partner endpoint to grant Pro (optional) | Automate Elco Pro activation; until then finance does it in Elco admin | Elco team |
-| Xendit (optional): written confirmation of USD card processing for PT English Space Berkah Indonesia | Second gateway for USD | Email to Xendit |
-| Counsel review of the 9 legal drafts + Bahasa Indonesia versions | Legal pages are drafts | Legal |
-| Decisions in DECISIONS.md (award coverage, Partial Funded amount, Early Bird end, balance due, refund tiers) | Several screens show "to be announced" until set | Admin → Content & settings |
+| Counsel review of the 10 legal drafts (Bahasa Indonesia primary, English translation) | Legal pages are drafts | Legal |
 | Real testimonials (with written consent), confirmed mentor names/photos | None are shown until supplied | Admin → Content |
 | Staff list (emails + roles) | Admin access | Admin → Staff |
 | Brand guidelines / Apple Garamond web licence (optional) | Typography; EB Garamond is the fallback | `apps/gif/src/app` |
+
+## Added 21 Nov 2026 (founder decisions)
+
+| Item | Why | Where it goes |
+|---|---|---|
+| `GIF_IELSCO_SUPABASE_URL`, `GIF_IELSCO_SUPABASE_ANON_KEY` | Sign in with IELSco account (combined accounts) | Vercel env |
+| `ELCO_GRANT_URL`, `IELSCO_TO_ELCO_SECRET` (after Elco builds the endpoint) | Automatic Elco Pro activation | Vercel env |
+| Confirm deposit amount, recruitment post URL, cashback timing, minors' operations, insurance minimum | See DECISIONS.md "Still open" | Admin → Content & settings |
+| Approve merging the follow-up PR | Applies migration 20261126000000 (additive) | GitHub |

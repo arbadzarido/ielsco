@@ -1,26 +1,45 @@
-# GIF Summer 2027 — decisions for the founder
+# GIF Summer 2027 — founder decisions
 
-Each item has a **recommended** choice. Items marked ⚑ block something specific before or soon after launch.
-All of them can be changed later in Admin → Content & settings unless stated otherwise.
+## Applied (founder decision sheet, 20 Nov 2026)
 
-| # | Decision | Recommendation | Where it applies |
+Implemented in `apps/gif` (settings defaults in `src/lib/settings.ts`, editable in Admin → Content & settings).
+
+| Area | Decision | Where |
+|---|---|---|
+| Fully Funded | 10 slots; covers programme fee, accommodation, in-programme transportation; international flights not included | `awards`, site, result email, Selection Terms |
+| Partial Funded | 10 slots; contribution USD 699 / IDR 10,999,000 instead of the Self-Funded fee; flights not included | `prices.partial_funded_payable`; after accepting: deposit within 7 days + balance by 30 Jun |
+| Self-Funded | USD 899 / IDR 14,999,000; seat secured by verified deposit, subject to capacity | `prices.self_funded_total` |
+| Mentoring | Early Bird USD 79 / IDR 1,199,000 until 31 Dec 2026 23:59 WIB; Regular USD 99 / IDR 1,499,000; per person | `prices.mentoring_*`, `dates.mentoring_early_bird_until` |
+| Cashback | Fully Funded USD 19 / IDR 299,000; Partial Funded USD 49 / IDR 749,000; after results + verification | `cashback`, Mentoring Terms |
+| Elco Pro | IDR 98,000 (3 months); hybrid fulfilment (Finance manual now, Elco API when available); kept regardless of outcome | `prices.elco_pro_idr`, `lib/elco.ts`, ELCO-GRANT-API.md |
+| Currency | Indonesian participants IDR, international USD, set by nationality in the application; separate prices, never converted | pricing, UI copy |
+| Gateway | Midtrans only; no second gateway; USD by invoice + manual verification; payment methods described only as "shown on the Midtrans page" | PAYMENTS.md |
+| Deposit / balance | deposit within 7 days of registration; balance by 30 Jun 2027; reminders weekly in the last 14 days | `dates.deposit_due_days`, `dates.balance_due`, cron |
+| Refunds | Mentoring 100% ≥7 days before 2 Feb, 50% before Session 4; balance 75% >60 days, 50% 30–60, 0% <30; deposit generally non-refundable except visa, medical, cancellation | Refund Policy (draft) |
+| Accounts | GIF + IELSco combined via non-destructive linking | ACCOUNTS.md |
+| Staff | `arbadzarido03@gmail.com` stays owner; roles unchanged | `gif.staff` |
+| Old page | redirect `/events/gif` only after go-live | EVENTS-GIF-REDIRECT.md |
+| Testimonials / mentors | only real, consented content; 3 pending slots + collection kit | TESTIMONIALS.md |
+| Typography | EB Garamond headings; Apple Garamond only if installed locally; no font files embedded | `layout.tsx`, `globals.css` |
+| Guidelines | Phase 2 essay + 10–12 slide deck; Phase 3 video 3–5 minutes | site, portal, Selection Terms |
+| Legal language | Bahasa Indonesia primary, English translation | all 10 legal pages |
+| Under 18 | guardian consent via emailed link or signed form; payments blocked until recorded | `lib/guardian.ts`, Parental Consent |
+| Phase 1 social tasks | 5 tasks, reported by applicants, verified per task by staff (Verified / Not found / Pending review); Phase 1 completes only when Elco Pro is paid and every task is verified for every delegate | `phase1_tasks`, `instagram.recruitment_post` |
+| Timeline | Recruitment 25 Nov 2026 · Early Bird 31 Dec 2026 · Mentoring 2 Feb–11 May 2027 · Phase 1 to 10 May · Phase 2 11–24 May · Phase 3 25–31 May · Results 1 Jun · Preparation 8 Jun–26 Jul · Balance 30 Jun · Programme 27 Jul–3 Aug 2027 | `dates`, KEY_DATES |
+
+## Still open (need the founder)
+
+| # | Item | Why it matters | Current behaviour |
 |---|---|---|---|
-| 1 ⚑ | **What Fully Funded and Partial Funded awards cover** (programme fee? accommodation? in-programme transport? flights?) | Publish before Phase 2 opens; at minimum "programme fee covered" for Fully Funded. The site says "award details are confirmed with your result" until then. | Selection Terms §5, result emails, /fully-funded |
-| 2 ⚑ | **Partial Funded payable amount** (`prices.partial_funded_payable`) | Set before 1 June 2027 (e.g. a fixed USD/IDR pair). Until set, Partial Funded acceptances are confirmed manually by staff. | Admin settings |
-| 3 ⚑ | **Mentoring Early Bird end date** (`dates.mentoring_early_bird_until`) | 31 December 2026, 23:59 WIB. Until set, Early Bird applies and the site says the end date will be announced. | /mentoring, checkout price |
-| 4 | **Balance due date** (`dates.balance_due`) | 30 June 2027 (about 4 weeks before departure, inside preparation). | Self-Funded balance obligations, reminders |
-| 5 | **Deposit due window** (`dates.deposit_due_days`) | 7 days after registration; seats are first-come by verified deposit anyway. | Self-Funded deposits |
-| 6 | **Refund percentages and windows** (bracketed in the Refund Policy) | Keep the proposed tiers (mentoring 100% ≥7 days before 2 Feb, 50% before session 4; balance 75% >60 days, 50% 30–60 days, 0% <30 days; deposit non-refundable except visa/medical/cancellation). Have counsel confirm. | /refund-policy |
-| 7 | **International delegates paying by card** (`payments.allow_idr_for_international`) | Turn on: lets non-Indonesians pay the published IDR price (IDR 15,000,000 ≈ the USD 900 price) by card via Midtrans — no conversion by us; their bank converts. Otherwise they can only pay by bank transfer. | Payments page |
-| 8 | **Second gateway for USD** | Ask Xendit in writing about USD card processing for an Indonesian PT; don't integrate until confirmed. | PAYMENTS.md §5 |
-| 9 | **Mentoring fee per person or per team** | Per person (implemented; each member is an individual delegate). | Obligations |
-| 10 | **Elco Pro API** | Ask the Elco team for a signed "grant Pro for N months" endpoint; until then finance activates manually and records the reference. | Elco fulfilment |
-| 11 | **GIF accounts vs IELSco accounts** | Keep separate (implemented): passwordless email codes, no IELSco account needed, and no load on Supabase Auth's 30/hour email limit. Link later if useful. | Auth |
-| 12 | **Founder's staff email** | The migration seeds `arbadzarido03@gmail.com` as owner (the existing GIF admin). Add others in Admin → Staff. | gif.staff |
-| 13 | **Old /events/gif page on ielsco.com** | It still advertises the superseded USD 800 Early Bird and a Google Form. Recommended: after gif.ielsco.com is live, redirect it there (see DEPLOYMENT.md §7). Not changed in this PR. | ielsco.com |
-| 14 | **Testimonials and mentor profiles** | None were supplied, so none are shown. Send real quotes with written consent and confirmed mentor names/photos; add them in Admin → Content. | Home, /mentoring, /previous-gif |
-| 15 | **Heading font** | Apple Garamond is not licensed for web embedding by default; EB Garamond (open licence) is used, and Apple Garamond is used automatically where installed. Supply a web licence/files if you want it everywhere. | globals.css |
-| 16 | **Phase 2/3 guidelines** | Drafted on /fully-funded and the Phase pages (essay structure, 10–12 slide deck, 3–5 minute video). Confirm or edit. | /fully-funded, portal |
-| 17 | **Indonesian-language legal texts** | Have counsel prepare Bahasa Indonesia versions (Law 24/2009) and decide which prevails. | Legal pages |
-| 18 | **Minors** | Guardian consent for delegates under 18 (in Terms and Travel Disclaimer; collected during preparation). Confirm with counsel. | Legal, onboarding |
-| 19 ⚑ | **Fully Funded Phase 1 social media tasks** (`phase1_tasks`, `instagram.recruitment_post`) | Added 20 Nov at the founder's request. Proposed list (follow @iels.co, follow @elco.ai, like the recruitment post, comment and tag 3 friends, share to Story) is live in settings and editable or switchable off; each delegate reports them in /portal/tasks, staff verify each one (verified / not found) on the applicant page, and Phase 1 completes only when Elco Pro is paid **and** every task is verified for every delegate. Confirm the final list and set the recruitment post URL. | Admin settings, /portal/tasks |
+| 1 | **Deposit amount** | The sheet says keep it configurable and not invent one. The value in use (USD 300 / IDR 5,000,000) is carried over from the original programme brief, not re-confirmed with the new prices. | Admin setting `prices.self_funded_deposit`; please confirm or change before payments open |
+| 2 | **Recruitment post URL** | Needed for the "like / comment / share" task links | Links point to @iels.co until set (`instagram.recruitment_post`) |
+| 3 | **Cashback payment timing** | The sheet asks to explain timing but gave no number | Site and Mentoring Terms say "within 30 days of verification" (proposal, marked in [brackets] in the legal text) |
+| 4 | **Minors: operations** | Supervision ratio, rooming, curfew, emergency procedures, chaperones | Not invented; legal text says they will be shared before departure |
+| 5 | **Travel insurance minimum cover** | Required in the travel terms | Required, minimum cover "awaiting approval" |
+| 6 | **Refund processing time, retention periods, dispute forum** | Bracketed in the legal drafts | Proposed values in [brackets] |
+| 7 | **Counsel review** | All 10 legal documents are drafts | Marked "Draf untuk ditinjau penasihat hukum" on every page |
+| 8 | **Elco grant endpoint** | Automatic Elco Pro activation | Manual by Finance until Elco ships it |
+| 9 | **Midtrans account capabilities** | Which methods / foreign cards are enabled on our MID; business category | Only "methods shown on the Midtrans page" is promised |
+| 10 | **Mentor profiles, testimonials** | Real content and consent | Placeholders / pending slots |
+| 11 | **Google sign-in through IELSco** | Needs a Supabase redirect URL | Email code or IELSco password |
+| 12 | **Payment for international delegates by card** | `payments.allow_idr_for_international` is off: international delegates pay by invoice | Switch on only if you want them to pay the IDR price by card |

@@ -19,15 +19,16 @@ export interface Settings {
     evaluation_close: string;       // then 4 days of evaluation
     results: string;
     preparation_start: string;
+    preparation_end: string;
     mentoring_start: string;
     mentoring_end: string;
     programme_start: string;
     programme_end: string;
-    // Not fixed in the published facts: null until the founder sets them in Admin → Settings.
+    // Founder decisions (20 Nov 2026). null = not set; the site then says the date will be announced.
     mentoring_early_bird_until: string | null;
     mentoring_registration_close: string | null;
     self_funded_registration_close: string | null;
-    deposit_due_days: number | null;     // days after registration to pay the deposit (null: no due date shown)
+    deposit_due_days: number | null;     // days after registration (or offer acceptance) to pay the deposit
     balance_due: string | null;
   };
   prices: {
@@ -37,9 +38,11 @@ export interface Settings {
     mentoring_regular: Money;
     self_funded_total: Money;
     self_funded_deposit: Money;
-    partial_funded_payable: Money | null; // what a Partial Funded delegate still pays: founder decision, null until set
+    partial_funded_payable: Money | null; // the Partial Funded participant contribution
   };
   cashback: { fully_funded: Money; partial_funded: Money };
+  // What each funded outcome covers, as published (founder decision 20 Nov 2026). Shown on the site and in result emails.
+  awards: { fully_funded_covers: string[]; partial_funded_covers: string[]; not_included: string[] };
   slots: { fully_funded: number; partial_funded: number; capacity: number };
   payments: {
     // Midtrans processes IDR only. When true, international (USD-priced) payers may choose to pay the published IDR
@@ -68,26 +71,34 @@ export const DEFAULT_SETTINGS: Settings = {
     evaluation_close: "2027-05-31T23:59:59+07:00",
     results: "2027-06-01T00:00:00+07:00",
     preparation_start: "2027-06-08T00:00:00+07:00",
+    preparation_end: "2027-07-26T23:59:59+07:00",
     mentoring_start: "2027-02-02T00:00:00+07:00",
     mentoring_end: "2027-05-11T23:59:59+07:00",
     programme_start: "2027-07-27T00:00:00+07:00",
     programme_end: "2027-08-03T23:59:59+07:00",
-    mentoring_early_bird_until: null,
+    mentoring_early_bird_until: "2026-12-31T23:59:59+07:00",
     mentoring_registration_close: null,
     self_funded_registration_close: null,
-    deposit_due_days: null,
-    balance_due: null,
+    deposit_due_days: 7,
+    balance_due: "2027-06-30T23:59:59+07:00",
   },
   prices: {
-    elco_pro_idr: 99000,
+    elco_pro_idr: 98000,
     elco_pro_months: 3,
-    mentoring_early: { IDR: 1200000, USD: 80 },
-    mentoring_regular: { IDR: 1500000, USD: 100 },
-    self_funded_total: { IDR: 15000000, USD: 900 },
+    mentoring_early: { IDR: 1199000, USD: 79 },
+    mentoring_regular: { IDR: 1499000, USD: 99 },
+    self_funded_total: { IDR: 14999000, USD: 899 },
+    // Deposit carried over from the original programme brief (USD 300 / IDR 5,000,000); not re-confirmed with the
+    // 20 Nov price change, so it stays an admin setting (docs/gif-platform/DECISIONS.md).
     self_funded_deposit: { IDR: 5000000, USD: 300 },
-    partial_funded_payable: null,
+    partial_funded_payable: { IDR: 10999000, USD: 699 },
   },
-  cashback: { fully_funded: { IDR: 300000, USD: 20 }, partial_funded: { IDR: 750000, USD: 50 } },
+  cashback: { fully_funded: { IDR: 299000, USD: 19 }, partial_funded: { IDR: 749000, USD: 49 } },
+  awards: {
+    fully_funded_covers: ["Programme fee", "Accommodation during the programme", "In-programme transportation"],
+    partial_funded_covers: ["A reduced participant contribution instead of the Self-Funded fee"],
+    not_included: ["International flights to Singapore and from Thailand"],
+  },
   slots: { fully_funded: 10, partial_funded: 10, capacity: 100 },
   payments: {
     allow_idr_for_international: false,

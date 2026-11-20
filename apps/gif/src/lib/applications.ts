@@ -1,13 +1,13 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { one, q, tx } from "./db";
 import { audit } from "./audit";
 import { currentCohort } from "./cohort";
 import { sendEmail, deliverQueued } from "./email/send";
-import { applicationSubmittedEmail, teamInviteEmail } from "./email/templates";
+import { applicationSubmittedEmail, guardianConsentEmail, teamInviteEmail } from "./email/templates";
 import { pathwayOpen, type Pathway } from "./settings";
-import { currencyFor, plannedObligations, formatMoney } from "./pricing";
-import { applicationSchema, firstErrors, type ApplicationInput } from "./validation";
+import { currencyFor, plannedObligations, partialFundedObligations, formatMoney } from "./pricing";
+import { applicationSchema, firstErrors, isMinor, normalizePhone, type ApplicationInput } from "./validation";
 import { LEGAL_VERSION, requiredConsents, type ConsentCategory } from "./legal";
 import { PATHWAY_LABEL, type Status } from "./status";
 import { recompute } from "./payments/service";
@@ -22,6 +22,7 @@ export type AppRow = {
 export type ParticipantRow = { id: string; application_id: string; account_id: string | null; role: "leader" | "member"; email: string; legal_name: string; whatsapp: string;
   nationality: string; residence_country: string; date_of_birth: string; institution: string; education_level: string; academic_background: string;
   country_of_study: string; emergency_name: string; emergency_relation: string; emergency_phone: string; currency: "IDR" | "USD"; seat_status: string; withdrawn_at: string | null;
+  guardian_name: string | null; guardian_email: string | null; guardian_consent_at: string | null; guardian_consent_method: string | null;
   instagram: string | null; social_tasks: Record<string, { status: "submitted" | "verified" | "not_found"; at: string; by?: string; note?: string }> };
 export type ObligationRow = { id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD"; amount: number; due_at: string | null; status: string; paid_at: string | null };
 export type PaymentRow = { id: string; obligation_id: string; participant_id: string; kind: string; gateway: string; order_id: string; amount: number; currency: "IDR" | "USD";
@@ -140,6 +141,14 @@ export async function submitApplication(account: { id: string; email: string }, 
           values ($1, $2, (select id from gif.accounts where email = $5), $3, $5, $4, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) returning id`,
           [app.id, cohort.id, leader ? "leader" : "member", p.legal_name, p.email, p.whatsapp, p.nationality, p.residence_country, p.date_of_birth, p.institution,
             p.education_level, p.academic_background, p.country_of_study, p.emergency_name, p.emergency_relation, p.emergency_phone, currencyFor(p.nationality)])).rows[0].id;
+        if (isMinor(p.date_of_birth)) {
+          const token = randomBytes(32).toString("base64url");
+          await db.query(`update gif.participants set guardian_name = $2, guardian_relation = $3, guardian_email = $4, guardian_phone = $5,
+            guardian_token_hash = $6, guardian_token_expires_at = $7 where id = $1`,
+            [pid, p.guardian_name, p.guardian_relation, p.guardian_email, normalizePhone(p.guardian_phone), createHash("sha256").update(token).digest("hex"), s.dates.programme_start]);
+          await sendEmail({ to: p.guardian_email, template: "guardian_consent", ...guardianConsentEmail(p.guardian_name, p.legal_name, token),
+            dedupeKey: `guardian:${pid}:1`, applicationId: app.id }, db);
+        }
         for (const ob of plannedObligations(s, a.pathway, p.nationality)) {
           const oid = (await db.query<{ id: string }>(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, due_at, created_by)
             values ($1, $2, $3, $4, $5, $6, $7, 'system') returning id`, [app.id, pid, ob.kind, ob.label, ob.currency, ob.amount, ob.dueAt])).rows[0].id;
@@ -211,17 +220,20 @@ export async function acceptOffer(account: { id: string; email: string }, ip: st
       "select id, status from gif.applications where owner_account_id = $1 and status in ('selected_fully_funded', 'selected_partial_funded') and outcome_published_at is not null for update", [account.id])).rows[0];
     if (!app) throw new UserError("There is no offer to accept.");
     await db.query("update gif.applications set offer_accepted_at = coalesce(offer_accepted_at, now()) where id = $1", [app.id]);
-    const payable = cohort.settings.prices.partial_funded_payable;
-    if (app.status === "selected_partial_funded" && payable) {
-      const ps = (await db.query<{ id: string; currency: "IDR" | "USD" }>("select id, currency from gif.participants where application_id = $1 and withdrawn_at is null", [app.id])).rows;
-      for (const p of ps) {
-        await db.query(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, created_by)
-          values ($1, $2, 'full', 'Partial Funded participant payment', $3, $4, 'system') on conflict do nothing`, [app.id, p.id, p.currency, payable[p.currency]]);
+    if (app.status === "selected_partial_funded") {
+      // Partial Funded contribution (USD 699 / IDR 10,999,000) follows the same rule as every seat: a deposit within
+      // deposit_due_days of accepting secures the seat; the rest is due by the balance deadline (30 June 2027).
+      for (const ob of partialFundedObligations(cohort.settings)) {
+        const ps = (await db.query<{ id: string; currency: "IDR" | "USD" }>("select id, currency from gif.participants where application_id = $1 and withdrawn_at is null", [app.id])).rows;
+        for (const p of ps) {
+          if (!(ob.amount[p.currency] > 0)) continue;
+          await db.query(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, due_at, created_by)
+            values ($1, $2, $3, $4, $5, $6, $7, 'system') on conflict do nothing`, [app.id, p.id, ob.kind, ob.label, p.currency, ob.amount[p.currency], ob.dueAt]);
+        }
       }
     }
     await audit(account.email, "offer_accepted", "application", app.id, {}, ip, db);
-    // Fully Funded: confirmed on acceptance. Partial Funded: confirmed once its payment is settled (recompute), or by
-    // staff while the founder has not set the Partial Funded amount.
+    // Fully Funded: confirmed on acceptance. Partial Funded: confirmed once its deposit is verified (recompute).
     await recompute(db, app.id, account.email);
   });
   await deliverQueued().catch(() => {});

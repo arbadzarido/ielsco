@@ -5,6 +5,8 @@ import { publishedAnnouncements } from "@/lib/cms";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import { Countdown } from "@/components/Client";
 import { tasksComplete, tasksFor } from "@/lib/tasks";
+import { guardianBlocks } from "@/lib/guardian";
+import { ResendGuardian } from "./ResendGuardian";
 
 export default async function PortalHome({ searchParams }: { searchParams: Promise<{ submitted?: string; withdrawn?: string }> }) {
   const sp = await searchParams;
@@ -76,6 +78,14 @@ export default async function PortalHome({ searchParams }: { searchParams: Promi
       {deadlines[0] && <div className="strip" style={{ marginTop: 32, padding: "0 16px" }}><Countdown to={deadlines[0].at} label={`${deadlines[0].label} in`} /></div>}
       <h2>Upcoming dates</h2>
       <div className="table-wrap"><table className="t compact"><tbody>{deadlines.map((d) => <tr key={d.label}><td>{d.label}</td><td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(d.at)}</td></tr>)}</tbody></table></div>
+
+      {detail.participants.some((p) => !p.withdrawn_at && guardianBlocks(p) && (c.isOwner || p.id === me?.id)) && <>
+        <h2 id="guardian">Parent or guardian consent</h2>
+        <p className="small muted">Delegates under 18 on 27 July 2027 need a parent's or legal guardian's consent before payment. We emailed the guardian a secure link.</p>
+        <ul className="progress">{detail.participants.filter((p) => !p.withdrawn_at && guardianBlocks(p) && (c.isOwner || p.id === me?.id)).map((p) => (
+          <li key={p.id} className="current"><span className="dot" aria-hidden="true" /><div><strong>{p.legal_name}</strong><span className="small muted">Guardian: {p.guardian_name} ({p.guardian_email})</span><ResendGuardian participantId={p.id} /></div></li>
+        ))}</ul>
+      </>}
 
       <h2>Announcements</h2>
       {news.length === 0 ? <p className="muted">No announcements yet.</p> : news.map((n) => (

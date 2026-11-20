@@ -4,7 +4,7 @@ import { taskLink, tasksFor, tasksSummary } from "@/lib/tasks";
 import { fmtDateTime } from "@/lib/format";
 import TasksForm from "./TasksForm";
 
-const LABEL = { submitted: ["", "Waiting for verification"], verified: ["ok", "Verified"], not_found: ["err", "Not found: check and resubmit"] } as const;
+const LABEL = { submitted: ["", "Pending review"], verified: ["ok", "Verified"], not_found: ["err", "Not found: check and resubmit"] } as const;
 
 export default async function Tasks() {
   const c = await portalContext("/portal/tasks");

@@ -31,6 +31,8 @@ export const ENV = {
   GIF_RATE_LIMIT_FACTOR: "50",
   GIF_NOINDEX: "true",
   CRON_SECRET: "e2e-cron-secret-0123456789",
+  GIF_IELSCO_SUPABASE_URL: `http://127.0.0.1:${MT_PORT}`,
+  GIF_IELSCO_SUPABASE_ANON_KEY: "e2e-ielsco-anon",
   NEXT_TELEMETRY_DISABLED: "1",
 };
 
@@ -42,7 +44,9 @@ async function setupDb() {
   await admin.end();
   const c = new pg.Client({ host: PGHOST, port: PGPORT, user: PGUSER, database: DB });
   await c.connect();
-  await c.query(readFileSync(join(repo, "supabase", "migrations", "20261123000000_gif_programme_platform.sql"), "utf8"));
+  for (const m of ["20261123000000_gif_programme_platform.sql", "20261126000000_gif_accounts_guardians_tasks.sql"]) {
+    await c.query(readFileSync(join(repo, "supabase", "migrations", m), "utf8"));
+  }
   // Applications open on 25 Nov 2026; tests run before that, so open them early in this throwaway database only.
   await c.query(`update gif.cohorts set settings = '{"dates": {"launch": "2026-11-01T00:00:00+07:00"}}' where is_current`);
   // Test staff (fictional, example.test).

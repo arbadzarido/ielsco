@@ -14,6 +14,8 @@ import { sendEmail, deliverQueued } from "@/lib/email/send";
 import { announcementEmail, elcoActivatedEmail, missingInfoEmail } from "@/lib/email/templates";
 import { resolveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 import { signedDownloadUrl } from "@/lib/storage";
+import { autoActivatePending } from "@/lib/elco";
+import { recordSignedGuardianForm } from "@/lib/guardian";
 
 export type AdminResult = { ok?: boolean; error?: string; message?: string; url?: string } | null;
 
@@ -108,6 +110,7 @@ export async function waiveObligationAction(_: AdminResult, fd: FormData): Promi
   if (o.kind === "deposit") await q("update gif.participants set seat_status = 'confirmed', seat_confirmed_at = now() where id = $1 and seat_status = 'none'", [o.participant_id]);
   await audit(a.email, "obligation_waived", "obligation", id, { reason }, ip);
   await recomputeNow(o.application_id, a.email);
+  await autoActivatePending(o.application_id).catch(() => 0);
   return done("Obligation waived.");
 }
 
@@ -213,6 +216,7 @@ const settingsSchema = z.object({
   payments: z.object({ allow_idr_for_international: z.boolean(), bank_transfer_instructions: z.string().min(10).max(1000) }),
   phase1_tasks: z.object({ enabled: z.boolean(), items: z.array(z.object({ key: z.string().regex(/^[a-z0-9_]{2,40}$/), title: z.string().min(3).max(80), detail: z.string().max(240), link: z.enum(["ielsco", "elco", "post"]).optional() })).max(12) }),
   instagram: z.object({ ielsco: z.string().url(), elco: z.string().url(), recruitment_post: z.string().url().nullable() }),
+  awards: z.object({ fully_funded_covers: z.array(z.string().min(3)).min(1), partial_funded_covers: z.array(z.string().min(3)), not_included: z.array(z.string().min(3)) }),
   universities: z.array(z.object({ name: z.string().min(2), country: z.string().min(2), status: z.enum(["planned", "confirmed"]) })),
   contact: z.object({ email: z.string().email(), whatsapp: z.string().min(5) }),
 });
@@ -236,7 +240,8 @@ export async function saveSettingsAction(_: AdminResult, fd: FormData): Promise<
 const contentSchemas = {
   faq: z.array(z.object({ q: z.string().min(3), a: z.string().min(3), group: z.string().min(2) })),
   mentors: z.array(z.object({ name: z.string().min(2), role: z.string().min(2), org: z.string().min(2), photo: z.string().regex(/^\/[\w\-/.]+$/).optional(), bio: z.string().optional() })),
-  testimonials: z.array(z.object({ quote: z.string().min(10), name: z.string().min(2), role: z.string().min(2), consent: z.literal(true, { message: "testimonials need the person's recorded consent (consent: true)" }) })),
+  testimonials: z.array(z.object({ quote: z.string(), name: z.string().min(2), role: z.string().min(2), consent: z.boolean(), status: z.enum(["pending", "approved"]).default("pending"), consent_reference: z.string().optional() })
+    .refine((t) => t.status !== "approved" || (t.consent && t.quote.trim().length >= 10 && (t.consent_reference ?? "").length >= 3), { message: "an approved testimonial needs the real quote, consent: true and a consent_reference (where the signed consent is kept)" })),
   photos: z.array(z.object({ src: z.string().regex(/^\/photos\/[\w\-.]+$/), alt: z.string().min(10), caption: z.string(), w: z.number(), h: z.number() })),
 };
 
@@ -315,7 +320,7 @@ export async function sponsorshipStatusAction(_: AdminResult, fd: FormData): Pro
 export async function verifyTaskAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
   const { a, ip } = await staff("review");
   const pid = String(fd.get("participant_id")), key = String(fd.get("task")), status = String(fd.get("status"));
-  if (!["verified", "not_found"].includes(status)) return { error: "Choose verified or not found." };
+  if (!["verified", "not_found", "submitted"].includes(status)) return { error: "Choose verified, not found or pending review." };
   if (!/^[a-z0-9_]{2,40}$/.test(key)) return { error: "Unknown task." };
   const p = await one<{ application_id: string }>(
     `update gif.participants set social_tasks = jsonb_set(social_tasks, array[$2::text], jsonb_build_object('status', $3::text, 'at', now(), 'by', $4::text, 'note', $5::text)), updated_at = now()
@@ -323,5 +328,11 @@ export async function verifyTaskAction(_: AdminResult, fd: FormData): Promise<Ad
   if (!p) return { error: "Delegate not found." };
   await audit(a.email, `social_task_${status}`, "participant", pid, { task: key }, ip);
   await recomputeNow(p.application_id, a.email);
-  return done(status === "verified" ? "Task verified." : "Marked as not found.");
+  return done(status === "verified" ? "Task verified." : status === "not_found" ? "Marked as not found." : "Set back to pending review.");
+}
+
+export async function recordGuardianFormAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
+  const { a, ip } = await staff("review");
+  const r = await recordSignedGuardianForm(a.email, String(fd.get("participant_id")), String(fd.get("guardian_name") ?? ""), String(fd.get("reference") ?? ""), ip);
+  return r.ok ? done("Guardian consent recorded.") : { error: r.error };
 }

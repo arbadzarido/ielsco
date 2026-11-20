@@ -1,6 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { acceptTermsAction, withdrawAction, type ActionResult } from "@/app/actions/portal";
+import { linkIelscoAction, type FormState } from "@/app/actions/public";
 
 export function TermsForm({ docs }: { docs: { slug: string; title: string; category: string }[] }) {
   const [s, action, pending] = useActionState<ActionResult, FormData>(acceptTermsAction, null);
@@ -27,6 +28,20 @@ export function WithdrawForm() {
       <label className="field"><span className="label">Type WITHDRAW to confirm</span><input name="confirm" autoComplete="off" /></label>
       {s?.error && <p className="error" role="alert">{s.error}</p>}
       <button className="btn btn-danger" disabled={pending} style={{ justifySelf: "start" }}>{pending ? "Withdrawing…" : "Withdraw application"}</button>
+    </form>
+  );
+}
+
+export function LinkIelsco() {
+  const [s, action, pending] = useActionState<FormState, FormData>(linkIelscoAction, null);
+  if (s?.ok) return <div className="notice ok" role="status"><p>Your IELSco account is now linked. You can sign in with it from now on.</p></div>;
+  return (
+    <form action={action} className="form panel" style={{ maxWidth: 560 }}>
+      <p className="small">Link your IELSco (ielsco.com) account so you can sign in with it. Your application and payments stay as they are.</p>
+      <label className="field"><span className="label">IELSco email</span><input name="email" type="email" autoComplete="username" /></label>
+      <label className="field"><span className="label">IELSco password</span><input name="password" type="password" autoComplete="current-password" /></label>
+      {s?.error && <p className="error" role="alert">{s.error}</p>}
+      <button className="btn btn-secondary" disabled={pending} style={{ justifySelf: "start" }}>{pending ? "Linking…" : "Link IELSco account"}</button>
     </form>
   );
 }
