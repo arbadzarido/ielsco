@@ -36,7 +36,7 @@ After this branch is deployed, open `https://gif.ielsco.com/api/health` and read
 | `dns` / `network` | Direct host `db.hkubzamchahvdpvojepc.supabase.co` (IPv6-only; Vercel cannot reach it) or a typo in the host | Use the **Transaction pooler** host `aws-1-ap-northeast-2.pooler.supabase.com`, port **6543** |
 | `url_invalid` | The password contains `@ # / ? %` etc. without URL encoding | URL-encode the password, or reset it to letters and digits |
 | `timeout` | Pooler unreachable or overloaded | Check Supabase status; keep `GIF_DATABASE_POOL_MAX` at 5 |
-| `tls` | `GIF_DATABASE_CA_CERT` set but wrong | Remove `GIF_DATABASE_CA_CERT` (TLS stays on) or paste Supabase's CA |
+| `tls` | **Seen in production on 21 Nov.** `GIF_DATABASE_CA_CERT` was set, but the code never unescaped `\n` (the replace was a no-op), so an escaped PEM was unusable and every connection failed TLS verification | Fixed in code (escaped or multi-line PEM both work; a non-PEM value is ignored with a log line). Immediate workaround: delete `GIF_DATABASE_CA_CERT` in Vercel and redeploy (the connection stays encrypted). `db_error_code` and `db_tls` in `/api/health` show the details |
 | `schema_missing` | Connected, but `gif.cohorts` is missing in **that** database | You are connected to a different project; check the project ref in the URL |
 | `permission` | Connected as a role without grants on schema `gif` | Use the `postgres.<ref>` pooler user |
 
