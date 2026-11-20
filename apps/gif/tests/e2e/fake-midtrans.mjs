@@ -78,6 +78,17 @@ const server = http.createServer(async (req, res) => {
       o.transaction_status = o.refunded >= Number(o.gross_amount) ? "refund" : "partial_refund";
       return json(res, 200, { status_code: "200", status_message: "Success, refund request is approved by the bank", refund_key: b.refund_key, refund_amount: amount });
     }
+    // ── Fake IELSco Supabase Auth (password grant), for the combined-account sign-in ──
+    if (req.method === "POST" && p === "/auth/v1/token" && url.searchParams.get("grant_type") === "password") {
+      if (req.headers.apikey !== "e2e-ielsco-anon") return json(res, 401, { error: "no api key" });
+      const b = JSON.parse(await read(req) || "{}");
+      const users = { "ayu@example.test": { id: "11111111-1111-4111-8111-111111111111", pw: "ielsco-pass-1", confirmed: true },
+        "fresh.ielsco@example.test": { id: "22222222-2222-4222-8222-222222222222", pw: "ielsco-pass-2", confirmed: true },
+        "unconfirmed@example.test": { id: "33333333-3333-4333-8333-333333333333", pw: "ielsco-pass-3", confirmed: false } };
+      const u = users[b.email];
+      if (!u || u.pw !== b.password) return json(res, 400, { error: "invalid_grant", error_description: "Invalid login credentials" });
+      return json(res, 200, { access_token: "x", user: { id: u.id, email: b.email, email_confirmed_at: u.confirmed ? new Date().toISOString() : null } });
+    }
     // ── Test controls ──
     if (req.method === "POST" && p === "/__control/set") {
       const b = JSON.parse(await read(req));

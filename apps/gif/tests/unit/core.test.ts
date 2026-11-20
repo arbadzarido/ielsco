@@ -13,13 +13,19 @@ const person = (email: string, nat = "ID") => ({ legal_name: "Test Person", emai
 
 test("published facts are the defaults", () => {
   const s = DEFAULT_SETTINGS;
-  assert.equal(s.prices.elco_pro_idr, 99000);
-  assert.deepEqual(s.prices.mentoring_early, { IDR: 1200000, USD: 80 });
-  assert.deepEqual(s.prices.mentoring_regular, { IDR: 1500000, USD: 100 });
-  assert.deepEqual(s.prices.self_funded_total, { IDR: 15000000, USD: 900 });
+  assert.equal(s.prices.elco_pro_idr, 98000);
+  assert.deepEqual(s.prices.mentoring_early, { IDR: 1199000, USD: 79 });
+  assert.deepEqual(s.prices.mentoring_regular, { IDR: 1499000, USD: 99 });
+  assert.deepEqual(s.prices.self_funded_total, { IDR: 14999000, USD: 899 });
+  assert.deepEqual(s.prices.partial_funded_payable, { IDR: 10999000, USD: 699 });
   assert.deepEqual(s.prices.self_funded_deposit, { IDR: 5000000, USD: 300 });
-  assert.deepEqual(balanceOf(s), { IDR: 10000000, USD: 600 });
-  assert.deepEqual(s.cashback, { fully_funded: { IDR: 300000, USD: 20 }, partial_funded: { IDR: 750000, USD: 50 } });
+  assert.deepEqual(balanceOf(s), { IDR: 9999000, USD: 599 });
+  assert.equal(s.dates.mentoring_early_bird_until, "2026-12-31T23:59:59+07:00");
+  assert.equal(s.dates.balance_due, "2027-06-30T23:59:59+07:00");
+  assert.equal(s.dates.deposit_due_days, 7);
+  assert.equal(s.dates.preparation_end, "2027-07-26T23:59:59+07:00");
+  assert.deepEqual(s.awards.fully_funded_covers, ["Programme fee", "Accommodation during the programme", "In-programme transportation"]);
+  assert.deepEqual(s.cashback, { fully_funded: { IDR: 299000, USD: 19 }, partial_funded: { IDR: 749000, USD: 49 } });
   assert.equal(s.slots.capacity, 100);
   assert.ok(s.universities.every((u) => u.status === "planned"));
 });
@@ -28,7 +34,7 @@ test("settings merge ignores unknown keys and keeps defaults", () => {
   const s = resolveSettings({ prices: { elco_pro_idr: 120000, bogus: 1 }, nonsense: true });
   assert.equal(s.prices.elco_pro_idr, 120000);
   assert.equal((s.prices as unknown as Record<string, unknown>).bogus, undefined);
-  assert.equal(s.prices.self_funded_total.USD, 900);
+  assert.equal(s.prices.self_funded_total.USD, 899);
 });
 
 test("phases follow the master timeline (WIB)", () => {
@@ -55,19 +61,20 @@ test("pathways open at launch; Fully Funded closes after Phase 1", () => {
 test("mentoring Early Bird until the configured date, then Regular", () => {
   const s = resolveSettings({ dates: { mentoring_early_bird_until: "2026-12-31T23:59:59+07:00" } });
   assert.equal(mentoringPrice(s, new Date("2026-12-01T00:00:00Z")).tier, "early");
-  assert.equal(mentoringPrice(s, new Date("2027-01-02T00:00:00Z")).price.USD, 100);
-  assert.equal(mentoringPrice(DEFAULT_SETTINGS).tier, "early"); // no end date set yet
+  assert.equal(mentoringPrice(s, new Date("2027-01-02T00:00:00Z")).price.USD, 99);
+  assert.equal(mentoringPrice(DEFAULT_SETTINGS, new Date("2026-12-31T16:58:00Z")).tier, "early"); // 23:58 WIB on 31 Dec
+  assert.equal(mentoringPrice(DEFAULT_SETTINGS, new Date("2026-12-31T17:00:00Z")).tier, "regular"); // 00:00 WIB on 1 Jan
 });
 
 test("currency by citizenship, no conversion", () => {
   assert.equal(currencyFor("ID"), "IDR");
   assert.equal(currencyFor("MY"), "USD");
   const sf = plannedObligations(DEFAULT_SETTINGS, "self_funded", "SG");
-  assert.deepEqual(sf.map((o) => [o.kind, o.currency, o.amount]), [["deposit", "USD", 300], ["balance", "USD", 600]]);
+  assert.deepEqual(sf.map((o) => [o.kind, o.currency, o.amount]), [["deposit", "USD", 300], ["balance", "USD", 599]]);
   const ff = plannedObligations(DEFAULT_SETTINGS, "fully_funded", "VN");
-  assert.deepEqual(ff.map((o) => [o.kind, o.currency, o.amount]), [["elco_pro", "IDR", 99000]]);
+  assert.deepEqual(ff.map((o) => [o.kind, o.currency, o.amount]), [["elco_pro", "IDR", 98000]]);
   const mt = plannedObligations(DEFAULT_SETTINGS, "mentoring", "ID");
-  assert.deepEqual(mt.map((o) => [o.currency, o.amount]), [["IDR", 1200000]]);
+  assert.deepEqual(mt.map((o) => [o.currency, o.amount]), [["IDR", 1199000]]);
 });
 
 test("USD obligations are collected manually unless the IDR option is enabled", () => {
@@ -76,8 +83,8 @@ test("USD obligations are collected manually unless the IDR option is enabled", 
   assert.equal(collectionMethod(resolveSettings({ payments: { allow_idr_for_international: true } }), "USD", true), "midtrans_idr_option");
   assert.equal(collectionMethod(DEFAULT_SETTINGS, "IDR", false), "manual");
   assert.equal(idrPriceFor(DEFAULT_SETTINGS, "deposit"), 5000000);
-  assert.equal(formatMoney(15000000, "IDR"), "IDR 15,000,000");
-  assert.equal(formatMoney(900, "USD"), "USD 900");
+  assert.equal(formatMoney(14999000, "IDR"), "IDR 14,999,000");
+  assert.equal(formatMoney(899, "USD"), "USD 899");
 });
 
 test("status machine and labels", () => {
@@ -174,4 +181,53 @@ test("Phase 1 social tasks: configurable, all must be verified", () => {
   assert.equal(normalizeHandle("@ayu_l"), "ayu_l");
   assert.equal(normalizeHandle("not a handle!"), null);
   assert.equal(taskLink(s, "post")?.label, "Find the post on @iels.co");
+});
+
+import { partialFundedObligations } from "../../src/lib/pricing.ts";
+import { isMinor } from "../../src/lib/validation.ts";
+import { legalDocs } from "../../src/lib/legal-docs.ts";
+import { defaultFaq } from "../../src/lib/content.ts";
+
+test("Partial Funded: deposit within 7 days, balance by 30 June, totals USD 699 / IDR 10,999,000", () => {
+  const now = new Date("2027-06-02T00:00:00Z");
+  const [dep, bal] = partialFundedObligations(DEFAULT_SETTINGS, now);
+  assert.deepEqual(dep.amount, { IDR: 5000000, USD: 300 });
+  assert.deepEqual(bal.amount, { IDR: 5999000, USD: 399 });
+  assert.equal(dep.amount.USD + bal.amount.USD, 699);
+  assert.equal(dep.amount.IDR + bal.amount.IDR, 10999000);
+  assert.equal(dep.dueAt, new Date(now.getTime() + 7 * 86400000).toISOString());
+  assert.equal(bal.dueAt, "2027-06-30T23:59:59+07:00");
+  assert.equal(idrPriceFor(DEFAULT_SETTINGS, "balance", now, true), 5999000);
+  assert.equal(idrPriceFor(DEFAULT_SETTINGS, "balance", now, false), 9999000);
+});
+
+test("self-funded deposit due 7 days after registration", () => {
+  const now = new Date("2026-12-01T00:00:00Z");
+  const [dep] = plannedObligations(DEFAULT_SETTINGS, "self_funded", "ID", now);
+  assert.equal(dep.dueAt, "2026-12-08T00:00:00.000Z");
+});
+
+test("under-18 rule uses the first programme day", () => {
+  assert.ok(isMinor("2009-07-28"));   // turns 18 on 28 July 2027
+  assert.ok(!isMinor("2009-07-27"));  // 18 on 27 July 2027
+  assert.ok(!isMinor(""));
+  const base = { pathway: "self_funded", mode: "individual", members: [], motivation: "m".repeat(60), discovery_source: "Instagram" };
+  const minor = { ...person("kid@example.test"), date_of_birth: "2010-01-01" };
+  assert.ok(!applicationSchema.safeParse({ ...base, leader: minor }).success);
+  assert.ok(applicationSchema.safeParse({ ...base, leader: { ...minor, guardian_name: "Ibu Sari", guardian_relation: "Mother", guardian_email: "mum@example.test", guardian_phone: "+62 811 1111 1111" } }).success);
+  assert.ok(!applicationSchema.safeParse({ ...base, leader: { ...minor, guardian_name: "Ibu Sari", guardian_relation: "Mother", guardian_email: "kid@example.test", guardian_phone: "+62 811 1111 1111" } }).success);
+});
+
+test("legal texts and FAQ quote exactly the configured prices and never the old ones", () => {
+  const all = JSON.stringify(legalDocs(DEFAULT_SETTINGS)) + JSON.stringify(defaultFaq(DEFAULT_SETTINGS));
+  for (const want of ["USD 899", "IDR 14,999,000", "USD 699", "IDR 10,999,000", "USD 79", "IDR 1,199,000", "USD 99", "IDR 1,499,000", "IDR 98,000", "USD 19", "IDR 299,000", "USD 49", "IDR 749,000"]) {
+    assert.ok(all.includes(want), want);
+  }
+  for (const old of ["USD 900", "USD 800", "USD 1,000", "IDR 15,000,000", "IDR 99,000", "IDR 1,200,000", "IDR 1,500,000", "USD 80 ", "USD 100", "USD 20 ", "USD 50 ", "IDR 300,000", "IDR 750,000"]) {
+    assert.ok(!all.includes(old), old);
+  }
+  const docs = legalDocs(DEFAULT_SETTINGS);
+  assert.equal(Object.keys(docs).length, 10);
+  for (const d of Object.values(docs)) { assert.ok(d.id.blocks.length > 0 && d.en.blocks.length > 0, d.slug); }
+  assert.ok(JSON.stringify(docs["refund-policy"].id).includes("75%") && JSON.stringify(docs["refund-policy"].id).includes("Sesi 4"));
 });

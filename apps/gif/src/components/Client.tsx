@@ -57,9 +57,10 @@ export function CurrencyToggle() {
   const { cur, set } = useContext(CurCtx);
   return (
     <fieldset className="btn-row" style={{ gap: 6 }}>
-      <legend className="small" style={{ marginBottom: 6 }}>Show prices for</legend>
-      <label className="option" style={{ padding: "8px 12px" }}><input type="radio" name="cur" checked={cur === "IDR"} onChange={() => set("IDR")} /> Indonesian citizens (IDR)</label>
-      <label className="option" style={{ padding: "8px 12px" }}><input type="radio" name="cur" checked={cur === "USD"} onChange={() => set("USD")} /> International (USD)</label>
+      <legend className="small" style={{ marginBottom: 6 }}>Which price applies to you?</legend>
+      <label className="option" style={{ padding: "8px 12px" }}><input type="radio" name="cur" checked={cur === "IDR"} onChange={() => set("IDR")} /> Indonesian participants (IDR)</label>
+      <label className="option" style={{ padding: "8px 12px" }}><input type="radio" name="cur" checked={cur === "USD"} onChange={() => set("USD")} /> International participants (USD)</label>
+      <p className="tiny muted" style={{ width: "100%", margin: "4px 0 0" }}>Two separate published prices, not exchange-rate conversions. Your price is set by the nationality in your application and shown in your portal before you pay.</p>
     </fieldset>
   );
 }

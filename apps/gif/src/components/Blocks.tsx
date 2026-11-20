@@ -65,7 +65,7 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
         <h3>Fully Funded application</h3>
         <div className="price">IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}<span className="small muted serif"> · Phase 1 with {s.prices.elco_pro_months} months of Elco Pro</span></div>
         <ul>
-          <li>{s.slots.fully_funded} Fully Funded and {s.slots.partial_funded} Partial Funded places</li>
+          <li>{s.slots.fully_funded} Fully Funded places (programme fee, accommodation and in-programme transport; flights not included) and {s.slots.partial_funded} Partial Funded places</li>
           <li>Three phases: application with Elco Pro and social media tasks, essay and pitch deck, video pitch</li>
           <li>Phase 1 open until {fmtDate(s.dates.phase1_close, { day: "numeric", month: "long", year: "numeric" })}</li>
           {!compact && <li>Elco Pro is yours to keep, selected or not</li>}
@@ -160,7 +160,7 @@ export function MentorPlaceholders({ mentors }: { mentors: Mentor[] }) {
 }
 
 export function Testimonials({ items }: { items: Testimonial[] }) {
-  const ok = items.filter((t) => t.consent);
+  const ok = items.filter((t) => t.consent && t.status !== "pending" && t.quote.trim().length > 0);
   if (!ok.length) {
     return <div className="notice"><p>Delegate stories from GIF 2026 will appear here once delegates have shared them with us and agreed to publication.</p></div>;
   }

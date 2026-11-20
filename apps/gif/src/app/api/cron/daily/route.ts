@@ -8,6 +8,7 @@ import { syncFromGateway } from "@/lib/payments/service";
 import { phaseWindow } from "@/lib/phases";
 import { formatMoney } from "@/lib/pricing";
 import { fmtDate, fmtRange } from "@/lib/format";
+import { autoActivatePending } from "@/lib/elco";
 
 // Daily housekeeping (vercel.json cron, Authorization: Bearer CRON_SECRET). Every step is idempotent (email dedupe keys,
 // monotonic payment states), so running it twice is harmless.
@@ -60,6 +61,9 @@ export async function GET(req: Request) {
       await sendEmail({ to: a.email, template: `phase${phase}_open`, ...phaseOpenEmail(a.legal_name, phase, window), dedupeKey: `phaseopen:${phase}:${a.id}`, applicationId: a.id }).catch(() => null);
     }
   }
+
+  // 3b. Elco Pro: retry automatic activation for paid subscriptions still pending (no-op until the Elco API is configured).
+  out.elco = await autoActivatePending().catch(() => 0);
 
   // 4. Retry queued or failed emails; housekeeping.
   out.emails = await deliverQueued(200);

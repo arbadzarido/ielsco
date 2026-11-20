@@ -19,7 +19,7 @@ export default async function MentoringPortal() {
       <div className="table-wrap"><table className="t compact"><thead><tr><th>#</th><th>Tuesday</th><th>Session</th></tr></thead>
         <tbody>{MENTORING_SESSIONS.map(([d, t], i) => <tr key={d} style={{ opacity: new Date(`${d}T23:59:59+07:00`) < new Date() ? 0.55 : 1 }}><td>{i + 1}</td><td>{fmtDate(d, { weekday: "short", day: "numeric", month: "short" })}</td><td>{t}</td></tr>)}</tbody></table></div>
       <h2>After mentoring</h2>
-      <p>You go straight to Phase 3 (video pitch, 25–27 May 2027), evaluated like every other applicant. If selected, cashback applies after verification.</p>
+      <p>You go straight to Phase 3 (3–5 minute video presentation, submitted 25–27 May 2027), evaluated like every other applicant. If selected, cashback applies after verification.</p>
       <h2>Mentors</h2>
       <MentorPlaceholders mentors={mentors} />
     </>

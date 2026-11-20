@@ -59,10 +59,10 @@ export async function run({ base, mt, env, db: dbc }) {
     await scope.getByLabel("Major, stream or field of study").fill("Environmental science");
     await scope.getByLabel("Country of study").selectOption(p.nat);
     await scope.getByLabel("Name", { exact: true }).fill("Parent of " + p.name);
-    await scope.getByLabel("Relationship").fill("Parent");
-    await scope.getByLabel("Phone (with country code)").fill("+62 812 0000 0001");
+    await scope.getByLabel("Relationship", { exact: true }).first().fill("Parent");
+    await scope.getByLabel("Phone (with country code)", { exact: true }).fill("+62 812 0000 0001");
   }
-  async function apply(page, { pathway, team, leader, members = [], selfFunded = false }) {
+  async function apply(page, { pathway, team, leader, members = [], selfFunded = false, keepGuardian = false }) {
     await page.goto(`/apply?pathway=${pathway}`);
     await page.getByRole("heading", { level: 2 }).waitFor();
     for (let i = 0; i < 5 && !(await page.getByRole("heading", { name: "Pathway", exact: true }).isVisible()); i++) {
@@ -139,8 +139,13 @@ export async function run({ base, mt, env, db: dbc }) {
       check("home has no fabricated testimonials", text.includes("Delegate stories from GIF 2026 will appear here"));
       const css = await page.evaluate(() => [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules].map((r) => r.cssText); } catch { return []; } }).join(" "));
       check("no yellow in CSS palette", !css.toLowerCase().includes("f9e15b") && !css.includes("rgb(249, 225, 91)"));
-      await page.getByRole("radio", { name: "Indonesian citizens (IDR)" }).first().check();
-      check("currency toggle shows IDR prices", (await page.locator("body").innerText()).includes("IDR 15,000,000"));
+      await page.getByRole("radio", { name: "Indonesian participants (IDR)" }).first().check();
+      check("currency toggle shows IDR prices", (await page.locator("body").innerText()).includes("IDR 14,999,000"));
+      await page.getByRole("radio", { name: "International participants (USD)" }).first().check();
+      const usdText = await page.locator("body").innerText();
+      check("international prices shown: USD 899 / USD 79", usdText.includes("USD 899") && usdText.includes("USD 79"));
+      check("no old prices anywhere on home", !["USD 900", "USD 800", "USD 1,000", "IDR 15,000,000", "IDR 99,000"].some((x) => usdText.includes(x) || text.includes(x)));
+      check("home states Fully Funded coverage, flights excluded", text.includes("accommodation") && /not international flights|flights not included/i.test(text));
       // Sponsorship form
       await page.goto("/sponsorship");
       await page.getByLabel("Full name").fill("Sari Wulandari");
@@ -176,9 +181,9 @@ export async function run({ base, mt, env, db: dbc }) {
       const app = await appOf(A.email);
       check("A submitted → Awaiting Payment", app.status === "awaiting_payment", app.status);
       const ob = await obligation(A.email, "elco_pro");
-      check("A has one Elco Pro obligation of IDR 99,000", ob && Number(ob.amount) === 99000 && ob.currency === "IDR");
+      check("A has one Elco Pro obligation of IDR 98,000", ob && Number(ob.amount) === 98000 && ob.currency === "IDR");
       check("registration email sent", !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'application_submitted'", [A.email])));
-      check("consents recorded with version + IP", (await one("select count(*)::int as n from gif.consents c join gif.accounts a on a.id = c.account_id where a.email = $1 and document_version like '2026-11-25%'", [A.email])).n >= 7);
+      check("consents recorded with version + IP", (await one("select count(*)::int as n from gif.consents c join gif.accounts a on a.id = c.account_id where a.email = $1 and document_version like '2026-11-21%'", [A.email])).n >= 7);
       // Duplicate application attempt
       await page.goto("/apply");
       check("second application redirected to portal", page.url().endsWith("/portal"));
@@ -208,6 +213,8 @@ export async function run({ base, mt, env, db: dbc }) {
       }
       await page.getByRole("button", { name: "Send for verification" }).click();
       await waitDb(async () => Object.keys((await one("select social_tasks from gif.participants where email = $1", [A.email])).social_tasks).length === 5);
+      await page.goto("/portal/tasks");
+      check("portal shows Pending review for reported tasks (not auto-verified)", (await page.locator("body").innerText()).includes("Pending review") && (await appOf(A.email)).status === "submitted");
       check("A submitted 5 social tasks with handle", (await one("select instagram from gif.participants where email = $1", [A.email])).instagram === "ayu.lestari");
       // Staff verifies each task (one marked not found first, then verified)
       const vp = await newPage();
@@ -270,7 +277,8 @@ export async function run({ base, mt, env, db: dbc }) {
       check("team self-funded submitted with 2 participants", app.mode === "team" && (await one("select count(*)::int as n from gif.participants where application_id = $1", [app.id])).n === 2);
       const dl = await obligation(B.email, "deposit"), bl = await obligation(B.email, "balance");
       const dm = await obligation(M.email, "deposit");
-      check("leader IDR deposit 5,000,000 + balance 10,000,000", Number(dl.amount) === 5000000 && dl.currency === "IDR" && Number(bl.amount) === 10000000);
+      check("leader IDR deposit 5,000,000 + balance 9,999,000 (total 14,999,000)", Number(dl.amount) === 5000000 && dl.currency === "IDR" && Number(bl.amount) === 9999000);
+      check("deposit due within 7 days, balance due 30 June 2027", Math.abs(new Date(dl.due_at).getTime() - Date.now() - 7 * 86400000) < 3600000 && new Date(bl.due_at).toISOString() === "2027-06-30T16:59:59.000Z");
       check("member USD deposit 300 (no FX conversion)", Number(dm.amount) === 300 && dm.currency === "USD");
       check("team invite email to member", !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'team_invite'", [M.email])));
       await page.goto("/portal/payments");
@@ -410,7 +418,7 @@ export async function run({ base, mt, env, db: dbc }) {
       await login(page, D.email, "/apply?pathway=mentoring");
       await apply(page, { pathway: "mentoring", leader: D });
       const ob = await obligation(D.email, "mentoring");
-      check("mentoring USD 80 Early Bird obligation", Number(ob.amount) === 80 && ob.currency === "USD", `${ob.amount} ${ob.currency}`);
+      check("mentoring USD 79 Early Bird obligation (per person)", Number(ob.amount) === 79 && ob.currency === "USD", `${ob.amount} ${ob.currency}`);
       await page.goto("/portal/payments");
       check("USD payer offered invoice, not a converted IDR charge", (await page.locator("tr", { hasText: "Mentoring" }).innerText()).includes("Request invoice"));
       await page.context().close();
@@ -518,7 +526,11 @@ export async function run({ base, mt, env, db: dbc }) {
       check("A Selected — Fully Funded", (await appOf(A.email)).status === "selected_fully_funded");
       check("D Selected — Partial Funded", (await appOf(D.email)).status === "selected_partial_funded");
       const cb = await one("select c.* from gif.cashbacks c join gif.participants p on p.id = c.participant_id where p.email = $1", [D.email]);
-      check("mentee cashback USD 50 pending verification", cb && Number(cb.amount) === 50 && cb.currency === "USD" && cb.status === "pending_verification");
+      check("mentee cashback USD 49 pending verification", cb && Number(cb.amount) === 49 && cb.currency === "USD" && cb.status === "pending_verification");
+      const resultMail = await one("select text_body from gif.email_outbox where template = 'result' and to_email = $1", [A.email]);
+      check("Fully Funded result email states coverage and excludes flights", resultMail.text_body.includes("programme fee") && resultMail.text_body.includes("international flights"));
+      const pfMail = await one("select text_body from gif.email_outbox where template = 'result' and to_email = $1", [D.email]);
+      check("Partial Funded result email states USD 699 contribution", pfMail.text_body.includes("USD 699"));
       check("result emails sent", (await one("select count(*)::int as n from gif.email_outbox where template = 'result'")).n === 2);
       // Elco Pro activation recorded by finance only after verification
       await op.goto(`/admin/applicants/${appA.id}`);
@@ -551,6 +563,115 @@ export async function run({ base, mt, env, db: dbc }) {
       await ap.waitForTimeout(1500);
       check("A accepts → Confirmed Participant", (await appOf(A.email)).status === "confirmed_participant");
       await ap.context().close();
+    }
+
+    // ── Partial Funded acceptance: deposit (7 days) + balance (30 June), seat secured by the verified deposit ──────────
+    {
+      const dp = await newPage();
+      await login(dp, D.email, "/portal/results");
+      await dp.goto("/portal/results");
+      check("Partial Funded result shows USD 699 contribution", (await dp.locator("body").innerText()).includes("USD 699"));
+      await dp.getByRole("button", { name: "Accept my offer" }).click();
+      await waitDb(async () => !!(await obligation(D.email, "balance")));
+      const pdep = await obligation(D.email, "deposit"), pbal = await obligation(D.email, "balance");
+      check("Partial Funded obligations: deposit USD 300 + balance USD 399", Number(pdep.amount) === 300 && Number(pbal.amount) === 399 && pdep.currency === "USD");
+      check("Partial Funded not confirmed before deposit", (await appOf(D.email)).status === "selected_partial_funded");
+      await dp.context().close();
+      const fp = await newPage();
+      await login(fp, "finance@example.test", "/admin");
+      const appD = await appOf(D.email);
+      await fp.goto(`/admin/applicants/${appD.id}`);
+      const row = fp.locator("tr", { hasText: "Partial Funded deposit" });
+      await row.getByText("Record manual payment").click();
+      await row.getByLabel("Bank reference / proof").fill("WISE-PF-DEP");
+      await row.getByRole("button", { name: "Record payment" }).click();
+      await waitDb(async () => (await obligation(D.email, "deposit")).status === "paid");
+      check("Partial Funded deposit verified → Confirmed Participant", (await appOf(D.email)).status === "confirmed_participant");
+      await fp.context().close();
+    }
+
+    // ── Under-18 applicant: guardian consent required before payment ──────────────────────────────────────────────
+    const E = { name: "Raka Putra", email: "raka.minor@example.test", wa: "+62 812 5555 6666", dob: "2010-03-01", nat: "ID", inst: "SMA Example 2", level: "high_school" };
+    {
+      const page = await newPage();
+      await login(page, E.email, "/apply?pathway=self_funded");
+      await page.goto("/apply?pathway=self_funded");
+      await page.getByRole("button", { name: "Continue" }).click();
+      await person(page, E, { lockedEmail: true });
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.waitForTimeout(500);
+      check("wizard blocks a minor without guardian details", (await page.getByRole("heading", { name: "Your profile" }).count()) === 1);
+      await page.getByLabel("Guardian full name").fill("Dewi Putri");
+      await page.getByLabel("Relationship", { exact: true }).last().fill("Mother");
+      await page.getByLabel("Guardian email").fill("dewi.guardian@example.test");
+      await page.getByLabel("Guardian phone (with country code)").fill("+62 811 7777 8888");
+      await page.getByRole("button", { name: "Save draft" }).click();
+      await waitDb(async () => (await appOf(E.email))?.draft?.leader?.guardian_email === "dewi.guardian@example.test");
+      await apply(page, { pathway: "self_funded", leader: E, selfFunded: true, keepGuardian: true });
+      const mail = await one("select html from gif.email_outbox where to_email = 'dewi.guardian@example.test' and template = 'guardian_consent'");
+      check("guardian consent email sent", !!mail);
+      await page.goto("/portal/payments");
+      await page.locator("tr", { hasText: "Self-Funded deposit" }).getByRole("button", { name: /Pay online/ }).click();
+      await page.getByText(/parent or guardian must give consent/).waitFor();
+      check("payment refused until guardian consents", !(await one("select 1 from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1", [E.email])));
+      const link = mail.html.match(/href="([^"]*guardian-consent\/[^"]+)"/)[1].replace(/^https?:\/\/[^/]+/, "");
+      const gp = await newPage();
+      await gp.goto(link);
+      for (const cb of await gp.locator("form.panel").getByRole("checkbox").all()) await cb.check();
+      await gp.getByRole("button", { name: "Give consent" }).click();
+      await gp.getByText(/consent for Raka Putra is recorded/).waitFor();
+      const g = await one("select guardian_consent_at, guardian_consent_name, guardian_consent_method, guardian_token_hash from gif.participants where email = $1", [E.email]);
+      check("guardian consent recorded (name, method), token single-use", !!g.guardian_consent_at && g.guardian_consent_name === "Dewi Putri" && g.guardian_consent_method === "online" && g.guardian_token_hash === null);
+      check("guardian consent row with actor email", !!(await one("select 1 from gif.consents where category = 'guardian' and actor_email = 'dewi.guardian@example.test' and account_id is null")));
+      await gp.goto(link);
+      check("used guardian link no longer valid", (await gp.locator("body").innerText()).includes("no longer valid"));
+      await gp.context().close();
+      await page.goto("/portal/payments");
+      await page.locator("tr", { hasText: "Self-Funded deposit" }).getByRole("button", { name: /Pay online/ }).click();
+      await page.waitForURL(/127\.0\.0\.1:3499\/pay\//);
+      check("payment opens after guardian consent", page.url().includes("/pay/"));
+      await page.context().close();
+    }
+
+    // ── Combined accounts: sign in with an IELSco account ─────────────────────────────────────────────────────────
+    {
+      const page = await newPage();
+      await page.goto("/login");
+      await page.getByRole("tab", { name: "IELSco account" }).click();
+      await page.getByLabel("IELSco email").fill(A.email);
+      await page.getByLabel("Password").fill("wrong-password");
+      await page.getByRole("button", { name: "Sign in with IELSco" }).click();
+      await page.getByText("That IELSco email or password is not correct.").waitFor();
+      check("wrong IELSco password refused", page.url().includes("/login"));
+      await page.getByLabel("Password").fill("ielsco-pass-1");
+      await page.getByRole("button", { name: "Sign in with IELSco" }).click();
+      await page.waitForURL(/\/portal/);
+      const acct = await one("select ielsco_user_id from gif.accounts where email = $1", [A.email]);
+      check("IELSco sign-in links the existing GIF account (application kept)", acct.ielsco_user_id === "11111111-1111-4111-8111-111111111111" && (await page.locator("body").innerText()).includes("Confirmed Participant"));
+      await page.context().close();
+      const p2 = await newPage();
+      await p2.goto("/login");
+      await p2.getByRole("tab", { name: "IELSco account" }).click();
+      await p2.getByLabel("IELSco email").fill("unconfirmed@example.test");
+      await p2.getByLabel("Password").fill("ielsco-pass-3");
+      await p2.getByRole("button", { name: "Sign in with IELSco" }).click();
+      await p2.getByText(/Confirm your IELSco email/).waitFor();
+      check("unconfirmed IELSco email refused", !(await one("select 1 from gif.accounts where email = 'unconfirmed@example.test'")));
+      await p2.context().close();
+    }
+
+    // ── Legal pages: Bahasa Indonesia primary, English translation, decided refund terms ───────────────────────────
+    {
+      const page = await newPage();
+      await page.goto("/refund-policy");
+      const t = await page.locator("body").innerText();
+      check("refund policy in Bahasa Indonesia with English translation", t.includes("Kebijakan Pengembalian Dana") && t.includes("English translation") && t.includes("75%") && t.includes("Sesi 4"));
+      const r = await page.goto("/parental-consent");
+      check("parental consent document published", r.status() === 200 && (await page.locator("body").innerText()).includes("Persetujuan Orang Tua/Wali"));
+      await page.goto("/payment-terms");
+      const pt = await page.locator("body").innerText();
+      check("payment terms quote USD 899 / IDR 14,999,000 and 30 Juni 2027", pt.includes("USD 899") && pt.includes("IDR 14,999,000") && pt.includes("30 Juni 2027"));
+      await page.context().close();
     }
 
     // ── Cron and mobile ────────────────────────────────────────────────────────────────────────────────────────────

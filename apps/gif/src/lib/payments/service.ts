@@ -13,6 +13,8 @@ import { recordServerEvent } from "../analytics";
 import { midtransGateway, paymentsState, type GatewayStatus } from "./gateway";
 import type { Normalized } from "./midtrans";
 import { tasksComplete, type TaskMap } from "../tasks";
+import { autoActivatePending } from "../elco";
+import { guardianBlocks } from "../guardian";
 
 // Rules (docs/gif/PAYMENTS.md):
 // - The server decides the obligation, amount and order id. A browser return URL is never proof of payment: payments
@@ -29,11 +31,11 @@ export class PaymentError extends Error { constructor(msg: string, public code: 
 
 type ObligationRow = { id: string; application_id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD";
   amount: number; status: string; owner_account_id: string; participant_account_id: string | null; app_status: string; pathway: string;
-  legal_name: string; email: string; whatsapp: string; code: string };
+  legal_name: string; email: string; whatsapp: string; code: string; date_of_birth: string; guardian_consent_at: string | null };
 
 async function loadObligation(db: pg.PoolClient | null, obligationId: string, lock = false): Promise<ObligationRow | null> {
   const sql = `select o.id, o.application_id, o.participant_id, o.kind, o.label, o.currency, o.amount, o.status,
-      a.owner_account_id, p.account_id as participant_account_id, a.status as app_status, a.pathway, p.legal_name, p.email, p.whatsapp, a.code
+      a.owner_account_id, p.account_id as participant_account_id, a.status as app_status, a.pathway, p.legal_name, p.email, p.whatsapp, a.code, p.date_of_birth, p.guardian_consent_at
     from gif.obligations o join gif.applications a on a.id = o.application_id join gif.participants p on p.id = o.participant_id
     where o.id = $1 ${lock ? "for update of o" : ""}`;
   return db ? ((await db.query<ObligationRow>(sql, [obligationId])).rows[0] ?? null) : one<ObligationRow>(sql, [obligationId]);
@@ -59,6 +61,7 @@ export async function startCheckout(accountId: string, obligationId: string, opt
   if (ob.status !== "open") throw new PaymentError("This item is already settled.", "not_open");
   if (["draft", "withdrawn", "not_selected"].includes(ob.app_status)) throw new PaymentError("This application can't take payments right now.", "app_state");
   if (!(await hasPaymentConsent(accountId))) throw new PaymentError("Accept the Terms, Payment Terms and Refund Policy before paying.", "consent");
+  if (guardianBlocks(ob)) throw new PaymentError("This delegate is under 18: a parent or guardian must give consent before payment. We emailed them a consent link; you can resend it from your dashboard.", "guardian");
   const gw = midtransGateway();
   const method = collectionMethod(s, ob.currency, !!gw);
   let amountIdr: number;
@@ -67,7 +70,7 @@ export async function startCheckout(accountId: string, obligationId: string, opt
     amountIdr = ob.amount;
   } else {
     if (method !== "midtrans_idr_option" || !opts.idrOption) throw new PaymentError("USD payments are made by invoice. Request an invoice from your portal.", "usd_manual");
-    const idr = idrPriceFor(s, ob.kind);
+    const idr = idrPriceFor(s, ob.kind, new Date(), ob.pathway === "fully_funded");
     if (!idr) throw new PaymentError("No IDR price is published for this item.", "no_idr_price");
     amountIdr = idr;
   }
@@ -177,6 +180,7 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
           await sendEmail({ to, template: "payment_received", ...m, dedupeKey: `paid:${pay.id}:${to}`, applicationId: pay.application_id }, db);
         }
         sideEffects.push(() => recordServerEvent("payment_succeeded", { kind: pay.kind }));
+        if (pay.kind === "elco_pro") sideEffects.push(() => autoActivatePending(pay.application_id).then(() => {}));
       }
     } else if (TERMINAL_UNPAID.includes(next)) {
       await db.query("update gif.payments set status = $2, payment_type = coalesce($3, payment_type), updated_at = now() where id = $1", [pay.id, next, st.paymentType]);
@@ -271,6 +275,7 @@ export async function recordManualPayment(staffEmail: string, obligationId: stri
     const ob = await loadObligation(db, obligationId, true);
     if (!ob) throw new PaymentError("Obligation not found.", "not_found");
     if (ob.status !== "open") throw new PaymentError("This obligation is not open.", "not_open");
+    if (guardianBlocks(ob)) throw new PaymentError("Record the parent or guardian consent for this delegate (under 18) before recording a payment.", "guardian");
     if (currency !== ob.currency || Math.round(amount * 100) !== Math.round(ob.amount * 100)) {
       throw new PaymentError(`The amount must equal the obligation (${formatMoney(ob.amount, ob.currency)}). Partial manual payments are not supported.`, "amount");
     }
@@ -287,6 +292,7 @@ export async function recordManualPayment(staffEmail: string, obligationId: stri
     return id;
   });
   await deliverQueued().catch(() => {});
+  await autoActivatePending().catch(() => 0);
   return result;
 }
 

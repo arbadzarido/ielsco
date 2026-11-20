@@ -86,7 +86,7 @@ export const phaseOpenEmail = (name: string, phase: 2 | 3, window: string) => ma
   heading: `Phase ${phase} is open`,
   paras: [`Hi ${name}, Phase ${phase} of the selection is now open (${window}).`,
     phase === 2 ? "Submit your project essay and pitch deck in the portal. The guidelines are on the Phase 2 page."
-      : "Record and submit your video pitch in the portal within the 3-day window."],
+      : "Record and submit your 3–5 minute video presentation in the portal within the 3-day window."],
   cta: { label: `Open Phase ${phase}`, href: `${SITE()}/portal/phase-${phase}` },
 });
 
@@ -96,12 +96,12 @@ export const phaseSubmittedEmail = (name: string, phase: 2 | 3, code: string) =>
   cta: { label: "Open your portal", href: `${SITE()}/portal` },
 });
 
-export const resultEmail = (name: string, outcome: "fully_funded" | "partial_funded" | "not_selected") => mail("Your GIF Summer 2027 result", {
+export const resultEmail = (name: string, outcome: "fully_funded" | "partial_funded" | "not_selected", award?: { covers: string[]; notIncluded: string[]; contribution?: string; depositDays?: number; balanceDue?: string }) => mail("Your GIF Summer 2027 result", {
   heading: outcome === "not_selected" ? "Your selection result" : "Congratulations",
   paras: outcome === "fully_funded"
-    ? [`Hi ${name}, you have been selected as a Fully Funded delegate for GIF Summer 2027.`, "Open your portal to read the award details and accept your offer."]
+    ? [`Hi ${name}, you have been selected as a Fully Funded delegate for GIF Summer 2027.`, award ? `Your award covers: ${award.covers.join(", ").toLowerCase()}. Not included: ${award.notIncluded.join(", ").toLowerCase()}.` : "Open your portal to read the award details.", "Open your portal to accept your offer."]
     : outcome === "partial_funded"
-      ? [`Hi ${name}, you have been selected as a Partial Funded delegate for GIF Summer 2027.`, "Open your portal to read the award details, any remaining payment and the next steps."]
+      ? [`Hi ${name}, you have been selected as a Partial Funded delegate for GIF Summer 2027.`, award?.contribution ? `Your participant contribution is ${award.contribution}. After you accept, pay a deposit within ${award.depositDays ?? 7} days to secure your seat; the balance is due by ${award.balanceDue ?? "the balance deadline"}. ${award.notIncluded.join(", ")} are not included.` : "Open your portal to read the award details and any remaining payment.", "Open your portal to accept your offer."]
       : [`Hi ${name}, thank you for taking part in the GIF Summer 2027 selection. You were not selected for funding this time.`,
         "Your Elco Pro access and any mentoring you joined are yours to keep. You can still join as a Self-Funded delegate while seats remain."],
   cta: { label: "Open your portal", href: `${SITE()}/portal/results` },
@@ -130,4 +130,12 @@ export const announcementEmail = (name: string, title: string, body: string) => 
   heading: title,
   paras: [`Hi ${name},`, ...body.split(/\n{2,}/)],
   cta: { label: "Open your portal", href: `${SITE()}/portal` },
+});
+
+export const guardianConsentEmail = (guardian: string, applicant: string, token: string) => mail(`Parent or guardian consent needed for ${applicant} (GIF Summer 2027)`, {
+  heading: `Dear ${guardian}`,
+  paras: [`${applicant} has applied to the Global Impact Fellowship Summer 2027, an 8-day programme from Singapore through Malaysia to Thailand (27 July – 3 August 2027) organised by IELSco (PT English Space Berkah Indonesia).`,
+    `Because ${applicant} will be under 18 on the first programme day, they can take part only with your written consent. Please review the programme terms and give or decline consent using the secure link below. No payment is taken before you consent.`],
+  cta: { label: "Review and give consent", href: `${SITE()}/guardian-consent/${token}` },
+  note: "This link is personal and works once. If you did not expect this email, reply and we will remove your details.",
 });

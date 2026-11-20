@@ -96,7 +96,7 @@ export function progressSteps(pathway: Pathway, status: Status, paid: boolean, t
   } else {
     steps.push(mk("mentoring", "Mentoring", "15 weekly sessions, 2 Feb – 11 May 2027", r >= rank("phase_3_in_progress") && status !== "withdrawn", status === "phase_1_completed"));
   }
-  steps.push(mk("p3", "Phase 3", "Recorded video pitch, 25–27 May 2027", r >= rank("phase_3_submitted") && status !== "withdrawn",
+  steps.push(mk("p3", "Phase 3", "Video presentation (3–5 min), 25–27 May 2027", r >= rank("phase_3_submitted") && status !== "withdrawn",
     status === "phase_3_in_progress" || (pathway === "fully_funded" && status === "phase_2_submitted")));
   steps.push(mk("eval", "Evaluation", "28–31 May 2027", final, status === "phase_3_submitted" || status === "under_evaluation"));
   steps.push(mk("result", "Results", "1 June 2027", final, false));

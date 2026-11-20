@@ -1,6 +1,7 @@
 // Published programme copy and default CMS content. Everything here is a programme fact from the GIF Summer 2027 brief
 // or a verifiable record of GIF 2026; nothing is invented. Admins can replace FAQ, mentors, testimonials and photos in
 // Admin → Content (stored in gif.content and read through getContent()).
+import { DEFAULT_SETTINGS, type Money, type Settings } from "./settings.ts";
 
 export const NAV = [
   { href: "/", label: "Home" },
@@ -29,15 +30,56 @@ export const PHOTOS: Record<string, Photo> = {
 };
 
 export const KEY_DATES = [
-  { date: "2026-11-25", label: "Launch. Phase 1 opens", key: true },
-  { date: "2027-02-02", label: "Project Mentoring Program starts (session 15 on 11 May)", key: false },
-  { date: "2027-05-10", label: "Phase 1 closes", key: true },
+  { date: "2026-11-25", label: "Open Recruitment: Phase 1 administration opens", key: true },
+  { date: "2026-12-31", label: "Mentoring Early Bird deadline (23:59 WIB)", key: false },
+  { date: "2027-02-02", end: "2027-05-11", label: "Project Mentoring Program: 15 weekly sessions", key: false },
+  { date: "2027-05-10", label: "Phase 1 administration closes", key: true },
   { date: "2027-05-11", end: "2027-05-24", label: "Phase 2: project essay and pitch deck", key: false },
-  { date: "2027-05-25", end: "2027-05-31", label: "Phase 3: recorded video pitch (3 days) and evaluation (4 days)", key: false },
-  { date: "2027-06-01", label: "Results: Fully Funded, Partial Funded or Not Selected", key: true },
-  { date: "2027-06-08", label: "Participant preparation starts: payment, visa, travel, insurance, orientation (about 7 weeks)", key: false },
+  { date: "2027-05-25", end: "2027-05-31", label: "Phase 3: video presentation (3 days to submit, then 4 days of evaluation)", key: false },
+  { date: "2027-06-01", label: "Final results: Fully Funded, Partial Funded or Not Selected", key: true },
+  { date: "2027-06-08", end: "2027-07-26", label: "Pre-departure preparation: payment, visa, travel, insurance, orientation", key: false },
+  { date: "2027-06-30", label: "Balance payment deadline", key: false },
   { date: "2027-07-27", end: "2027-08-03", label: "GIF Summer 2027: Singapore → Malaysia → Thailand", key: true },
 ] as const;
+
+export type Faq = { q: string; a: string; group: string };
+
+const idr = (n: number) => `IDR ${new Intl.NumberFormat("en-US").format(n)}`;
+const usd = (n: number) => `USD ${new Intl.NumberFormat("en-US").format(n)}`;
+const pair = (m: Money) => `${usd(m.USD)} (international) / ${idr(m.IDR)} (Indonesian)`;
+const day = (iso: string | null) => (iso ? new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric" }).format(new Date(iso)) : "to be announced");
+
+// The default FAQ, built from the programme settings so prices and dates always match checkout. Admins can replace it
+// in Admin → Content (a stored FAQ is used as written).
+export function defaultFaq(s: Settings): Faq[] {
+  const p = s.prices;
+  const pf = p.partial_funded_payable;
+  const bal = { IDR: p.self_funded_total.IDR - p.self_funded_deposit.IDR, USD: p.self_funded_total.USD - p.self_funded_deposit.USD };
+  return [
+    { group: "Programme", q: "What is GIF Summer 2027?", a: "The Global Impact Fellowship Summer 2027 is an 8-day, 7-night international youth programme by IELSco, from 27 July to 3 August 2027, travelling from Singapore through Malaysia to Thailand. Delegates develop social impact projects, with planned university engagement, a conference and an awarding." },
+    { group: "Programme", q: "Who can join?", a: "High school, undergraduate and college students. You can apply individually or as a team of 2–3 people. Up to 100 delegates take part. Applicants under 18 can join with the written consent of a parent or legal guardian." },
+    { group: "Programme", q: "Are NUS, Universiti Malaya and Chulalongkorn partners?", a: "Engagement with these universities is planned, not confirmed. We will mark each one as confirmed on this site only once it is agreed in writing. Nothing on this site should be read as an endorsement by these universities." },
+    { group: "Pathways", q: "What are the three ways to join?", a: `1) Fully Funded application: a competitive three-phase selection for ${s.slots.fully_funded} Fully Funded and ${s.slots.partial_funded} Partial Funded places. 2) Project Mentoring Program: 15 weekly sessions; mentees go straight to Phase 3 of the selection. 3) Self-Funded: direct registration (${pair(p.self_funded_total)}), subject to capacity and the deposit, with no essay, deck or video.` },
+    { group: "Pathways", q: "Is Partial Funded a separate pathway?", a: "No. Partial Funded is one of the outcomes of the Fully Funded selection, together with Fully Funded and Not Selected." },
+    { group: "Pathways", q: "Can I switch pathways later?", a: "Contact us before paying. After payment, a change is handled case by case under the Refund & Cancellation Policy." },
+    { group: "Funding", q: "What does Fully Funded cover?", a: `${s.awards.fully_funded_covers.join(", ")}. Not included: ${s.awards.not_included.join(", ").toLowerCase()}.` },
+    { group: "Funding", q: "What does Partial Funded mean?", a: pf ? `Partial Funded delegates pay a reduced participant contribution of ${pair(pf)} instead of the Self-Funded fee of ${pair(p.self_funded_total)}. ${s.awards.not_included.join(", ")} are not included.` : "The Partial Funded contribution is announced with the results." },
+    { group: "Fully Funded", q: "Why does Phase 1 include Elco Pro?", a: `Phase 1 includes ${p.elco_pro_months} months of Elco Pro, IELSco's AI English practice app, for ${idr(p.elco_pro_idr)}. It is a product you use and keep, not an application fee, and you keep it whatever your selection result.` },
+    { group: "Fully Funded", q: "What else is in Phase 1?", a: "Besides the online application and Elco Pro, each delegate completes a few social media tasks (follow @iels.co and @elco.ai, like the recruitment post, comment and tag 3 friends, and share it to your Story). You report them in your portal and our team verifies each one. Phase 1 is complete only when your Elco Pro payment and every task are verified." },
+    { group: "Fully Funded", q: "Is funding guaranteed?", a: `No. Places are competitive: ${s.slots.fully_funded} Fully Funded and ${s.slots.partial_funded} Partial Funded. Results are announced on 1 June 2027.` },
+    { group: "Fully Funded", q: "What happens in Phases 2 and 3?", a: "Phase 2 (11–24 May 2027): a project essay and a pitch deck of 10–12 slides. Phase 3 (25–31 May 2027): a video presentation of 3–5 minutes, with 3 days to record and submit, followed by 4 days of evaluation." },
+    { group: "Mentoring", q: "How much is the mentoring and when does Early Bird end?", a: `Early Bird: ${pair(p.mentoring_early)} until ${day(s.dates.mentoring_early_bird_until)}, 23:59 WIB. Regular: ${pair(p.mentoring_regular)}. The fee is per person, including for each member of a team.` },
+    { group: "Mentoring", q: "How does the mentoring shortcut work?", a: "Mentees skip Phases 1 and 2 and go straight to Phase 3, where they are evaluated in exactly the same way as everyone else." },
+    { group: "Mentoring", q: "What is the cashback?", a: `If a mentee is later selected: ${pair(s.cashback.fully_funded)} for Fully Funded, or ${pair(s.cashback.partial_funded)} for Partial Funded. It is paid after results are published and we have verified your identity, enrolment and mentoring payment, by bank transfer to an account in your name. If not selected, you keep the full mentoring programme and no cashback applies.` },
+    { group: "Payments", q: "Which currency will I pay in?", a: "Indonesian participants pay the IDR price; international participants pay the USD price. Which one applies is set by the nationality you give in your application and shown in your portal. These are two separate published prices, not exchange-rate conversions. Elco Pro is priced in IDR for everyone." },
+    { group: "Payments", q: "How do I pay?", a: "IDR payments are made online through Midtrans; the methods offered are the ones shown on the Midtrans payment page for our account. USD payments are made by invoice and international bank transfer, verified by IELSco finance. A payment counts only after it is verified." },
+    { group: "Payments", q: "When is my seat confirmed?", a: `When your deposit (${pair(p.self_funded_deposit)}) is verified, subject to available seats. Pay it within ${s.dates.deposit_due_days ?? 7} days of registering. The balance (${pair(bal)} for Self-Funded) is due by ${day(s.dates.balance_due)}.` },
+    { group: "Payments", q: "Can I get a refund?", a: "It depends on what you paid for and when. Read the Refund & Cancellation Policy before paying; you accept it as part of your application." },
+    { group: "Travel", q: "Do I need a visa and insurance?", a: "It depends on your passport. You are responsible for your passport, visas and travel insurance. During pre-departure preparation (8 June – 26 July 2027) we provide documents and guidance, but we cannot guarantee any visa decision." },
+    { group: "Sponsorship", q: "Can IELSco help me find a sponsor?", a: "We can prepare documentation (for example an invitation letter and programme description) for you to approach sponsors. We do not guarantee sponsorship." },
+  ];
+}
+
 
 // Tuesdays from 2 Feb to 11 May 2027 (15 sessions).
 export const MENTORING_SESSIONS = [
@@ -68,32 +110,13 @@ export const SELECTION_CRITERIA = [
   ["Presentation", "Clarity and persuasiveness of your essay, deck and video pitch."],
 ] as const;
 
-export type Faq = { q: string; a: string; group: string };
-export const DEFAULT_FAQ: Faq[] = [
-  { group: "Programme", q: "What is GIF Summer 2027?", a: "The Global Impact Fellowship Summer 2027 is an 8-day, 7-night international youth programme by IELSco, from 27 July to 3 August 2027, travelling from Singapore through Malaysia to Thailand. Delegates develop social impact projects, with planned university engagement, a conference and an awarding." },
-  { group: "Programme", q: "Who can join?", a: "High school, undergraduate and college students. You can apply individually or as a team of 2–3 people. Up to 100 delegates take part." },
-  { group: "Programme", q: "Are NUS, Universiti Malaya and Chulalongkorn partners?", a: "Engagement with these universities is planned, not confirmed. We will mark each one as confirmed on this site only once it is agreed in writing. Nothing on this site should be read as an endorsement by these universities." },
-  { group: "Pathways", q: "What are the three ways to join?", a: "1) Fully Funded application: a competitive three-phase selection for 10 Fully Funded and 10 Partial Funded places. 2) Project Mentoring Program: 15 weekly sessions, and mentees go straight to Phase 3 of the selection. 3) Self-Funded: direct registration with a deposit, no essay, deck or video." },
-  { group: "Pathways", q: "Is Partial Funded a separate pathway?", a: "No. Partial Funded is one of the outcomes of the Fully Funded selection, together with Fully Funded and Not Selected." },
-  { group: "Pathways", q: "Can I switch pathways later?", a: "Contact us before paying. After payment, a change is handled case by case under the Refund & Cancellation Policy." },
-  { group: "Fully Funded", q: "Why does Phase 1 include Elco Pro?", a: "Phase 1 is your online application plus 3 months of Elco Pro, IELSco's AI English practice app, for IDR 99,000 (Elco Pro is normally IDR 99,000 a month). It is a product you use and keep, not an application fee. You keep it even if you are not selected." },
-  { group: "Fully Funded", q: "What else is in Phase 1?", a: "Besides the online application and Elco Pro, each delegate completes a few social media tasks (for example following @iels.co and @elco.ai and engaging with the recruitment post). You report them in your portal and our team verifies each one. Phase 1 is complete when your Elco Pro payment and every task are verified." },
-  { group: "Fully Funded", q: "Is funding guaranteed?", a: "No. Places are competitive: 10 Fully Funded and 10 Partial Funded. Results are announced on 1 June 2027." },
-  { group: "Fully Funded", q: "What happens in Phases 2 and 3?", a: "Phase 2 (11–24 May 2027): a project essay and a pitch deck, following published guidelines. Phase 3 (25–31 May 2027): a recorded video pitch, with 3 days to record and submit, followed by 4 days of evaluation." },
-  { group: "Mentoring", q: "How does the mentoring shortcut work?", a: "Mentees skip Phases 1 and 2 and go straight to Phase 3, where they are evaluated in exactly the same way as everyone else." },
-  { group: "Mentoring", q: "What is the cashback?", a: "If a mentee is selected, they receive a cashback after selection and verification: USD 20 / IDR 300,000 for Fully Funded, USD 50 / IDR 750,000 for Partial Funded. If not selected, the mentee keeps the full mentoring programme and no cashback applies." },
-  { group: "Payments", q: "Which currency will I pay in?", a: "Indonesian citizens pay in IDR. Everyone else pays in USD. Elco Pro is priced in IDR for everyone. We never convert prices with an exchange rate on your behalf." },
-  { group: "Payments", q: "How do I pay?", a: "IDR payments are made online through Midtrans (cards, bank transfer, e-wallets and more, depending on availability). USD payments are made by invoice and bank transfer, verified by IELSco finance. A payment counts only after it is verified." },
-  { group: "Payments", q: "When is my Self-Funded seat confirmed?", a: "When your deposit (USD 300 / IDR 5,000,000) is verified. The balance (USD 600 / IDR 10,000,000) is paid during participant preparation; the exact due date is shown in your portal." },
-  { group: "Payments", q: "Can I get a refund?", a: "It depends on what you paid for and when. Read the Refund & Cancellation Policy before paying; you accept it as part of your application." },
-  { group: "Travel", q: "Do I need a visa?", a: "It depends on your passport. You are responsible for your passport, visas and travel insurance. During participant preparation (from 8 June 2027) we provide documents and guidance, but we cannot guarantee any visa decision." },
-  { group: "Sponsorship", q: "Can IELSco help me find a sponsor?", a: "We can prepare documentation (for example an invitation letter and programme description) for you to approach sponsors. We do not guarantee sponsorship." },
-];
+
 
 export type Mentor = { name: string; role: string; org: string; photo?: string; bio?: string };
-export type Testimonial = { quote: string; name: string; role: string; consent: boolean };
+// Only status "approved" with recorded written consent is ever published. Pending slots hold the place for real quotes.
+export type Testimonial = { quote: string; name: string; role: string; consent: boolean; status?: "pending" | "approved"; consent_reference?: string };
 export type ContentKeys = { faq: Faq[]; mentors: Mentor[]; testimonials: Testimonial[]; photos: Photo[] };
-export const CONTENT_DEFAULTS: ContentKeys = { faq: DEFAULT_FAQ, mentors: [], testimonials: [], photos: Object.values(PHOTOS) };
+export const CONTENT_DEFAULTS: ContentKeys = { faq: defaultFaq(DEFAULT_SETTINGS), mentors: [], testimonials: [1, 2, 3].map((i) => ({ quote: "", name: `GIF 2026 participant ${i} (awaiting quote and consent)`, role: "GIF 2026 delegate", consent: false, status: "pending" as const })), photos: Object.values(PHOTOS) };
 
 export const ELCO_PRO_FEATURES = [
   "Placement check and a Daily Study Plan",

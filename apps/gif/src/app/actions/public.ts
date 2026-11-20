@@ -1,7 +1,10 @@
 "use server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requestLoginCode, verifyLoginCode, signOut } from "@/lib/auth";
+import { requestLoginCode, verifyLoginCode, signOut, signInWithIelsco, linkIelscoAccount, requireAccount } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+import { recordGuardianConsent } from "@/lib/guardian";
+import { userAgent } from "@/lib/request";
 import { q } from "@/lib/db";
 import { overLimit } from "@/lib/ratelimit";
 import { clientIp } from "@/lib/request";
@@ -67,4 +70,29 @@ export async function sponsorshipAction(_: FormState, fd: FormData): Promise<For
   await sendEmail({ to: d.email, template: "sponsorship_received", ...sponsorshipReceivedEmail(d.name) });
   await recordServerEvent("sponsorship_submitted", {});
   return { ok: true };
+}
+
+export async function ielscoSignInAction(_: FormState, fd: FormData): Promise<FormState> {
+  const email = String(fd.get("email") ?? "");
+  const r = await signInWithIelsco(email, String(fd.get("password") ?? ""));
+  if (!r.ok) return { error: r.error, email: email.slice(0, 254) };
+  redirect(safeNext(fd.get("next")));
+}
+
+export async function linkIelscoAction(_: FormState, fd: FormData): Promise<FormState> {
+  const a = await requireAccount();
+  const r = await linkIelscoAccount(a.id, String(fd.get("email") ?? ""), String(fd.get("password") ?? ""));
+  if (!r.ok) return { error: r.error };
+  revalidatePath("/portal", "layout");
+  return { ok: true };
+}
+
+export async function guardianConsentAction(_: FormState, fd: FormData): Promise<FormState> {
+  const ip = (await clientIp()) ?? "unknown";
+  if (await overLimit(`guardian-ip:${ip}`, 20, 3600)) return { error: "Too many attempts. Please try again later." };
+  if (fd.get("participate") !== "on" || fd.get("data") !== "on" || fd.get("responsible") !== "on") return { error: "Please tick the three statements to give consent." };
+  const media = fd.get("media");
+  const r = await recordGuardianConsent(String(fd.get("token") ?? ""), { name: String(fd.get("name") ?? ""), relation: String(fd.get("relation") ?? ""), media: media === "yes" ? true : media === "no" ? false : null },
+    { ip, userAgent: await userAgent() });
+  return r.ok ? { ok: true } : { error: r.error };
 }

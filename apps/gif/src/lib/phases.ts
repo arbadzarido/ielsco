@@ -130,7 +130,7 @@ export async function publishResults(adminEmail: string, ip: string | null) {
           const cb = s.cashback[a.outcome][p.currency];
           await db.query(`insert into gif.cashbacks (participant_id, outcome, currency, amount) values ($1, $2, $3, $4) on conflict (participant_id) do nothing`, [p.id, a.outcome, p.currency, cb]);
         }
-        await sendEmail({ to: p.email, template: "result", ...resultEmail(p.legal_name, a.outcome), dedupeKey: `result:${a.id}:${p.email}`, applicationId: a.id }, db);
+        await sendEmail({ to: p.email, template: "result", ...resultEmail(p.legal_name, a.outcome, { covers: s.awards.fully_funded_covers, notIncluded: s.awards.not_included, contribution: s.prices.partial_funded_payable ? (p.currency === "IDR" ? `IDR ${s.prices.partial_funded_payable.IDR.toLocaleString("en-US")}` : `USD ${s.prices.partial_funded_payable.USD}`) : undefined, depositDays: s.dates.deposit_due_days ?? 7, balanceDue: "30 June 2027" }), dedupeKey: `result:${a.id}:${p.email}`, applicationId: a.id }, db);
       }
     }
     await audit(adminEmail, "results_published", "cohort", cohort.id, { count: apps.length }, ip, db);

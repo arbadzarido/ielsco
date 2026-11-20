@@ -4,6 +4,7 @@ import { currentSettingsSafe } from "@/lib/cohort";
 import { ELCO_PRO_FEATURES, SELECTION_CRITERIA } from "@/lib/content";
 import { fmtRange } from "@/lib/format";
 import { tasksFor } from "@/lib/tasks";
+import { Price } from "@/components/Client";
 import { DeadlineStrip, Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
 
 export const metadata: Metadata = { title: "Fully Funded application", description: "Compete for 10 Fully Funded and 10 Partial Funded places at GIF Summer 2027 in a three-phase selection." };
@@ -43,7 +44,7 @@ export default async function FullyFunded() {
             <ul><li><strong>Essay</strong>: the problem, who it affects and the evidence; your solution and why it is new; expected impact and how you will measure it; your plan, budget outline and how the project lasts. Upload a PDF (up to 10 MB) or write it in the portal.</li>
               <li><strong>Pitch deck</strong>: 10–12 slides covering problem, solution, impact, feasibility, sustainability and your team. PDF or PPTX, up to 25 MB.</li>
               <li>Teams submit one essay and one deck together.</li></ul></div>
-          <div className="item"><Eyebrow n="03">Phase 3 · {fmtRange("2027-05-25", "2027-05-31")}</Eyebrow><h3>Recorded video pitch.</h3>
+          <div className="item"><Eyebrow n="03">Phase 3 · {fmtRange("2027-05-25", "2027-05-31")}</Eyebrow><h3>Video presentation, 3–5 minutes.</h3>
             <p className="muted" style={{ marginTop: 12 }}>You have <strong>3 days</strong> (25–27 May) to record and submit. Evaluation takes the following <strong>4 days</strong> (28–31 May).</p>
             <ul><li>Share an unlisted YouTube, Vimeo, Loom or Google Drive link, or upload MP4/MOV (up to 100 MB).</li>
               <li>Project Mentoring Program mentees join the selection here, with the same evaluation.</li></ul></div>
@@ -59,8 +60,8 @@ export default async function FullyFunded() {
         <div className="wrap grid split" style={{ alignItems: "start" }}>
           <div><Eyebrow n="05">Results · 1 June 2027</Eyebrow><h2>Three possible outcomes.</h2></div>
           <div className="grid g3">
-            <div className="item"><h4>Fully Funded</h4><p>{s.slots.fully_funded} places. Award details are set out in your result letter.</p></div>
-            <div className="item"><h4>Partial Funded</h4><p>{s.slots.partial_funded} places. Your result letter states the support and any amount you still pay.</p></div>
+            <div className="item"><h4>Fully Funded</h4><p>{s.slots.fully_funded} places. Covers: {s.awards.fully_funded_covers.join(", ").toLowerCase()}. Not included: {s.awards.not_included.join(", ").toLowerCase()}.</p></div>
+            <div className="item"><h4>Partial Funded</h4><p>{s.slots.partial_funded} places. You pay a reduced contribution of {s.prices.partial_funded_payable ? <Price idr={s.prices.partial_funded_payable.IDR} usd={s.prices.partial_funded_payable.USD} /> : "(announced with results)"} instead of the Self-Funded fee. {s.awards.not_included.join(", ")} not included.</p></div>
             <div className="item"><h4>Not Selected</h4><p>You keep Elco Pro, and you may still join Self-Funded while seats remain.</p></div>
           </div>
         </div>

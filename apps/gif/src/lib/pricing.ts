@@ -1,7 +1,7 @@
 // What each participant owes when an application is submitted. Pure (node --test imports it).
 // Prices are per participant (every team member is an individual delegate). No FX conversion happens anywhere:
 // Indonesian citizens are charged the IDR price, everyone else the USD price; Elco Pro is an IDR product for everyone.
-import { balanceOf, mentoringPrice, type Currency, type Pathway, type Settings } from "./settings.ts";
+import { balanceOf, mentoringPrice, type Currency, type Money, type Pathway, type Settings } from "./settings.ts";
 
 export function currencyFor(nationality: string): Currency {
   return nationality.toUpperCase() === "ID" ? "IDR" : "USD";
@@ -26,6 +26,19 @@ export function plannedObligations(s: Settings, pathway: Pathway, nationality: s
   ];
 }
 
+// Partial Funded contribution after acceptance: deposit (same configurable deposit as Self-Funded, capped at the
+// contribution) due deposit_due_days after accepting, then the balance by the balance deadline.
+export function partialFundedObligations(s: Settings, now = new Date()): { kind: "deposit" | "balance"; label: string; amount: Money; dueAt: string | null }[] {
+  const pay = s.prices.partial_funded_payable;
+  if (!pay) return [];
+  const dep = { IDR: Math.min(s.prices.self_funded_deposit.IDR, pay.IDR), USD: Math.min(s.prices.self_funded_deposit.USD, pay.USD) };
+  const days = s.dates.deposit_due_days;
+  return [
+    { kind: "deposit", label: "Partial Funded deposit", amount: dep, dueAt: days ? new Date(now.getTime() + days * 86400000).toISOString() : null },
+    { kind: "balance", label: "Partial Funded balance", amount: { IDR: pay.IDR - dep.IDR, USD: pay.USD - dep.USD }, dueAt: s.dates.balance_due },
+  ];
+}
+
 // Which gateway can collect an obligation, given the currency. Midtrans charges IDR only (docs.midtrans.com:
 // "Midtrans currently only processes transactions in Indonesian Rupiah (IDR)").
 export function collectionMethod(s: Settings, currency: Currency, midtransReady: boolean): "midtrans" | "manual" | "midtrans_idr_option" {
@@ -40,7 +53,11 @@ export function formatMoney(amount: number, currency: Currency): string {
 
 // The IDR price an international payer would pay if the founder enables the IDR card option: the published IDR price of
 // the same item, never a converted USD amount.
-export function idrPriceFor(s: Settings, kind: string, now = new Date()): number | null {
+export function idrPriceFor(s: Settings, kind: string, now = new Date(), partial = false): number | null {
+  if (partial && (kind === "deposit" || kind === "balance")) {
+    const p = partialFundedObligations(s, now).find((o) => o.kind === kind);
+    return p ? p.amount.IDR : null;
+  }
   if (kind === "mentoring") return mentoringPrice(s, now).price.IDR;
   if (kind === "deposit") return s.prices.self_funded_deposit.IDR;
   if (kind === "balance") return balanceOf(s).IDR;

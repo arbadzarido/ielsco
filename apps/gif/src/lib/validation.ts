@@ -41,8 +41,18 @@ export const personSchema = z.object({
   emergency_name: text(2, 120, "Emergency contact name"),
   emergency_relation: text(2, 60, "Emergency contact relationship"),
   emergency_phone: phone("Emergency contact phone"),
+  // Required only for applicants under 18 on the first programme day (checked in applicationSchema).
+  guardian_name: z.string().trim().max(120).optional().default(""),
+  guardian_relation: z.string().trim().max(60).optional().default(""),
+  guardian_email: z.string().trim().toLowerCase().max(254).optional().default(""),
+  guardian_phone: z.string().trim().max(30).optional().default(""),
 });
 export type Person = z.infer<typeof personSchema>;
+
+export const PROGRAMME_START = new Date("2027-07-27T00:00:00Z");
+export function isMinor(dob: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dob) && ageOn(dob, PROGRAMME_START) < 18;
+}
 
 export const applicationSchema = z.object({
   pathway: z.enum(["fully_funded", "mentoring", "self_funded"], { message: "Choose a pathway." }),
@@ -62,6 +72,15 @@ export const applicationSchema = z.object({
   } else if (a.members.length) {
     ctx.addIssue({ code: "custom", path: ["members"], message: "Individual applications have no members." });
   }
+  [a.leader, ...a.members].forEach((p, i) => {
+    if (!isMinor(p.date_of_birth)) return;
+    const at = i === 0 ? "leader" : `members.${i - 1}`;
+    if (p.guardian_name.length < 2) ctx.addIssue({ code: "custom", path: [at, "guardian_name"], message: "Under 18: add your parent or legal guardian." });
+    if (p.guardian_relation.length < 2) ctx.addIssue({ code: "custom", path: [at, "guardian_relation"], message: "Relationship is required." });
+    if (!z.string().email().safeParse(p.guardian_email).success) ctx.addIssue({ code: "custom", path: [at, "guardian_email"], message: "Enter the guardian's email: we send them the consent form." });
+    else if (p.guardian_email === p.email) ctx.addIssue({ code: "custom", path: [at, "guardian_email"], message: "The guardian needs their own email address." });
+    if (!/^\+[1-9]\d{6,14}$/.test(normalizePhone(p.guardian_phone))) ctx.addIssue({ code: "custom", path: [at, "guardian_phone"], message: "Guardian phone with country code." });
+  });
   const emails = [a.leader.email, ...a.members.map((m) => m.email)];
   if (new Set(emails).size !== emails.length) ctx.addIssue({ code: "custom", path: ["members"], message: "Each team member needs their own email address." });
   if (a.pathway !== "self_funded") {

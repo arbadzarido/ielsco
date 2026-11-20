@@ -72,26 +72,90 @@ export async function verifyLoginCode(rawEmail: string, rawCode: string): Promis
   const acct = await one<{ id: string }>(
     `insert into gif.accounts (email, last_login_at) values ($1, now())
      on conflict (email) do update set last_login_at = now() returning id`, [email]);
-  // Team members invited by a leader are linked to their participant row the first time they sign in.
-  await q("update gif.participants set account_id = $1 where email = $2 and account_id is null", [acct!.id, email]);
-  const token = randomBytes(32).toString("base64url");
-  await q("insert into gif.sessions (token_hash, account_id, expires_at, ip, user_agent) values ($1, $2, now() + make_interval(days => $3), $4, $5)",
-    [sha256(token), acct!.id, SESSION_DAYS, ip, await userAgent()]);
-  (await cookies()).set(SESSION_COOKIE(), token, { httpOnly: true, secure: secure(), sameSite: "lax", path: "/", maxAge: SESSION_DAYS * 86400 });
+  await startSession(acct!.id, email, ip);
   return { ok: true, accountId: acct!.id };
 }
 
-export type Account = { id: string; email: string; staffRole: StaffRole | null; staffName: string | null };
+async function startSession(accountId: string, email: string, ip: string) {
+  // Team members invited by a leader are linked to their participant row the first time they sign in.
+  await q("update gif.participants set account_id = $1 where email = $2 and account_id is null", [accountId, email]);
+  const token = randomBytes(32).toString("base64url");
+  await q("insert into gif.sessions (token_hash, account_id, expires_at, ip, user_agent) values ($1, $2, now() + make_interval(days => $3), $4, $5)",
+    [sha256(token), accountId, SESSION_DAYS, ip, await userAgent()]);
+  (await cookies()).set(SESSION_COOKIE(), token, { httpOnly: true, secure: secure(), sameSite: "lax", path: "/", maxAge: SESSION_DAYS * 86400 });
+}
+
+// ── Combined IELSco accounts ──────────────────────────────────────────────────────────────────────────────────────────
+// Founder decision (20 Nov 2026): GIF and IELSco accounts are combined. Non-destructive design: GIF keeps its own
+// account rows (and every application and payment attached to them); an account is *linked* to the IELSco Supabase
+// Auth user (gif.accounts.ielsco_user_id). Applicants can sign in with their IELSco email and password, which IELSco's
+// Supabase Auth verifies; GIF keeps no Supabase tokens. Lookup order: linked user id, then the same verified email.
+// Email-code sign-in keeps working for everyone, so no existing applicant loses access.
+function ielscoAuthConfig() {
+  const url = (process.env.GIF_IELSCO_SUPABASE_URL || "").replace(/\/+$/, "");
+  const key = process.env.GIF_IELSCO_SUPABASE_ANON_KEY || "";
+  return url && key ? { url, key } : null;
+}
+export const ielscoSignInAvailable = () => !!ielscoAuthConfig();
+
+type IelscoUser = { id: string; email: string };
+async function verifyIelscoPassword(rawEmail: string, password: string): Promise<{ ok: true; user: IelscoUser } | { ok: false; error: string }> {
+  const cfg = ielscoAuthConfig();
+  if (!cfg) return { ok: false, error: "IELSco sign-in is not available yet. Use an email code instead." };
+  const email = normalizeEmail(rawEmail);
+  if (!email || !password || password.length > 200) return { ok: false, error: "Enter your IELSco email and password." };
+  const ip = (await clientIp()) ?? "unknown";
+  if (await overLimit(`ielsco-email:${email}`, 10, 3600) || await overLimit(`ielsco-ip:${ip}`, 40, 3600)) return { ok: false, error: "Too many attempts. Try again later or use an email code." };
+  try {
+    const res = await fetch(`${cfg.url}/auth/v1/token?grant_type=password`, {
+      method: "POST", headers: { apikey: cfg.key, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }), signal: AbortSignal.timeout(10_000) });
+    const body = (await res.json().catch(() => ({}))) as { user?: { id?: string; email?: string; email_confirmed_at?: string | null } };
+    if (!res.ok || !body.user?.id || !body.user.email) return { ok: false, error: "That IELSco email or password is not correct." };
+    if (!body.user.email_confirmed_at) return { ok: false, error: "Confirm your IELSco email address first (check your inbox), or use an email code." };
+    return { ok: true, user: { id: body.user.id, email: body.user.email.toLowerCase() } };
+  } catch {
+    return { ok: false, error: "IELSco sign-in is temporarily unavailable. Use an email code instead." };
+  }
+}
+
+export async function signInWithIelsco(rawEmail: string, password: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const v = await verifyIelscoPassword(rawEmail, password);
+  if (!v.ok) return v;
+  const ip = (await clientIp()) ?? "unknown";
+  let acct = await one<{ id: string; email: string }>("select id, email from gif.accounts where ielsco_user_id = $1", [v.user.id]);
+  if (!acct) {
+    const byEmail = await one<{ id: string; email: string; ielsco_user_id: string | null }>("select id, email, ielsco_user_id from gif.accounts where email = $1", [v.user.email]);
+    if (byEmail?.ielsco_user_id && byEmail.ielsco_user_id !== v.user.id) return { ok: false, error: "This email is linked to a different IELSco account. Contact hello@ielsco.com." };
+    acct = byEmail
+      ? await one<{ id: string; email: string }>("update gif.accounts set ielsco_user_id = $2, ielsco_linked_at = now() where id = $1 returning id, email", [byEmail.id, v.user.id])
+      : await one<{ id: string; email: string }>("insert into gif.accounts (email, ielsco_user_id, ielsco_linked_at) values ($1, $2, now()) returning id, email", [v.user.email, v.user.id]);
+  }
+  await q("update gif.accounts set last_login_at = now() where id = $1", [acct!.id]);
+  await startSession(acct!.id, acct!.email, ip);
+  return { ok: true };
+}
+
+// Link the signed-in GIF account to an IELSco account (also when the two use different email addresses).
+export async function linkIelscoAccount(accountId: string, rawEmail: string, password: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const v = await verifyIelscoPassword(rawEmail, password);
+  if (!v.ok) return v;
+  const other = await one<{ id: string }>("select id from gif.accounts where ielsco_user_id = $1 and id <> $2", [v.user.id, accountId]);
+  if (other) return { ok: false, error: "That IELSco account is already linked to another GIF account. Contact hello@ielsco.com to merge them." };
+  await q("update gif.accounts set ielsco_user_id = $2, ielsco_linked_at = now() where id = $1", [accountId, v.user.id]);
+  return { ok: true };
+}
+
+export type Account = { id: string; email: string; staffRole: StaffRole | null; staffName: string | null; ielscoLinked: boolean };
 export type StaffRole = "owner" | "admin" | "finance" | "evaluator" | "viewer";
 
 export const getAccount = cache(async (): Promise<Account | null> => {
   const token = (await cookies()).get(SESSION_COOKIE())?.value;
   if (!token || token.length > 100) return null;
-  const row = await one<{ id: string; email: string; role: StaffRole | null; name: string | null }>(
-    `select a.id, a.email, st.role, st.name from gif.sessions s join gif.accounts a on a.id = s.account_id
+  const row = await one<{ id: string; email: string; role: StaffRole | null; name: string | null; ielsco_user_id: string | null }>(
+    `select a.id, a.email, st.role, st.name, a.ielsco_user_id from gif.sessions s join gif.accounts a on a.id = s.account_id
      left join gif.staff st on st.email = a.email and st.active
      where s.token_hash = $1 and s.expires_at > now()`, [sha256(token)]);
-  return row ? { id: row.id, email: row.email, staffRole: row.role, staffName: row.name } : null;
+  return row ? { id: row.id, email: row.email, staffRole: row.role, staffName: row.name, ielscoLinked: !!row.ielsco_user_id } : null;
 });
 
 export async function signOut() {

@@ -36,7 +36,7 @@ export default async function Payments() {
               const method = collectionMethod(s, o.currency, ready);
               const depositOpen = o.kind === "balance" && detail.obligations.some((d) => d.participant_id === o.participant_id && d.kind === "deposit" && d.status === "open");
               const pending = payments.some((p) => p.obligation_id === o.id && p.status === "pending");
-              const idr = idrPriceFor(s, o.kind);
+              const idr = idrPriceFor(s, o.kind, new Date(), app.pathway === "fully_funded");
               return (
                 <tr key={o.id}>
                   <td>{o.label}</td>

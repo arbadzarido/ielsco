@@ -6,7 +6,7 @@ import { fmtDate } from "@/lib/format";
 import { CurrencyToggle, Price } from "@/components/Client";
 import { Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
 
-export const metadata: Metadata = { title: "Self-Funded", description: "Register directly for GIF Summer 2027: USD 900 / IDR 15,000,000, with a deposit to confirm your seat." };
+export const metadata: Metadata = { title: "Self-Funded", description: "Register directly for GIF Summer 2027: USD 899 for international participants, IDR 14,999,000 for Indonesian participants, with a deposit to secure your seat." };
 export const revalidate = 300;
 
 export default async function SelfFunded() {
@@ -33,7 +33,7 @@ export default async function SelfFunded() {
       <section className="section alt">
         <div className="wrap grid g2">
           <div className="item"><Eyebrow n="02">How to pay</Eyebrow><h3>IDR online, USD by invoice.</h3>
-            <p className="muted" style={{ marginTop: 12 }}>Indonesian citizens pay in IDR online through Midtrans. International delegates pay in USD by invoice and bank transfer, verified by IELSco finance. We never convert your price with an exchange rate.</p></div>
+            <p className="muted" style={{ marginTop: 12 }}>Indonesian participants pay the IDR price online through Midtrans. International delegates pay in USD by invoice and bank transfer, verified by IELSco finance. We never convert your price with an exchange rate.</p></div>
           <div className="item"><Eyebrow n="03">Seats</Eyebrow><h3>Up to {s.slots.capacity} delegates in total.</h3>
             <p className="muted" style={{ marginTop: 12 }}>Seats are confirmed in the order deposits are verified. Registration closes when the programme is full; you will see this before paying.</p></div>
           <div className="item"><Eyebrow n="04">Teams</Eyebrow><h3>Register with up to two friends.</h3><p className="muted" style={{ marginTop: 12 }}>Each team member is a delegate with their own profile, deposit and balance.</p></div>
