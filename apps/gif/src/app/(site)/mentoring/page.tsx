@@ -25,9 +25,9 @@ export default async function Mentoring() {
         <div className="wrap">
           <div className="head side"><div><Eyebrow n="01">Price</Eyebrow><h2>Early Bird and Regular.</h2></div><CurrencyToggle /></div>
           <div className="grid g3">
-            <div className="item"><span className="kicker">Early Bird {m.tier === "early" ? "· current" : "· ended"}</span><p className="serif" style={{ fontSize: 34 }}><Price idr={s.prices.mentoring_early.IDR} usd={s.prices.mentoring_early.USD} /></p>
+            <div className="item"><span className="kicker">Early Bird {m.tier === "early" ? "· current" : "· ended"}</span><p className="big-number"><Price idr={s.prices.mentoring_early.IDR} usd={s.prices.mentoring_early.USD} /></p>
               <p className="small muted">{s.dates.mentoring_early_bird_until ? `Until ${fmtDate(s.dates.mentoring_early_bird_until, { day: "numeric", month: "long", year: "numeric" })}, 23:59 WIB.` : "The Early Bird end date will be announced here in advance."}</p></div>
-            <div className="item"><span className="kicker">Regular</span><p className="serif" style={{ fontSize: 34 }}><Price idr={s.prices.mentoring_regular.IDR} usd={s.prices.mentoring_regular.USD} /></p><p className="small muted">After the Early Bird period.</p></div>
+            <div className="item"><span className="kicker">Regular</span><p className="big-number"><Price idr={s.prices.mentoring_regular.IDR} usd={s.prices.mentoring_regular.USD} /></p><p className="small muted">After the Early Bird period.</p></div>
             <div className="item"><span className="kicker">Who pays what</span><p className="small">Indonesian participants pay the IDR price; international participants pay the USD price. Each team member enrols individually.</p></div>
           </div>
         </div>
@@ -51,7 +51,7 @@ export default async function Mentoring() {
           <div className="head side"><div><Eyebrow n="03">Curriculum</Eyebrow><h2>15 sessions, every Tuesday.</h2></div><p className="lead">Problem identification, design thinking, ideation, research, development, business model, impact measurement, sustainability, pitch deck and pitching. Session times are sent to enrolled mentees.</p></div>
           <div className="table-wrap"><table className="t">
             <thead><tr><th>#</th><th>Tuesday</th><th>Session</th><th>Theme</th></tr></thead>
-            <tbody>{MENTORING_SESSIONS.map(([d, t, k], i) => <tr key={d}><td className="serif" style={{ color: "var(--maroon)" }}>{String(i + 1).padStart(2, "0")}</td><td style={{ whiteSpace: "nowrap" }}>{fmtDate(d, { day: "numeric", month: "short" })}</td><td>{t}</td><td className="muted small">{k}</td></tr>)}</tbody>
+            <tbody>{MENTORING_SESSIONS.map(([d, t, k], i) => <tr key={d}><td style={{ color: "var(--coral)", fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</td><td style={{ whiteSpace: "nowrap" }}>{fmtDate(d, { day: "numeric", month: "short" })}</td><td>{t}</td><td className="muted small">{k}</td></tr>)}</tbody>
           </table></div>
         </div>
       </section>

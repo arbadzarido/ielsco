@@ -60,7 +60,7 @@ export default async function FullyFunded() {
         <div className="wrap grid split" style={{ alignItems: "start" }}>
           <div><Eyebrow n="05">Results · 1 June 2027</Eyebrow><h2>Three possible outcomes.</h2></div>
           <div className="grid g3">
-            <div className="item"><h4>Fully Funded</h4><p>{s.slots.fully_funded} places. Covers: {s.awards.fully_funded_covers.join(", ").toLowerCase()}. Not included: {s.awards.not_included.join(", ").toLowerCase()}.</p></div>
+            <div className="item"><h4>Fully Funded</h4><p>{s.slots.fully_funded} places. Covers: {s.awards.fully_funded_covers.map((x) => x.charAt(0).toLowerCase() + x.slice(1)).join(", ")}. Not included: {s.awards.not_included.map((x) => x.charAt(0).toLowerCase() + x.slice(1)).join(", ")}.</p></div>
             <div className="item"><h4>Partial Funded</h4><p>{s.slots.partial_funded} places. You pay a reduced contribution of {s.prices.partial_funded_payable ? <Price idr={s.prices.partial_funded_payable.IDR} usd={s.prices.partial_funded_payable.USD} /> : "(announced with results)"} instead of the Self-Funded fee. {s.awards.not_included.join(", ")} not included.</p></div>
             <div className="item"><h4>Not Selected</h4><p>You keep Elco Pro, and you may still join Self-Funded while seats remain.</p></div>
           </div>

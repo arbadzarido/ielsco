@@ -20,7 +20,7 @@ Implemented in `apps/gif` (settings defaults in `src/lib/settings.ts`, editable 
 | Staff | `arbadzarido03@gmail.com` stays owner; roles unchanged | `gif.staff` |
 | Old page | redirect `/events/gif` only after go-live | EVENTS-GIF-REDIRECT.md |
 | Testimonials / mentors | only real, consented content; 3 pending slots + collection kit | TESTIMONIALS.md |
-| Typography | EB Garamond headings; Apple Garamond only if installed locally; no font files embedded | `layout.tsx`, `globals.css` |
+| Typography and visual identity | **Superseded 21 Nov 2026** (founder: "the existing IELSco design system is the source of truth"). GIF now uses the IELSco public design system: Poppins headings, Plus Jakarta Sans body, navy #2F4157 / coral #E56668 / teal #577E90 tokens, pill buttons, 20px hairline cards, white photo-veil hero, IELSco header/footer pattern. The official GIF logo (`public/brand/gif-logo.png`, same file as ielsco.com) is used in header, footer and favicon. EB Garamond was removed. | `layout.tsx`, `globals.css` |
 | Guidelines | Phase 2 essay + 10–12 slide deck; Phase 3 video 3–5 minutes | site, portal, Selection Terms |
 | Legal language | Bahasa Indonesia primary, English translation | all 10 legal pages |
 | Under 18 | guardian consent via emailed link or signed form; payments blocked until recorded | `lib/guardian.ts`, Parental Consent |

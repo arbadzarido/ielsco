@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV } from "@/lib/content";
 
+// Mirrors the IELSco site header (white, hairline border, 72px, pill links, pill CTAs) with the official GIF logo.
 export default function SiteHeader({ signedIn }: { signedIn: boolean }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
@@ -16,16 +17,20 @@ export default function SiteHeader({ signedIn }: { signedIn: boolean }) {
       <div className="wrap">
         <div className="bar">
           <Link href="/" className="brand" aria-label="Global Impact Fellowship by IELSco, home">
-            <Image src="/brand/iels-navy.png" alt="IELSco" width={100} height={26} priority />
-            <span className="word">Global Impact Fellowship<small>Summer 2027</small></span>
+            <Image className="gif-logo" src="/brand/gif-logo.png" alt="Global Impact Fellowship" width={238} height={87} priority />
+            <span className="by">Summer 2027<br />by <Image src="/brand/iels-navy.png" alt="IELSco" width={70} height={18} style={{ display: "inline", verticalAlign: "-3px" }} /></span>
           </Link>
           <nav className="nav" aria-label="Main">
-            {NAV.slice(1).map((n) => <Link key={n.href} href={n.href} aria-current={current(n.href)}>{n.label}</Link>)}
+            {NAV.filter((n) => n.primary).map((n) => <Link key={n.href} href={n.href} aria-current={current(n.href)}>{n.label}</Link>)}
           </nav>
           <div className="header-cta">
-            <Link className="btn btn-secondary btn-sm" href={signedIn ? "/portal" : "/login"}>{signedIn ? "Portal" : "Log in"}</Link>
+            <Link className="signin" href={signedIn ? "/portal" : "/login"}>{signedIn ? "Portal" : "Log in"}</Link>
             <Link className="btn btn-primary btn-sm" href="/apply" data-track="apply_click">Apply Now</Link>
-            <button type="button" className="menu-btn" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen((v) => !v)}>{open ? "Close" : "Menu"}</button>
+            <button type="button" className="menu-btn" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? "Close menu" : "Open menu"} onClick={() => setOpen((v) => !v)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+              </svg>
+            </button>
           </div>
         </div>
         {open && (
