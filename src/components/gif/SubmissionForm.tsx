@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AlertCircle, CheckCircle2, ImagePlus, Info, Loader2, Lock, Paperclip, Send, Save } from "lucide-react";
+import { AlertCircle, CheckCircle2, ImagePlus, Info, Loader2, Lock, Paperclip, Send, Save, Star } from "lucide-react";
 import { btnPrimary, btnSecondary, inputClass } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 import {
@@ -52,6 +52,7 @@ export function SubmissionForm({
       if (f.type === "members" || f.type === "files" || f.type === "story_proof") continue;
       const v = responses[f.key];
       if (f.type === "checkbox") out[f.key] = v === true;
+      else if (f.type === "rating") { if (typeof v === "number" && v >= 1 && v <= 5) out[f.key] = v; }
       else if (typeof v === "string" && v.trim()) out[f.key] = v.trim().slice(0, f.max ?? 5000);
     }
     return out;
@@ -106,7 +107,7 @@ export function SubmissionForm({
     }
   };
 
-  const upload = async (field: FieldDef, list: FileList | null, description: string) => {
+  const upload = async (field: FieldDef, list: FileList | null, description: string, storyDay?: number) => {
     if (!list?.length) return;
     const kind = field.type === "story_proof" ? "story_proof" : "file";
     const max = field.max_files ?? (kind === "story_proof" ? 20 : 5);
@@ -131,7 +132,7 @@ export function SubmissionForm({
         const res = await fetch("/api/gif/files", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ submissionId: sub.id, fieldKey: field.key, path, originalName: file.name, description }),
+          body: JSON.stringify({ submissionId: sub.id, fieldKey: field.key, path, originalName: file.name, description, storyDay }),
         });
         if (!res.ok) { errors.push(`${file.name}: ${((await res.json().catch(() => ({}))) as { error?: string }).error || "upload failed"}`); continue; }
         done++;
@@ -189,6 +190,23 @@ export function SubmissionForm({
               </div>
             );
           }
+          if (f.type === "rating") {
+            const v = typeof responses[f.key] === "number" ? (responses[f.key] as number) : 0;
+            return (
+              <fieldset key={f.key} className="min-w-0">
+                <legend className="mb-2 text-[15px] font-semibold text-[#2F4157]">{f.label}{req}</legend>
+                <div className="flex gap-1" role="radiogroup" aria-label={f.label}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" role="radio" aria-checked={v === n} aria-label={`${n} of 5`} onClick={() => set(f.key, n)} data-testid={`gif-rating-${f.key}-${n}`}
+                      className="rounded-lg p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90]">
+                      <Star size={30} className={n <= v ? "fill-[#E5A13A] text-[#E5A13A]" : "text-[#C9D2DD]"} aria-hidden="true" />
+                    </button>
+                  ))}
+                  {v > 0 && <span className="self-center pl-2 text-[14px] text-[#2F4157]/70">{v}/5</span>}
+                </div>
+              </fieldset>
+            );
+          }
           if (f.type === "checkbox") {
             return (
               <label key={f.key} htmlFor={id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E3E7ED] p-4">
@@ -205,7 +223,7 @@ export function SubmissionForm({
             return (
               <UploadField key={f.key} id={id} field={f} story={story} files={mine} urls={urls} accept={accept} max={max}
                 busy={busy === `upload-${f.key}`} editable={editable} msg={fieldMsg[f.key] ?? null} missing={isMissing}
-                onUpload={(list, desc) => upload(f, list, desc)} onRemove={remove} />
+                onUpload={(list, desc, day) => upload(f, list, desc, day)} onRemove={remove} />
             );
           }
           return (
@@ -255,9 +273,10 @@ export function SubmissionForm({
 function UploadField({ id, field, story, files, urls, accept, max, busy, editable, msg, missing, onUpload, onRemove }: {
   id: string; field: FieldDef; story: boolean; files: SubmissionFile[]; urls: Record<string, string>; accept: string[]; max: number;
   busy: boolean; editable: boolean; msg: Msg; missing: boolean;
-  onUpload: (list: FileList | null, description: string) => void; onRemove: (f: SubmissionFile) => void;
+  onUpload: (list: FileList | null, description: string, storyDay?: number) => void; onRemove: (f: SubmissionFile) => void;
 }) {
   const [desc, setDesc] = useState("");
+  const [day, setDay] = useState<number>(field.day_options?.[0] ?? 0);
   const Icon = story ? ImagePlus : Paperclip;
   const live = files.filter((f) => !f.deleted_at).length;
   return (
@@ -274,9 +293,25 @@ function UploadField({ id, field, story, files, urls, accept, max, busy, editabl
           <Info size={15} className="mt-0.5 shrink-0 text-[#577E90]" aria-hidden="true" /> {RETENTION_NOTE}
         </p>
       )}
-      {files.length > 0 && <div className="grid gap-2 sm:grid-cols-2">{files.map((f) => <FileTile key={f.id} file={f} url={urls[f.id]} onRemove={editable ? () => onRemove(f) : undefined} />)}</div>}
+      {field.day_options && (
+        <ul className="flex flex-wrap gap-1.5" aria-label="Screenshots per day">
+          {field.day_options.map((n) => {
+            const c = files.filter((f) => f.story_day === n).length;
+            return <li key={n} className={cn("rounded-full px-2.5 py-1 text-[12px] font-semibold", c >= 2 ? "bg-[#E8F3EE] text-[#2E6B4F]" : "bg-white text-[#2F4157]/70")}>Day {n}: {c}{c >= 2 ? " ✓" : "/2"}</li>;
+          })}
+        </ul>
+      )}
+      {files.length > 0 && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{files.map((f) => <FileTile key={f.id} file={f} url={urls[f.id]} onRemove={editable ? () => onRemove(f) : undefined} />)}</div>}
       {editable && live < max && (
         <div className="space-y-2">
+          {field.day_options && (
+            <label className="block">
+              <span className="mb-1 block text-[13px] font-semibold text-[#2F4157]">Posted on</span>
+              <select className={cn(fieldInput, "py-2.5")} value={day} onChange={(e) => setDay(Number(e.target.value))} data-testid={`gif-story-day-${field.key}`}>
+                {field.day_options.map((n) => <option key={n} value={n}>Day {n}</option>)}
+              </select>
+            </label>
+          )}
           {story && (
             <input type="text" maxLength={200} className={cn(fieldInput, "py-2.5")} placeholder="Optional: what is this Story about?" value={desc}
               onChange={(e) => setDesc(e.target.value)} aria-label="Short description for the screenshots you upload next" />
@@ -285,7 +320,7 @@ function UploadField({ id, field, story, files, urls, accept, max, busy, editabl
             {busy ? <Loader2 size={18} className="animate-spin" /> : <Icon size={18} />}
             {busy ? "Uploading…" : story ? "Add screenshots" : "Upload file"}
             <input id={id} type="file" className="sr-only" accept={accept.join(",")} multiple={max - live > 1}
-              onChange={(e) => { const l = e.target.files; onUpload(l, desc); e.target.value = ""; setDesc(""); }} />
+              onChange={(e) => { const l = e.target.files; onUpload(l, desc, field.day_options ? day : undefined); e.target.value = ""; setDesc(""); }} />
           </label>
           <p className="text-[12px] text-[#2F4157]/55">{describeTypes(accept)} · max {story ? 10 : 50} MB each · up to {max}</p>
         </div>

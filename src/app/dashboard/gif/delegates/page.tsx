@@ -47,12 +47,14 @@ import {
   ArrowRight,
   Sparkles,
   ClipboardList,
+  Compass,
   IdCard,
   ShieldCheck,
 } from "lucide-react";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { DelegateAssignments } from "@/components/gif/DelegateAssignments";
+import { DelegateJourney } from "@/components/gif/DelegateJourney";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -378,30 +380,33 @@ export default function GIFDelegatePortalPage() {
   const [busy, setBusy] = useState<string | null>(null);       // which save/upload is running
   const [notice, setNotice] = useState<{ key: string; ok: boolean; text: string } | null>(null);
 
-  // Tabs: "assignments" (GIF 2026 Assignment & Assessment Portal) and "profile" (biodata, passport, flights…).
-  // Kept in the URL (?tab=profile, ?day=2) so links and the back button work.
-  const [tab, setTab] = useState<"assignments" | "profile">("assignments");
+  // Tabs: "journey" (GIF Summer 2027 Fully Funded eligibility, default), "assignments" (GIF 2026 Day 1–4) and
+  // "profile" (biodata, passport, flights…). Kept in the URL (?tab=assignments&day=2, ?view=messages) for links and Back.
+  type Tab = "journey" | "assignments" | "profile";
+  const [tab, setTab] = useState<Tab>("journey");
   const [day, setDay] = useState<number | null>(null);
+  const [view, setView] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search);
-    if (q.get("tab") === "profile") setTab("profile");
-    const d = Number(q.get("day"));
-    if (d >= 1 && d <= 14) setDay(d);
-    const onPop = () => {
+    const read = () => {
       const p = new URLSearchParams(window.location.search);
-      setTab(p.get("tab") === "profile" ? "profile" : "assignments");
+      const t = p.get("tab");
       const n = Number(p.get("day"));
       setDay(n >= 1 && n <= 14 ? n : null);
+      setTab(t === "profile" ? "profile" : t === "assignments" || (n >= 1 && n <= 14) ? "assignments" : "journey");
+      const v = p.get("view");
+      setView(v && /^[a-z0-9_]{1,40}$/.test(v) ? v : null);
     };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    read();
+    window.addEventListener("popstate", read);
+    return () => window.removeEventListener("popstate", read);
   }, []);
-  const go = (t: "assignments" | "profile", d: number | null = null) => {
-    setTab(t); setDay(d);
+  const go = (t: Tab, d: number | null = null, v: string | null = null) => {
+    setTab(t); setDay(d); setView(v);
     const q = new URLSearchParams();
-    if (t === "profile") q.set("tab", "profile");
+    if (t !== "journey") q.set("tab", t);
     if (d) q.set("day", String(d));
+    if (v) q.set("view", v);
     window.history.pushState(null, "", `${window.location.pathname}${q.size ? `?${q}` : ""}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -761,7 +766,7 @@ export default function GIFDelegatePortalPage() {
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#914D4D] rounded-full blur-[120px] opacity-60"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#304156] rounded-full blur-[120px] opacity-80"></div>
         </div>
-        <div className="relative z-10 p-6 md:p-12 space-y-8">
+        <div className="relative z-10 p-5 md:p-12 space-y-5 md:space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-5">
               <div className="flex items-center gap-4">
@@ -772,7 +777,7 @@ export default function GIFDelegatePortalPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">Welcome to GIF Singapore 2026</h1>
+                <h1 className="text-[26px] md:text-5xl font-black text-white leading-tight">Welcome to GIF Singapore 2026</h1>
                 <p className="text-white/90 text-base md:text-lg font-light">You&apos;re officially selected as a GIF 2026 Delegate.</p>
               </div>
               <div className="flex flex-wrap gap-2.5 text-sm text-white">
@@ -786,16 +791,16 @@ export default function GIFDelegatePortalPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-white/10">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-white/10">
+            <div className="min-w-0 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4">
               <div className="text-[10px] uppercase tracking-widest font-semibold text-white/60">Participant ID</div>
               <div className="text-lg font-black text-white mt-1">{row.participant_id}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+            <div className="col-span-2 sm:col-span-1 sm:order-none order-first min-w-0 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4">
               <div className="text-[10px] uppercase tracking-widest font-semibold text-white/60">Full Name</div>
               <div className="text-lg font-black text-white mt-1 break-words">{row.full_name || "—"}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
+            <div className="min-w-0 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:p-4">
               <div className="text-[10px] uppercase tracking-widest font-semibold text-white/60">Profile Completion</div>
               <div className="text-lg font-black text-[#FFD1D1] mt-1">{pct}%</div>
             </div>
@@ -805,12 +810,12 @@ export default function GIFDelegatePortalPage() {
 
       {/* === TABS === */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#304156]/10 bg-white p-1 shadow-sm sm:inline-grid" role="tablist" aria-label="Delegate portal">
-          {([["assignments", "Assignments", ClipboardList], ["profile", "Profile & travel", IdCard]] as const).map(([t, label, Icon]) => (
+        <div className="grid min-w-0 grid-cols-3 gap-1 rounded-2xl border border-[#304156]/10 bg-white p-1 shadow-sm sm:inline-grid" role="tablist" aria-label="Delegate portal">
+          {([["journey", "Summer 2027", Compass], ["assignments", "Assignments", ClipboardList], ["profile", "Profile & travel", IdCard]] as const).map(([t, label, Icon]) => (
             <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => go(t)} data-testid={`gif-tab-${t}`}
-              className={cn("inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90]",
+              className={cn("inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[13px] font-bold leading-tight transition-colors sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#577E90]",
                 tab === t ? "bg-[#304156] text-white shadow" : "text-[#304156] hover:bg-[#304156]/5")}>
-              <Icon className="w-4 h-4" /> {label}
+              <Icon className="hidden h-4 w-4 shrink-0 min-[400px]:block" /> <span className="truncate">{label}</span>
             </button>
           ))}
         </div>
@@ -820,6 +825,11 @@ export default function GIFDelegatePortalPage() {
           </Link>
         )}
       </div>
+
+      {tab === "journey" && (
+        <DelegateJourney supabase={supabase} delegateId={row.id} delegateName={row.preferred_name || row.full_name || profile?.full_name || "Delegate"}
+          view={view} onView={(v) => go("journey", null, v)} onOpenDay={(d) => go("assignments", d)} />
+      )}
 
       {tab === "assignments" && (
         <DelegateAssignments supabase={supabase} delegateId={row.id} delegateName={row.preferred_name || row.full_name || profile?.full_name || "Delegate"}
@@ -1139,16 +1149,16 @@ export default function GIFDelegatePortalPage() {
 
       {/* === HELP === */}
       <div className="bg-white rounded-2xl border border-[#304156]/10 p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="flex min-w-0 items-center gap-4">
             <div className="bg-[#304156]/5 p-3 rounded-xl"><Mail className="w-6 h-6 text-[#304156]" /></div>
             <div>
               <h4 className="font-bold text-[#304156] text-lg">Need help or a correction?</h4>
               <p className="text-sm text-gray-600">Contact Arbadza — <a href={`mailto:${CONTACT_EMAIL}`} className="underline font-semibold">{CONTACT_EMAIL}</a></p>
             </div>
           </div>
-          <Link href={CONTACT_WA_LINK} target="_blank">
-            <Button className="px-6 py-3 bg-[#304156] hover:bg-[#2F4055] text-white font-bold rounded-xl shadow-md flex items-center gap-2">
+          <Link href={CONTACT_WA_LINK} target="_blank" className="w-full lg:w-auto">
+            <Button className="w-full lg:w-auto h-auto whitespace-normal px-6 py-3 bg-[#304156] hover:bg-[#2F4055] text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2">
               WhatsApp {CONTACT_WA_DISPLAY}
               <ArrowRight className="w-4 h-4" />
             </Button>

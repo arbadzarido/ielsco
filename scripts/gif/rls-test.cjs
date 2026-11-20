@@ -8,7 +8,10 @@ const root = path.join(__dirname, "..", "..");
 const files = [
   "supabase/migrations/20261122000000_gif_assessment_portal.sql",
   "supabase/migrations/20261122000100_gif_story_retention_cron.sql",
+  "supabase/migrations/20261124000000_gif_fully_funded_eligibility.sql",
+  "supabase/migrations/20261124000100_gif_eligibility_activate.sql",
   "supabase/tests/gif_portal_rls.sql",
+  "supabase/tests/gif_eligibility_rls.sql",
 ];
 (async () => {
   const url = process.env.DATABASE_URL;

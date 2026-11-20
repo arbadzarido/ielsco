@@ -2,29 +2,31 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { AlertTriangle, ArrowLeft, ArrowRight, Download, FileClock, Inbox, LayoutGrid, Search, Settings2, Users } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Award, Download, FileClock, Inbox, LayoutGrid, Search, Settings2, Users } from "lucide-react";
 import { ErrorState, LoadingState, PageHeader } from "@/components/dashboard/PageStates";
 import { btnLink, btnSecondary, card, cardGloss, focusRing, inputClass } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 import {
-  ALL_DISPLAY_STATUSES, STATUS_LABEL, combineStatuses, displayStatus, fmtDateTime, fmtScore, latestAssessment, retentionInfo, submissionFor,
+  ALL_DISPLAY_STATUSES, STATUS_LABEL, assignmentLabel, combineStatuses, displayStatus, fmtDateTime, fmtScore, isProgramme, latestAssessment, retentionInfo, submissionFor,
   type Assessment, type Assignment, type DisplayStatus, type ProgrammeDay, type Submission, type SubmissionFile,
 } from "@/lib/gif/portal";
 import { REPORTS, delegateProgress, kpis, type RosterRow } from "@/lib/gif/report";
 import { ProgressBar, StatusPill, TypeBadge } from "../shared";
 import { SubmissionReview } from "./SubmissionReview";
 import { AssignmentEditor } from "./AssignmentEditor";
+import { EligibilityAdmin } from "./EligibilityAdmin";
 
 export interface AdminData {
   roster: RosterRow[];
   days: ProgrammeDay[];
-  assignments: Assignment[];
+  assignments: Assignment[];     // programme Day 1–4 tasks
+  allAssignments: Assignment[];  // + GIF Summer 2027 tasks
   submissions: Submission[];
   files: SubmissionFile[];
   assessments: Assessment[];
   runs: { id: number; started_at: string; finished_at: string | null; scanned: number; deleted: number; failed: number; orphans_deleted: number }[];
 }
-type Tab = "overview" | "teams" | "inbox" | "retention" | "assignments";
+type Tab = "overview" | "teams" | "inbox" | "eligibility" | "retention" | "assignments";
 type View = { kind: "tab" } | { kind: "submission"; id: string } | { kind: "delegate"; id: string };
 
 export function GifAdmin({ supabase, user }: { supabase: SupabaseClient; user: User }) {
@@ -46,7 +48,8 @@ export function GifAdmin({ supabase, user }: { supabase: SupabaseClient; user: U
       const err = roster.error || days.error || assignments.error || submissions.error || files.error || assessments.error || runs.error;
       if (err) throw err;
       setState({ s: "ready", data: {
-        roster: (roster.data ?? []) as RosterRow[], days: (days.data ?? []) as ProgrammeDay[], assignments: (assignments.data ?? []) as Assignment[],
+        roster: (roster.data ?? []) as RosterRow[], days: (days.data ?? []) as ProgrammeDay[], assignments: ((assignments.data ?? []) as Assignment[]).filter(isProgramme),
+        allAssignments: (assignments.data ?? []) as Assignment[],
         submissions: (submissions.data ?? []) as Submission[], files: (files.data ?? []) as SubmissionFile[],
         assessments: (assessments.data ?? []) as Assessment[], runs: (runs.data ?? []) as AdminData["runs"],
       } });
@@ -61,7 +64,7 @@ export function GifAdmin({ supabase, user }: { supabase: SupabaseClient; user: U
     const read = () => {
       const q = new URLSearchParams(window.location.search);
       const sid = q.get("submission"), did = q.get("delegate"), t = q.get("tab") as Tab | null;
-      if (t && ["overview", "teams", "inbox", "retention", "assignments"].includes(t)) setTab(t);
+      if (t && ["overview", "teams", "inbox", "eligibility", "retention", "assignments"].includes(t)) setTab(t);
       setView(sid ? { kind: "submission", id: sid } : did ? { kind: "delegate", id: did } : { kind: "tab" });
     };
     read();
@@ -106,6 +109,7 @@ export function GifAdmin({ supabase, user }: { supabase: SupabaseClient; user: U
     { t: "teams", label: "Teams", icon: Users },
     { t: "inbox", label: "Assessment inbox", icon: Inbox, badge: d.submissions.filter((s) => s.status === "submitted" || s.status === "under_review").length },
     { t: "retention", label: "Story proofs", icon: FileClock },
+    { t: "eligibility", label: "Fully Funded", icon: Award },
     { t: "assignments", label: "Assignments", icon: Settings2 },
   ];
   return (
@@ -127,6 +131,7 @@ export function GifAdmin({ supabase, user }: { supabase: SupabaseClient; user: U
       {tab === "teams" && <Teams data={d} open={(id) => nav({ kind: "submission", id })} />}
       {tab === "inbox" && <InboxView data={d} open={(id) => nav({ kind: "submission", id })} />}
       {tab === "retention" && <Retention data={d} open={(id) => nav({ kind: "submission", id })} />}
+      {tab === "eligibility" && <EligibilityAdmin supabase={supabase} user={user} data={d} openSubmission={(id) => nav({ kind: "submission", id }, "eligibility")} />}
       {tab === "assignments" && <AssignmentEditor supabase={supabase} data={d} onSaved={load} />}
     </Shell>
   );
@@ -270,7 +275,7 @@ function Teams({ data: d, open }: { data: AdminData; open: (id: string) => void 
     return r.concept?.slice(0, 120) ?? r.group_name ?? null;
   };
   return (
-    <div className="grid gap-4 lg:grid-cols-2" data-testid="gif-teams">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="gif-teams">
       {teams.map((t) => {
         const members = progress.filter((p) => p.d.team_id === t.team_id);
         const groupStatuses = groupParts.map((a) => displayStatus(submissionFor(a, d.submissions, null, t.team_id)));
@@ -328,13 +333,13 @@ function InboxView({ data: d, open }: { data: AdminData; open: (id: string) => v
       {!list.length && <p className={cn(card, "p-8 text-center text-[#2F4157]/60")}>Nothing here right now.</p>}
       <ul className="space-y-2">
         {list.map((s) => {
-          const a = d.assignments.find((x) => x.id === s.assignment_id)!;
+          const a = d.allAssignments.find((x) => x.id === s.assignment_id)!;
           const expiring = d.files.filter((f) => f.submission_id === s.id && retentionInfo(f)?.state === "warning").length;
           return (
             <li key={s.id}>
               <button type="button" onClick={() => open(s.id)} className={cn(card, focusRing, "flex w-full flex-col gap-2 p-4 text-left hover:border-[#577E90] sm:flex-row sm:items-center sm:justify-between")} data-testid="gif-inbox-item">
                 <span className="min-w-0">
-                  <span className="block font-semibold">{who(d, s)} · Day {a.day_number}</span>
+                  <span className="block font-semibold">{who(d, s)} · {assignmentLabel(a)}</span>
                   <span className="flex flex-wrap items-center gap-2 text-[14px] text-[#2F4157]/70"><TypeBadge type={a.submission_type} /> {a.title} {s.version > 1 && <span>· v{s.version}</span>}</span>
                 </span>
                 <span className="flex shrink-0 flex-wrap items-center gap-2 text-[13px]">

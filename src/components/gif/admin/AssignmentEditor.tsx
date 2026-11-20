@@ -23,6 +23,23 @@ export function AssignmentEditor({ supabase, data: d, onSaved }: { supabase: Sup
         Assignment content lives in the database, so you can change instructions, deadlines, fields and rubrics here without a code change
         (for example Day 4). Deactivate an assignment instead of deleting it; submissions are always kept.
       </p>
+      <section className="space-y-3" data-testid="gif-editor-summer2027">
+        <div className={cn(cardGloss, "p-4")}>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-[#577E90]">GIF Summer 2027 tasks</p>
+          <p className="text-[14px] text-[#2F4157]/70">Reels 1–4, Story activation, Fellowship feedback and Letters to the Future. Set opening dates and deadlines here; weights live in Fully Funded → Weights.</p>
+        </div>
+        {d.allAssignments.filter((a) => a.track === "eligibility").map((a) => (
+          <div key={a.id} className={cn(card, "p-4")}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex flex-wrap items-center gap-2"><TypeBadge type={a.submission_type} /><span className="font-semibold">{a.title}</span>
+                {a.window_label && <span className="text-[13px] text-[#2F4157]/60">{a.window_label}</span>}
+                {!a.is_active && <span className="rounded-full bg-[#F1F4F8] px-2 py-0.5 text-[12px] font-semibold">Inactive</span>}</span>
+              <button type="button" className={btnSecondary} onClick={() => setOpenId(openId === a.id ? null : a.id)} data-testid={`gif-edit-${a.slug}`}>{openId === a.id ? "Close" : "Edit"}</button>
+            </div>
+            {openId === a.id && <AssignmentForm supabase={supabase} a={a} hasSubmissions={d.submissions.some((s) => s.assignment_id === a.id)} onSaved={onSaved} />}
+          </div>
+        ))}
+      </section>
       {d.days.map((day) => (
         <section key={day.day_number} className="space-y-3">
           <DayEditor supabase={supabase} day={day} onSaved={onSaved} />
@@ -61,7 +78,7 @@ function DayEditor({ supabase, day, onSaved }: { supabase: SupabaseClient; day: 
   return (
     <div className={cn(cardGloss, "space-y-3 p-4")}>
       <p className="text-[13px] font-bold uppercase tracking-wider text-[#577E90]">Day {day.day_number}</p>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label><span className={labelClass}>Title</span><input className={input} value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} /></label>
         <label><span className={labelClass}>Theme</span><input className={input} value={v.theme} onChange={(e) => setV({ ...v, theme: e.target.value })} /></label>
       </div>
@@ -74,7 +91,7 @@ function DayEditor({ supabase, day, onSaved }: { supabase: SupabaseClient; day: 
 
 function AssignmentForm({ supabase, a, hasSubmissions, onSaved }: { supabase: SupabaseClient; a: Assignment; hasSubmissions: boolean; onSaved: () => Promise<void> }) {
   const [v, setV] = useState({
-    title: a.title, purpose: a.purpose ?? "", instructions: a.instructions ?? "", deliverables: a.deliverables.join("\n"),
+    title: a.title, window_label: a.window_label ?? "", purpose: a.purpose ?? "", instructions: a.instructions ?? "", deliverables: a.deliverables.join("\n"),
     submission_format: a.submission_format ?? "", submission_type: a.submission_type, opens_at: toSgtInput(a.opens_at), due_at: toSgtInput(a.due_at),
     allow_late: a.allow_late, is_active: a.is_active, fields: JSON.stringify(a.fields, null, 2), rubric: JSON.stringify(a.rubric, null, 2),
   });
@@ -89,7 +106,7 @@ function AssignmentForm({ supabase, a, hasSubmissions, onSaved }: { supabase: Su
     if (!v.title.trim()) { setMsg({ ok: false, text: "Title is required." }); return; }
     setBusy(true);
     const { error } = await supabase.from("gif_assignments").update({
-      title: v.title.trim(), purpose: v.purpose.trim() || null, instructions: v.instructions.trim() || null,
+      title: v.title.trim(), window_label: v.window_label.trim() || null, purpose: v.purpose.trim() || null, instructions: v.instructions.trim() || null,
       deliverables: v.deliverables.split("\n").map((x) => x.trim()).filter(Boolean), submission_format: v.submission_format.trim() || null,
       submission_type: v.submission_type, opens_at: fromSgtInput(v.opens_at), due_at: fromSgtInput(v.due_at), allow_late: v.allow_late, is_active: v.is_active,
       fields: fv.value, rubric: rv.value,
@@ -100,7 +117,7 @@ function AssignmentForm({ supabase, a, hasSubmissions, onSaved }: { supabase: Su
   };
   return (
     <div className="mt-4 space-y-3 border-t border-[#E3E7ED] pt-4" data-testid="gif-assignment-form">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label><span className={labelClass}>Title</span><input className={input} value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} /></label>
         <label><span className={labelClass}>Submission type</span>
           <select className={input} value={v.submission_type} disabled={hasSubmissions} onChange={(e) => setV({ ...v, submission_type: e.target.value as Assignment["submission_type"] })}>
@@ -108,6 +125,7 @@ function AssignmentForm({ supabase, a, hasSubmissions, onSaved }: { supabase: Su
           </select>
           {hasSubmissions && <span className="mt-1 block text-[12px] text-[#2F4157]/60">Locked: submissions already exist.</span>}
         </label>
+        {a.track === "eligibility" && <label className="md:col-span-2"><span className={labelClass}>Submission window label</span><input className={input} value={v.window_label} onChange={(e) => setV({ ...v, window_label: e.target.value })} placeholder="e.g. Week 2 · December 2026" /></label>}
         <label><span className={labelClass}>Opens (Singapore time)</span><input type="datetime-local" className={input} value={v.opens_at} onChange={(e) => setV({ ...v, opens_at: e.target.value })} /></label>
         <label><span className={labelClass}>Deadline (Singapore time)</span><input type="datetime-local" className={input} value={v.due_at} onChange={(e) => setV({ ...v, due_at: e.target.value })} /></label>
       </div>
@@ -122,7 +140,7 @@ function AssignmentForm({ supabase, a, hasSubmissions, onSaved }: { supabase: Su
       <details>
         <summary className="cursor-pointer text-[15px] font-semibold text-[#577E90]">Submission fields and rubric (JSON)</summary>
         <p className="mt-2 text-[13px] text-[#2F4157]/65">
-          Field types: text, textarea, url, select (options), checkbox, members, files (accept, max_files), story_proof (min_files, story_day; 7-day retention).
+          Field types: text, textarea, url, select (options), checkbox, rating (1–5 stars), members, files (accept, max_files), story_proof (min_files, story_day or day_options; 7-day retention).
           Options: required, help, placeholder, max, or_field (a link field that can stand in for an upload). Rubric: [{"{"}&quot;key&quot;, &quot;label&quot;{"}"}], each scored 1–5.
           Renaming a field key hides answers already saved under the old key.
         </p>
@@ -154,7 +172,7 @@ function NewAssignment({ supabase, day, order, onDone }: { supabase: SupabaseCli
   return (
     <div className={cn(card, "space-y-3 p-4")}>
       <p className="text-[14px] text-[#2F4157]/70">New tasks start inactive with one text field; edit them, then tick “Active”.</p>
-      <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_auto]">
         <input className={input} placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} />
         <select className={input} value={type} onChange={(e) => setType(e.target.value as "group" | "individual")}><option value="individual">Individual</option><option value="group">Group</option></select>
         <button type="button" className={btnPrimary} disabled={busy} onClick={() => void create()}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create</button>

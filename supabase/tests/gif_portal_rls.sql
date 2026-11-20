@@ -32,7 +32,7 @@ grant execute on function pg_temp.expect_error(text, text), pg_temp.ok(boolean, 
 select set_config('request.jwt.claims', (select v from t_ctx where k = 't1'), true);
 set local role authenticated;
 select pg_temp.ok((select count(*) from public.gif_my_team()) = 3 and (select bool_and(team_number = 1) from public.gif_my_team()), 'T1 delegate sees own team of 3');
-select pg_temp.ok((select count(*) from public.gif_assignments) = 8, 'T1 delegate sees 8 active assignments');
+select pg_temp.ok((select count(*) from public.gif_assignments where coalesce(to_jsonb(gif_assignments)->>'track','programme') = 'programme') = 8, 'T1 delegate sees 8 active programme assignments');
 select pg_temp.ok((select count(*) from public.gif_delegates) = 1, 'T1 delegate reads only own biodata row');
 select pg_temp.ok((select count(*) from public.gif_teams) = 1, 'T1 delegate sees only own team');
 select pg_temp.ok(public.gif_is_admin() = false, 'T1 delegate is not admin');

@@ -3,7 +3,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireGifAdmin } from "@/lib/gif/admin-auth";
 import { REPORTS, buildReport, type ReportKind, type RosterRow } from "@/lib/gif/report";
-import type { Assessment, Assignment, Submission } from "@/lib/gif/portal";
+import { toCsv, type Assessment, type Assignment, type Submission } from "@/lib/gif/portal";
+import { eligibilityCsv, type Category, type Requirement, type Review, type Signals, type VerificationRequest } from "@/lib/gif/eligibility";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,21 @@ export async function GET(req: NextRequest) {
   if (!kind || !REPORTS.some((r) => r.kind === kind)) return NextResponse.json({ error: "Unknown report." }, { status: 400 });
 
   const { supabase } = auth;
+  if (kind === "eligibility") {
+    const [roster, assignments, submissions, categories, requirements, reviews, requests, signals] = await Promise.all([
+      supabase.rpc("gif_admin_roster"), supabase.from("gif_assignments").select("*"), supabase.from("gif_submissions").select("*"),
+      supabase.from("gif_eligibility_categories").select("*"), supabase.from("gif_eligibility_requirements").select("*"),
+      supabase.from("gif_eligibility_reviews").select("*"), supabase.from("gif_verification_requests").select("*"), supabase.rpc("gif_admin_eligibility_signals"),
+    ]);
+    const e2 = roster.error || assignments.error || submissions.error || categories.error || requirements.error || reviews.error || requests.error || signals.error;
+    if (e2) return NextResponse.json({ error: "Couldn't build the report." }, { status: 500 });
+    const csv = eligibilityCsv((roster.data ?? []) as RosterRow[], {
+      categories: (categories.data ?? []) as Category[], requirements: (requirements.data ?? []) as Requirement[], assignments: (assignments.data ?? []) as Assignment[],
+      submissions: (submissions.data ?? []) as Submission[], reviews: (reviews.data ?? []) as Review[], requests: (requests.data ?? []) as VerificationRequest[],
+      signals: (signals.data ?? []) as Signals[],
+    }, toCsv);
+    return new NextResponse(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="gif2026-fully-funded-eligibility-${new Date().toISOString().slice(0, 10)}.csv"`, "Cache-Control": "no-store" } });
+  }
   const [roster, assignments, submissions, assessments] = await Promise.all([
     supabase.rpc("gif_admin_roster"),
     supabase.from("gif_assignments").select("*"),

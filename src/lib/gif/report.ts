@@ -1,7 +1,7 @@
 // GIF admin reporting: derived from live rows only (roster, assignments, submissions, assessments). Pure functions so the
 // admin dashboard (KPIs, tables) and /api/gif/admin/export (CSV) compute exactly the same numbers.
 import {
-  STATUS_LABEL, combineStatuses, displayStatus, fmtScore, isAwaitingReview, isDone, latestAssessment, progressCounts, submissionFor, toCsv,
+  STATUS_LABEL, assignmentLabel, combineStatuses, displayStatus, fmtScore, isProgramme, isAwaitingReview, isDone, latestAssessment, progressCounts, submissionFor, toCsv,
   type Assessment, type Assignment, type DisplayStatus, type Submission,
 } from "./portal.ts";
 
@@ -17,8 +17,8 @@ export interface DelegateProgress {
 }
 
 export function delegateProgress(roster: RosterRow[], assignments: Assignment[], subs: Submission[]): DelegateProgress[] {
-  const active = assignments.filter((a) => a.is_active);
-  const days = Array.from(new Set(active.map((a) => a.day_number))).sort((a, b) => a - b);
+  const active = assignments.filter((a) => a.is_active && isProgramme(a));
+  const days = Array.from(new Set(active.map((a) => a.day_number as number))).sort((a, b) => a - b);
   return roster.map((d) => {
     const parts = active
       .filter((a) => a.submission_type === "individual" || d.team_id)
@@ -44,20 +44,21 @@ export function kpis(progress: DelegateProgress[], subs: Submission[]): Kpis {
   };
 }
 
-export type ReportKind = "statuses" | "individual" | "teams" | "scores" | "pending";
+export type ReportKind = "statuses" | "individual" | "teams" | "scores" | "pending" | "eligibility";
 export const REPORTS: { kind: ReportKind; label: string }[] = [
   { kind: "statuses", label: "All delegate assignment statuses" },
   { kind: "individual", label: "Individual completion report" },
   { kind: "teams", label: "Team progress report" },
   { kind: "scores", label: "Assessment scores" },
   { kind: "pending", label: "Pending submissions" },
+  { kind: "eligibility", label: "Fully Funded eligibility" },
 ];
 
 export function buildReport(kind: ReportKind, roster: RosterRow[], assignments: Assignment[], subs: Submission[], assessments: Assessment[]): { filename: string; csv: string } {
   const team = roster.filter((r) => r.team_id);
   const progress = delegateProgress(team, assignments, subs);
-  const active = assignments.filter((a) => a.is_active).sort((a, b) => a.day_number - b.day_number || a.sort_order - b.sort_order);
-  const days = Array.from(new Set(active.map((a) => a.day_number))).sort((a, b) => a - b);
+  const active = assignments.filter((a) => a.is_active && isProgramme(a)).sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0) || a.sort_order - b.sort_order);
+  const days = Array.from(new Set(active.map((a) => a.day_number as number))).sort((a, b) => a - b);
   const stamp = new Date().toISOString().slice(0, 10);
   const who = (s: Submission) => s.team_id ? roster.find((r) => r.team_id === s.team_id)?.team_name ?? "Team" : roster.find((r) => r.delegate_id === s.delegate_id)?.full_name ?? "Delegate";
 
@@ -90,7 +91,7 @@ export function buildReport(kind: ReportKind, roster: RosterRow[], assignments: 
     const header = ["Assessed at (UTC)", "Day", "Assignment", "Type", "Delegate / team", "Status", "Score", "Max", "Rubric", "Feedback", "Revision instructions", "Submission version"];
     const rows = [...assessments].sort((a, b) => a.created_at.localeCompare(b.created_at)).map((x) => {
       const s = subs.find((y) => y.id === x.submission_id); const a = assignments.find((y) => y.id === s?.assignment_id);
-      return [x.created_at, a?.day_number, a?.title, a?.submission_type, s ? who(s) : "", STATUS_LABEL[x.status], x.score == null ? "" : Number(x.score), x.max_score == null ? "" : Number(x.max_score),
+      return [x.created_at, a ? assignmentLabel(a) : "", a?.title, a?.submission_type, s ? who(s) : "", STATUS_LABEL[x.status], x.score == null ? "" : Number(x.score), x.max_score == null ? "" : Number(x.max_score),
         a ? a.rubric.map((c) => `${c.label}: ${x.rubric_scores?.[c.key] ?? "-"}`).join("; ") : "", x.feedback, x.revision_instructions, x.submission_version];
     });
     return { filename: `gif2026-assessment-scores-${stamp}.csv`, csv: toCsv(header, rows) };
