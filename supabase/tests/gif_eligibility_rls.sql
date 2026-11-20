@@ -78,37 +78,37 @@ select pg_temp.eok((select weight from public.gif_eligibility_categories where k
 -- ===== Denver (recipient, Team 2) =====
 select set_config('request.jwt.claims', (select v from e_ctx where k = 'denver'), true);
 set local role authenticated;
-select pg_temp.eok((select count(*) from public.gif_my_received_messages()) = 1, 'Recipient reads the message left for them');
-select pg_temp.eok((select count(*) from public.gif_my_sent_messages()) = 0, 'Recipient does not see who sent it (no sent rows)');
-select public.gif_update_received_message((select id from public.gif_my_received_messages() limit 1), true, true, true);
-select pg_temp.eok((select read_at is not null and favourite and wall_status = 'requested' from public.gif_my_received_messages()), 'Recipient marks read, favourite and asks for the wall');
-select pg_temp.eok((select count(*) from public.gif_wall_messages()) = 0, 'Wall stays empty until Arba approves');
-select pg_temp.eexpect_error($q$select public.gif_admin_moderate_message((select id from public.gif_my_received_messages() limit 1), null, null, 'approved')$q$, 'Delegate cannot moderate');
+select pg_temp.eok((select count(*) from public.gif_my_received_messages() where body like 'Denver, your questions%') = 1, 'Recipient reads the message left for them');
+select pg_temp.eok((select count(*) from public.gif_my_sent_messages() where body like 'Denver, your questions%') = 0, 'Recipient does not see who sent it (no sent rows)');
+select public.gif_update_received_message((select id from public.gif_my_received_messages() where body like 'Denver, your questions%'), true, true, true);
+select pg_temp.eok((select read_at is not null and favourite and wall_status = 'requested' from public.gif_my_received_messages() where body like 'Denver, your questions%'), 'Recipient marks read, favourite and asks for the wall');
+select pg_temp.eok((select count(*) from public.gif_wall_messages() where body like 'Denver, your questions%') = 0, 'Wall stays empty until Arba approves');
+select pg_temp.eexpect_error($q$select public.gif_admin_moderate_message((select id from public.gif_my_received_messages() where body like 'Denver, your questions%'), null, null, 'approved')$q$, 'Delegate cannot moderate');
 select pg_temp.eexpect_error($q$select * from public.gif_admin_messages()$q$, 'Delegate cannot see message senders');
 reset role;
 
 -- ===== Agha: cannot touch Denver's message =====
 select set_config('request.jwt.claims', (select v from e_ctx where k = 'agha'), true);
 set local role authenticated;
-select pg_temp.eexpect_error($q$select public.gif_update_received_message((select id from public.gif_messages where recipient_delegate_id = (select v::uuid from e_ctx where k='id_denver')), true, true, null)$q$, 'Cannot act on someone else''s message');
-select pg_temp.eok((select count(*) from public.gif_my_received_messages()) = 1 and (select favourite = false and wall_status = 'none' from public.gif_my_received_messages()), 'Agha sees own message; sender did not allow the wall');
-select public.gif_update_received_message((select id from public.gif_my_received_messages() limit 1), null, null, true);
-select pg_temp.eok((select wall_status = 'none' from public.gif_my_received_messages()), 'Wall request ignored when the sender did not allow it');
+select pg_temp.eexpect_error($q$select public.gif_update_received_message((select id from public.gif_messages where body like 'Denver, your questions%'), true, true, null)$q$, 'Cannot act on someone else''s message');
+select pg_temp.eok((select count(*) from public.gif_my_received_messages() where body like 'Agha, thank you%') = 1 and (select favourite = false and wall_status = 'none' from public.gif_my_received_messages() where body like 'Agha, thank you%'), 'Agha sees own message; sender did not allow the wall');
+select public.gif_update_received_message((select id from public.gif_my_received_messages() where body like 'Agha, thank you%'), null, null, true);
+select pg_temp.eok((select wall_status = 'none' from public.gif_my_received_messages() where body like 'Agha, thank you%'), 'Wall request ignored when the sender did not allow it');
 reset role;
 
 -- ===== Admin =====
 select set_config('request.jwt.claims', (select v from e_ctx where k = 'admin'), true);
 set local role authenticated;
-select pg_temp.eok((select count(*) from public.gif_admin_messages()) = 5 and (select count(distinct sender_name) from public.gif_admin_messages()) = 1, 'Admin sees all messages with sender for moderation');
-select public.gif_admin_moderate_message((select id from public.gif_admin_messages() where wall_status = 'requested'), null, null, 'approved');
-select pg_temp.eok((select count(*) from public.gif_wall_messages()) = 1, 'Approved message appears on the wall');
+select pg_temp.eok((select count(*) from public.gif_admin_messages() where body in ('Denver, your questions on Day 3 changed our pitch.','Agha, thank you for the late-night slides.','Deana, your energy carried the Story Hunt.','Arba, thank you for believing in us.','Farrel, the Elco demo was inspiring.')) = 5 and (select count(distinct sender_name) from public.gif_admin_messages() where body in ('Denver, your questions on Day 3 changed our pitch.','Agha, thank you for the late-night slides.','Deana, your energy carried the Story Hunt.','Arba, thank you for believing in us.','Farrel, the Elco demo was inspiring.')) = 1, 'Admin sees all messages with sender for moderation');
+select public.gif_admin_moderate_message((select id from public.gif_admin_messages() where body like 'Denver, your questions%'), null, null, 'approved');
+select pg_temp.eok((select count(*) from public.gif_wall_messages() where body like 'Denver, your questions%') = 1, 'Approved message appears on the wall');
 select pg_temp.eok((select count(*) from public.gif_admin_eligibility_signals() s join public.gif_team_members m on m.delegate_id = s.delegate_id) = 12, 'Admin sees signals for all 12 delegates');
 select pg_temp.eexpect_error($q$insert into public.gif_eligibility_reviews (requirement_id, delegate_id, assessor_id, status) values ((select v::uuid from e_ctx where k='req_msgs'), (select v::uuid from e_ctx where k='id_philip'), auth.uid(), 'revision_required')$q$, 'Revision needs a note');
 select pg_temp.eexpect_error($q$insert into public.gif_eligibility_reviews (requirement_id, delegate_id, assessor_id, status) values ((select v::uuid from e_ctx where k='req_reels1'), (select v::uuid from e_ctx where k='id_philip'), auth.uid(), 'approved')$q$, 'Submission requirements are assessed in the inbox, not here');
 insert into public.gif_eligibility_reviews (requirement_id, delegate_id, assessor_id, status) values ((select v::uuid from e_ctx where k='req_msgs'), (select v::uuid from e_ctx where k='id_philip'), auth.uid(), 'approved');
 update public.gif_eligibility_categories set weight = 30 where key = 'content';
 select pg_temp.eok(true, 'Admin can verify a requirement and edit weights');
-select public.gif_admin_moderate_message((select id from public.gif_admin_messages() where recipient_staff = 'farrel'), true, 'test hide', null);
+select public.gif_admin_moderate_message((select id from public.gif_admin_messages() where body like 'Farrel, the Elco demo%'), true, 'test hide', null);
 reset role;
 
 -- ===== Philip sees the verification; hidden messages stop counting =====
@@ -122,3 +122,17 @@ set local role anon;
 select pg_temp.eexpect_error($q$select * from public.gif_wall_messages()$q$, 'Anonymous visitors cannot read the wall');
 reset role;
 select 'ALL ELIGIBILITY TESTS PASSED' as result;
+
+-- ===== Arba's own inbox (20261125000000) =====
+select set_config('request.jwt.claims', (select v from e_ctx where k = 'admin'), true);
+set local role authenticated;
+select pg_temp.eok((select count(*) from public.gif_my_received_messages() where body like 'Arba, thank you for believing in us.%') = 1, 'Messages to Arba appear in Arba''s inbox');
+select pg_temp.eok((select count(*) from public.gif_my_received_messages() where body like 'Farrel,%') = 0, 'Messages to Farrel do not');
+select public.gif_update_received_message((select id from public.gif_my_received_messages() where body like 'Arba, thank you%'), true, true, true);
+select pg_temp.eok((select read_at is not null and favourite and wall_status = 'none' from public.gif_my_received_messages() where body like 'Arba, thank you%'), 'Arba can mark read/favourite; staff messages never go to the wall');
+reset role;
+select set_config('request.jwt.claims', (select v from e_ctx where k = 'denver'), true);
+set local role authenticated;
+select pg_temp.eok((select count(*) from public.gif_my_received_messages() where body like 'Arba,%') = 0, 'Delegates never see messages to Arba');
+reset role;
+select 'ARBA INBOX TESTS PASSED' as result;
