@@ -5,7 +5,7 @@
 // Campus photos are campus references only: they do not mean a visit, partnership or endorsement is confirmed.
 
 export type Credit = { author: string; license: string; licenseUrl: string; source: string; title: string; changes: string };
-export type Place = { key: string; src: string; w: number; h: number; alt: string; credit: Credit };
+export type Place = { key: string; src: string; w: number; h: number; alt: string; credit: Credit; focus?: string };
 
 const commons = (file: string) => `https://commons.wikimedia.org/wiki/File:${file}`;
 const BY_SA_4 = { license: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" };
@@ -20,7 +20,7 @@ export const PLACES = {
   cbdDusk: { key: "cbdDusk", src: "/places/singapore-cbd-dusk.webp", w: 1920, h: 1280,
     alt: "Singapore's Central Business District and Marina Bay at dusk, seen from above",
     credit: { author: "Basile Morin", ...BY_SA_4, source: commons("Skylines_of_the_Central_Business_District,_Singapore_at_dusk.jpg"), title: "Skylines of the Central Business District, Singapore at dusk", changes: RESIZED } },
-  merlion: { key: "merlion", src: "/places/singapore-merlion.webp", w: 1920, h: 1280,
+  merlion: { key: "merlion", src: "/places/singapore-merlion.webp", w: 1920, h: 1280, focus: "22% 60%",
     alt: "The Merlion statue at Marina Bay, Singapore, at blue hour with the city lights behind",
     credit: { author: "Diego Delso", ...BY_SA_4, source: commons("Merli%C3%B3n,_Marina_Bay,_Singapur,_2023-08-18,_DD_42-44_HDR.jpg"), title: "Merlión, Marina Bay, Singapur, 2023-08-18, DD 42-44 HDR", changes: RESIZED } },
   petronas: { key: "petronas", src: "/places/kuala-lumpur-petronas-towers.webp", w: 1920, h: 1280,

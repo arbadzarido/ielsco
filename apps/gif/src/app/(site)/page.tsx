@@ -7,6 +7,7 @@ import { balanceOf, mentoringPrice } from "@/lib/settings";
 import { fmtRange } from "@/lib/format";
 import { CurrencyToggle, Price } from "@/components/Client";
 import { DeadlineStrip, Eyebrow, FaqList, FinalCta, Figure, MentorPlaceholders, Pathways, PhotoBand, Testimonials, Universities } from "@/components/Blocks";
+import { DESTINATIONS, PLACES } from "@/lib/places";
 
 export const revalidate = 300;
 
@@ -24,26 +25,29 @@ export default async function Home() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       {/* 1 · Hero */}
-      <section className="hero" aria-labelledby="hero-heading">
-        <div className="hero-bg" aria-hidden="true">
-          <Image src={PHOTOS.museumGroup.src} alt="" fill priority sizes="100vw" />
+      <section className="gif-hero" aria-labelledby="hero-heading">
+        <div className="bg" aria-hidden="true">
+          <Image src={PLACES.marinaBay.src} alt="" fill priority sizes="100vw" quality={70} />
         </div>
-        <div className="wrap hero-inner">
-          <Image className="gif-mark" src="/brand/gif-logo.png" alt="Global Impact Fellowship" width={238} height={87} priority style={{ height: 72, width: "auto" }} />
-          <p className="eyebrow" style={{ justifyContent: "center" }}>Summer 2027 · Singapore, Malaysia, Thailand</p>
+        <div className="wrap inner">
+          <Image className="mark" src="/brand/gif-logo.png" alt="Global Impact Fellowship" width={238} height={87} priority />
+          <p className="eyebrow">Summer 2027 · 27 July – 3 August</p>
           <h1 id="hero-heading">Eight days, three countries, one project that <span className="accent">matters</span>.</h1>
           <p className="lead">GIF Summer 2027 takes high school, undergraduate and college students from Singapore through Malaysia to Thailand to build social impact projects with peers from across the region.</p>
           <div className="btn-row">
-            <Link className="btn btn-primary" href="/apply" data-track="apply_click">Apply Now <span aria-hidden="true">→</span></Link>
+            <Link className="btn btn-light" href="/apply" data-track="apply_click">Apply Now <span aria-hidden="true">→</span></Link>
             <Link className="btn btn-secondary" href="/opportunities" data-track="explore_click">Explore Opportunities</Link>
           </div>
-          <ul className="hero-facts" aria-label="Programme facts">
-            <li className="pill">27 Jul – 3 Aug 2027</li>
-            <li className="pill">SG → MY → TH</li>
-            <li className="pill">8 days, 7 nights</li>
-            <li className="pill">Up to {s.slots.capacity} delegates</li>
+          <ol className="route" aria-label="The route">
+            {DESTINATIONS.map((d) => <li key={d.country}><span className="stop">{d.stop}</span><span aria-hidden="true">{d.flag}</span>{d.country}</li>)}
+          </ol>
+          <ul className="facts" aria-label="Programme facts">
+            <li>8 days, 7 nights</li>
+            <li>Up to {s.slots.capacity} delegates</li>
+            <li>Individuals or teams of 2–3</li>
           </ul>
         </div>
+        <p className="credit">Photo: Marina Bay, Singapore · {PLACES.marinaBay.credit.author}, {PLACES.marinaBay.credit.license} · <Link href="/photo-credits">Credits</Link></p>
       </section>
       <DeadlineStrip s={s} />
 
@@ -70,11 +74,18 @@ export default async function Home() {
         <div className="wrap">
           <div className="head side"><div><Eyebrow n="02">Destinations</Eyebrow><h2>One route, three countries.</h2></div>
             <p className="lead">The programme moves from Singapore through Malaysia to Thailand, so the ideas you work on meet three different cities, systems and cultures in eight days.</p></div>
-          <ol className="grid g3" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {[["Singapore", "Start of the route", "Planned engagement with the National University of Singapore, where GIF 2026 delegates worked on their projects."],
-              ["Malaysia", "Middle of the route", "Planned engagement with Universiti Malaya."],
-              ["Thailand", "End of the route", "Planned engagement with Chulalongkorn University."]].map(([c, k, d], i) => (
-              <li className="item" key={c}><span className="index-num">0{i + 1}</span><h3>{c}</h3><span className="kicker" style={{ marginTop: 8 }}>{k}</span><p className="muted">{d}</p></li>
+          <ol className="destinations">
+            {DESTINATIONS.map((d) => (
+              <li className="dest" key={d.country}>
+                <div className="ph"><Image src={d.photo.src} alt={d.photo.alt} fill sizes="(min-width: 900px) 33vw, 100vw" style={{ objectPosition: ("focus" in d.photo && d.photo.focus) || "50% 50%" }} /></div>
+                <span className="photo-credit">{d.photo.credit.author} · {d.photo.credit.license}</span>
+                <div className="body">
+                  <span className="stop">Stop {d.stop}</span>
+                  <h3><span className="flag" aria-hidden="true">{d.flag}</span>{d.country}</h3>
+                  <span className="where">{d.place}, {d.city}</span>
+                  <p>{d.line}</p>
+                </div>
+              </li>
             ))}
           </ol>
           <p className="small muted" style={{ marginTop: 24 }}>The day-by-day itinerary is published to delegates during participant preparation (from 8 June 2027).</p>

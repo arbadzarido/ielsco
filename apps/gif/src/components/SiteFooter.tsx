@@ -58,7 +58,7 @@ export default function SiteFooter() {
       <div className="bottom">
         <div className="wrap">
           <span>© {new Date().getFullYear()} PT English Space Berkah Indonesia · NIB 0905260045155</span>
-          <span>University names describe planned engagement only and do not imply endorsement.</span>
+          <span>University names describe planned engagement only and do not imply endorsement. <Link href="/photo-credits">Photo credits</Link></span>
         </div>
       </div>
     </footer>
