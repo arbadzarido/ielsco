@@ -28,6 +28,8 @@ function pool(): pg.Pool {
   return g.__gifPool;
 }
 
+export { dbErrorKind, logDbError, type DbErrorKind } from "./db-errors";
+
 export type Db = Pick<pg.PoolClient, "query">;
 
 export async function q<T extends pg.QueryResultRow = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<T[]> {

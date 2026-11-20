@@ -5,7 +5,7 @@ import { requestLoginCode, verifyLoginCode, signOut, signInWithIelsco, linkIelsc
 import { revalidatePath } from "next/cache";
 import { recordGuardianConsent } from "@/lib/guardian";
 import { userAgent } from "@/lib/request";
-import { q } from "@/lib/db";
+import { q, logDbError } from "@/lib/db";
 import { overLimit } from "@/lib/ratelimit";
 import { clientIp } from "@/lib/request";
 import { sendEmail } from "@/lib/email/send";
@@ -15,6 +15,12 @@ import { COUNTRY_CODES, normalizePhone } from "@/lib/validation";
 
 export type FormState = { ok?: boolean; error?: string; errors?: Record<string, string>; step?: string; email?: string } | null;
 
+// Sign-in must never crash the page: if the database or email is down, say so and keep the form usable.
+const UNAVAILABLE = "Sign-in is temporarily unavailable. Please try again in a few minutes, or email hello@ielsco.com.";
+async function guarded<T>(where: string, fn: () => Promise<T>): Promise<T | { ok: false; error: string }> {
+  try { return await fn(); } catch (e) { logDbError(where, e); return { ok: false, error: UNAVAILABLE }; }
+}
+
 function safeNext(raw: FormDataEntryValue | null): string {
   const v = typeof raw === "string" ? raw : "";
   return /^\/(portal|admin|apply)([/?][\w\-/?=&.%]*)?$/.test(v) && !v.includes("//") ? v : "/portal";
@@ -22,14 +28,14 @@ function safeNext(raw: FormDataEntryValue | null): string {
 
 export async function requestCodeAction(_: FormState, fd: FormData): Promise<FormState> {
   const email = String(fd.get("email") ?? "");
-  const r = await requestLoginCode(email);
+  const r = await guarded("requestLoginCode", () => requestLoginCode(email));
   if (!r.ok) return { error: r.error, step: "email", email };
   return { ok: true, step: "code", email: email.trim().toLowerCase() };
 }
 
 export async function verifyCodeAction(_: FormState, fd: FormData): Promise<FormState> {
   const email = String(fd.get("email") ?? "");
-  const r = await verifyLoginCode(email, String(fd.get("code") ?? ""));
+  const r = await guarded("verifyLoginCode", () => verifyLoginCode(email, String(fd.get("code") ?? "")));
   if (!r.ok) return { error: r.error, step: "code", email };
   redirect(safeNext(fd.get("next")));
 }
@@ -74,7 +80,7 @@ export async function sponsorshipAction(_: FormState, fd: FormData): Promise<For
 
 export async function ielscoSignInAction(_: FormState, fd: FormData): Promise<FormState> {
   const email = String(fd.get("email") ?? "");
-  const r = await signInWithIelsco(email, String(fd.get("password") ?? ""));
+  const r = await guarded("signInWithIelsco", () => signInWithIelsco(email, String(fd.get("password") ?? "")));
   if (!r.ok) return { error: r.error, email: email.slice(0, 254) };
   redirect(safeNext(fd.get("next")));
 }
