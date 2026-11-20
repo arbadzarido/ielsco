@@ -106,13 +106,17 @@ export async function run({ base, mt, env, db: dbc }) {
   }
   const appOf = (email) => one("select a.* from gif.applications a join gif.accounts c on c.id = a.owner_account_id where c.email = $1 and a.status <> 'withdrawn'", [email]);
   const obligation = (email, kind) => one("select o.* from gif.obligations o join gif.participants p on p.id = o.participant_id where p.email = $1 and o.kind = $2 and o.status <> 'cancelled'", [email, kind]);
+  // The portal opens Midtrans Snap as a popup (the fake's Snap JS shows #fake-snap with the order id in data-order).
+  const snapOrder = async (page) => { const el = page.locator("#fake-snap"); await el.waitFor(); return el.getAttribute("data-order"); };
   async function payOnline(page, rowText, outcome = "settlement") {
     await page.goto("/portal/payments");
     const row = page.locator("tr", { hasText: rowText }).first();
-    await row.getByRole("button", { name: /Pay online|Continue payment/ }).click();
-    await page.waitForURL(/127\.0\.0\.1:3499\/pay\//);
+    await row.getByRole("button", { name: /Pay online|Continue payment|Choose a payment method/ }).click();
+    const order = await snapOrder(page);
     await page.locator(`#pay-${outcome}`).click();
-    await page.waitForURL(/\/portal\/payments\/return/);
+    if (outcome === "settlement" || outcome === "pending") await page.waitForURL((u) => u.pathname === "/portal/payments/return" && u.searchParams.get("order_id") === order);
+    else await page.getByTestId("attempt-choose").waitFor();
+    return order;
   }
   const setDates = async (patch) => {
     const r = await one("select settings from gif.cohorts where is_current");
@@ -190,16 +194,18 @@ export async function run({ base, mt, env, db: dbc }) {
       // Pay: return URL alone never marks paid. Start checkout, come back via finish URL without paying.
       await page.goto("/portal/payments");
       await page.locator("tr", { hasText: "Elco Pro" }).getByRole("button", { name: "Pay online" }).click();
-      await page.waitForURL(/\/pay\//);
-      const order1 = page.url().split("/pay/")[1];
+      const order1 = await snapOrder(page);
+      await page.locator("#snap-close").click(); // closed the popup without paying
+      await page.getByTestId("attempt-open").waitFor();
+      check("closing Snap shows Continue / Cancel & change, cancels nothing", (await page.getByTestId("attempt-open").innerText()).includes("Cancel & change payment method")
+        && (await one("select status, cancel_requested_at from gif.payments where order_id = $1", [order1])).cancel_requested_at === null);
       await page.goto(`/portal/payments/return?order_id=${order1}&transaction_status=settlement&status_code=200`);
       await page.waitForTimeout(2500);
       check("forged return URL does not mark paid", (await obligation(A.email, "elco_pro")).status === "open");
       // Double click → same checkout reused (no second order)
       await page.goto("/portal/payments");
       await page.locator("tr", { hasText: "Elco Pro" }).getByRole("button", { name: /Pay online|Continue payment/ }).click();
-      await page.waitForURL(/\/pay\//);
-      check("second click reuses the live checkout", page.url().split("/pay/")[1] === order1);
+      check("Continue payment reopens the same order (no second order)", (await snapOrder(page)) === order1);
       await page.locator("#pay-settlement").click();
       await page.waitForURL(/\/portal\/payments\/return/);
       await page.getByText("Payment verified").waitFor({ timeout: 30_000 });
@@ -285,7 +291,7 @@ export async function run({ base, mt, env, db: dbc }) {
       check("balance blocked until deposit paid", (await page.locator("tr", { hasText: "balance" }).first().innerText()).includes("Pay the deposit first"));
       // Payment failure path
       await payOnline(page, "Self-Funded deposit", "deny");
-      await page.getByText("The payment failed").waitFor({ timeout: 30_000 });
+      await page.getByText(/payment failed/).waitFor({ timeout: 30_000 });
       check("denied payment → failed, obligation still open", (await obligation(B.email, "deposit")).status === "open" && !!(await one("select 1 from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'failed'", [B.email])));
       // Expired path via webhook from fake gateway (pending → expire)
       await payOnline(page, "Self-Funded deposit", "pending");
@@ -374,13 +380,11 @@ export async function run({ base, mt, env, db: dbc }) {
       await apply(page, { pathway: "fully_funded", leader: C });
       await page.goto("/portal/payments");
       await page.locator("tr", { hasText: "Elco Pro" }).getByRole("button", { name: "Pay online" }).click();
-      await page.waitForURL(/\/pay\//);
-      const o1 = decodeURIComponent(page.url().split("/pay/")[1]);
+      const o1 = await snapOrder(page);
       await db.query("update gif.payments set checkout_expires_at = now() - interval '1 minute' where order_id = $1", [o1]); // first tab left open too long
       await page.goto("/portal/payments");
       await page.locator("tr", { hasText: "Elco Pro" }).getByRole("button", { name: /Pay online|Continue payment/ }).click();
-      await page.waitForURL(/\/pay\//);
-      const o2 = decodeURIComponent(page.url().split("/pay/")[1]);
+      const o2 = await snapOrder(page);
       check("expired checkout replaced by a new order", o1 !== o2);
       await page.locator("#pay-settlement").click();
       await page.waitForURL(/return/);
@@ -628,9 +632,123 @@ export async function run({ base, mt, env, db: dbc }) {
       await gp.context().close();
       await page.goto("/portal/payments");
       await page.locator("tr", { hasText: "Self-Funded deposit" }).getByRole("button", { name: /Pay online/ }).click();
-      await page.waitForURL(/127\.0\.0\.1:3499\/pay\//);
-      check("payment opens after guardian consent", page.url().includes("/pay/"));
+      check("payment opens after guardian consent", !!(await snapOrder(page)));
       await page.context().close();
+    }
+
+    // ── Payment recovery: wrong method → cancel & change; refused cancel; paid during cancel; duplicates ────────────
+    const F = { name: "Fajar Nugroho", email: "fajar@example.test", wa: "+62 812 3333 4444", dob: "2005-05-05", nat: "ID", inst: "Universitas Example", level: "undergraduate" };
+    // Earlier scenarios moved the cohort past Phase 1; reopen it for these applicants, then put the dates back.
+    const savedDates = (await one("select settings from gif.cohorts where is_current")).settings?.dates ?? {};
+    await setDates({ phase1_close: iso(30 * 86400000) });
+    {
+      const page = await newPage();
+      await login(page, F.email, "/apply?pathway=fully_funded");
+      await apply(page, { pathway: "fully_funded", leader: F });
+      const fpay = (o) => one("select * from gif.payments where order_id = $1", [o]);
+      const calls = async (o) => ((await (await fetch(`${mt}/__orders`)).json()).find((x) => x.order_id === o)?.calls ?? {});
+      // 1. Picks a virtual account by mistake (pending), then cancels and changes method.
+      const v1 = await payOnline(page, "Elco Pro", "pending");
+      check("VA chosen → attempt pending", (await fpay(v1)).status === "pending");
+      await page.getByTestId("cancel-change").click();
+      await page.getByTestId("attempt-choose").waitFor();
+      const c1 = await fpay(v1);
+      check("cancel confirmed by Midtrans → attempt cancelled (no 1-hour wait)", c1.status === "cancelled" && c1.cancel_result === "cancelled" && (await calls(v1)).cancel === 1, `${c1.status}/${c1.cancel_result}`);
+      check("no 'payment failed' email for a cancellation the payer asked for", !(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'payment_failed'", [F.email])));
+      check("obligation untouched by the cancellation", (await obligation(F.email, "elco_pro")).status === "open");
+      await page.getByTestId("choose-method").click();
+      const v2 = await snapOrder(page);
+      check("new method → new order id, linked to the cancelled attempt", v2 !== v1 && (await fpay(v1)).replaced_by === (await fpay(v2)).id);
+      // 2. Duplicate cancellation requests from two tabs at once.
+      await page.locator("#pay-pending").click();
+      await page.waitForURL((u) => u.searchParams.get("order_id") === v2);
+      const tab2 = await page.context().newPage();
+      await Promise.all([page.goto("/portal/payments"), tab2.goto("/portal/payments")]);
+      const cancelBtn = (pg) => pg.locator("tr", { hasText: "Elco Pro" }).getByTestId("cancel-change");
+      await Promise.all([cancelBtn(page).waitFor(), cancelBtn(tab2).waitFor()]);
+      await Promise.all([cancelBtn(page).click(), cancelBtn(tab2).click()]);
+      await waitDb(async () => (await fpay(v2)).status === "cancelled");
+      check("two simultaneous cancels → exactly one Midtrans cancel", (await calls(v2)).cancel === 1 && (await fpay(v2)).status === "cancelled", JSON.stringify(await calls(v2)));
+      await tab2.close();
+      // 3. Midtrans refuses to cancel (and to expire): payer is told and can still start a new payment.
+      const v3 = await payOnline(page, "Elco Pro", "pending");
+      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: v3, refuse_cancel: true, refuse_expire: true }) });
+      await page.getByTestId("cancel-change").click();
+      await page.getByTestId("attempt-not-cancellable").waitFor();
+      const c3 = await fpay(v3);
+      check("refused cancel → attempt stays pending, marked not cancellable", c3.status === "pending" && c3.cancel_result === "not_cancellable", `${c3.status}/${c3.cancel_result}`);
+      check("cancel, then expire, were each tried once", (await calls(v3)).cancel === 1 && (await calls(v3)).expire === 1);
+      await page.getByTestId("force-new").click();
+      const v4 = await snapOrder(page);
+      check("recovery: new payment allowed right away after a refused cancel", v4 !== v3 && (await fpay(v3)).replaced_by === (await fpay(v4)).id);
+      const fob = await obligation(F.email, "elco_pro");
+      check("no Elco Pro grant requested while attempts were only opened, pending or cancelled",
+        !(await (await fetch(`${mt}/__elco`)).json()).calls.some((c) => c.reference === `gif:${fob.id}`));
+      // 4. The payer completes the payment just as a cancellation is requested: the payment wins.
+      await page.locator("#pay-pending").click();
+      await page.waitForURL((u) => u.searchParams.get("order_id") === v4);
+      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: v4, settle_on_cancel: true }) });
+      await page.getByTestId("cancel-change").click();
+      await page.getByTestId("attempt-paid").waitFor();
+      check("paid during cancellation → attempt paid, obligation paid", (await fpay(v4)).status === "paid" && (await obligation(F.email, "elco_pro")).status === "paid");
+      // 5. The attempt Midtrans wouldn't cancel is paid later too: duplicate, refund queued, still one obligation.
+      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: v3, transaction_status: "settlement", notify: true }) });
+      await waitDb(async () => (await fpay(v3)).status === "paid");
+      check("old attempt paid later → duplicate with refund queued", (await fpay(v3)).is_duplicate === true
+        && !!(await one("select 1 from gif.refunds r join gif.payments p on p.id = r.payment_id where p.order_id = $1", [v3]))
+        && (await one("select count(*)::int as n from gif.obligations o join gif.participants p on p.id = o.participant_id where p.email = $1 and o.kind = 'elco_pro'", [F.email])).n === 1);
+      // 6. Duplicate webhooks for the paid attempt change nothing.
+      for (let i = 0; i < 2; i++) await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: v4, transaction_status: "settlement", notify: true }) });
+      await new Promise((r) => setTimeout(r, 800));
+      check("duplicate webhooks → one receipt email, payment unchanged", (await one("select count(*)::int as n from gif.email_outbox where to_email = $1 and template = 'payment_received'", [F.email])).n === 1
+        && (await fpay(v4)).status === "paid" && (await fpay(v4)).is_duplicate === false);
+      // 7. Cancelling an attempt that already closed is a no-op (Midtrans not called again).
+      await page.goto(`/portal/payments/return?order_id=${encodeURIComponent(v1)}`);
+      await page.getByText("This payment was cancelled").waitFor();
+      check("closed attempt shows no cancel button", (await page.getByTestId("cancel-change").count()) === 0 && (await calls(v1)).cancel === 1);
+      // 8. Elco API down when the payment verified: stays "activation in progress", the attempt is logged, a retry scheduled.
+      const ff = await one("select f.* from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.email = $1", [F.email]);
+      const att = await all("select * from gif.elco_grant_attempts where fulfilment_id = $1", [ff.id]);
+      check("Elco unavailable → pending_activation, attempt logged, retry scheduled", ff.status === "pending_activation" && att.length >= 1 && att[0].outcome === "error"
+        && att[0].http_status === 503 && !!ff.next_attempt_at && ff.grant_attempts >= 1, JSON.stringify({ s: ff.status, att }));
+      // Elco comes back; the cron retries once the backoff is due.
+      await fetch(`${mt}/__control/elco`, { method: "POST", body: JSON.stringify({ mode: "up" }) });
+      let r = await fetch(`${base}/api/cron/daily`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+      check("retry waits for the backoff", (await one("select status from gif.elco_fulfilments where id = $1", [ff.id])).status === "pending_activation", String(r.status));
+      await db.query("update gif.elco_fulfilments set next_attempt_at = now() - interval '1 second' where id = $1", [ff.id]);
+      r = await fetch(`${base}/api/cron/daily`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+      const ff2 = await one("select * from gif.elco_fulfilments where id = $1", [ff.id]);
+      check("Elco grant succeeds on retry → activated by elco-api with grant id + email", ff2.status === "activated" && ff2.activated_by === "elco-api" && /^EG-/.test(ff2.elco_reference ?? "")
+        && !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'elco_activated'", [F.email])), `${r.status} ${ff2.status} ${ff2.notes}`);
+      // Duplicate grant request (e.g. the response was lost): Elco answers with the same grant; nothing granted twice.
+      await db.query("update gif.elco_fulfilments set status = 'pending_activation', next_attempt_at = null where id = $1", [ff.id]);
+      await fetch(`${base}/api/cron/daily`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+      const ff3 = await one("select * from gif.elco_fulfilments where id = $1", [ff.id]);
+      const eg = await (await fetch(`${mt}/__elco`)).json();
+      check("duplicate grant request → same grant id, one grant at Elco, one activation email", ff3.elco_reference === ff2.elco_reference
+        && eg.grants.filter(([ref]) => ref === `gif:${ff.obligation_id}`).length === 1
+        && (await one("select count(*)::int as n from gif.email_outbox where to_email = $1 and template = 'elco_activated'", [F.email])).n === 1);
+      await page.context().close();
+    }
+    // Elco Pro bought with an email that has no Elco account yet: Elco reserves it for that email's sign-up.
+    const G = { name: "Nadia Putri", email: "nadia@newcomer.example.test", wa: "+62 812 5555 6666", dob: "2006-06-06", nat: "ID", inst: "SMA Example 2", level: "high_school" };
+    {
+      const page = await newPage();
+      await login(page, G.email, "/apply?pathway=fully_funded");
+      await apply(page, { pathway: "fully_funded", leader: G });
+      await payOnline(page, "Elco Pro", "settlement");
+      await page.getByText("Payment verified").waitFor({ timeout: 30_000 });
+      await waitDb(async () => (await one("select f.status from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.email = $1", [G.email])).status === "activated");
+      const fg = await one("select f.* from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.email = $1", [G.email]);
+      check("Elco grant right after payment (Elco up); no account yet → reserved for sign-up", fg.status === "activated" && (fg.notes ?? "").startsWith("Reserved on Elco"));
+      await page.goto("/portal");
+      check("portal tells the delegate to sign up on Elco with that email", (await page.locator("body").innerText()).includes(`Sign up on Elco with ${G.email}`));
+      await page.context().close();
+      await fetch(`${mt}/__control/elco`, { method: "POST", body: JSON.stringify({ mode: "down" }) });
+    }
+    {
+      const r = await one("select settings from gif.cohorts where is_current");
+      await db.query("update gif.cohorts set settings = $1 where is_current", [JSON.stringify({ ...(r.settings ?? {}), dates: savedDates })]);
     }
 
     // ── Combined accounts: sign in with an IELSco account ─────────────────────────────────────────────────────────

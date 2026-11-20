@@ -5,10 +5,11 @@ import { paymentsState } from "@/lib/payments/gateway";
 import { collectionMethod, formatMoney, idrPriceFor } from "@/lib/pricing";
 import { PAYMENT_CONSENTS } from "@/lib/legal";
 import { fmtDate, fmtDateTime } from "@/lib/format";
-import { PayButton, InvoiceButton } from "./buttons";
+import { PayFlow, InvoiceButton } from "./buttons";
 
+// Attempt and obligation states, in plain words. "Awaiting payment" = an open attempt that can be continued or cancelled.
 const STATUS: Record<string, string> = { open: "Due", paid: "Paid", waived: "Waived", refunded: "Refunded", partially_refunded: "Partly refunded", cancelled: "Cancelled",
-  created: "Started", pending: "Waiting for confirmation", failed: "Failed", expired: "Expired" };
+  created: "Awaiting payment", pending: "Awaiting payment", cancelling: "Cancelling", failed: "Failed", expired: "Expired" };
 
 export default async function Payments() {
   const c = await portalContext("/portal/payments");
@@ -35,20 +36,25 @@ export default async function Payments() {
             {obligations.map((o) => {
               const method = collectionMethod(s, o.currency, ready);
               const depositOpen = o.kind === "balance" && detail.obligations.some((d) => d.participant_id === o.participant_id && d.kind === "deposit" && d.status === "open");
-              const pending = payments.some((p) => p.obligation_id === o.id && p.status === "pending");
+              // The latest attempt still open at Midtrans for this item (payments are newest first).
+              const attempt = payments.find((p) => p.obligation_id === o.id && p.gateway === "midtrans" && ["created", "pending", "cancelling"].includes(p.status)
+                && (p.status === "cancelling" || !p.checkout_expires_at || new Date(p.checkout_expires_at).getTime() > Date.now()));
+              const pending = attempt?.status === "pending";
               const idr = idrPriceFor(s, o.kind, new Date(), app.pathway === "fully_funded");
+              const flow = (idrOption: boolean, label: string) => <PayFlow obligationId={o.id} idrOption={idrOption} label={label}
+                openOrderId={attempt?.order_id ?? null} openStatus={attempt?.status ?? null} cancelResult={attempt?.cancel_result ?? null} />;
               return (
                 <tr key={o.id}>
                   <td>{o.label}</td>
                   {c.isOwner && detail.participants.length > 1 && <td>{name(o.participant_id)}</td>}
                   <td style={{ whiteSpace: "nowrap" }}>{formatMoney(o.amount, o.currency)}</td>
                   <td>{o.due_at ? fmtDate(o.due_at) : "—"}</td>
-                  <td><span className={`badge ${o.status === "paid" ? "ok" : o.status === "open" ? "warn" : ""}`}>{pending ? "Waiting for confirmation" : STATUS[o.status] ?? o.status}</span></td>
-                  <td style={{ minWidth: 200 }}>
+                  <td><span className={`badge ${o.status === "paid" ? "ok" : o.status === "open" ? "warn" : ""}`}>{o.status === "open" && attempt ? STATUS[attempt.status] : STATUS[o.status] ?? o.status}</span></td>
+                  <td style={{ minWidth: 240 }}>
                     {o.status === "open" && (depositOpen ? <span className="small muted">Pay the deposit first.</span>
                       : !consented ? <span className="small muted">Accept the terms first.</span>
-                      : method === "midtrans" ? <PayButton obligationId={o.id} label={pending ? "Continue payment" : "Pay online"} />
-                      : method === "midtrans_idr_option" ? <div style={{ display: "grid", gap: 8 }}><InvoiceButton obligationId={o.id} /><PayButton obligationId={o.id} idrOption label={`Pay IDR ${idr?.toLocaleString("en-US")} by card instead`} /></div>
+                      : method === "midtrans" ? flow(false, pending ? "Continue payment" : "Pay online")
+                      : method === "midtrans_idr_option" ? <div style={{ display: "grid", gap: 8 }}><InvoiceButton obligationId={o.id} />{flow(true, `Pay IDR ${idr?.toLocaleString("en-US")} by card instead`)}</div>
                       : <InvoiceButton obligationId={o.id} />)}
                   </td>
                 </tr>

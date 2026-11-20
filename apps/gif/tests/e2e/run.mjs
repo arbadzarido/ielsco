@@ -33,6 +33,8 @@ export const ENV = {
   CRON_SECRET: "e2e-cron-secret-0123456789",
   GIF_IELSCO_SUPABASE_URL: `http://127.0.0.1:${MT_PORT}`,
   GIF_IELSCO_SUPABASE_ANON_KEY: "e2e-ielsco-anon",
+  ELCO_GRANT_URL: `http://127.0.0.1:${MT_PORT}/api/integrations/ielsco/grants`,
+  IELSCO_TO_ELCO_SECRET: "e2e-ielsco-to-elco-secret-0123456789abcdef",
   NEXT_TELEMETRY_DISABLED: "1",
 };
 
@@ -44,7 +46,7 @@ async function setupDb() {
   await admin.end();
   const c = new pg.Client({ host: PGHOST, port: PGPORT, user: PGUSER, database: DB });
   await c.connect();
-  for (const m of ["20261123000000_gif_programme_platform.sql", "20261126000000_gif_accounts_guardians_tasks.sql"]) {
+  for (const m of ["20261123000000_gif_programme_platform.sql", "20261126000000_gif_accounts_guardians_tasks.sql", "20261127000000_gif_payment_attempts_elco_grants.sql"]) {
     await c.query(readFileSync(join(repo, "supabase", "migrations", m), "utf8"));
   }
   // Applications open on 25 Nov 2026; tests run before that, so open them early in this throwaway database only.
