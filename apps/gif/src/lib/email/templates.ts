@@ -6,26 +6,26 @@ export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESC[c]);
 type Block = { heading: string; paras: string[]; cta?: { label: string; href: string }; note?: string; rows?: [string, string][] };
 
 export function layout(b: Block): { html: string; text: string } {
-  const td = "padding:8px 0;border-bottom:1px solid #DCDFE3;";
+  const td = "padding:8px 0;border-bottom:1px solid #E6E9EE;";
   const rows = b.rows?.length
     ? `<table role="presentation" width="100%" style="border-collapse:collapse;margin:20px 0">${b.rows.map(([k, v]) =>
         `<tr><td style="${td}color:#577E90;font-size:13px;width:42%">${esc(k)}</td><td style="${td}color:#1A2534;font-size:14px">${esc(v)}</td></tr>`).join("")}</table>`
     : "";
   const cta = b.cta
-    ? `<p style="margin:28px 0"><a href="${esc(b.cta.href)}" style="background:#5C2D2E;color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:3px;font-weight:600;font-size:14px;display:inline-block">${esc(b.cta.label)}</a></p>`
+    ? `<p style="margin:28px 0"><a href="${esc(b.cta.href)}" style="background:#2F4157;color:#ffffff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:600;font-size:14px;display:inline-block">${esc(b.cta.label)}</a></p>`
     : "";
-  const html = `<!doctype html><html><body style="margin:0;background:#F4F5F7;font-family:Helvetica,Arial,sans-serif">
-<table role="presentation" width="100%" style="background:#F4F5F7;padding:24px 12px"><tr><td align="center">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-top:4px solid #5C2D2E">
-<tr><td style="padding:28px 32px 8px;background:#1B2B3C;background-image:linear-gradient(160deg,#1B2B3C 0%,#284055 40%,#5C2D2E 85%,#7A3B3E 100%);color:#ffffff">
-<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#DCDFE3">IELSco &middot; Global Impact Fellowship</div>
-<div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;padding:6px 0 18px">GIF Summer 2027</div></td></tr>
+  const html = `<!doctype html><html><body style="margin:0;background:#F1F4F8;font-family:Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" style="background:#F1F4F8;padding:24px 12px"><tr><td align="center">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border:1px solid #E6E9EE;border-radius:20px;overflow:hidden">
+<tr><td style="padding:28px 32px 8px;background:#2F4157;color:#ffffff">
+<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E6E9EE">IELSco &middot; Global Impact Fellowship</div>
+<div style="font-family:Poppins,Helvetica,Arial,sans-serif;font-weight:700;font-size:22px;padding:6px 0 18px">GIF Summer 2027</div></td></tr>
 <tr><td style="padding:28px 32px 8px;color:#1A2534;font-size:15px;line-height:1.6">
-<h1 style="font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:24px;color:#304156;margin:0 0 16px">${esc(b.heading)}</h1>
+<h1 style="font-family:Poppins,Helvetica,Arial,sans-serif;font-weight:700;font-size:24px;color:#2F4157;margin:0 0 16px">${esc(b.heading)}</h1>
 ${b.paras.map((p) => `<p style="margin:0 0 14px">${esc(p)}</p>`).join("")}${rows}${cta}
 ${b.note ? `<p style="margin:0 0 14px;color:#577E90;font-size:13px">${esc(b.note)}</p>` : ""}
 </td></tr>
-<tr><td style="padding:20px 32px 28px;color:#577E90;font-size:12px;line-height:1.5;border-top:1px solid #DCDFE3">
+<tr><td style="padding:20px 32px 28px;color:#577E90;font-size:12px;line-height:1.5;border-top:1px solid #E6E9EE">
 PT English Space Berkah Indonesia (IELSco) &middot; Villa Regency 2 Blok AB 4 No. 8, Pasar Kemis, Tangerang 15560, Indonesia<br>
 Questions: hello@ielsco.com &middot; WhatsApp +62 882-9725-3491 &middot; <a href="${SITE()}" style="color:#577E90">gif.ielsco.com</a></td></tr>
 </table></td></tr></table></body></html>`;

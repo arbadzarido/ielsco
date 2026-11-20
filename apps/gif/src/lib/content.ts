@@ -3,16 +3,17 @@
 // Admin → Content (stored in gif.content and read through getContent()).
 import { DEFAULT_SETTINGS, type Money, type Settings } from "./settings.ts";
 
-export const NAV = [
+// primary: shown in the desktop header bar (IELSco keeps the bar short); every item appears in the mobile menu and footer.
+export const NAV: { href: string; label: string; primary?: boolean }[] = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About GIF" },
-  { href: "/program", label: "Program" },
-  { href: "/opportunities", label: "Opportunities" },
-  { href: "/selection-process", label: "Selection Process" },
-  { href: "/mentoring", label: "Mentorship" },
+  { href: "/about", label: "About", primary: true },
+  { href: "/program", label: "Program", primary: true },
+  { href: "/opportunities", label: "Opportunities", primary: true },
+  { href: "/selection-process", label: "Selection", primary: true },
+  { href: "/mentoring", label: "Mentorship", primary: true },
   { href: "/sponsorship", label: "Sponsorship Support" },
   { href: "/previous-gif", label: "Previous GIF" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/faq", label: "FAQ", primary: true },
 ];
 
 export type Photo = { src: string; alt: string; caption: string; w: number; h: number };

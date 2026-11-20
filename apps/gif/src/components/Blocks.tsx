@@ -7,17 +7,18 @@ import type { Settings } from "@/lib/settings";
 import { balanceOf, mentoringPrice } from "@/lib/settings";
 import { fmtDate } from "@/lib/format";
 
-export function Eyebrow({ n, children }: { n?: string; children: ReactNode }) {
-  return <div className="eyebrow">{n && <span className="num">{n}</span>}<span>{children}</span></div>;
+// IELSco eyebrow: teal, uppercase, no editorial numbering (n is accepted for older call sites and ignored).
+export function Eyebrow({ children }: { n?: string; children: ReactNode }) {
+  return <div className="eyebrow"><span>{children}</span></div>;
 }
 
 export function PageHero({ eyebrow, title, lead, children, dark = true }: { eyebrow: string; title: ReactNode; lead?: ReactNode; children?: ReactNode; dark?: boolean }) {
   return (
-    <section className={`section ${dark ? "dark" : ""}`} style={{ paddingBottom: "clamp(40px, 6vw, 72px)" }}>
+    <section className={dark ? "page-hero" : "section"} style={dark ? undefined : { paddingBottom: 40 }}>
       <div className="wrap">
-        <Eyebrow>{eyebrow}</Eyebrow>
-        <h1 style={{ maxWidth: "16ch", color: dark ? "#fff" : undefined }}>{title}</h1>
-        {lead && <p className="lead" style={{ marginTop: 24 }}>{lead}</p>}
+        <div className="eyebrow">{dark && <Image src="/brand/gif-icon-white.png" alt="" width={289} height={300} />}<span>{eyebrow}</span></div>
+        <h1>{title}</h1>
+        {lead && <p className="lead">{lead}</p>}
         {children && <div style={{ marginTop: 28 }}>{children}</div>}
       </div>
     </section>
@@ -63,7 +64,7 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
       <article className="pathway ff">
         <span className="kicker">Pathway A · Competitive</span>
         <h3>Fully Funded application</h3>
-        <div className="price">IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}<span className="small muted serif"> · Phase 1 with {s.prices.elco_pro_months} months of Elco Pro</span></div>
+        <div className="price">IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}<span className="small muted"> · Phase 1 with {s.prices.elco_pro_months} months of Elco Pro</span></div>
         <ul>
           <li>{s.slots.fully_funded} Fully Funded places (programme fee, accommodation and in-programme transport; flights not included) and {s.slots.partial_funded} Partial Funded places</li>
           <li>Three phases: application with Elco Pro and social media tasks, essay and pitch deck, video pitch</li>
@@ -78,7 +79,7 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
       <article className="pathway mt">
         <span className="kicker">Pathway B · Guided</span>
         <h3>Project Mentoring Program</h3>
-        <div className="price"><Price idr={m.price.IDR} usd={m.price.USD} /><span className="small muted serif"> · {m.tier === "early" ? "Early Bird" : "Regular"}</span></div>
+        <div className="price"><Price idr={m.price.IDR} usd={m.price.USD} /><span className="small muted"> · {m.tier === "early" ? "Early Bird" : "Regular"}</span></div>
         <ul>
           <li>15 weekly sessions, Tuesdays, 2 Feb – 11 May 2027</li>
           <li>Go straight to Phase 3 of the selection</li>
@@ -149,7 +150,7 @@ export function MentorPlaceholders({ mentors }: { mentors: Mentor[] }) {
         {[1, 2, 3, 4, 5].map((i) => (
           <div className="placeholder" key={i}>
             <span className="ph-mark" aria-hidden="true" />
-            <strong className="serif" style={{ fontSize: 19, fontWeight: 500, color: "var(--ink)" }}>Mentor profile coming soon</strong>
+            <strong>Mentor profile coming soon</strong>
             <span className="small">Student startup founder · NUS, UTM or Chulalongkorn</span>
           </div>
         ))}
@@ -168,7 +169,7 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
     <div className="grid g3">
       {ok.map((t) => (
         <blockquote className="item" key={t.name} style={{ margin: 0 }}>
-          <p className="serif" style={{ fontSize: 22, lineHeight: 1.35 }}>&ldquo;{t.quote}&rdquo;</p>
+          <p style={{ fontSize: 18, lineHeight: 1.55, color: "var(--deep)" }}>&ldquo;{t.quote}&rdquo;</p>
           <footer className="small muted">{t.name}, {t.role}</footer>
         </blockquote>
       ))}

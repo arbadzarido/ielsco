@@ -22,10 +22,10 @@ export default async function SelfFunded() {
         <div className="wrap">
           <div className="head side"><div><Eyebrow n="01">Price</Eyebrow><h2>One fee, two payments.</h2></div><CurrencyToggle /></div>
           <div className="grid g3">
-            <div className="item"><span className="kicker">Programme fee</span><p className="serif" style={{ fontSize: 34 }}><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p><p className="small muted">Per delegate.</p></div>
-            <div className="item"><span className="kicker">1 · Deposit</span><p className="serif" style={{ fontSize: 34 }}><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p>
+            <div className="item"><span className="kicker">Programme fee</span><p className="big-number"><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p><p className="small muted">Per delegate.</p></div>
+            <div className="item"><span className="kicker">1 · Deposit</span><p className="big-number"><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p>
               <p className="small muted">{s.dates.deposit_due_days ? `Due within ${s.dates.deposit_due_days} days of registering.` : "Pay any time after registering; your seat is held only once it is verified."}</p></div>
-            <div className="item"><span className="kicker">2 · Balance</span><p className="serif" style={{ fontSize: 34 }}><Price idr={bal.IDR} usd={bal.USD} /></p>
+            <div className="item"><span className="kicker">2 · Balance</span><p className="big-number"><Price idr={bal.IDR} usd={bal.USD} /></p>
               <p className="small muted">{s.dates.balance_due ? `Due by ${fmtDate(s.dates.balance_due, { day: "numeric", month: "long", year: "numeric" })}.` : "Due during participant preparation; the exact date is shown in your portal."}</p></div>
           </div>
         </div>

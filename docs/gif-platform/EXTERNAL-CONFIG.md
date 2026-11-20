@@ -11,12 +11,12 @@
 | Midtrans sandbox keys + Signature Secret Key | Sandbox payments | Vercel env (Preview + Production) |
 | Midtrans confirmation: foreign cards on the MID, business category OK for youth programme with travel | Account eligibility (see PAYMENTS.md) | Email to Midtrans |
 | Midtrans production keys + `GIF_MIDTRANS_PRODUCTION_ENABLED=true` | Real payments, only after the sandbox run-through | Vercel env |
-| DNS: `CNAME gif → cname.vercel-dns.com` | gif.ielsco.com | DNS host of ielsco.com |
+| **Move `gif.ielsco.com` off the main `ielsco` Vercel project** (it is attached there today, which is why it shows the IELSco homepage) and onto a new `gif` project, Root Directory `apps/gif` — see DEPLOYMENT.md §4 | gif.ielsco.com serving the GIF app | Vercel (team ielscommunity) |
+| DNS: `CNAME gif → cname.vercel-dns.com` (already resolves to Vercel; no DNS change expected) | gif.ielsco.com | DNS host of ielsco.com |
 | Elco: partner endpoint to grant Pro (optional) | Automate Elco Pro activation; until then finance does it in Elco admin | Elco team |
 | Counsel review of the 10 legal drafts (Bahasa Indonesia primary, English translation) | Legal pages are drafts | Legal |
 | Real testimonials (with written consent), confirmed mentor names/photos | None are shown until supplied | Admin → Content |
 | Staff list (emails + roles) | Admin access | Admin → Staff |
-| Brand guidelines / Apple Garamond web licence (optional) | Typography; EB Garamond is the fallback | `apps/gif/src/app` |
 
 ## Added 21 Nov 2026 (founder decisions)
 

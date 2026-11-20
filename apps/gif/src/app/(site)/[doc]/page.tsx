@@ -13,7 +13,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ doc: string }> }): Promise<Metadata> {
   const d = legalDocs(await currentSettingsSafe())[(await params).doc];
-  return d ? { title: `${d.id.title} / ${d.en.title}`, description: d.id.intro.slice(0, 155), alternates: { languages: { id: `/${d.slug}`, en: `/${d.slug}#english` } } } : {};
+  return d ? { title: d.en.title, description: d.en.intro.slice(0, 155) } : {};
 }
 
 function Body({ v }: { v: Version }) {
@@ -38,28 +38,30 @@ export default async function LegalPage({ params }: { params: Promise<{ doc: str
     <section className="section">
       <div className="wrap grid split" style={{ alignItems: "start" }}>
         <aside className="no-print">
-          <div className="eyebrow">Dokumen hukum · Legal</div>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}>
-            {DOCS.map((x) => <li key={x.slug}><Link href={`/${x.slug}`} aria-current={x.slug === d.slug ? "page" : undefined} style={{ fontWeight: x.slug === d.slug ? 600 : 400 }}>{x.title_id}<span className="tiny muted" style={{ display: "block" }}>{x.title}</span></Link></li>)}
+          <div className="eyebrow">Legal</div>
+          <ul className="legal-nav">
+            {DOCS.map((x) => <li key={x.slug}><Link href={`/${x.slug}`} aria-current={x.slug === d.slug ? "page" : undefined}>{x.title}</Link></li>)}
           </ul>
         </aside>
         <article className="legal-doc">
-          <div lang="id">
-            <h1 style={{ fontSize: "clamp(34px, 4.4vw, 52px)" }}>{d.id.title}</h1>
-            <div className="notice warn" style={{ marginTop: 20 }}><p><strong>Draf untuk ditinjau penasihat hukum.</strong> Versi {LEGAL_VERSION}. Dokumen ini sedang ditinjau oleh penasihat hukum Indonesia, bukan nasihat hukum, dan tidak menyatakan kepatuhan terhadap peraturan apa pun. Bagian dalam [kurung siku] menunggu keputusan akhir. Versi Bahasa Indonesia adalah versi utama; terjemahan bahasa Inggris tersedia di bawah.</p>
-              <p className="small"><a href="#english">English translation ↓</a></p></div>
-            <Body v={d.id} />
-          </div>
-          <hr className="rule" style={{ margin: "56px 0 24px" }} />
+          {/* English reading version first; the Bahasa Indonesia text below is the official, prevailing version (founder decision). */}
           <div lang="en" id="english">
-            <div className="eyebrow">English translation</div>
-            <h2 style={{ fontSize: "clamp(28px, 3.4vw, 40px)", marginTop: 0 }}>{d.en.title}</h2>
-            <p className="small muted">Draft for legal review. Version {LEGAL_VERSION}. The Bahasa Indonesia version above prevails.</p>
+            <h1 style={{ fontSize: "clamp(32px, 4.4vw, 48px)" }}>{d.en.title}</h1>
+            <div className="notice warn" style={{ marginTop: 20 }}>
+              <p><strong>Draft for legal review.</strong> Version {LEGAL_VERSION}. This document is being reviewed by Indonesian legal counsel. It is not legal advice and does not claim compliance with any regulation. Sections in [square brackets] await a final decision.</p>
+              <p><strong>Official language.</strong> The Bahasa Indonesia version is the official version of this document and prevails if the two differ. This English translation is provided for convenience. <a href="#bahasa-indonesia">Read the Bahasa Indonesia version ↓</a></p>
+            </div>
             <Body v={d.en} />
           </div>
-          <h2>Sumber · Sources consulted</h2>
+          <hr className="rule" style={{ margin: "56px 0 24px" }} />
+          <div lang="id" id="bahasa-indonesia">
+            <div className="eyebrow">Official version · Bahasa Indonesia</div>
+            <h2 style={{ fontSize: "clamp(26px, 3.2vw, 36px)", marginTop: 0 }}>{d.id.title}</h2>
+            <Body v={d.id} />
+          </div>
+          <h2>Sources consulted</h2>
           <ul className="small">{LEGAL_SOURCES.map((s) => <li key={s.href}><a href={s.href} rel="noopener noreferrer" target="_blank">{s.label}</a></li>)}</ul>
-          <p className="small muted">Pertanyaan / Questions: <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>.</p>
+          <p className="small muted">Questions: <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>.</p>
         </article>
       </div>
     </section>

@@ -24,28 +24,25 @@ export default async function Home() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       {/* 1 · Hero */}
-      <section className="hero dark">
-        <div className="wrap hero-grid">
-          <div>
-            <Eyebrow>IELSco · Global Impact Fellowship</Eyebrow>
-            <h1>Eight days, three countries, <em>one project</em> that matters.</h1>
-            <p className="lead" style={{ marginTop: 24 }}>GIF Summer 2027 takes high school, undergraduate and college students from Singapore through Malaysia to Thailand to build social impact projects with peers from across the region.</p>
-            <div className="btn-row" style={{ marginTop: 28 }}>
-              <Link className="btn btn-light" href="/apply" data-track="apply_click">Apply Now</Link>
-              <Link className="btn btn-secondary" href="/opportunities" data-track="explore_click">Explore Opportunities</Link>
-            </div>
-            <dl className="hero-meta">
-              <div><dt>Dates</dt><dd>27 Jul – 3 Aug 2027</dd></div>
-              <div><dt>Route</dt><dd>SG → MY → TH</dd></div>
-              <div><dt>Duration</dt><dd>8 days, 7 nights</dd></div>
-              <div><dt>Delegates</dt><dd>Up to {s.slots.capacity}</dd></div>
-            </dl>
+      <section className="hero" aria-labelledby="hero-heading">
+        <div className="hero-bg" aria-hidden="true">
+          <Image src={PHOTOS.museumGroup.src} alt="" fill priority sizes="100vw" />
+        </div>
+        <div className="wrap hero-inner">
+          <Image className="gif-mark" src="/brand/gif-logo.png" alt="Global Impact Fellowship" width={238} height={87} priority style={{ height: 72, width: "auto" }} />
+          <p className="eyebrow" style={{ justifyContent: "center" }}>Summer 2027 · Singapore, Malaysia, Thailand</p>
+          <h1 id="hero-heading">Eight days, three countries, one project that <span className="accent">matters</span>.</h1>
+          <p className="lead">GIF Summer 2027 takes high school, undergraduate and college students from Singapore through Malaysia to Thailand to build social impact projects with peers from across the region.</p>
+          <div className="btn-row">
+            <Link className="btn btn-primary" href="/apply" data-track="apply_click">Apply Now <span aria-hidden="true">→</span></Link>
+            <Link className="btn btn-secondary" href="/opportunities" data-track="explore_click">Explore Opportunities</Link>
           </div>
-          <div className="hero-photos" aria-label="GIF 2026 in Singapore">
-            <figure style={{ aspectRatio: "3 / 4.4" }}><Image src={PHOTOS.nusSign.src} alt={PHOTOS.nusSign.alt} fill sizes="(min-width: 960px) 28vw, 55vw" priority style={{ objectFit: "cover" }} /><figcaption>GIF 2026 at NUS, Singapore</figcaption></figure>
-            <figure style={{ aspectRatio: "3 / 3.4" }}><Image src={PHOTOS.jewel.src} alt={PHOTOS.jewel.alt} fill sizes="(min-width: 960px) 20vw, 45vw" priority style={{ objectFit: "cover" }} /><figcaption>Jewel Changi</figcaption></figure>
-            <figure style={{ aspectRatio: "3 / 3.4" }}><Image src={PHOTOS.marina.src} alt={PHOTOS.marina.alt} fill sizes="(min-width: 960px) 20vw, 45vw" style={{ objectFit: "cover" }} /><figcaption>Marina Bay</figcaption></figure>
-          </div>
+          <ul className="hero-facts" aria-label="Programme facts">
+            <li className="pill">27 Jul – 3 Aug 2027</li>
+            <li className="pill">SG → MY → TH</li>
+            <li className="pill">8 days, 7 nights</li>
+            <li className="pill">Up to {s.slots.capacity} delegates</li>
+          </ul>
         </div>
       </section>
       <DeadlineStrip s={s} />
@@ -62,7 +59,7 @@ export default async function Home() {
           </div>
           <div className="grid g4">
             {[["Who", "High school, undergraduate and college students."], ["How", "Individually or in teams of 2–3 (maximum 3)."], ["Where", "Singapore, Malaysia and Thailand, in that order."], ["When", "27 July – 3 August 2027. Applications from 25 November 2026."]].map(([k, v]) => (
-              <div className="item" key={k}><span className="kicker">{k}</span><p className="serif" style={{ fontSize: 21, lineHeight: 1.3 }}>{v}</p></div>
+              <div className="item" key={k}><span className="kicker">{k}</span><p style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.45, color: "var(--deep)", margin: 0 }}>{v}</p></div>
             ))}
           </div>
         </div>
@@ -127,7 +124,7 @@ export default async function Home() {
             <h2>Fifteen Tuesdays that take you straight to Phase 3.</h2>
             <p className="lead" style={{ marginTop: 20 }}>From 2 February to 11 May 2027, five student startup founders from NUS, UTM and Chulalongkorn guide you from problem to pitch. Mentees skip Phases 1 and 2 and are evaluated in Phase 3 exactly like everyone else.</p>
             <div className="grid g2" style={{ marginTop: 28 }}>
-              <div className="item"><span className="kicker">{m.tier === "early" ? "Early Bird" : "Regular"}</span><p className="serif" style={{ fontSize: 30 }}><Price idr={m.price.IDR} usd={m.price.USD} /></p></div>
+              <div className="item"><span className="kicker">{m.tier === "early" ? "Early Bird" : "Regular"}</span><p className="big-number"><Price idr={m.price.IDR} usd={m.price.USD} /></p></div>
               <div className="item"><span className="kicker">If selected</span><p>Cashback after verification: <Price idr={s.cashback.fully_funded.IDR} usd={s.cashback.fully_funded.USD} /> (Fully Funded) or <Price idr={s.cashback.partial_funded.IDR} usd={s.cashback.partial_funded.USD} /> (Partial Funded).</p></div>
             </div>
             <div className="btn-row" style={{ marginTop: 20 }}><Link className="btn btn-light" href="/apply?pathway=mentoring" data-track="pathway_select" data-pathway="mentoring">Join the mentoring</Link><Link className="btn btn-secondary" href="/mentoring">See all 15 sessions</Link></div>
@@ -142,9 +139,9 @@ export default async function Home() {
           <div className="head side"><div><Eyebrow n="07">Self-Funded</Eyebrow><h2>Register directly. No essay, no deck, no video.</h2></div>
             <p className="lead">Secure a place by paying the deposit. Your seat is confirmed only when the deposit is verified; the balance is paid during participant preparation.</p></div>
           <div className="grid g3">
-            <div className="item"><span className="kicker">Programme fee</span><p className="serif" style={{ fontSize: 30 }}><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p></div>
-            <div className="item"><span className="kicker">Deposit (confirms your seat)</span><p className="serif" style={{ fontSize: 30 }}><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p></div>
-            <div className="item"><span className="kicker">Balance</span><p className="serif" style={{ fontSize: 30 }}><Price idr={bal.IDR} usd={bal.USD} /></p></div>
+            <div className="item"><span className="kicker">Programme fee</span><p className="big-number"><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p></div>
+            <div className="item"><span className="kicker">Deposit (confirms your seat)</span><p className="big-number"><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p></div>
+            <div className="item"><span className="kicker">Balance</span><p className="big-number"><Price idr={bal.IDR} usd={bal.USD} /></p></div>
           </div>
           <p className="small muted" style={{ marginTop: 20 }}>Indonesian participants pay the IDR price; international participants pay the USD price. <Link href="/self-funded">What the fee covers and how to pay</Link>.</p>
         </div>

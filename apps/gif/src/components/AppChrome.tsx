@@ -9,10 +9,10 @@ export function AppHeader({ email, staff }: { email: string; staff: boolean }) {
       <div className="wrap" style={{ maxWidth: "none" }}>
         <div className="bar">
           <Link href="/" className="brand" aria-label="GIF Summer 2027 home">
-            <Image src="/brand/iels-navy.png" alt="IELSco" width={100} height={26} />
-            <span className="word">Global Impact Fellowship<small>{staff ? "Admin" : "Applicant portal"}</small></span>
+            <Image className="gif-logo" src="/brand/gif-logo.png" alt="Global Impact Fellowship" width={238} height={87} priority />
+            <span className="by">{staff ? "Admin" : "Applicant portal"}<br />Summer 2027</span>
           </Link>
-          <div className="header-cta">
+          <div className="header-cta" style={{ marginLeft: "auto" }}>
             <span className="small muted" style={{ display: "none" }}>{email}</span>
             {staff && <Link className="btn btn-secondary btn-sm" href="/admin">Admin</Link>}
             <form action={signOutAction}><button className="btn btn-quiet btn-sm">Sign out</button></form>

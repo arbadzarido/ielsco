@@ -36,7 +36,15 @@ to production when a PR is merged to `main`**, so merging this PR creates the `g
 
 ## 4. DNS and SSL
 
-Add `gif.ielsco.com` to the new Vercel project → Vercel shows the record; at the DNS host of ielsco.com add
+**Current state (checked 21 Nov 2026):** `gif.ielsco.com` is attached as a domain of the main `ielsco` Vercel project
+(team ielscommunity), so visitors get the IELSco homepage. There is no GIF Vercel project yet. Fix, in order:
+
+1. Create the `gif` project (§1–3 above) and wait for a green deployment on its `*.vercel.app` URL.
+2. Main `ielsco` project → Settings → Domains → remove `gif.ielsco.com` (only that entry; leave ielsco.com / www untouched).
+3. `gif` project → Settings → Domains → add `gif.ielsco.com`. DNS already points at Vercel, so it verifies immediately.
+4. Check `https://gif.ielsco.com/api/health` and that `https://www.ielsco.com` still serves the IELSco site.
+
+If the domain was never attached elsewhere: add `gif.ielsco.com` to the new Vercel project → Vercel shows the record; at the DNS host of ielsco.com add
 `CNAME gif → cname.vercel-dns.com` (or the value Vercel displays). SSL is issued automatically once the record resolves.
 Verify: `https://gif.ielsco.com/api/health` returns `{"ok":true,...}`.
 

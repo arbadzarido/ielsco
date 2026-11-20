@@ -128,8 +128,8 @@ export default function ApplyWizard({ email, initial, initialPathway, open, docs
               <p className="muted">Add each member&rsquo;s own details. They will get an email invitation and sign in with that address to accept the terms and see their payments. Maximum 3 people including you.</p>
               {errors.members && <p className="error" role="alert">{errors.members}</p>}
               {d.members!.map((m, i) => (
-                <fieldset key={i} className="panel" style={{ background: "var(--paper)" }}>
-                  <legend style={{ fontFamily: "var(--serif)", fontSize: 22 }}>Member {i + 2}</legend>
+                <fieldset key={i} className="panel" style={{ background: "var(--soft)" }}>
+                  <legend style={{ fontFamily: "var(--heading)", fontSize: 20 }}>Member {i + 2}</legend>
                   <PersonForm p={m} prefix={`members.${i}`} errors={errors} onChange={(f, v) => setPerson(i, f, v)} />
                   <button type="button" className="btn btn-danger btn-sm" style={{ marginTop: 14 }} onClick={() => set({ members: d.members!.filter((_, j) => j !== i) })}>Remove member {i + 2}</button>
                 </fieldset>
