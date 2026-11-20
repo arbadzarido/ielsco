@@ -53,7 +53,12 @@ function newOrderId(prefix: string, kind: string) {
   return `${prefix}-${k}-${Date.now().toString(36).toUpperCase()}-${randomBytes(4).toString("hex").toUpperCase()}`;
 }
 
-export async function startCheckout(accountId: string, obligationId: string, opts: { idrOption?: boolean } = {}): Promise<{ redirectUrl: string; orderId: string }> {
+export type CheckoutOut = { redirectUrl: string; orderId: string; token: string | null; snap: { clientKey: string; scriptUrl: string } | null; reused: boolean };
+
+// Payment attempts (docs/gif-platform/PAYMENTS.md, "Attempts"): an obligation has many attempts, each with its own Midtrans
+// order_id. "Pay" reopens the open attempt (Continue payment) unless the payer cancelled it or, after Midtrans refused a
+// cancellation, explicitly asked for a new one (opts.forceNew). Closing the Snap popup changes nothing on the server.
+export async function startCheckout(accountId: string, obligationId: string, opts: { idrOption?: boolean; forceNew?: boolean } = {}): Promise<CheckoutOut> {
   const cohort = await currentCohort();
   const s = cohort.settings;
   const ob = await loadObligation(null, obligationId);
@@ -87,28 +92,46 @@ export async function startCheckout(accountId: string, obligationId: string, opt
   // never produces two charges; the lock makes concurrent clicks wait for each other.
   const prep = await tx(async (db) => {
     await loadObligation(db, obligationId, true);
-    const live = (await db.query<{ order_id: string; checkout_url: string }>(
-      `select order_id, checkout_url from gif.payments where obligation_id = $1 and gateway = 'midtrans' and status in ('created', 'pending')
-       and checkout_url is not null and checkout_expires_at > now() + interval '2 minutes' and amount = $2 order by created_at desc limit 1`, [obligationId, amountIdr])).rows[0];
-    if (live) return { reuse: live };
+    const open = (await db.query<{ id: string; order_id: string; checkout_url: string | null; snap_token: string | null; status: string; cancel_result: string | null; amount: number; live: boolean; fresh: boolean }>(
+      `select id, order_id, checkout_url, snap_token, status, cancel_result, amount::float8 as amount,
+         (checkout_url is not null and checkout_expires_at > now() + interval '2 minutes') as live,
+         (checkout_url is null and created_at > now() - interval '1 minute') as fresh
+       from gif.payments where obligation_id = $1 and gateway = 'midtrans' and status in ('created', 'pending', 'cancelling')
+       order by created_at desc`, [obligationId])).rows;
+    // A cancellation is being confirmed with Midtrans: wait for it rather than opening a second order next to it.
+    if (open.some((p) => p.status === "cancelling")) throw new PaymentError("Your previous payment is being cancelled. This takes a few seconds; please try again.", "cancelling");
+    // Two clicks at the same moment: the first is still creating its payment page.
+    if (open.some((p) => p.fresh)) throw new PaymentError("Your payment page is being prepared. Please try again in a few seconds.", "in_progress");
+    const live = open.find((p) => p.live && Math.round(p.amount) === amountIdr);
+    if (live && !opts.forceNew) return { reuse: live };
+    if (live && opts.forceNew && live.cancel_result !== "not_cancellable") {
+      throw new PaymentError("Cancel your previous payment first (Cancel & change payment method), then choose a new method.", "open_attempt");
+    }
     const orderId = newOrderId(cohort.code_prefix, ob.kind);
-    await db.query(`insert into gif.payments (obligation_id, application_id, participant_id, kind, gateway, order_id, amount, currency, status, created_by, checkout_expires_at)
-      values ($1, $2, $3, $4, 'midtrans', $5, $6, 'IDR', 'created', $7, now() + make_interval(mins => $8))`,
-      [ob.id, ob.application_id, ob.participant_id, ob.kind, orderId, amountIdr, accountId, CHECKOUT_MINUTES]);
+    const id = (await db.query<{ id: string }>(`insert into gif.payments (obligation_id, application_id, participant_id, kind, gateway, order_id, amount, currency, status, created_by, checkout_expires_at)
+      values ($1, $2, $3, $4, 'midtrans', $5, $6, 'IDR', 'created', $7, now() + make_interval(mins => $8)) returning id`,
+      [ob.id, ob.application_id, ob.participant_id, ob.kind, orderId, amountIdr, accountId, CHECKOUT_MINUTES])).rows[0].id;
+    // Link the earlier attempts this one replaces (cancelled, expired, failed, or still pending after a refused cancellation).
+    await db.query(`update gif.payments set replaced_by = $2 where obligation_id = $1 and id <> $2 and replaced_by is null
+      and gateway = 'midtrans' and status in ('cancelled', 'expired', 'failed', 'pending', 'created')`, [ob.id, id]);
     return { orderId };
   });
-  if ("reuse" in prep && prep.reuse) return { redirectUrl: prep.reuse.checkout_url, orderId: prep.reuse.order_id };
+  const snapInfo = gw!.snap;
+  if ("reuse" in prep && prep.reuse) {
+    const r = prep.reuse;
+    return { redirectUrl: r.checkout_url!, orderId: r.order_id, token: r.snap_token, snap: r.snap_token ? snapInfo : null, reused: true };
+  }
   const orderId = (prep as { orderId: string }).orderId;
   try {
-    const { redirectUrl } = await gw!.createCheckout({
+    const { redirectUrl, token } = await gw!.createCheckout({
       orderId, amount: amountIdr, currency: "IDR", itemId: `${ob.code}-${ob.kind}`, itemName: ob.label,
       customer: { name: ob.legal_name, email: ob.email, phone: ob.whatsapp },
       finishUrl: `${siteUrl()}/portal/payments/return?order_id=${encodeURIComponent(orderId)}`,
       notificationUrl: `${siteUrl()}/api/payments/midtrans/notification`, expiryMinutes: CHECKOUT_MINUTES,
     });
-    await q("update gif.payments set checkout_url = $2, updated_at = now() where order_id = $1", [orderId, redirectUrl]);
+    await q("update gif.payments set checkout_url = $2, snap_token = $3, updated_at = now() where order_id = $1", [orderId, redirectUrl, token]);
     await recordServerEvent("payment_initiated", { pathway: ob.pathway, kind: ob.kind });
-    return { redirectUrl, orderId };
+    return { redirectUrl, orderId, token, snap: snapInfo, reused: false };
   } catch (e) {
     await q("update gif.payments set status = 'failed', updated_at = now() where order_id = $1", [orderId]);
     console.error("[gif] checkout failed", (e as Error).message);
@@ -136,8 +159,8 @@ export async function syncFromGateway(orderId: string, source: "webhook" | "stat
 export async function applyStatus(orderId: string, source: "webhook" | "status_check", st: GatewayStatus, notification?: Record<string, unknown>, signatureOk?: boolean) {
   const cohort = await currentCohort();
   const outcome = await tx(async (db) => {
-    const pay = (await db.query<{ id: string; obligation_id: string; application_id: string; participant_id: string; amount: number; currency: string; status: string; kind: string; is_duplicate: boolean }>(
-      "select id, obligation_id, application_id, participant_id, amount, currency, status, kind, is_duplicate from gif.payments where order_id = $1 for update", [orderId])).rows[0];
+    const pay = (await db.query<{ id: string; obligation_id: string; application_id: string; participant_id: string; amount: number; currency: string; status: string; kind: string; is_duplicate: boolean; cancel_requested_at: string | null }>(
+      "select id, obligation_id, application_id, participant_id, amount, currency, status, kind, is_duplicate, cancel_requested_at from gif.payments where order_id = $1 for update", [orderId])).rows[0];
     if (!pay) return { applied: false, reason: "unknown_order" };
     const dedupe = `${orderId}:${source}:${st.transactionStatus}:${st.fraudStatus ?? ""}`;
     const ev = await db.query(`insert into gif.payment_events (payment_id, order_id, source, transaction_status, fraud_status, status_code, gross_amount, signature_ok, dedupe_key, payload)
@@ -151,7 +174,7 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
       await audit("system", "payment_amount_mismatch", "payment", pay.id, { orderId, expected: pay.amount, got: st.amount, currency: st.currency }, null, db);
       return { applied: false, reason: "amount_mismatch" };
     }
-    const cur = pay.status as Normalized | "created";
+    const cur = pay.status as Normalized | "created" | "cancelling";
     // Monotonic: a settled payment can only move to refunded; refunded never goes back.
     if (cur === "paid" && !["refunded", "partially_refunded"].includes(next)) next = "paid";
     if ((cur === "refunded") || (cur === "partially_refunded" && next !== "refunded")) next = cur;
@@ -183,8 +206,10 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
         if (pay.kind === "elco_pro") sideEffects.push(() => autoActivatePending(pay.application_id).then(() => {}));
       }
     } else if (TERMINAL_UNPAID.includes(next)) {
-      await db.query("update gif.payments set status = $2, payment_type = coalesce($3, payment_type), updated_at = now() where id = $1", [pay.id, next, st.paymentType]);
-      if (cur === "pending") {
+      await db.query(`update gif.payments set status = $2, payment_type = coalesce($3, payment_type), updated_at = now(),
+        cancel_result = case when cancel_requested_at is not null and $2 = 'cancelled' then 'cancelled' else cancel_result end where id = $1`, [pay.id, next, st.paymentType]);
+      // A payer who cancelled on purpose doesn't get a "payment failed" email.
+      if (cur === "pending" && !pay.cancel_requested_at) {
         const who = (await db.query<{ legal_name: string; email: string; label: string }>(
           "select p.legal_name, p.email, o.label from gif.participants p join gif.obligations o on o.participant_id = p.id where o.id = $1", [pay.obligation_id])).rows[0];
         const m = paymentFailedEmail(who.legal_name, who.label);
@@ -192,8 +217,10 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
       }
       sideEffects.push(() => recordServerEvent("payment_failed", { kind: pay.kind, status: next }));
     } else if (next === "pending") {
-      await db.query("update gif.payments set status = 'pending', payment_type = $2, gateway_txn_id = coalesce($3, gateway_txn_id), updated_at = now() where id = $1",
-        [pay.id, st.paymentType, st.transactionId]);
+      // While a cancellation is being confirmed the attempt stays "cancelling"; the cancel flow settles it.
+      await db.query(`update gif.payments set status = case when status = 'cancelling' then 'cancelling' else 'pending' end, payment_type = $2,
+        gateway_txn_id = coalesce($3, gateway_txn_id), updated_at = now() where id = $1`, [pay.id, st.paymentType, st.transactionId]);
+      if (cur === "cancelling") return { applied: false, reason: "cancelling" };
     } else if (next === "refunded" || next === "partially_refunded") {
       await db.query("update gif.payments set status = $2, updated_at = now() where id = $1", [pay.id, next]);
       if (!pay.is_duplicate) await db.query("update gif.obligations set status = $2, updated_at = now() where id = $1", [pay.obligation_id, next]);
@@ -225,7 +252,7 @@ export async function recompute(db: pg.PoolClient, applicationId: string, actor:
   const obs = (await db.query<{ id: string; kind: string; status: string; participant_id: string }>(
     `select o.id, o.kind, o.status, o.participant_id from gif.obligations o join gif.participants p on p.id = o.participant_id
      where o.application_id = $1 and o.status <> 'cancelled' and p.withdrawn_at is null`, [applicationId])).rows;
-  const pending = (await db.query<{ obligation_id: string }>("select obligation_id from gif.payments where application_id = $1 and status = 'pending'", [applicationId])).rows;
+  const pending = (await db.query<{ obligation_id: string }>("select obligation_id from gif.payments where application_id = $1 and status in ('pending', 'cancelling')", [applicationId])).rows;
   const settled = (o: { status: string }) => o.status === "paid" || o.status === "waived";
   const paymentStatus = obs.length === 0 ? "none" : obs.every(settled) ? "paid" : obs.some((o) => o.status === "refunded") && !obs.some(settled) ? "refunded"
     : pending.length ? "pending" : obs.some(settled) ? "partially_paid" : "due";

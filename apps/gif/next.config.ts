@@ -5,14 +5,19 @@ import { fileURLToPath } from "node:url";
 const root = dirname(fileURLToPath(import.meta.url));
 
 const supabase = (process.env.GIF_SUPABASE_URL || "https://hkubzamchahvdpvojepc.supabase.co").replace(/\/+$/, "");
+// Midtrans Snap popup (snap.js + its payment iframe). The local fake Midtrans is allowed only for sandbox test runs.
+const testGateway = (process.env.GIF_MIDTRANS_TEST_BASE || "").replace(/\/+$/, "");
+const allowTest = !!testGateway && (process.env.GIF_MIDTRANS_ENV || "sandbox") === "sandbox"
+  && (process.env.NODE_ENV !== "production" || process.env.GIF_ALLOW_TEST_GATEWAY === "true");
+const snap = ["https://app.midtrans.com", "https://app.sandbox.midtrans.com", ...(allowTest ? [testGateway] : [])].join(" ");
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
+  `script-src 'self' 'unsafe-inline' ${snap}` + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://*.midtrans.com",
   "font-src 'self' data:",
-  `connect-src 'self' ${supabase}`,
-  "frame-src 'none'",
+  `connect-src 'self' ${supabase} ${snap} https://api.midtrans.com https://api.sandbox.midtrans.com`,
+  `frame-src ${snap} https://*.midtrans.com`,
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",

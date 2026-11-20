@@ -26,6 +26,9 @@ export async function GET(req: Request) {
   const cohort = await currentCohort();
   const s = cohort.settings;
 
+  // 0. A cancellation interrupted mid-way (server restart): put the attempt back to what it was; the sync below re-reads it.
+  out.unstuck = (await q(`update gif.payments set status = coalesce(cancel_prev_status, 'pending'), cancel_result = 'gateway_error', updated_at = now()
+    where status = 'cancelling' and cancel_requested_at < now() - interval '10 minutes' returning id`)).length;
   // 1. Reconcile payments still waiting (missed notifications): re-read status from Midtrans.
   const pending = await q<{ order_id: string }>(`select order_id from gif.payments where gateway = 'midtrans' and status in ('created', 'pending')
     and created_at < now() - interval '10 minutes' and created_at > now() - interval '30 days' order by created_at limit 100`);

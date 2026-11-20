@@ -26,7 +26,8 @@ export type ParticipantRow = { id: string; application_id: string; account_id: s
   instagram: string | null; social_tasks: Record<string, { status: "submitted" | "verified" | "not_found"; at: string; by?: string; note?: string }> };
 export type ObligationRow = { id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD"; amount: number; due_at: string | null; status: string; paid_at: string | null };
 export type PaymentRow = { id: string; obligation_id: string; participant_id: string; kind: string; gateway: string; order_id: string; amount: number; currency: "IDR" | "USD";
-  status: string; payment_type: string | null; receipt_no: string | null; paid_at: string | null; created_at: string; is_duplicate: boolean; manual_reference: string | null };
+  status: string; payment_type: string | null; receipt_no: string | null; paid_at: string | null; created_at: string; is_duplicate: boolean; manual_reference: string | null;
+  cancel_result?: string | null; checkout_expires_at?: string | null };
 
 // The application an account belongs to in the current cohort: as its owner (leader) or as an invited member.
 export async function applicationForAccount(accountId: string): Promise<{ app: AppRow; isOwner: boolean; me: ParticipantRow | null } | null> {

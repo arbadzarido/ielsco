@@ -342,3 +342,5 @@ legend { font-weight: 700; margin-bottom: 10px; padding: 0; color: var(--deep); 
 .legal-nav a[aria-current="page"] { background: var(--soft); color: var(--deep); }
 .print-only { display: none; }
 @media print { .site-header, .site-footer, .app-side, .no-print, .cookie { display: none !important; } .print-only { display: block; } .app { background: #fff; } .main { padding: 0; } }
+.attempt { display: grid; gap: 8px; max-width: 360px; }
+.attempt p { margin: 0; }

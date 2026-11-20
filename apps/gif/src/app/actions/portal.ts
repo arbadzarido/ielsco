@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { acceptOffer, applicationForAccount, recordConsents, UserError, withdrawApplication } from "@/lib/applications";
 import { startCheckout, PaymentError, syncFromGateway } from "@/lib/payments/service";
+import { attemptState, cancelAttempt, resumeAttempt, type CancelResult } from "@/lib/payments/attempts";
 import { beginUpload, finishUpload, deleteOwnDocument, UploadError } from "@/lib/documents";
 import { savePhase } from "@/lib/phases";
 import { currentCohort } from "@/lib/cohort";
@@ -27,21 +28,51 @@ async function ctx() {
   return { account, found };
 }
 
-export async function payAction(_: ActionResult, fd: FormData): Promise<ActionResult> {
-  const { account } = await ctx();
-  let url: string;
+export type CheckoutResult = { error?: string; orderId?: string; token?: string | null; redirectUrl?: string; snap?: { clientKey: string; scriptUrl: string } | null } | null;
+
+// Opens (or reopens) the payment for an obligation. The browser shows Snap in a popup when it can, else follows redirectUrl.
+export async function payAction(obligationId: string, opts: { idrOption?: boolean; forceNew?: boolean } = {}): Promise<CheckoutResult> {
+  const account = await requireAccount();
   try {
     if (await overLimit(`checkout:${account.id}`, 20, 3600)) return { error: "Too many payment attempts. Please wait a while." };
-    const r = await startCheckout(account.id, String(fd.get("obligation_id")), { idrOption: fd.get("idr_option") === "1" });
-    url = r.redirectUrl;
+    const r = await startCheckout(account.id, String(obligationId), { idrOption: !!opts.idrOption, forceNew: !!opts.forceNew });
+    revalidatePath("/portal/payments");
+    return { orderId: r.orderId, token: r.token, redirectUrl: r.redirectUrl, snap: r.snap };
   } catch (e) {
     if (e instanceof PaymentError) return { error: e.message };
     throw e;
   }
-  redirect(url);
 }
 
-export async function checkPaymentAction(orderId: string): Promise<{ status: string }> {
+// Continue payment: reopen an open attempt (after checking it wasn't paid or expired meanwhile).
+export async function resumePaymentAction(orderId: string): Promise<CheckoutResult & { status?: string }> {
+  const account = await requireAccount();
+  try {
+    if (await overLimit(`resume:${account.id}`, 30, 600)) return { error: "Too many requests. Please wait a moment." };
+    const r = await resumeAttempt(account.id, String(orderId));
+    if (!r.token && !r.redirectUrl) return { status: r.status, error: r.status === "paid" ? undefined : "This payment can't be continued any more. Choose a payment method to start again." };
+    return { status: r.status, orderId, token: r.token, redirectUrl: r.redirectUrl ?? undefined, snap: r.snap };
+  } catch (e) {
+    if (e instanceof PaymentError) return { error: e.message };
+    throw e;
+  }
+}
+
+// Cancel & change payment method: cancels the attempt at Midtrans when it can be cancelled (see lib/payments/attempts.ts).
+export async function cancelPaymentAction(orderId: string): Promise<CancelResult> {
+  const account = await requireAccount();
+  if (await overLimit(`cancel:${account.id}`, 15, 600)) return { outcome: "error", status: "rate_limited", message: "Too many requests. Please wait a moment and try again." };
+  try {
+    const r = await cancelAttempt(account.id, String(orderId));
+    revalidatePath("/portal/payments");
+    return r;
+  } catch (e) {
+    if (e instanceof PaymentError) return { outcome: "error", status: "error", message: e.message };
+    throw e;
+  }
+}
+
+export async function checkPaymentAction(orderId: string): Promise<{ status: string; canContinue?: boolean; canCancel?: boolean; cancelResult?: string | null; obligationId?: string }> {
   const account = await requireAccount();
   const pay = await one<{ status: string; owner: string; pacct: string | null }>(
     `select p.status, a.owner_account_id as owner, pt.account_id as pacct from gif.payments p join gif.applications a on a.id = p.application_id
@@ -52,8 +83,9 @@ export async function checkPaymentAction(orderId: string): Promise<{ status: str
       await syncFromGateway(orderId, "status_check").catch(() => null);
     }
   }
-  const now = await one<{ status: string }>("select status from gif.payments where order_id = $1", [orderId]);
-  return { status: now?.status ?? "unknown" };
+  const now = await one<{ status: string; obligation_id: string }>("select status, obligation_id from gif.payments where order_id = $1", [orderId]);
+  const st = await attemptState(account.id, orderId);
+  return { status: now?.status ?? "unknown", canContinue: st?.canContinue, canCancel: st?.canCancel, cancelResult: st?.cancelResult, obligationId: now?.obligation_id };
 }
 
 export async function requestInvoiceAction(_: ActionResult, fd: FormData): Promise<ActionResult> {

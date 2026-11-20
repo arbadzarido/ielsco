@@ -8,6 +8,11 @@
 //   which also covers key rotation, when retries may still be signed with the old key.
 // - A notification is a hint, not proof: its status is re-read from the Get Status API before anything changes.
 // - Refunds: POST /v2/{order_id}/refund with refund_key (idempotent retries within 7 days), optional partial amount.
+// - Cancel: POST /v2/{order_id}/cancel voids a pending transaction (VA, e-wallet/QRIS, over-the-counter, cardless credit) or an
+//   unsettled card capture. Success = status_code "200" and transaction_status "cancel"; not allowed = status_code "412"
+//   ("Merchant cannot modify the status of the transaction"). Settled payments can't be cancelled (refund instead).
+// - Expire: POST /v2/{order_id}/expire moves a pending transaction to "expire" (success status_code "407"; 412 when not allowed).
+// - A Snap order where no method was chosen yet has no transaction: Get Status answers status_code "404".
 import { createHash, timingSafeEqual } from "node:crypto";
 
 export type MidtransEnv = "sandbox" | "production";
@@ -109,6 +114,20 @@ export async function getStatus(c: MidtransConfig, orderId: string): Promise<Mid
   if (body.status_code === "404") return null; // never created at Midtrans (e.g. Snap opened but no method chosen)
   if (!res.ok) throw new Error(`Midtrans status ${res.status}`);
   return body;
+}
+
+export type ModifyResult = { ok: boolean; statusCode: string | null; transactionStatus: string | null; message: string | null; raw: Record<string, unknown> };
+
+// POST /v2/{order}/cancel or /expire. Never throws on a Midtrans refusal: the caller re-reads the authoritative status anyway.
+export async function modifyTransaction(c: MidtransConfig, orderId: string, action: "cancel" | "expire"): Promise<ModifyResult> {
+  const res = await fetch(`${c.apiBase}/v2/${encodeURIComponent(orderId)}/${action}`, {
+    method: "POST", headers: { Authorization: auth(c.serverKey), Accept: "application/json", "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = (await res.json().catch(() => ({}))) as { status_code?: string; transaction_status?: string; status_message?: string; [k: string]: unknown };
+  const statusCode = body.status_code != null ? String(body.status_code) : null;
+  const ok = action === "cancel" ? statusCode === "200" && body.transaction_status === "cancel" : statusCode === "407" && body.transaction_status === "expire";
+  return { ok, statusCode, transactionStatus: body.transaction_status ?? null, message: body.status_message ?? null, raw: body };
 }
 
 export async function refund(c: MidtransConfig, orderId: string, refundKey: string, amountIdr: number, reason: string) {
