@@ -1,0 +1,34 @@
+{
+  "name": "gif-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Global Impact Fellowship programme platform (gif.ielsco.com)",
+  "scripts": {
+    "dev": "next dev -p 3400",
+    "build": "next build",
+    "start": "next start -p 3400",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"tests/unit/*.test.ts\"",
+    "e2e": "node tests/e2e/run.mjs"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "pg": "8.20.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "server-only": "^0.0.1",
+    "sharp": "0.34.5",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.37",
+    "@types/pg": "8.18.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "playwright": "1.49.1",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
