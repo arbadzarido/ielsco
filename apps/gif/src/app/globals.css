@@ -1,3 +1,131 @@
+.site-footer .logos .sep { width: 1px; height: 28px; background: var(--hairline); }
+.site-footer .bottom { border-top: 1px solid var(--hairline); }
+.site-footer .bottom .wrap { display: flex; flex-direction: column; gap: 8px; padding-top: 22px; padding-bottom: 22px; font-size: 13px; color: rgba(47,65,87,.6); }
+@media (min-width: 640px) { .site-footer .bottom .wrap { flex-direction: row; justify-content: space-between; align-items: center; } }
+
+/* App shells (portal + admin), same tokens as the IELSco dashboard */
+.app { display: grid; grid-template-rows: auto 1fr; min-height: calc(100vh - 73px); background: var(--soft); }
+@media (min-width: 980px) { .app { grid-template-columns: 248px minmax(0, 1fr); grid-template-rows: none; } }
+.app-side { border-right: 1px solid var(--hairline); background: var(--white); padding: 20px 16px; }
+.app-side nav { display: flex; flex-wrap: wrap; gap: 4px; }
+.app-side nav a { display: block; padding: 9px 14px; border-radius: 12px; text-decoration: none; color: var(--navy); font-size: 15px; font-weight: 600; }
+.app-side nav a:hover { background: var(--soft); }
+.app-side nav a[aria-current="page"] { background: var(--navy); color: var(--white); }
+.app-side .who { font-size: 13px; color: var(--muted); margin: 0 4px 14px; word-break: break-all; }
+@media (min-width: 980px) { .app-side nav { flex-direction: column; flex-wrap: nowrap; } }
+.main { padding: 28px var(--gutter) 64px; min-width: 0; }
+@media (min-width: 980px) { .main { padding: 40px 40px 72px; } }
+.main h1 { font-size: 30px; margin-bottom: 8px; }
+@media (min-width: 640px) { .main h1 { font-size: 36px; } }
+.main h2 { font-size: 22px; margin: 36px 0 14px; }
+.main > .notice, .main > p { max-width: 900px; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.kpis div { padding: 16px 18px; border: 1px solid var(--hairline); border-radius: 16px; background: var(--white); }
+.kpis dt { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); font-weight: 700; }
+.kpis dd { margin: 6px 0 0; font-family: var(--heading); font-size: 24px; font-weight: 800; color: var(--deep); }
+@media (min-width: 900px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.progress { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; background: var(--white); border: 1px solid var(--hairline); border-radius: var(--radius-card); overflow: hidden; }
+.progress li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--hairline); }
+.progress li:last-child { border-bottom: 0; }
+.progress .dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--field); display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 2px; color: var(--muted); }
+.progress li.done .dot { background: var(--ok); border-color: var(--ok); color: var(--white); }
+.progress li.current .dot { border-color: var(--coral); background: var(--err-bg); color: var(--coral-dark); }
+.progress strong { display: block; color: var(--deep); }
+.progress a strong { color: var(--navy); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 16px 0; }
+.toolbar .field { min-width: 160px; }
+.pill-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 18px; }
+.pill-tabs a { padding: 7px 14px; border: 1px solid var(--field); border-radius: 999px; text-decoration: none; font-size: 14px; font-weight: 600; color: var(--navy); background: var(--white); }
+.pill-tabs a[aria-current="page"] { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.kv { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 0; font-size: 15px; }
+.kv dt, .kv dd { padding: 10px 0; border-bottom: 1px solid var(--hairline); margin: 0; }
+.kv dt { color: var(--muted); padding-right: 12px; }
+.main .item, .main .grid > .item { background: var(--white); }
+.main .notice:not(.warn):not(.ok):not(.err) { background: var(--white); }
+.cookie { position: fixed; z-index: 60; left: 12px; right: 12px; bottom: 12px; max-width: 520px; background: var(--white); border: 1px solid var(--hairline); border-radius: var(--radius-card); padding: 18px; box-shadow: 0 16px 40px rgba(26, 37, 52, .12); font-size: 14px; }
+.legal-doc { max-width: 76ch; }
+.legal-doc h2 { font-size: 24px; margin: 36px 0 10px; }
+.legal-doc h3 { font-size: 19px; margin: 24px 0 8px; }
+.legal-doc li { margin-bottom: 6px; }
+.legal-doc ul { padding-left: 20px; }
+.legal-nav { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.legal-nav a { display: block; padding: 8px 12px; border-radius: 12px; text-decoration: none; color: var(--navy); font-size: 15px; font-weight: 600; }
+.legal-nav a:hover { background: var(--soft); }
+.legal-nav a[aria-current="page"] { background: var(--soft); color: var(--deep); }
+.print-only { display: none; }
+@media print { .site-header, .site-footer, .app-side, .no-print, .cookie { display: none !important; } .print-only { display: block; } .app { background: #fff; } .main { padding: 0; } }
+.attempt { display: grid; gap: 8px; max-width: 360px; }
+.attempt p { margin: 0; }
+
+
+/* ══ GIF brand layer ═══════════════════════════════════════════════════════════════════════════════════════════════
+   IELSco provides the design language (type, spacing, cards, buttons, header/footer). GIF adds its own colour identity:
+   Amber #B8862E and Nightfall #304156, with restrained layered gradients and real photography of the three countries.
+   These tokens live only in apps/gif; the main IELSco site and Elco are untouched.
+   Contrast (WCAG 2.1): amber #B8862E is 3.2:1 on white and on Nightfall, so it is used for rules, icons, large figures and
+   accents only. Amber TEXT uses --gif-amber-ink on light (5.3:1) and --gif-amber-soft on Nightfall (5.6:1). No amber
+   buttons (16px label text would fail AA). White on Nightfall is 10.4:1; --gif-mist on Nightfall is 6.8:1. */
+:root {
+  --gif-amber: #B8862E;
+  --gif-amber-ink: #8C6420;
+  --gif-amber-soft: #E0B865;
+  --gif-amber-wash: #FBF5E9;
+  --gif-amber-line: #EAD9B8;
+  --gif-nightfall: #304156;
+  --gif-nightfall-mid: #26354A;
+  --gif-nightfall-deep: #1F2B3A;
+  --gif-mist: #C8D2DD;
+  --gif-grad-night: linear-gradient(160deg, var(--gif-nightfall) 0%, var(--gif-nightfall-mid) 55%, var(--gif-nightfall-deep) 100%);
+  --gif-glow-amber: radial-gradient(60% 90% at 88% 0%, rgba(184, 134, 46, 0.26) 0%, rgba(184, 134, 46, 0) 62%);
+  --gif-glow-amber-low: radial-gradient(70% 60% at 10% 100%, rgba(184, 134, 46, 0.16) 0%, rgba(184, 134, 46, 0) 65%);
+  --gif-photo-veil: linear-gradient(180deg, rgba(31, 43, 58, 0.10) 0%, rgba(31, 43, 58, 0.45) 50%, rgba(24, 34, 47, 0.92) 100%);
+  /* Nightfall is GIF's primary (practically IELSco navy #2F4157). Coral stays IELSco's error/alert colour; GIF accents use
+     the amber classes below instead of redefining --coral. */
+  --navy: var(--gif-nightfall);
+}
+.accent { color: var(--gif-amber-ink); }
+.dark .accent, .page-hero .accent, .gif-hero .accent { color: var(--gif-amber-soft); }
+::selection { background: var(--gif-amber-line); color: var(--deep); }
+
+/* Night bands: dark sections and the inner-page header carry depth (nightfall gradient + a soft amber glow). */
+.section.dark, .page-hero {
+  background-color: var(--gif-nightfall);
+  background-image: var(--gif-glow-amber), var(--gif-glow-amber-low), var(--gif-grad-night);
+}
+.page-hero { position: relative; border-bottom: 1px solid rgba(224, 184, 101, 0.28); }
+.dark .eyebrow, .page-hero .eyebrow { color: var(--gif-amber-soft); }
+.dark .kicker { color: var(--gif-amber-soft); }
+.dark .lead, .page-hero .lead { color: var(--gif-mist); }
+.dark .muted { color: var(--gif-mist); }
+.eyebrow { color: var(--gif-amber-ink); }
+.kicker { color: var(--teal); }
+.dark .item { background: rgba(255, 255, 255, 0.05); border-color: rgba(200, 210, 221, 0.22); }
+.dark .timeline li.key::before { background: var(--gif-amber); border-color: var(--gif-amber); }
+.timeline li.key::before { background: var(--gif-amber); border-color: var(--gif-amber); }
+.timeline .when { color: var(--gif-amber-ink); }
+.dark .timeline .when { color: var(--gif-amber-soft); }
+.index-num { background: var(--gif-amber-wash); color: var(--gif-amber-ink); box-shadow: inset 0 0 0 1px var(--gif-amber-line); }
+.pathway.ff { border-top-color: var(--gif-amber); }
+.pathway.mt { border-top-color: var(--teal); }
+.pathway:not(.ff):not(.mt) { border-top-color: var(--gif-nightfall); }
+.badge.maroon { background: var(--gif-amber-wash); color: var(--gif-amber-ink); }
+.strip { background: var(--gif-amber-wash); border-bottom-color: var(--gif-amber-line); }
+.strip .countdown .units b { color: var(--gif-nightfall); }
+.steps-nav li[aria-current="step"] { background: var(--gif-nightfall); border-color: var(--gif-nightfall); }
+details.faq[open] { border-color: var(--gif-amber-line); }
+details.faq[open] summary::after { background: var(--gif-amber-wash); color: var(--gif-amber-ink); }
+
+/* ── Home hero: Marina Bay at dusk under a Nightfall gradient ─────────────────────────────────────────────────────── */
+.gif-hero { position: relative; isolation: isolate; overflow: hidden; color: #fff; background: var(--gif-nightfall-deep); }
+.gif-hero .bg { position: absolute; inset: 0; z-index: -2; }
+.gif-hero .bg img { object-fit: cover; object-position: 50% 55%; }
+.gif-hero::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(31, 43, 58, 0.55) 0%, rgba(31, 43, 58, 0.62) 45%, rgba(24, 34, 47, 0.96) 100%),
+              radial-gradient(55% 70% at 50% 38%, rgba(48, 65, 86, 0.45) 0%, rgba(48, 65, 86, 0) 70%),
+              radial-gradient(45% 50% at 85% 100%, rgba(184, 134, 46, 0.22) 0%, rgba(184, 134, 46, 0) 70%); }
+.gif-hero .inner { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 72px 0 40px; }
+@media (min-width: 768px) { .gif-hero .inner { padding: 112px 0 56px; } }
+.gif-hero .mark { height: 64px; width: auto; filter: brightness(0) invert(1); margin-bottom: 18px; }
 .gif-hero .eyebrow { justify-content: center; color: var(--gif-amber-soft); }
 .gif-hero h1 { color: #fff; max-width: 980px; font-size: 36px; line-height: 1.06; }
 @media (min-width: 640px) { .gif-hero h1 { font-size: 50px; } }
@@ -30,70 +158,3 @@
 .dest::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--gif-amber), rgba(184, 134, 46, 0)); }
 @media (hover: hover) { .dest:hover .ph img { transform: scale(1.03); } }
 .dest .body { padding: 24px; }
-.dest .stop { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gif-amber-soft); }
-.dest h3 { color: #fff; font-size: 26px; margin: 8px 0 2px; display: flex; align-items: center; gap: 10px; }
-.dest .flag { font-size: 24px; line-height: 1; }
-.dest .where { font-size: 14px; font-weight: 600; color: #E4E9EF; }
-.dest p { color: var(--gif-mist); font-size: 15px; margin: 10px 0 0; }
-.dest .photo-credit { position: absolute; top: 10px; right: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
-
-/* ── Campus references ────────────────────────────────────────────────────────────────────────────────────────────── */
-.campuses { display: grid; gap: 20px; }
-@media (min-width: 720px) { .campuses { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.campus { background: #fff; border: 1px solid var(--hairline); border-radius: var(--radius-card); overflow: hidden; display: flex; flex-direction: column; }
-.campus .ph { position: relative; aspect-ratio: 4 / 3; background: var(--soft); }
-.campus .ph img { object-fit: cover; }
-.campus .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(31, 43, 58, 0) 55%, rgba(31, 43, 58, 0.55) 100%); }
-.campus .ph .photo-credit { position: absolute; left: 10px; bottom: 8px; z-index: 1; }
-.campus .body { padding: 20px 22px 22px; display: grid; gap: 6px; }
-.campus .country { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
-.campus h3 { font-size: 19px; }
-
-/* ── Closing call to action: Singapore at dusk under Nightfall ────────────────────────────────────────────────────── */
-.cta-night { position: relative; isolation: isolate; overflow: hidden; color: var(--gif-mist); background: var(--gif-nightfall-deep); }
-.cta-night .bg { position: absolute; inset: 0; z-index: -2; }
-.cta-night .bg img { object-fit: cover; object-position: 50% 60%; }
-.cta-night::before { content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, rgba(31, 43, 58, 0.94) 0%, rgba(31, 43, 58, 0.72) 50%, rgba(31, 43, 58, 0.30) 100%), var(--gif-glow-amber); }
-@media (max-width: 899px) { .cta-night::before { background: linear-gradient(180deg, rgba(31, 43, 58, 0.55) 0%, rgba(31, 43, 58, 0.9) 100%); } }
-.cta-night h2 { color: #fff; }
-.cta-night .lead { color: #E4E9EF; }
-.cta-night .photo-credit { position: absolute; right: 12px; bottom: 8px; }
-
-/* ── Footer and app chrome ────────────────────────────────────────────────────────────────────────────────────────── */
-.site-footer { border-top: 0; box-shadow: inset 0 3px 0 0 var(--gif-amber); }
-.app-header-line { height: 3px; background: linear-gradient(90deg, var(--gif-nightfall) 0%, var(--gif-nightfall) 60%, var(--gif-amber) 100%); }
-.app-side nav a[aria-current="page"] { background: var(--gif-nightfall); }
-.progress li.current .dot { border-color: var(--gif-amber); background: var(--gif-amber-wash); color: var(--gif-amber-ink); }
-.pill-tabs a[aria-current="page"] { background: var(--gif-nightfall); border-color: var(--gif-nightfall); }
-
-/* Portal welcome banner (dashboard) */
-.welcome { position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); padding: 26px 24px; margin-bottom: 24px; color: var(--gif-mist);
-  background-color: var(--gif-nightfall); background-image: var(--gif-glow-amber), var(--gif-grad-night); }
-@media (min-width: 640px) { .welcome { padding: 30px 32px; } }
-.welcome .eyebrow { color: var(--gif-amber-soft); margin-bottom: 8px; }
-.welcome h1 { color: #fff; margin: 0 0 6px; }
-.welcome p { margin: 0; }
-.welcome .route-mini { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 14px; font-size: 13px; font-weight: 600; color: #fff; }
-.welcome .route-mini span + span::before { content: "→"; color: var(--gif-amber-soft); margin-right: 14px; }
-.welcome .route-mini span.when { color: var(--gif-mist); font-weight: 500; }
-.welcome .route-mini span.when::before { content: "·"; }
-
-/* Login: form beside a destination photo on wide screens */
-.auth-split { display: grid; gap: 32px; align-items: stretch; }
-@media (min-width: 980px) { .auth-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; } }
-.auth-photo { display: none; }
-@media (min-width: 980px) { .auth-photo { display: flex; position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); min-height: 520px; flex-direction: column; justify-content: flex-end; padding: 28px; color: #fff; background: var(--gif-nightfall-deep); } }
-.auth-photo .ph { position: absolute; inset: 0; z-index: -2; }
-.auth-photo .ph img { object-fit: cover; }
-.auth-photo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--gif-photo-veil), var(--gif-glow-amber); }
-.auth-photo h2 { color: #fff; font-size: 26px; max-width: 18ch; }
-.auth-photo p { color: var(--gif-mist); margin: 8px 0 0; }
-.auth-photo .photo-credit { position: absolute; top: 10px; right: 12px; }
-
-/* Credits page */
-.credits { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
-.credits li { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: center; border: 1px solid var(--hairline); border-radius: 16px; padding: 12px; background: #fff; }
-.credits li img { width: 120px; height: 80px; object-fit: cover; border-radius: 10px; }
-@media (max-width: 480px) { .credits li { grid-template-columns: 1fr; } .credits li img { width: 100%; height: 140px; } }
-@media (prefers-reduced-motion: reduce) { .dest .ph img { transition: none; } }
