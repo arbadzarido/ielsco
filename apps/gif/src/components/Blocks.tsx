@@ -6,6 +6,7 @@ import { PHOTOS, type Photo, type Mentor, type Testimonial, type Faq } from "@/l
 import type { Settings } from "@/lib/settings";
 import { balanceOf, mentoringPrice } from "@/lib/settings";
 import { fmtDate } from "@/lib/format";
+import { CAMPUS_PHOTOS, PLACES } from "@/lib/places";
 
 // IELSco eyebrow: teal, uppercase, no editorial numbering (n is accepted for older call sites and ignored).
 export function Eyebrow({ children }: { n?: string; children: ReactNode }) {
@@ -112,18 +113,30 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
 export function Universities({ s }: { s: Settings }) {
   return (
     <>
-      <div className="grid g3">
-        {s.universities.map((u) => (
-          <div className="item" key={u.name}>
-            <span className="kicker">{u.country}</span>
-            <h3>{u.name}</h3>
-            <p style={{ marginTop: 10 }}><span className={`badge ${u.status === "confirmed" ? "ok" : "planned"}`}>{u.status === "confirmed" ? "Confirmed" : "Planned engagement"}</span></p>
-          </div>
-        ))}
+      <div className="campuses">
+        {s.universities.map((u) => {
+          const photo = CAMPUS_PHOTOS[u.name];
+          return (
+            <article className="campus" key={u.name}>
+              {photo && (
+                <div className="ph">
+                  <Image src={photo.src} alt={photo.alt} fill sizes="(min-width: 720px) 33vw, 100vw" />
+                  <span className="photo-credit">{photo.credit.author} · {photo.credit.license}</span>
+                </div>
+              )}
+              <div className="body">
+                <span className="country">{u.country}</span>
+                <h3>{u.name}</h3>
+                <p style={{ margin: "4px 0 0" }}><span className={`badge ${u.status === "confirmed" ? "ok" : "planned"}`}>{u.status === "confirmed" ? "Confirmed" : "Planned engagement · subject to confirmation"}</span></p>
+              </div>
+            </article>
+          );
+        })}
       </div>
       <p className="small muted" style={{ marginTop: 24, maxWidth: "70ch" }}>
         University engagement is planned and is marked &ldquo;Confirmed&rdquo; here only once agreed in writing. These institutions are not
-        organisers, partners or endorsers of GIF unless stated as confirmed.
+        organisers, partners or endorsers of GIF unless stated as confirmed. Campus photos are independent photographs used for reference
+        (<Link href="/photo-credits">photo credits</Link>); no university logo or official mark is used.
       </p>
     </>
   );
@@ -197,9 +210,10 @@ export function PhotoBand() {
 
 export function FinalCta({ title = "Your project deserves a bigger room.", body = "Applications for GIF Summer 2027 open on 25 November 2026. Choose the pathway that fits you and start today; you can save a draft and finish later." }: { title?: string; body?: string }) {
   return (
-    <section className="section dark">
+    <section className="section dark cta-night">
+      <div className="bg" aria-hidden="true"><Image src={PLACES.cbdDusk.src} alt="" fill sizes="100vw" quality={65} /></div>
       <div className="wrap">
-        <div className="head side">
+        <div className="head side" style={{ marginBottom: 0 }}>
           <h2>{title}</h2>
           <div>
             <p className="lead">{body}</p>
@@ -210,6 +224,7 @@ export function FinalCta({ title = "Your project deserves a bigger room.", body 
           </div>
         </div>
       </div>
+      <p className="photo-credit">Photo: Singapore at dusk · {PLACES.cbdDusk.credit.author}, {PLACES.cbdDusk.credit.license}</p>
     </section>
   );
 }

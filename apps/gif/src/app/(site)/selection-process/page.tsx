@@ -31,7 +31,7 @@ export default async function Selection() {
         <div className="wrap">
           <div className="head side"><div><Eyebrow n="02">Criteria</Eyebrow><h2>How evaluators score.</h2></div><p className="lead">Each Phase 3 entry is scored on seven criteria from 1 to 10 by assigned evaluators, who also write feedback. Places go to the highest-ranked applications.</p></div>
           <div className="table-wrap"><table className="t"><thead><tr><th>#</th><th>Criterion</th><th>What evaluators look for</th></tr></thead>
-            <tbody>{SELECTION_CRITERIA.map(([t, d], i) => <tr key={t}><td style={{ color: "var(--coral)", fontWeight: 700 }}>{i + 1}</td><td><strong>{t}</strong></td><td>{d}</td></tr>)}</tbody></table></div>
+            <tbody>{SELECTION_CRITERIA.map(([t, d], i) => <tr key={t}><td style={{ color: "var(--gif-amber-ink)", fontWeight: 700 }}>{i + 1}</td><td><strong>{t}</strong></td><td>{d}</td></tr>)}</tbody></table></div>
         </div>
       </section>
       <section className="section">

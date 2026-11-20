@@ -51,7 +51,7 @@ export default async function Mentoring() {
           <div className="head side"><div><Eyebrow n="03">Curriculum</Eyebrow><h2>15 sessions, every Tuesday.</h2></div><p className="lead">Problem identification, design thinking, ideation, research, development, business model, impact measurement, sustainability, pitch deck and pitching. Session times are sent to enrolled mentees.</p></div>
           <div className="table-wrap"><table className="t">
             <thead><tr><th>#</th><th>Tuesday</th><th>Session</th><th>Theme</th></tr></thead>
-            <tbody>{MENTORING_SESSIONS.map(([d, t, k], i) => <tr key={d}><td style={{ color: "var(--coral)", fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</td><td style={{ whiteSpace: "nowrap" }}>{fmtDate(d, { day: "numeric", month: "short" })}</td><td>{t}</td><td className="muted small">{k}</td></tr>)}</tbody>
+            <tbody>{MENTORING_SESSIONS.map(([d, t, k], i) => <tr key={d}><td style={{ color: "var(--gif-amber-ink)", fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</td><td style={{ whiteSpace: "nowrap" }}>{fmtDate(d, { day: "numeric", month: "short" })}</td><td>{t}</td><td className="muted small">{k}</td></tr>)}</tbody>
           </table></div>
         </div>
       </section>

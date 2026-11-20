@@ -19,6 +19,7 @@ export function AppHeader({ email, staff }: { email: string; staff: boolean }) {
           </div>
         </div>
       </div>
+      <div className="app-header-line" aria-hidden="true" />
     </header>
   );
 }
