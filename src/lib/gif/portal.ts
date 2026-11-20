@@ -5,7 +5,7 @@
 export type SubmissionStatus = "in_progress" | "submitted" | "under_review" | "approved" | "revision_required";
 export type DisplayStatus = "not_started" | SubmissionStatus;
 export type SubmissionType = "group" | "individual";
-export type FieldType = "text" | "textarea" | "url" | "select" | "checkbox" | "members" | "files" | "story_proof";
+export type FieldType = "text" | "textarea" | "url" | "select" | "checkbox" | "members" | "files" | "story_proof" | "rating";
 
 export interface FieldDef {
   key: string;
@@ -21,13 +21,16 @@ export interface FieldDef {
   min_files?: number;
   or_field?: string;
   story_day?: number;
+  day_options?: number[]; // story_proof: delegate picks the programme day per upload
 }
 export interface RubricCriterion { key: string; label: string; description?: string }
 
 export interface Assignment {
   id: string;
   edition: string;
-  day_number: number;
+  day_number: number | null;
+  track?: "programme" | "eligibility";
+  window_label?: string | null;
   slug: string;
   title: string;
   purpose: string | null;
@@ -152,7 +155,7 @@ export function submissionFor(a: Pick<Assignment, "id" | "submission_type">, sub
 // Client mirror of public.gif_submission_missing(): which required fields are still empty.
 export function missingRequired(fields: FieldDef[], responses: Record<string, unknown>, fileCounts: Record<string, number>): string[] {
   const out: string[] = [];
-  const filled = (k?: string) => !!k && typeof responses[k] === "string" && (responses[k] as string).trim() !== "";
+  const filled = (k?: string) => !!k && ((typeof responses[k] === "string" && (responses[k] as string).trim() !== "") || typeof responses[k] === "number");
   for (const f of fields) {
     if (!f.required || f.type === "members") continue;
     if (f.type === "files" || f.type === "story_proof") {
@@ -269,7 +272,7 @@ export const latestAssessment = (list: Assessment[], submissionId: string): Asse
 // ---------------------------------------------------------------------------------------------------------------------
 // Config validation (admin assignment editor)
 // ---------------------------------------------------------------------------------------------------------------------
-const FIELD_TYPES: FieldType[] = ["text", "textarea", "url", "select", "checkbox", "members", "files", "story_proof"];
+const FIELD_TYPES: FieldType[] = ["text", "textarea", "url", "select", "checkbox", "members", "files", "story_proof", "rating"];
 export function validateFieldsConfig(raw: unknown): { ok: true; value: FieldDef[] } | { ok: false; error: string } {
   if (!Array.isArray(raw)) return { ok: false, error: "Fields must be a JSON array." };
   const keys = new Set<string>();
@@ -309,6 +312,10 @@ export function csvCell(v: unknown): string {
 export function toCsv(header: string[], rows: unknown[][]): string {
   return "﻿" + [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
+
+// Programme tasks belong to a day; GIF Summer 2027 eligibility tasks don't.
+export const isProgramme = (a: Pick<Assignment, "track" | "day_number">) => (a.track ?? "programme") === "programme" && a.day_number !== null;
+export const assignmentLabel = (a: Pick<Assignment, "day_number" | "title" | "track">) => (a.day_number ? `Day ${a.day_number}` : "Summer 2027");
 
 export const fmtDateTime = (iso: string | null | undefined, tz = "Asia/Singapore") =>
   iso ? new Date(iso).toLocaleString("en-GB", { timeZone: tz, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " SGT" : "—";

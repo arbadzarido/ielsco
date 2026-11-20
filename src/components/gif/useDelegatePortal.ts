@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Assessment, Assignment, ProgrammeDay, Submission, SubmissionFile } from "@/lib/gif/portal";
+import { isProgramme, type Assessment, type Assignment, type ProgrammeDay, type Submission, type SubmissionFile } from "@/lib/gif/portal";
+import type { Category, Requirement, Review, Signals, VerificationRequest } from "@/lib/gif/eligibility";
 
 export interface TeamMember { team_id: string; team_number: number; team_name: string; delegate_id: string; full_name: string; is_me: boolean }
 export interface GifNotification { id: string; submission_id: string | null; kind: string; message: string; created_at: string; read_at: string | null }
@@ -11,11 +12,17 @@ export interface PortalData {
   team: TeamMember[];
   teamId: string | null;
   days: ProgrammeDay[];
-  assignments: Assignment[];
+  assignments: Assignment[];      // programme Day 1–4 tasks only
+  allAssignments: Assignment[];   // + GIF Summer 2027 eligibility tasks
   submissions: Submission[];
   files: SubmissionFile[];
   assessments: Assessment[];
   notifications: GifNotification[];
+  categories: Category[];
+  requirements: Requirement[];
+  reviews: Review[];
+  requests: VerificationRequest[];
+  signals: Signals | null;
 }
 type State = { s: "loading" } | { s: "error"; message: string } | { s: "ready"; data: PortalData };
 
@@ -26,14 +33,20 @@ export function useDelegatePortal(supabase: SupabaseClient, delegateId: string) 
 
   const load = useCallback(async () => {
     try {
-      const [team, days, assignments, submissions, notifications] = await Promise.all([
+      const [team, days, assignments, submissions, notifications, categories, requirements, reviews, requests, signals] = await Promise.all([
         supabase.rpc("gif_my_team"),
         supabase.from("gif_programme_days").select("*").order("day_number"),
         supabase.from("gif_assignments").select("*").order("day_number").order("sort_order"),
         supabase.from("gif_submissions").select("*"),
         supabase.from("gif_notifications").select("*").order("created_at", { ascending: false }).limit(30),
+        supabase.from("gif_eligibility_categories").select("*").order("sort_order"),
+        supabase.from("gif_eligibility_requirements").select("*").order("sort_order"),
+        supabase.from("gif_eligibility_reviews").select("*").order("created_at", { ascending: false }),
+        supabase.from("gif_verification_requests").select("*").order("created_at", { ascending: false }),
+        supabase.rpc("gif_my_eligibility_signals"),
       ]);
-      const err = team.error || days.error || assignments.error || submissions.error || notifications.error;
+      const err = team.error || days.error || assignments.error || submissions.error || notifications.error
+        || categories.error || requirements.error || reviews.error || requests.error || signals.error;
       if (err) throw err;
       const subIds = (submissions.data ?? []).map((s) => s.id);
       const [files, assessments] = subIds.length
@@ -51,11 +64,17 @@ export function useDelegatePortal(supabase: SupabaseClient, delegateId: string) 
           team: members,
           teamId: members[0]?.team_id ?? null,
           days: (days.data ?? []) as ProgrammeDay[],
-          assignments: (assignments.data ?? []) as Assignment[],
+          assignments: ((assignments.data ?? []) as Assignment[]).filter(isProgramme),
+          allAssignments: (assignments.data ?? []) as Assignment[],
           submissions: (submissions.data ?? []) as Submission[],
           files: (files.data ?? []) as SubmissionFile[],
           assessments: (assessments.data ?? []) as Assessment[],
           notifications: (notifications.data ?? []) as GifNotification[],
+          categories: (categories.data ?? []) as Category[],
+          requirements: (requirements.data ?? []) as Requirement[],
+          reviews: (reviews.data ?? []) as Review[],
+          requests: (requests.data ?? []) as VerificationRequest[],
+          signals: ((signals.data ?? []) as Signals[])[0] ?? null,
         },
       });
     } catch (e) {

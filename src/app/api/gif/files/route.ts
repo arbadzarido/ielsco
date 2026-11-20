@@ -27,7 +27,7 @@ function service() {
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
-    | { submissionId?: string; fieldKey?: string; path?: string; originalName?: string; description?: string }
+    | { submissionId?: string; fieldKey?: string; path?: string; originalName?: string; description?: string; storyDay?: number }
     | null;
   const submissionId = body?.submissionId ?? "", fieldKey = body?.fieldKey ?? "", path = body?.path ?? "";
   if (!UUID.test(submissionId) || !/^[a-z][a-z0-9_]{0,40}$/.test(fieldKey) || !path) {
@@ -99,7 +99,10 @@ export async function POST(req: NextRequest) {
     original_name: (body?.originalName ?? "").slice(0, 200) || null,
     mime_type: sniffed,
     size_bytes: size,
-    story_day: kind === "story_proof" ? field.story_day ?? null : null,
+    // a field with day_options lets the delegate pick the day (validated against the field config)
+    story_day: kind !== "story_proof" ? null
+      : field.day_options?.length ? (field.day_options.includes(Number(body?.storyDay)) ? Number(body?.storyDay) : field.day_options[0])
+      : field.story_day ?? null,
     description,
     uploaded_by: user.id,
   }).select("*").single();

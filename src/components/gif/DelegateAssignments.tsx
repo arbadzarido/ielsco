@@ -86,7 +86,7 @@ function Overview({ supabase, data: d, delegateName, onOpenDay, onChanged }: {
 
       <section className="space-y-3" aria-labelledby="gif-days-heading">
         <h2 id="gif-days-heading" className="text-xl font-bold md:text-2xl">Your assignments</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {d.days.map((day) => {
             const ps = d.assignments.filter((a) => a.day_number === day.day_number && applies(d, a));
             const statuses = ps.map((a) => partStatus(d, a));
@@ -95,7 +95,7 @@ function Overview({ supabase, data: d, delegateName, onOpenDay, onChanged }: {
             const lastAssess = ps.map((a) => submissionFor(a, d.submissions, d.delegateId, d.teamId)).filter(Boolean)
               .map((s) => latestAssessment(d.assessments, s!.id)).filter((x): x is Assessment => !!x).sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
             return (
-              <article key={day.day_number} className={cn(cardGloss, "flex flex-col p-5")} data-testid={`gif-day-card-${day.day_number}`}>
+              <article key={day.day_number} className={cn(cardGloss, "flex min-w-0 flex-col p-5")} data-testid={`gif-day-card-${day.day_number}`}>
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-[13px] font-bold uppercase tracking-wider text-[#577E90]">Day {day.day_number}</p>
                   <StatusPill status={overall} testId={`gif-day-status-${day.day_number}`} />
@@ -183,7 +183,7 @@ function DayDetail({ supabase, data: d, day, onBack, onChanged }: { supabase: Su
   );
 }
 
-function Part({ supabase, data: d, a, onChanged }: { supabase: SupabaseClient; data: PortalData; a: Assignment; onChanged: () => Promise<void> }) {
+export function Part({ supabase, data: d, a, onChanged }: { supabase: SupabaseClient; data: PortalData; a: Assignment; onChanged: () => Promise<void> }) {
   const sub = submissionFor(a, d.submissions, d.delegateId, d.teamId);
   const history = sub ? d.assessments.filter((x) => x.submission_id === sub.id) : [];
   const latest = history[0] ?? null;

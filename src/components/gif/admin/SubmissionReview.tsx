@@ -14,7 +14,7 @@ type AStatus = Assessment["status"];
 export function SubmissionReview({ supabase, user, data: d, submission: s, onSaved }: {
   supabase: SupabaseClient; user: User; data: AdminData; submission: Submission; onSaved: () => Promise<void>;
 }) {
-  const a = d.assignments.find((x) => x.id === s.assignment_id)!;
+  const a = d.allAssignments.find((x) => x.id === s.assignment_id)!;
   const day = d.days.find((x) => x.day_number === a.day_number);
   const files = d.files.filter((f) => f.submission_id === s.id);
   const history = d.assessments.filter((x) => x.submission_id === s.id);
@@ -54,7 +54,7 @@ export function SubmissionReview({ supabase, user, data: d, submission: s, onSav
     <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_380px]" data-testid="gif-review">
       <div className="space-y-5">
         <header className={cn(cardGloss, "space-y-2 p-5")}>
-          <p className="text-[13px] font-bold uppercase tracking-wider text-[#577E90]">Day {a.day_number}{day ? ` · ${day.title}` : ""}</p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-[#577E90]">{a.day_number ? `Day ${a.day_number}${day ? ` · ${day.title}` : ""}` : `GIF Summer 2027${a.window_label ? ` · ${a.window_label}` : ""}`}</p>
           <h1 className="text-2xl font-bold">{a.title}</h1>
           <div className="flex flex-wrap items-center gap-2"><TypeBadge type={a.submission_type} /><StatusPill status={s.status} testId="gif-review-status" /><span className="text-[14px] font-semibold">{target.label}</span></div>
           <p className="text-[14px] text-[#2F4157]/70">{target.members.join(" · ")}</p>
@@ -81,7 +81,7 @@ export function SubmissionReview({ supabase, user, data: d, submission: s, onSav
               return (
                 <div key={f.key} className="space-y-2 p-4">
                   <p className="text-[14px] font-semibold text-[#2F4157]/70">{f.label} ({list.length})</p>
-                  {list.length ? <div className="grid gap-2 sm:grid-cols-2">{list.map((x) => <FileTile key={x.id} file={x} url={urls[x.id]} admin />)}</div> : <p className="text-[15px] text-[#2F4157]/50">No files</p>}
+                  {list.length ? <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{list.map((x) => <FileTile key={x.id} file={x} url={urls[x.id]} admin />)}</div> : <p className="text-[15px] text-[#2F4157]/50">No files</p>}
                   {f.type === "story_proof" && list.some((x) => x.deleted_at) && <p className="text-[13px] text-[#2F4157]/60">Removed screenshots were deleted by the 7-day retention policy; the record of the upload remains.</p>}
                 </div>
               );
@@ -91,6 +91,7 @@ export function SubmissionReview({ supabase, user, data: d, submission: s, onSav
               <div key={f.key} className="p-4">
                 <p className="text-[14px] font-semibold text-[#2F4157]/70">{f.label}</p>
                 {f.type === "checkbox" ? <p className="mt-1 text-[15px]">{v === true ? "✓ Confirmed" : "Not confirmed"}</p>
+                  : f.type === "rating" ? <p className="mt-1 text-[15px]">{typeof v === "number" ? `${"★".repeat(v)}${"☆".repeat(5 - v)} (${v}/5)` : "—"}</p>
                   : typeof v === "string" && v ? (f.type === "url" && isHttpUrl(v)
                     ? <a href={v} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 break-all font-semibold text-[#577E90] underline">{v} <ExternalLink size={14} /></a>
                     : <p className="mt-1 whitespace-pre-line text-[15px]">{v}</p>)
