@@ -342,10 +342,8 @@ legend { font-weight: 700; margin-bottom: 10px; padding: 0; color: var(--deep); 
 .legal-nav a[aria-current="page"] { background: var(--soft); color: var(--deep); }
 .print-only { display: none; }
 @media print { .site-header, .site-footer, .app-side, .no-print, .cookie { display: none !important; } .print-only { display: block; } .app { background: #fff; } .main { padding: 0; } }
-<<<<<<< fix/payment-recovery
 .attempt { display: grid; gap: 8px; max-width: 360px; }
 .attempt p { margin: 0; }
-=======
 
 /* ══ GIF brand layer ═══════════════════════════════════════════════════════════════════════════════════════════════
    IELSco provides the design language (type, spacing, cards, buttons, header/footer). GIF adds its own colour identity:
@@ -514,4 +512,3 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 .credits li img { width: 120px; height: 80px; object-fit: cover; border-radius: 10px; }
 @media (max-width: 480px) { .credits li { grid-template-columns: 1fr; } .credits li img { width: 100%; height: 140px; } }
 @media (prefers-reduced-motion: reduce) { .dest .ph img { transition: none; } }
->>>>>>> main
