@@ -37,6 +37,7 @@ account is approved for), which only Midtrans can confirm for PT English Space B
   (paid → only refunded); events are logged with a dedupe key; emails have dedupe keys. Replayed notifications are no-ops.
 - **Duplicates**: a live checkout is reused instead of creating a second order; if two orders are nevertheless both paid,
   the second is flagged `is_duplicate` and a full refund is queued for finance (Admin → Payments → Refunds to review).
+- **Attempts and recovery** (21 Nov 2026): see §2a.
 - **No FX**: Indonesian citizens owe IDR, everyone else USD (Elco Pro is IDR for all). USD obligations are paid by invoice
   and bank transfer, verified by finance. Optional switch `payments.allow_idr_for_international` lets international
   delegates pay the *published IDR price* by card instead (no conversion) — a founder decision, off by default.
@@ -44,17 +45,49 @@ account is approved for), which only Midtrans can confirm for PT English Space B
 - **Sandbox only** in this branch: production requires `GIF_MIDTRANS_ENV=production` **and**
   `GIF_MIDTRANS_PRODUCTION_ENABLED=true` **and** non-sandbox keys.
 
+## 2a. Payment attempts: Continue payment / Cancel & change payment method
+
+**The old lock.** "Pay" reused any open checkout for the obligation for its whole 60-minute Snap expiry. Once a payer chose
+a method in Snap (e.g. a BCA virtual account), Midtrans fixes that order to the method, so reopening the same order showed
+the same VA and there was no way to pick another method until the order expired. Closing the page changed nothing either.
+Cause: application-level reuse (`startCheckout`) combined with the Snap order's method lock and the 60-minute `expiry`.
+
+**Now** (`apps/gif/src/lib/payments/attempts.ts`, `service.ts`, portal `payments/buttons.tsx`):
+
+- One obligation (what is owed) has many attempts (`gif.payments`), each its own Midtrans `order_id`; `replaced_by` links a
+  closed attempt to the one that replaced it. The obligation is never duplicated.
+- Snap opens as a popup (Snap JS; the redirect page stays as a fallback). Closing it cancels nothing: the payer sees
+  "Awaiting payment" with **Continue payment** (reopens the same Snap token) and **Cancel & change payment method**.
+- Cancel: the attempt is claimed under a row lock (`status = 'cancelling'`; repeated clicks get "already cancelling"),
+  then the status is re-read from Midtrans:
+  - no transaction (no method chosen) → `POST /v2/{order}/expire` best effort, attempt `cancelled` (`no_transaction`);
+  - pending → `POST /v2/{order}/cancel` ([Cancel](https://docs.midtrans.com/reference/cancel-transaction)); if refused
+    (412), `POST /v2/{order}/expire`; the status is re-read and applied;
+  - paid (even while cancelling) → applied as paid: a verified payment always wins;
+  - both refused → back to `pending` with `cancel_result = not_cancellable`: the payer can continue it, wait for the expiry,
+    or explicitly **start a new payment** (if both are paid, the second is flagged duplicate and refunded);
+  - Midtrans unreachable → back to the previous status (`gateway_error`), "try again"; the daily cron un-sticks a
+    `cancelling` attempt older than 10 minutes.
+- A cancellation the payer asked for never sends the "payment failed" email. Webhooks stay authoritative and idempotent;
+  a "pending" notification never overrides `cancelling`.
+- States shown: Awaiting payment (created/pending), Cancelling, Paid, Cancelled, Expired, Failed.
+
 ## 3. Elco Pro fulfilment
 
-The Elco repository has no partner/entitlement API that IELSco could call to grant a subscription (its IELSco integration
-only links accounts and pushes benefits from Elco to IELSco). So GIF uses an **admin fulfilment workflow**:
-paid → `pending_activation` → finance grants 3 months of Pro in Elco's admin → records the Elco reference in GIF →
-`activated` + email. The portal never says "active" before that. A future Elco endpoint (HMAC-signed, same v1 signature
-as the existing link flow) can replace the manual step; see DECISIONS.md.
+Hybrid (see ELCO-GRANT-API.md): when the Elco Pro obligation is verified paid (or waived), GIF calls Elco's
+server-to-server grant endpoint (HMAC v1, idempotent on `gif:<obligation id>`), records every call in
+`gif.elco_grant_attempts`, retries with backoff (1 min, 5 min, 30 min, 2 h, then every 12 h; payment hook + daily cron;
+Finance can force a retry), and marks the fulfilment `activated` only when Elco confirms (`granted`, or `pending_signup` =
+reserved for that email's Elco sign-up). Manual activation by Finance in Elco's admin stays available as the fallback.
+A payment attempt or an open Snap window never triggers a grant.
 
 ## 4. Testing
 
-`apps/gif/tests/e2e/fake-midtrans.mjs` implements Snap, status, refund and signed notifications locally. The e2e suite covers
+`apps/gif/tests/e2e/fake-midtrans.mjs` implements Snap (redirect page and a Snap JS stand-in), status, refund, cancel,
+expire (with refusal and pay-during-cancel switches), signed notifications and a fake Elco grant endpoint locally. Recovery
+scenarios: close without paying, continue the same order, cancel a pending VA and switch method, simultaneous cancels,
+refused cancel → new payment, paid during cancellation, the refused attempt paid later (duplicate refund), duplicate
+webhooks, closed attempt; Elco grant down → retry → granted, duplicate grant request, pending sign-up. The e2e suite covers
 settlement, deny, pending → expire, amount mismatch, forged return URL, bad/foreign signatures, replayed notifications,
 unknown orders, checkout reuse, duplicate settlement → refund through the gateway, manual USD payments and refusal of
 partial manual payments. No real money is involved.

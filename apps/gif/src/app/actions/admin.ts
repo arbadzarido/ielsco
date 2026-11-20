@@ -14,7 +14,7 @@ import { sendEmail, deliverQueued } from "@/lib/email/send";
 import { announcementEmail, elcoActivatedEmail, missingInfoEmail } from "@/lib/email/templates";
 import { resolveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 import { signedDownloadUrl } from "@/lib/storage";
-import { autoActivatePending } from "@/lib/elco";
+import { autoActivatePending, elcoApiConfigured, tryAutoActivate } from "@/lib/elco";
 import { recordSignedGuardianForm } from "@/lib/guardian";
 
 export type AdminResult = { ok?: boolean; error?: string; message?: string; url?: string } | null;
@@ -154,6 +154,16 @@ export async function elcoActivateAction(_: AdminResult, fd: FormData): Promise<
   if (status === "activated") await sendEmail({ to: f.email, template: "elco_activated", ...elcoActivatedEmail(f.legal_name, f.elco_email, f.months), dedupeKey: `elco:${id}`, applicationId: f.application_id });
   await audit(a.email, `elco_${status}`, "elco_fulfilment", id, { ref }, ip);
   return done(status === "activated" ? "Marked active; applicant emailed." : "Marked as failed.");
+}
+
+// Finance: try the automatic Elco grant again now (skips the backoff). Manual activation above stays available.
+export async function elcoRetryAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
+  const { a, ip } = await staff("finance");
+  const id = String(fd.get("fulfilment_id"));
+  if (!elcoApiConfigured()) return { error: "Automatic activation is not configured (ELCO_GRANT_URL / IELSCO_TO_ELCO_SECRET). Activate manually in Elco's admin." };
+  const ok = await tryAutoActivate(id, { force: true });
+  await audit(a.email, "elco_grant_retry", "elco_fulfilment", id, { ok }, ip);
+  return ok ? done("Elco confirmed the grant; applicant emailed.") : { error: "Elco didn't confirm the grant. See the attempt log; a retry is scheduled, or activate manually." };
 }
 
 export async function cashbackAction(_: AdminResult, fd: FormData): Promise<AdminResult> {

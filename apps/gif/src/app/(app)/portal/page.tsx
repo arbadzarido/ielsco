@@ -60,7 +60,7 @@ export default async function PortalHome({ searchParams }: { searchParams: Promi
               <ul className="small" style={{ paddingLeft: 18 }}>
                 {elco.map((f) => {
                   const who = detail.participants.find((p) => p.id === f.participant_id);
-                  return <li key={f.id}>{who?.legal_name}: {f.status === "activated" ? <span className="badge ok">Active since {fmtDate(f.activated_at)}</span> : f.status === "pending_activation" ? <span className="badge warn">Paid · activation in progress</span> : f.status === "awaiting_payment" ? <span className="badge">Awaiting payment</span> : <span className="badge err">{f.status}</span>} <span className="muted">({f.elco_email})</span></li>;
+                  return <li key={f.id}>{who?.legal_name}: {f.status === "activated" ? <span className="badge ok">Active since {fmtDate(f.activated_at)}</span> : f.status === "pending_activation" ? <span className="badge warn">Paid · activation in progress</span> : f.status === "awaiting_payment" ? <span className="badge">Awaiting payment</span> : <span className="badge err">{f.status}</span>} <span className="muted">({f.elco_email})</span>{f.status === "activated" && f.notes?.startsWith("Reserved on Elco") && <span className="tiny muted" style={{ display: "block" }}>Sign up on Elco with {f.elco_email} to start using it.</span>}</li>;
                 })}
               </ul>
               <p className="tiny muted">Activation is done by our team on the Elco account with this email. We email you once it is active.</p>

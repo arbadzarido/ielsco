@@ -55,8 +55,8 @@ export async function loadApplicationDetail(applicationId: string) {
     q<{ phase: number; essay_text: string | null; essay_doc_id: string | null; deck_doc_id: string | null; video_url: string | null; video_doc_id: string | null; notes: string | null; submitted_at: string | null }>(
       "select phase, essay_text, essay_doc_id, deck_doc_id, video_url, video_doc_id, notes, submitted_at from gif.submissions where application_id = $1", [applicationId]),
     q<{ from_status: string | null; to_status: string; actor: string; note: string | null; at: string }>("select from_status, to_status, actor, note, at from gif.status_history where application_id = $1 order by at", [applicationId]),
-    q<{ id: string; participant_id: string; elco_email: string; status: string; months: number; activated_at: string | null }>(
-      "select f.id, f.participant_id, f.elco_email, f.status, f.months, f.activated_at from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.application_id = $1", [applicationId]),
+    q<{ id: string; participant_id: string; elco_email: string; status: string; months: number; activated_at: string | null; activated_by: string | null; notes: string | null }>(
+      "select f.id, f.participant_id, f.elco_email, f.status, f.months, f.activated_at, f.activated_by, f.notes from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.application_id = $1", [applicationId]),
     q<{ participant_id: string; outcome: string; currency: string; amount: number; status: string }>(
       "select c.participant_id, c.outcome, c.currency, c.amount, c.status from gif.cashbacks c join gif.participants p on p.id = c.participant_id where p.application_id = $1", [applicationId]),
   ]);

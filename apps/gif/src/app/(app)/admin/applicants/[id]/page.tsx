@@ -8,7 +8,7 @@ import { CRITERIA, EDUCATION_LEVELS, UPLOAD_RULES } from "@/lib/validation";
 import { formatMoney } from "@/lib/pricing";
 import { bytes, countryName, fmtDate, fmtDateTime } from "@/lib/format";
 import { ActionForm, DocLink } from "@/components/ActionForm";
-import { addNoteAction, addObligationAction, assignEvaluatorAction, cashbackAction, changeStatusAction, documentLinkAction, elcoActivateAction,
+import { addNoteAction, addObligationAction, assignEvaluatorAction, cashbackAction, changeStatusAction, documentLinkAction, elcoActivateAction, elcoRetryAction,
   manualPaymentAction, missingInfoAction, refundAction, reviewDocumentAction, verifyTaskAction, waiveObligationAction, recordGuardianFormAction } from "@/app/actions/admin";
 import { isMinor } from "@/lib/validation";
 import { currentCohort } from "@/lib/cohort";
@@ -146,10 +146,11 @@ export default async function Applicant({ params }: { params: Promise<{ id: stri
 
       {d.fulfilments.length > 0 && <>
         <h2>Elco Pro fulfilment</h2>
-        <p className="small muted">Elco has no partner API for subscriptions yet: activate in Elco&rsquo;s admin, then record the reference here. Applicants are told it is active only after you do.</p>
-        <div className="table-wrap"><table className="t compact"><tbody>{d.fulfilments.map((f) => <tr key={f.id}><td>{pname(f.participant_id)}</td><td>{f.elco_email}</td><td>{f.months} months</td><td>{f.status}{f.activated_at ? ` · ${fmtDate(f.activated_at)}` : ""}</td>
+        <p className="small muted">Paid Elco Pro is granted automatically through Elco&rsquo;s grant API when it is configured (retried with backoff if Elco is unavailable). Manual fallback: activate in Elco&rsquo;s admin, then record the reference here. Applicants are told it is active only after one of the two succeeds.</p>
+        <div className="table-wrap"><table className="t compact"><tbody>{d.fulfilments.map((f) => <tr key={f.id}><td>{pname(f.participant_id)}</td><td>{f.elco_email}</td><td>{f.months} months</td><td>{f.status}{f.activated_at ? ` · ${fmtDate(f.activated_at)}` : ""}{f.activated_by ? ` · ${f.activated_by}` : ""}{f.notes ? <span className="tiny muted" style={{ display: "block" }}>{f.notes}</span> : null}</td>
           <td>{can(role, "finance") && ["pending_activation", "failed"].includes(f.status) && <ActionForm action={elcoActivateAction} inline submit="Save" className=""><input type="hidden" name="fulfilment_id" value={f.id} />
-            <select name="status"><option value="activated">Activated</option><option value="failed">Failed</option></select><input name="reference" placeholder="Elco reference" /></ActionForm>}</td></tr>)}</tbody></table></div>
+            <select name="status"><option value="activated">Activated</option><option value="failed">Failed</option></select><input name="reference" placeholder="Elco reference" /></ActionForm>}
+            {can(role, "finance") && f.status === "pending_activation" && <ActionForm action={elcoRetryAction} inline submit="Retry automatic grant" className=""><input type="hidden" name="fulfilment_id" value={f.id} /></ActionForm>}</td></tr>)}</tbody></table></div>
       </>}
 
       {d.cashbacks.length > 0 && <>

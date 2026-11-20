@@ -4,7 +4,7 @@ import { checkPaymentAction } from "@/app/actions/portal";
 import { PayFlow } from "../buttons";
 
 const TEXT: Record<string, [string, string]> = {
-  paid: ["ok", "Payment completed and verified. Thank you! Your receipt is on the Payments page."],
+  paid: ["ok", "Payment verified. Thank you! Your receipt is on the Payments page."],
   pending: ["", "Awaiting payment. If you chose bank transfer, a virtual account or an e-wallet, complete it there; this page and your portal update automatically. Picked the wrong method? Cancel it below and choose another."],
   created: ["", "We haven't received a payment yet. You can continue the payment, or cancel it and choose another method."],
   cancelling: ["", "Cancelling your previous payment. This takes a few seconds."],

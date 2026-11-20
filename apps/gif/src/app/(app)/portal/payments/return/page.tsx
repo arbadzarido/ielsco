@@ -8,7 +8,7 @@ export default async function PaymentReturn({ searchParams }: { searchParams: Pr
   return (
     <>
       <h1>Checking your payment</h1>
-      {/^[A-Z0-9-]{8,60}$/.test(orderId) ? <ReturnStatus orderId={orderId} /> : <p className="muted">No payment reference found.</p>}
+      {/^[A-Z0-9-]{8,60}$/.test(orderId) ? <ReturnStatus key={orderId} orderId={orderId} /> : <p className="muted">No payment reference found.</p>}
       <p style={{ marginTop: 24 }}><Link href="/portal/payments">Back to payments</Link></p>
     </>
   );
