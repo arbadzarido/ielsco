@@ -36,12 +36,15 @@ export default async function PortalHome({ searchParams }: { searchParams: Promi
   return (
     <>
       {sp.submitted && <div className="notice ok" role="status"><p><strong>Application submitted.</strong> Your application ID is {sp.submitted}. We have emailed you a confirmation.</p></div>}
-      <div className="eyebrow">{PATHWAY_LABEL[app.pathway]} · {app.code}</div>
-      <h1>Hello, {(me?.legal_name ?? c.account.email).split(" ")[0]}</h1>
-      <p className="lead" style={{ marginBottom: 24 }}>
-        Status: <span className="badge maroon">{STATUS_LABEL[app.status]}</span>
-        {app.mode === "team" && <> · Team {app.team_name}{!c.isOwner && " (you are a member)"}</>}
-      </p>
+      <section className="welcome" aria-label="Your application">
+        <div className="eyebrow">{PATHWAY_LABEL[app.pathway]} · {app.code}</div>
+        <h1>Hello, {(me?.legal_name ?? c.account.email).split(" ")[0]}</h1>
+        <p>
+          Status: <span className="badge maroon">{STATUS_LABEL[app.status]}</span>
+          {app.mode === "team" && <> · Team {app.team_name}{!c.isOwner && " (you are a member)"}</>}
+        </p>
+        <div className="route-mini" aria-label="Programme route"><span>🇸🇬 Singapore</span><span>🇲🇾 Malaysia</span><span>🇹🇭 Thailand</span><span className="when">27 Jul – 3 Aug 2027</span></div>
+      </section>
 
       <div className="grid g2" style={{ alignItems: "start" }}>
         <section>
