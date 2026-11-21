@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { signSsoToken, signWorkspaceRequest } from "../../src/lib/ielsco-bridge.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const results = [];
@@ -33,6 +34,9 @@ export async function run({ base, mt, env, db: dbc }) {
   }
   async function login(page, email, next = "/portal") {
     await page.goto(`/login?next=${encodeURIComponent(next)}`);
+    // With IELSco single sign-on on, the email code is the fallback inside "Other ways to sign in".
+    const fallback = page.getByText("Other ways to sign in (email code)");
+    if (await fallback.isVisible().catch(() => false)) await fallback.click();
     await page.getByLabel("Email address").fill(email);
     const before = await one("select count(*)::int as n from gif.email_outbox where to_email = $1 and template = 'login_code'", [email]);
     await page.getByRole("button", { name: "Email me a code" }).click();
@@ -755,6 +759,7 @@ export async function run({ base, mt, env, db: dbc }) {
     {
       const page = await newPage();
       await page.goto("/login");
+      await page.getByText("Other ways to sign in (email code)").click();
       await page.getByRole("tab", { name: "IELSco account" }).click();
       await page.getByLabel("IELSco email").fill(A.email);
       await page.getByLabel("Password").fill("wrong-password");
@@ -769,6 +774,7 @@ export async function run({ base, mt, env, db: dbc }) {
       await page.context().close();
       const p2 = await newPage();
       await p2.goto("/login");
+      await p2.getByText("Other ways to sign in (email code)").click();
       await p2.getByRole("tab", { name: "IELSco account" }).click();
       await p2.getByLabel("IELSco email").fill("unconfirmed@example.test");
       await p2.getByLabel("Password").fill("ielsco-pass-3");
@@ -814,6 +820,59 @@ export async function run({ base, mt, env, db: dbc }) {
       check("mobile portal: no horizontal scroll", over <= 1, `overflow ${over}px`);
       await page.context().close();
     }
+    // ── IELSco single sign-on + GIF workspace in the IELSco dashboard (21 Nov 2026) ─────────────────────────────────
+    {
+      const SECRET = env.IELSCO_GIF_SSO_SECRET;
+      const uuid = () => crypto.randomUUID();
+      const ws = async (sub, email, secret = SECRET) => {
+        const body = JSON.stringify({ sub, email });
+        const r = await fetch(`${base}/api/integrations/ielsco/workspace`, { method: "POST", headers: { "Content-Type": "application/json", "X-IELSco-Signature": signWorkspaceRequest(secret, body) }, body });
+        return { status: r.status, json: await r.json().catch(() => null) };
+      };
+      const page = await newPage();
+      await page.goto("/login?next=%2Fapply");
+      const sso = page.getByRole("link", { name: "Continue with your IELSco account" });
+      check("login: IELSco account is the main way in", (await sso.getAttribute("href")) === "http://ielsco.example.test/api/gif/sso?next=%2Fapply");
+      // Applicant A (email-code account, linked to this IELSco user by the password test above) arrives from the IELSco
+      // dashboard: same GIF account, same link, no new account.
+      const aSub = "11111111-1111-4111-8111-111111111111";
+      const before = await one("select id from gif.accounts where email = $1", [A.email]);
+      const t = signSsoToken(SECRET, { sub: aSub, email: A.email.toUpperCase() });
+      await page.goto(`/sso?t=${encodeURIComponent(t)}&next=%2Fportal%2Fpayments`);
+      check("SSO: lands on the requested GIF page signed in", new URL(page.url()).pathname === "/portal/payments", page.url());
+      const after = await one("select id, ielsco_user_id from gif.accounts where email = $1", [A.email]);
+      check("SSO: existing GIF account linked to the IELSco user id, not duplicated", after.id === before.id && after.ielsco_user_id === aSub && (await one("select count(*)::int as n from gif.accounts where email = $1", [A.email])).n === 1);
+      // Refusals, checked on the redirect itself (a browser that is already signed in would be forwarded to /portal).
+      const hop = async (token) => (await fetch(`${base}/sso?t=${encodeURIComponent(token)}&next=%2Fportal`, { redirect: "manual" })).headers.get("location") ?? "";
+      check("SSO: a token works once", (await hop(t)).includes("sso=used"));
+      const parts = t.split(".");
+      check("SSO: a forged token is refused", (await hop(`${parts[0]}.${parts[1]}.${parts[2].slice(0, -2)}AA`)).includes("sso=bad_signature"));
+      check("SSO: an email linked to another IELSco user is refused", (await hop(signSsoToken(SECRET, { sub: uuid(), email: A.email }))).includes("sso=conflict"));
+      check("SSO: an expired token is refused", (await hop(signSsoToken(SECRET, { sub: aSub, email: A.email }, Date.now() - 10 * 60_000))).includes("sso=expired"));
+      await page.context().close();
+      // A brand-new IELSco member: one GIF account created and linked on first visit.
+      const nSub = uuid(), nEmail = "new.ielsco.member@example.test";
+      const p2 = await newPage();
+      await p2.goto(`/sso?t=${encodeURIComponent(signSsoToken(SECRET, { sub: nSub, email: nEmail }))}&next=%2Fapply%3Fpathway%3Dself_funded`);
+      check("SSO: new IELSco member goes straight to the application", new URL(p2.url()).pathname === "/apply", p2.url());
+      check("SSO: new GIF account carries the IELSco user id", !!(await one("select 1 from gif.accounts where email = $1 and ielsco_user_id = $2", [nEmail, nSub])));
+      await p2.context().close();
+      // Workspace summary for the IELSco dashboard.
+      const wa = await ws(aSub, A.email);
+      const appA = await appOf(A.email);
+      check("workspace: A's application, pathway and status", wa.status === 200 && wa.json.application?.code === appA.code && wa.json.application?.pathway === "fully_funded", JSON.stringify(wa.json?.application));
+      check("workspace: pathway-specific progress (Fully Funded has Phase 2)", wa.json.steps.some((x) => x.key === "p2") && !wa.json.steps.some((x) => x.key === "mentoring"));
+      check("workspace: payments and history included", wa.json.obligations.length > 0 && Array.isArray(wa.json.payments));
+      check("workspace: registration availability per pathway", wa.json.pathways.length === 3 && wa.json.pathways.every((x) => typeof x.open === "boolean" && x.opensAt));
+      const wn = await ws(nSub, nEmail);
+      check("workspace: no application yet → start action", wn.status === 200 && wn.json.application === null && wn.json.actions[0]?.href === "/apply");
+      const stranger = await ws(uuid(), "stranger@example.test");
+      check("workspace: unknown person gets no one else's data", stranger.status === 200 && stranger.json.account === null && stranger.json.application === null);
+      check("workspace: wrong signature refused", (await ws(aSub, A.email, "x".repeat(40))).status === 401);
+      const unsigned = await fetch(`${base}/api/integrations/ielsco/workspace`, { method: "POST", body: JSON.stringify({ sub: aSub, email: A.email }) });
+      check("workspace: unsigned request refused", unsigned.status === 401);
+    }
+
     check("analytics funnel recorded server events", (await one("select count(*)::int as n from gif.analytics_events where event in ('application_completed', 'payment_succeeded')")).n >= 3);
     check("analytics stores no IP or email", !(await one("select 1 from gif.analytics_events where props::text like '%@%'")));
   } catch (e) {

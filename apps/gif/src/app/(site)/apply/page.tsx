@@ -7,6 +7,7 @@ import { currentCohort } from "@/lib/cohort";
 import { pathwayOpen, mentoringPrice, balanceOf, type Pathway } from "@/lib/settings";
 import { DOCS, requiredConsents } from "@/lib/legal";
 import ApplyWizard from "./ApplyWizard";
+import { bridgeConfigured, ielscoSignInUrl } from "@/lib/ielsco-bridge";
 
 export const metadata: Metadata = { title: "Apply", description: "Apply for GIF Summer 2027: Fully Funded, Project Mentoring Program or Self-Funded." };
 export const dynamic = "force-dynamic";
@@ -15,15 +16,18 @@ export default async function Apply({ searchParams }: { searchParams: Promise<{ 
   const sp = await searchParams;
   const pathway = ["fully_funded", "mentoring", "self_funded"].includes(sp.pathway ?? "") ? (sp.pathway as Pathway) : undefined;
   const acct = await getAccount();
+  const sso = bridgeConfigured();
   if (!acct) {
     return (
       <section className="section">
         <div className="wrap" style={{ maxWidth: 720 }}>
           <div className="eyebrow">Apply · GIF Summer 2027</div>
           <h1 style={{ fontSize: "clamp(36px, 5vw, 56px)" }}>Start with your email.</h1>
-          <p className="lead" style={{ margin: "18px 0 28px" }}>Your application is saved to your account as you go, so you can stop and come back. Sign in with a one-time code; no password needed.</p>
+          <p className="lead" style={{ margin: "18px 0 28px" }}>{sso ? "GIF is an IELSco programme: sign in with your IELSco account (or create one) and your application is saved to it as you go." : "Your application is saved to your account as you go, so you can stop and come back. Sign in with a one-time code; no password needed."}</p>
           <div className="btn-row">
-            <Link className="btn btn-primary" href={`/login?next=${encodeURIComponent(`/apply${pathway ? `?pathway=${pathway}` : ""}`)}`} data-track="application_start">Continue with email</Link>
+            {sso
+              ? <a className="btn btn-primary" href={ielscoSignInUrl(`/apply${pathway ? `?pathway=${pathway}` : ""}`)} data-track="application_start">Continue with your IELSco account</a>
+              : <Link className="btn btn-primary" href={`/login?next=${encodeURIComponent(`/apply${pathway ? `?pathway=${pathway}` : ""}`)}`} data-track="application_start">Continue with email</Link>}
             <Link className="btn btn-secondary" href="/opportunities">Compare pathways first</Link>
           </div>
           <ol className="steps-nav" style={{ marginTop: 40 }}><li>Pathway</li><li>Your profile</li><li>Team</li><li>Project</li><li>Review and submit</li></ol>

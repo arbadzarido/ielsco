@@ -58,7 +58,7 @@ export const en = {
     myShelf: "My Shelf",
     myShelfShort: "Shelf",
     myLearning: "My Learning",
-    gif: "GIF Singapore",
+    gif: "GIF",
     tests: "My tests",
     courses: "My courses",
     schedule: "My schedule",

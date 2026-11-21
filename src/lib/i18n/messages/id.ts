@@ -61,7 +61,7 @@ export const id: DeepPartial<Messages> = {
     myShelf: "Rak Saya",
     myShelfShort: "Rak",
     myLearning: "Belajar Saya",
-    gif: "GIF Singapore",
+    gif: "GIF",
     tests: "Tes saya",
     courses: "Kursus saya",
     schedule: "Jadwal saya",

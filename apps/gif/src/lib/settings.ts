@@ -10,7 +10,12 @@ export interface Settings {
   applications_open: boolean;
   pathways_open: Record<Pathway, boolean>;
   dates: {
-    launch: string;                 // Phase 1 opens
+    launch: string;                 // Phase 1 of the Fully Funded selection opens
+    // Registration opens per pathway (21 Nov 2026 timeline): Self-Funded and Mentoring since 20 Nov 2026, Fully Funded on
+    // 25 Nov 2026. Partial Funded is a result of the Fully Funded selection, so it has no registration date of its own.
+    self_funded_opens: string;
+    mentoring_opens: string;
+    fully_funded_opens: string;
     phase1_close: string;
     phase2_open: string;
     phase2_close: string;
@@ -63,6 +68,9 @@ export const DEFAULT_SETTINGS: Settings = {
   pathways_open: { fully_funded: true, mentoring: true, self_funded: true },
   dates: {
     launch: "2026-11-25T00:00:00+07:00",
+    self_funded_opens: "2026-11-20T00:00:00+07:00",
+    mentoring_opens: "2026-11-20T00:00:00+07:00",
+    fully_funded_opens: "2026-11-25T00:00:00+07:00",
     phase1_close: "2027-05-10T23:59:59+07:00",
     phase2_open: "2027-05-11T00:00:00+07:00",
     phase2_close: "2027-05-24T23:59:59+07:00",
@@ -171,12 +179,19 @@ export function currentPhase(s: Settings, now = new Date()): Phase {
   return "after";
 }
 
+// When registration for a pathway opens (falls back to the Phase 1 launch for settings saved before 21 Nov 2026).
+export function pathwayOpensAt(s: Settings, p: Pathway): string {
+  const v = p === "self_funded" ? s.dates.self_funded_opens : p === "mentoring" ? s.dates.mentoring_opens : s.dates.fully_funded_opens;
+  return v || s.dates.launch;
+}
+
 // Is a pathway accepting new registrations right now? Returns the reason when it isn't (shown to applicants).
 export function pathwayOpen(s: Settings, p: Pathway, now = new Date()): { open: boolean; reason?: string } {
   const t = now.getTime();
   if (!s.applications_open) return { open: false, reason: "Applications are closed." };
   if (!s.pathways_open[p]) return { open: false, reason: "This pathway is not accepting registrations right now." };
-  if (t < new Date(s.dates.launch).getTime()) return { open: false, reason: "Applications open on 25 November 2026." };
+  const opens = pathwayOpensAt(s, p);
+  if (t < new Date(opens).getTime()) return { open: false, reason: `Registration opens on ${new Date(opens).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" })}.` };
   if (p === "fully_funded" && t > new Date(s.dates.phase1_close).getTime()) return { open: false, reason: "Phase 1 closed on 10 May 2027." };
   if (p === "mentoring") {
     const close = s.dates.mentoring_registration_close;

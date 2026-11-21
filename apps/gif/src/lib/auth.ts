@@ -98,7 +98,7 @@ function ielscoAuthConfig() {
 }
 export const ielscoSignInAvailable = () => !!ielscoAuthConfig();
 
-type IelscoUser = { id: string; email: string };
+export type IelscoUser = { id: string; email: string };
 async function verifyIelscoPassword(rawEmail: string, password: string): Promise<{ ok: true; user: IelscoUser } | { ok: false; error: string }> {
   const cfg = ielscoAuthConfig();
   if (!cfg) return { ok: false, error: "IELSco sign-in is not available yet. Use an email code instead." };
@@ -118,20 +118,48 @@ async function verifyIelscoPassword(rawEmail: string, password: string): Promise
   }
 }
 
+const LINK_CONFLICT = "This email is linked to a different IELSco account. Contact hello@ielsco.com.";
+
+// The GIF account of an IELSco user: the one linked to their IELSco user id, else the unlinked one with the same
+// confirmed email. Read-only (used by the IELSco dashboard summary); never returns an account linked to someone else.
+export async function findAccountForIelscoUser(user: IelscoUser): Promise<{ id: string; email: string; linked: boolean } | null> {
+  const linked = await one<{ id: string; email: string }>("select id, email from gif.accounts where ielsco_user_id = $1", [user.id]);
+  if (linked) return { ...linked, linked: true };
+  const byEmail = await one<{ id: string; email: string; ielsco_user_id: string | null }>("select id, email, ielsco_user_id from gif.accounts where email = $1", [user.email]);
+  return byEmail && !byEmail.ielsco_user_id ? { id: byEmail.id, email: byEmail.email, linked: false } : null;
+}
+
+// Find, link or create the GIF account for a verified IELSco user. Non-destructive: an existing GIF account (and every
+// application and payment on it) is kept and only gains ielsco_user_id.
+async function linkOrCreateForIelscoUser(user: IelscoUser): Promise<{ ok: true; acct: { id: string; email: string } } | { ok: false; error: string }> {
+  const linked = await one<{ id: string; email: string }>("select id, email from gif.accounts where ielsco_user_id = $1", [user.id]);
+  if (linked) return { ok: true, acct: linked };
+  const byEmail = await one<{ id: string; email: string; ielsco_user_id: string | null }>("select id, email, ielsco_user_id from gif.accounts where email = $1", [user.email]);
+  if (byEmail?.ielsco_user_id && byEmail.ielsco_user_id !== user.id) return { ok: false, error: LINK_CONFLICT };
+  const acct = byEmail
+    ? await one<{ id: string; email: string }>("update gif.accounts set ielsco_user_id = $2, ielsco_linked_at = now() where id = $1 and ielsco_user_id is null returning id, email", [byEmail.id, user.id])
+    : await one<{ id: string; email: string }>(
+      `insert into gif.accounts (email, ielsco_user_id, ielsco_linked_at) values ($1, $2, now())
+       on conflict (email) do update set ielsco_user_id = excluded.ielsco_user_id, ielsco_linked_at = now() where gif.accounts.ielsco_user_id is null
+       returning id, email`, [user.email, user.id]);
+  if (!acct) return { ok: false, error: LINK_CONFLICT }; // lost a race with a link to another IELSco user
+  return { ok: true, acct };
+}
+
 export async function signInWithIelsco(rawEmail: string, password: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const v = await verifyIelscoPassword(rawEmail, password);
   if (!v.ok) return v;
+  return signInAsIelscoUser(v.user);
+}
+
+// Single sign-on from the IELSco dashboard (lib/ielsco-bridge.ts): IELSco already verified the person, so no password
+// or code is asked again. The caller has verified the signed token and consumed its nonce.
+export async function signInAsIelscoUser(user: IelscoUser): Promise<{ ok: true } | { ok: false; error: string }> {
   const ip = (await clientIp()) ?? "unknown";
-  let acct = await one<{ id: string; email: string }>("select id, email from gif.accounts where ielsco_user_id = $1", [v.user.id]);
-  if (!acct) {
-    const byEmail = await one<{ id: string; email: string; ielsco_user_id: string | null }>("select id, email, ielsco_user_id from gif.accounts where email = $1", [v.user.email]);
-    if (byEmail?.ielsco_user_id && byEmail.ielsco_user_id !== v.user.id) return { ok: false, error: "This email is linked to a different IELSco account. Contact hello@ielsco.com." };
-    acct = byEmail
-      ? await one<{ id: string; email: string }>("update gif.accounts set ielsco_user_id = $2, ielsco_linked_at = now() where id = $1 returning id, email", [byEmail.id, v.user.id])
-      : await one<{ id: string; email: string }>("insert into gif.accounts (email, ielsco_user_id, ielsco_linked_at) values ($1, $2, now()) returning id, email", [v.user.email, v.user.id]);
-  }
-  await q("update gif.accounts set last_login_at = now() where id = $1", [acct!.id]);
-  await startSession(acct!.id, acct!.email, ip);
+  const r = await linkOrCreateForIelscoUser(user);
+  if (!r.ok) return r;
+  await q("update gif.accounts set last_login_at = now() where id = $1", [r.acct.id]);
+  await startSession(r.acct.id, r.acct.email, ip);
   return { ok: true };
 }
 

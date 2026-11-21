@@ -108,7 +108,7 @@ export default function RegisterPage() {
         } else {
           // Auto logged in
           setPopup("Account created successfully. Redirecting…");
-          setTimeout(() => router.push(nextUrl), 1500);
+          setTimeout(() => (nextUrl.startsWith("/api/") ? window.location.assign(nextUrl) : router.push(nextUrl)), 1500);
         }
       }
     } catch (error) {
@@ -134,7 +134,7 @@ export default function RegisterPage() {
 
       if (data.session) {
         setPopup("Account verified successfully. Redirecting…");
-        setTimeout(() => router.push(nextUrl), 1500);
+        setTimeout(() => (nextUrl.startsWith("/api/") ? window.location.assign(nextUrl) : router.push(nextUrl)), 1500);
       }
     } catch (error) {
       setPopup(`Invalid verification code: ${(error as Error).message}`);

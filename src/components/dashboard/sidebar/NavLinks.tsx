@@ -117,9 +117,9 @@ export function NavLinks({ onNavigate, testPrefix = "nav" }: { onNavigate?: () =
     <>
       <PrimaryItem section={home} onClick={onNavigate} testPrefix={testPrefix} />
       <Divider />
-      {groups.map((s) => (
-        <NavGroup key={s.id} id={s.id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, unread)} inside={isItemActive(s, path)} onClick={onNavigate} testPrefix={testPrefix} />
-      ))}
+      {groups.map((s) => s.children?.length
+        ? <NavGroup key={s.id} id={s.id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, unread)} inside={isItemActive(s, path)} onClick={onNavigate} testPrefix={testPrefix} />
+        : <PrimaryItem key={s.id} section={s} onClick={onNavigate} testPrefix={testPrefix} />)}
       {isAdmin && (
         <>
           <Divider />

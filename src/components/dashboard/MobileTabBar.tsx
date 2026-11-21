@@ -6,7 +6,7 @@ import { useCallback, useRef, useState } from "react";
 import { Compass, LogOut, Menu } from "lucide-react";
 import { ACCOUNT_ITEMS, ADMIN_NAV_GROUP, SECTIONS, isItemActive } from "./nav";
 import { BottomSheet } from "./BottomSheet";
-import { Divider, NavGroup, NavItem, SectionLabel, ring, sectionLeaves, type Leaf } from "./sidebar/NavLinks";
+import { Divider, NavGroup, NavItem, PrimaryItem, SectionLabel, ring, sectionLeaves, type Leaf } from "./sidebar/NavLinks";
 import { GifBanner } from "./sidebar/GifBanner";
 import { ElcoPromo } from "./sidebar/ElcoPromo";
 import { useStoryAdmin } from "./stories-admin/useStoryAdmin";
@@ -80,6 +80,7 @@ export function MobileTabBar() {
             const s = byId(id);
             return <NavGroup key={id} id={id} label={t(s.key)} icon={s.icon} items={sectionLeaves(s, unread)} inside={isItemActive(s, path)} onClick={close} testPrefix="drawer" />;
           })}
+          <PrimaryItem section={byId("gif")} onClick={close} testPrefix="drawer" />
           <Divider />
           <div role="group" aria-labelledby="more-account">
             <SectionLabel id="more-account">{t("nav.account")}</SectionLabel>

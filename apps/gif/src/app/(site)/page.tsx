@@ -6,7 +6,7 @@ import { PHOTOS, KEY_DATES, ELCO_PRO_FEATURES } from "@/lib/content";
 import { balanceOf, mentoringPrice } from "@/lib/settings";
 import { fmtRange } from "@/lib/format";
 import { CurrencyToggle, Price } from "@/components/Client";
-import { DeadlineStrip, Eyebrow, FaqList, FinalCta, Figure, MentorPlaceholders, Pathways, PhotoBand, Testimonials, Universities } from "@/components/Blocks";
+import { DeadlineStrip, Eyebrow, FaqList, FinalCta, openingLine, Figure, MentorPlaceholders, Pathways, PhotoBand, Testimonials, Universities } from "@/components/Blocks";
 import { DESTINATIONS, PLACES } from "@/lib/places";
 
 export const revalidate = 300;
@@ -62,7 +62,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="grid g4">
-            {[["Who", "High school, undergraduate and college students."], ["How", "Individually or in teams of 2–3 (maximum 3)."], ["Where", "Singapore, Malaysia and Thailand, in that order."], ["When", "27 July – 3 August 2027. Applications from 25 November 2026."]].map(([k, v]) => (
+            {[["Who", "High school, undergraduate and college students."], ["How", "Individually or in teams of 2–3 (maximum 3)."], ["Where", "Singapore, Malaysia and Thailand, in that order."], ["When", `27 July – 3 August 2027. ${openingLine(s)}`]].map(([k, v]) => (
               <div className="item" key={k}><span className="kicker">{k}</span><p style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.45, color: "var(--deep)", margin: 0 }}>{v}</p></div>
             ))}
           </div>
@@ -221,7 +221,7 @@ export default async function Home() {
           </tbody></table></div>
         </div>
       </section>
-      <FinalCta />
+      <FinalCta body={`${openingLine(s)} Choose the pathway that fits you and start today; you can save a draft and finish later.`} />
     </>
   );
 }

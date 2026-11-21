@@ -35,6 +35,9 @@ export const ENV = {
   GIF_IELSCO_SUPABASE_ANON_KEY: "e2e-ielsco-anon",
   ELCO_GRANT_URL: `http://127.0.0.1:${MT_PORT}/api/integrations/ielsco/grants`,
   IELSCO_TO_ELCO_SECRET: "e2e-ielsco-to-elco-secret-0123456789abcdef",
+  // IELSco single sign-on (lib/ielsco-bridge.ts); scenarios sign tokens with this test secret.
+  IELSCO_GIF_SSO_SECRET: "e2e-ielsco-gif-sso-secret-0123456789abcdef",
+  IELSCO_APP_URL: "http://ielsco.example.test",
   NEXT_TELEMETRY_DISABLED: "1",
 };
 
@@ -50,7 +53,7 @@ async function setupDb() {
     await c.query(readFileSync(join(repo, "supabase", "migrations", m), "utf8"));
   }
   // Applications open on 25 Nov 2026; tests run before that, so open them early in this throwaway database only.
-  await c.query(`update gif.cohorts set settings = '{"dates": {"launch": "2026-11-01T00:00:00+07:00"}}' where is_current`);
+  await c.query(`update gif.cohorts set settings = '{"dates": {"launch": "2026-11-01T00:00:00+07:00", "fully_funded_opens": "2026-11-01T00:00:00+07:00"}}' where is_current`);
   // Test staff (fictional, example.test).
   await c.query(`insert into gif.staff (email, role, name) values ('owner@example.test', 'owner', 'Test Owner'), ('finance@example.test', 'finance', 'Test Finance'),
     ('eval@example.test', 'evaluator', 'Test Evaluator'), ('eval2@example.test', 'evaluator', 'Second Evaluator') on conflict do nothing`);

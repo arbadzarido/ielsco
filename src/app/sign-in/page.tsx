@@ -49,6 +49,8 @@ function SignInContent() {
       }
       if (data.user) {
         setStatus("Signed in. Taking you to your dashboard…");
+        // A hop through a route handler (e.g. /api/gif/sso → gif.ielsco.com) needs a full page load, not a client push.
+        if (nextUrl.startsWith("/api/")) { window.location.assign(nextUrl); return; }
         router.refresh();
         router.push(nextUrl);
       }

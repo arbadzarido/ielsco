@@ -17,15 +17,17 @@ export type PortalCtx = {
   consents: Record<string, boolean>;
 };
 
-export const portalContext = cache(async (path = "/portal"): Promise<PortalCtx> => {
-  const account = await requireAccount(path);
+export const portalContext = cache(async (path = "/portal"): Promise<PortalCtx> => contextForAccount(await requireAccount(path)));
+
+// The same context for a known account (used by the IELSco dashboard summary, which has no GIF session cookie).
+export async function contextForAccount(account: Account): Promise<PortalCtx> {
   const cohort = await currentCohort();
   const found = await applicationForAccount(account.id);
   const consents = await consentState(account.id);
   if (!found) return { account, cohort, app: null, isOwner: false, me: null, detail: null, consents };
   const detail = await loadApplicationDetail(found.app.id);
   return { account, cohort, app: found.app, isOwner: found.isOwner, me: found.me, detail, consents };
-});
+}
 
 export type Action = { label: string; href: string; detail?: string; tone?: "warn" | "info" };
 
