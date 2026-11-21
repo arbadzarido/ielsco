@@ -1,0 +1,57 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { GIF_APPLY_URL, GIF_PATHWAYS, GIF_PROGRAMME, GIF_REGISTER_URL, GIF_SITE_URL, gifApplyHref, pathwayOpen, pathwayStatus } from "../src/lib/gif-summer-2027.ts";
+import { GIF_POPUP, gifPopupAllowedOn, shouldShowGifPopup, snoozeUntil } from "../src/lib/gif/recruit-popup.ts";
+
+const at = (iso) => Date.parse(iso);
+
+test("GIF destinations: the programme site and its application", () => {
+  assert.equal(GIF_SITE_URL, "https://gif.ielsco.com");
+  assert.equal(GIF_APPLY_URL, "https://gif.ielsco.com/apply");
+  assert.equal(GIF_REGISTER_URL, GIF_APPLY_URL, "no more Google Form");
+  assert.equal(gifApplyHref("mentoring"), "https://gif.ielsco.com/apply?pathway=mentoring");
+  assert.equal(GIF_PROGRAMME.dates, "27 July – 3 August 2027");
+  assert.deepEqual([...GIF_PROGRAMME.route], ["Singapore", "Malaysia", "Thailand"]);
+});
+
+test("three pathways (no Partial Funded pathway) with the 21 Nov 2026 timeline", () => {
+  assert.deepEqual(GIF_PATHWAYS.map((p) => p.key), ["fully_funded", "self_funded", "mentoring"]);
+  const ff = GIF_PATHWAYS[0], sf = GIF_PATHWAYS[1], mt = GIF_PATHWAYS[2];
+  const nov21 = at("2026-11-21T12:00:00+07:00");
+  assert.equal(pathwayOpen(sf, nov21), true);
+  assert.equal(pathwayOpen(mt, nov21), true);
+  assert.equal(pathwayOpen(ff, nov21), false);
+  assert.equal(pathwayStatus(ff, nov21), "Opens 25 Nov");
+  assert.equal(pathwayStatus(ff, at("2026-11-25T00:00:00+07:00")), "Open now");
+});
+
+test("popup only on public pages", () => {
+  for (const p of ["/", "/events", "/products", "/about", "/articles/x", "/opportunities"]) assert.equal(gifPopupAllowedOn(p, "www.ielsco.com"), true, p);
+  for (const p of ["/dashboard", "/dashboard/gif", "/sign-in", "/sign-up", "/membership/checkout", "/checkout", "/careers", "/careers/apply", "/os", "/admin", "/school", "/quiz", "/events/gif", "/events/gif/batch2", "/api/x"]) {
+    assert.equal(gifPopupAllowedOn(p, "www.ielsco.com"), false, p);
+  }
+  assert.equal(gifPopupAllowedOn("/", "gif.ielsco.com"), false, "never on the GIF site itself");
+  assert.equal(gifPopupAllowedOn("/", "circle.ielsco.com"), false);
+});
+
+test("popup display rules: window, once per session, cooldowns, other campaign", () => {
+  const base = { now: at("2026-11-22T10:00:00+07:00"), pathname: "/events", host: "www.ielsco.com", snoozedUntil: 0, seenThisSession: false, otherPopupThisSession: false };
+  assert.equal(shouldShowGifPopup(base), true);
+  assert.equal(shouldShowGifPopup({ ...base, seenThisSession: true }), false);
+  assert.equal(shouldShowGifPopup({ ...base, otherPopupThisSession: true }), false, "never in the same session as Open Recruitment");
+  assert.equal(shouldShowGifPopup({ ...base, snoozedUntil: snoozeUntil(base.now, "dismiss") }), false);
+  assert.equal(shouldShowGifPopup({ ...base, now: base.now + 8 * 86_400_000, snoozedUntil: snoozeUntil(base.now, "dismiss") }), true, "back after 7 days");
+  assert.equal(snoozeUntil(0, "clicked"), 30 * 86_400_000);
+  assert.equal(shouldShowGifPopup({ ...base, now: at("2027-07-27T00:00:00+07:00") }), false, "campaign ends when the programme starts");
+  assert.equal(shouldShowGifPopup({ ...base, enabled: false }), false, "kill switch");
+  assert.ok(GIF_POPUP.delayMs >= 10_000, "not on page load");
+});
+
+test("no navigation or CTA still points at /events/gif", () => {
+  const files = ["src/components/header.tsx", "src/components/footer.tsx", "src/app/HomeView.tsx", "src/app/events/EventsView.tsx", "src/app/products/page.tsx", "src/data/dashboard/programs.ts", "src/app/sitemap.ts"];
+  for (const f of files) assert.ok(!/["'(]\/events\/gif["')]/.test(readFileSync(new URL(`../${f}`, import.meta.url), "utf8")), f);
+  const cfg = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
+  assert.match(cfg, /source: "\/events\/gif", destination: "https:\/\/gif\.ielsco\.com", permanent: true/);
+  assert.ok(!/source: "\/events\/gif\/:/.test(cfg), "GIF 2026 subpages are not redirected");
+});

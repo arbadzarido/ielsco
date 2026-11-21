@@ -39,7 +39,7 @@ export function GifFeatureCard({ className }: { className?: string }) {
         </div>
         <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:justify-self-start lg:col-span-1 lg:flex-col">
           <Link
-            href={gifDelegate ? "/dashboard/gif" : "/events/gif"}
+            href="/dashboard/gif"
             data-testid="home-gif-access-link"
             className={cn("inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-[#304156] shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition-colors hover:bg-[#FFF4F4]", focusRing)}
           >

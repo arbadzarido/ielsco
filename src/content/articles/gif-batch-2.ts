@@ -47,7 +47,7 @@ export const gifBatch2: Article = {
       { p: "Batch 2 was open for self-funded participants, and confirmed delegates had to submit a passport valid for at least six months from the departure date." },
       { h2: "Why the English part matters" },
       { p: "Everything at GIF happens in English: classes, feedback sessions and the final pitch. If you're preparing for a program like this, practise presenting your idea and answering questions in English out loud; the free weekly [IELS Circle](https://circle.ielsco.com/) sessions are one place to do that with others." },
-      { note: "Interested in future batches and other international programs? See the [Global Impact Fellowship page](/events/gif) and the [IELSco opportunity board](/opportunities)." },
+      { note: "Interested in future batches and other international programs? See the [Global Impact Fellowship page](https://gif.ielsco.com) and the [IELSco opportunity board](/opportunities)." },
     ],
   },
   id: {
@@ -86,7 +86,7 @@ export const gifBatch2: Article = {
       { p: "Batch 2 dibuka untuk peserta yang membiayai sendiri (self-funded), dan delegasi yang terkonfirmasi wajib menyerahkan paspor yang berlaku minimal enam bulan dari tanggal keberangkatan." },
       { h2: "Mengapa bahasa Inggris penting di sini" },
       { p: "Semua kegiatan GIF berlangsung dalam bahasa Inggris: kelas, sesi masukan, hingga presentasi akhir. Jika kamu bersiap untuk program seperti ini, latih presentasi ide dan menjawab pertanyaan dalam bahasa Inggris dengan suara keras; sesi mingguan gratis [IELS Circle](https://circle.ielsco.com/) adalah salah satu tempat untuk berlatih bersama orang lain." },
-      { note: "Tertarik dengan batch berikutnya dan program internasional lainnya? Lihat [halaman Global Impact Fellowship](/events/gif) dan [papan peluang IELSco](/opportunities)." },
+      { note: "Tertarik dengan batch berikutnya dan program internasional lainnya? Lihat [halaman Global Impact Fellowship](https://gif.ielsco.com) dan [papan peluang IELSco](/opportunities)." },
     ],
   },
 };

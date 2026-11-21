@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Compass, GraduationCap, Library, School, Sparkles, Users, UserPlus } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Compass, GraduationCap, Library, School, Users, UserPlus } from "lucide-react";
 import Footer from "@/components/footer";
 import { Photo } from "@/components/site/Photo";
 import { body, btnPrimary, btnSecondary, cardLink, container, eyebrow, h1, h2, lead, section, siteRoot } from "@/components/site/ui";
@@ -9,6 +9,7 @@ import { pageMetadata } from "@/lib/seo";
 import { elcoHref } from "@/lib/elco";
 import { TutoringPanel } from "@/components/tutoring/TutoringPanel";
 import { TUTOR_PRICE_LABEL } from "@/components/tutoring/links";
+import { GifFeature } from "@/components/gif-public/GifFeature";
 
 export const metadata: Metadata = pageMetadata({
   title: "Programs at IELSco: Elco AI, private English tutor, IELS Circle and fellowships",
@@ -38,7 +39,6 @@ const GROUPS: { title: string; intro: string; items: Item[] }[] = [
     title: "Go deeper", intro: "Human support and programs with a clear outcome.",
     items: [
       { icon: GraduationCap, name: "Private tutoring", text: "One-to-one sessions with an IELSco tutor, on top of learning with Elco AI. Request a session when you need one.", href: "/products/courses", cost: TUTOR_PRICE_LABEL },
-      { icon: Sparkles, name: "Global Impact Fellowship", text: "Leadership and project incubation for youth across Southeast Asia, held at NUS.", href: "/events/gif", cost: "Self-funded" },
       { icon: School, name: "IELS for Schools", text: "Sessions and workshops planned with your school.", href: "/school", cost: "Quoted per school" },
     ],
   },
@@ -82,7 +82,8 @@ export default function ProgramsPage() {
           <div className={container}>
             <h2 className={h2}>{g.title}</h2>
             <p className={cn(lead, "mt-2")}>{g.intro}</p>
-            <ul className="mt-8 grid gap-5 md:grid-cols-3">
+            {g.title === "Go deeper" && <GifFeature placement="products" className="mt-8" />}
+            <ul className={cn("mt-8 grid gap-5", g.items.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3")}>
               {g.items.map((i) => (
                 <li key={i.name}>
                   <ItemLink item={i}>

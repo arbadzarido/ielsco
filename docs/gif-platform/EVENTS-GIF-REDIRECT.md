@@ -1,6 +1,10 @@
 # Redirect ielsco.com/events/gif → gif.ielsco.com (after go-live only)
 
-Founder decision: redirect only after gif.ielsco.com is confirmed live and working. **Not applied in this PR.**
+**Applied 21 Nov 2026** (founder request, after gif.ielsco.com went live): `/events/gif` → `https://gif.ielsco.com` (308) in
+`next.config.ts`; header, footer, home, Events, Products and the dashboard link to gif.ielsco.com; `GIF_REGISTER_URL` now
+points at `https://gif.ielsco.com/apply` (src/lib/gif-summer-2027.ts). The GIF 2026 subpages stay.
+
+Original plan (kept for reference): redirect only after gif.ielsco.com is confirmed live and working.
 
 Go-live checklist (all must pass first):
 1. `https://gif.ielsco.com/api/health` returns `{"ok":true, "db":true, ...}`.

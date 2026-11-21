@@ -23,7 +23,7 @@ import { ELCO_PLANS } from "@/data/membership";
 import { Photo } from "@/components/site/Photo";
 import { LandingOpportunities } from "@/components/opportunities/LandingOpportunities";
 import { track } from "@/lib/analytics";
-import { EARLY_BIRD_END } from "@/lib/gif-summer-2027";
+import { GIF_PATHWAYS, GIF_PROGRAMME, GIF_SITE_URL, pathwayStatus } from "@/lib/gif-summer-2027";
 
 // Public landing page. Positioning: IELSco is an English community connecting people, English learning and global
 // opportunities across Southeast Asia; Elco AI is its integrated learning technology. The Elco robot is the shared
@@ -234,8 +234,6 @@ function Stories() {
 
 function Opportunities() {
   const now = useNow();
-  // GIF Summer 2027: Early Bird open until 20 Nov 2026 23:59 WIB (EARLY_BIRD_END); general registration coming soon.
-  const earlyBirdOpen = now ? now.getTime() < Date.parse(EARLY_BIRD_END) : null;
   // The next event whose registration is still open, straight from the events data. Nothing shown if there is none.
   const nextEvent = useMemo(() => {
     if (!now) return null;
@@ -256,25 +254,23 @@ function Opportunities() {
         </div>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-          <Link href="/events/gif" className={cn(cardLink, "grid overflow-hidden sm:grid-cols-[1fr_200px]")} data-testid="landing-gif">
+          <a href={GIF_SITE_URL} className={cn(cardLink, "grid overflow-hidden sm:grid-cols-[1fr_200px]")} data-testid="landing-gif">
             <div className="flex flex-col p-7">
               <div className="flex items-center gap-3">
                 <Image src="/images/logos/events/gif.png" alt="" width={110} height={40} className="h-[40px] w-auto" />
                 <p className="text-[14px] font-semibold text-[#914D4D]">Global Impact Fellowship</p>
               </div>
               <h3 className={cn(h3, "mt-5")}>GIF Summer 2027: Singapore, Malaysia and Thailand</h3>
-              <p className={cn(body, "mt-2")}>An international youth incubation program with university sessions in three countries, six months of mentoring and a Final Pitch.</p>
+              <p className={cn(body, "mt-2")}>{GIF_PROGRAMME.dates}. {GIF_PROGRAMME.description}</p>
               <div className="mt-auto flex flex-wrap gap-2 pt-6">
-                {earlyBirdOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>Early Bird open until {fmt(new Date(EARLY_BIRD_END))}</span>}
-                {earlyBirdOpen === false && <span className={pill}>Early Bird closed</span>}
-                <span className={pill}>General registration: coming soon</span>
-                <span className="mt-4 flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">About the fellowship <ArrowRight size={16} aria-hidden="true" /></span>
+                {now && GIF_PATHWAYS.map((p) => <span key={p.key} className={cn(pill, pathwayStatus(p, now.getTime()) === "Open now" && "border-[#2D7A58]/30 text-[#2D7A58]")}>{p.name}: {pathwayStatus(p, now.getTime()).toLowerCase()}</span>)}
+                <span className="mt-4 flex w-full items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">Explore the programme <ArrowRight size={16} aria-hidden="true" /></span>
               </div>
             </div>
             <div className="relative hidden min-h-[240px] sm:block">
               <Image src="/images/gif-2027/wsu_group.webp" alt="" fill sizes="200px" className="object-cover" />
             </div>
-          </Link>
+          </a>
 
           <div className="grid gap-6">
             {nextEvent ? (

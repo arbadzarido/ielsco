@@ -31,7 +31,7 @@ const jsonLd = {
     priceCurrency: "USD",
     validThrough: EARLY_BIRD_END,
     availability: "https://schema.org/LimitedAvailability",
-    url: "https://www.ielsco.com/events/gif",
+    url: "https://gif.ielsco.com",
   },
 };
 

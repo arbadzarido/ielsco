@@ -66,7 +66,7 @@ export const PROGRAMS: Program[] = [
       "A seasonal regional program combining campus immersion, project ideation, entrepreneurship, education and social impact, and international exposure.",
     points: ["Campus immersion", "Impact project ideation", "International exposure"],
     actions: [
-      { label: "About GIF", href: "/events/gif" },
+      { label: "About GIF", href: "https://gif.ielsco.com" },
       { label: "Delegate dashboard", href: "/dashboard/gif" },
     ],
     note: "No active edition is listed right now. Existing delegates can still use their dashboard.",
