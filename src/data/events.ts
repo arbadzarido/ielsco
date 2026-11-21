@@ -741,7 +741,7 @@ export const eventsData: EventData[] = [
   <div>&nbsp;</div>
   <div><strong>Registration is free. Complete the form to reserve your place.</strong></div>
 </div>`,
-  registrationLink: "https://forms.gle/TjGqyLKq9LWx94bq7",
+  registrationLink: "https://gif.ielsco.com", // past GIF info session; GIF registration is in the IELSco Dashboard, not a Google Form
   startDate: "2026-11-01",
   registrationTimeDeadline: "12:45",
   registrationDateDeadline: "2026-11-01",

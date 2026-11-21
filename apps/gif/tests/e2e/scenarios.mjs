@@ -875,7 +875,7 @@ export async function run({ base, mt, env, db: dbc }) {
       r = await fetch(`${base}/api/cron/daily`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
       check("cron runs with secret", r.status === 200, await r.text());
       const page = await newPage({ width: 375, height: 812 });
-      for (const p of ["/", "/opportunities", "/mentoring", "/apply", "/refund-policy"]) {
+      for (const p of ["/", "/opportunities", "/mentoring", "/refund-policy"]) {
         await page.goto(p);
         const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         check(`mobile ${p}: no horizontal scroll`, over <= 1, `overflow ${over}px`);
@@ -939,6 +939,15 @@ export async function run({ base, mt, env, db: dbc }) {
       const stranger = await ws(uuid(), "stranger@example.test");
       check("workspace: unknown person gets no one else's data", stranger.status === 200 && stranger.json.account === null && stranger.json.application === null);
       check("workspace: wrong signature refused", (await ws(aSub, A.email, "x".repeat(40))).status === 401);
+
+      // The IELSco Dashboard is the participant entry point: signed-out /apply goes there (pathway kept).
+      const ap = await fetch(`${base}/apply?pathway=mentoring`, { redirect: "manual" });
+      check("signed-out /apply → IELSco dashboard with the pathway", [303, 307, 308].includes(ap.status) && ap.headers.get("location") === "http://ielsco.example.test/dashboard/gif?pathway=mentoring", `${ap.status} ${ap.headers.get("location")}`);
+      // Participant emails point to the dashboard / open GIF pages through IELSco sign-in; nothing links to a Google Form.
+      const mails = await all("select template, html, text_body from gif.email_outbox where template in ('application_submitted', 'payment_received', 'team_invite')");
+      check("participant emails link to the IELSco dashboard", mails.length > 0 && mails.every((m) => m.html.includes("http://ielsco.example.test/")), mails.map((m) => m.template).join(","));
+      check("payment emails open receipts through IELSco sign-in", mails.filter((m) => m.template === "payment_received").every((m) => m.html.includes("http://ielsco.example.test/api/gif/sso?next=%2Fportal%2Freceipts%2F")));
+      check("no Google Forms anywhere in sent emails", !(await one("select 1 from gif.email_outbox where html ~* '(forms\\.gle|docs\\.google\\.com/forms)'")));
       const unsigned = await fetch(`${base}/api/integrations/ielsco/workspace`, { method: "POST", body: JSON.stringify({ sub: aSub, email: A.email }) });
       check("workspace: unsigned request refused", unsigned.status === 401);
     }

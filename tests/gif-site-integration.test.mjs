@@ -8,9 +8,10 @@ const at = (iso) => Date.parse(iso);
 
 test("GIF destinations: the programme site and its application", () => {
   assert.equal(GIF_SITE_URL, "https://gif.ielsco.com");
-  assert.equal(GIF_APPLY_URL, "https://gif.ielsco.com/apply");
-  assert.equal(GIF_REGISTER_URL, GIF_APPLY_URL, "no more Google Form");
-  assert.equal(gifApplyHref("mentoring"), "https://gif.ielsco.com/apply?pathway=mentoring");
+  // Participants register, apply and pay in the IELSco Dashboard (no Google Forms).
+  assert.equal(GIF_APPLY_URL, "/dashboard/gif");
+  assert.equal(GIF_REGISTER_URL, GIF_APPLY_URL);
+  assert.equal(gifApplyHref("mentoring"), "/dashboard/gif?pathway=mentoring");
   assert.equal(GIF_PROGRAMME.dates, "27 July – 3 August 2027");
   assert.deepEqual([...GIF_PROGRAMME.route], ["Singapore", "Malaysia", "Thailand"]);
 });
@@ -54,6 +55,19 @@ test("no navigation or CTA still points at /events/gif", () => {
   const cfg = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
   assert.match(cfg, /source: "\/events\/gif", destination: "https:\/\/gif\.ielsco\.com", permanent: true/);
   assert.ok(!/source: "\/events\/gif\/:/.test(cfg), "GIF 2026 subpages are not redirected");
+});
+
+test("no GIF page, data or component links to a Google Form", async () => {
+  const { readdirSync, statSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const roots = ["src/app/events/gif", "src/app/dashboard/gif", "src/components/gif-public", "src/components/dashboard/gif", "src/lib/gif-summer-2027.ts", "src/data/gif.ts", "apps/gif/src"];
+  const files = [];
+  const walk = (p) => { const full = new URL(`../${p}`, import.meta.url); if (statSync(full).isDirectory()) for (const f of readdirSync(full)) walk(join(p, f)); else if (/\.(tsx?|mjs)$/.test(p)) files.push(p); };
+  roots.forEach(walk);
+  for (const f of files) assert.ok(!/forms\.gle|docs\.google\.com\/forms/i.test(readFileSync(new URL(`../${f}`, import.meta.url), "utf8")), f);
+  const events = readFileSync(new URL("../src/data/events.ts", import.meta.url), "utf8");
+  const gifEvent = events.slice(events.indexOf('title: "GIF: Study at NUS Info Session'));
+  assert.ok(!/forms\.gle/.test(gifEvent.slice(0, 4000)), "GIF info session registration link");
 });
 
 test("sign-in keeps the GIF pathway preselection (/dashboard/gif?pathway=…)", () => {

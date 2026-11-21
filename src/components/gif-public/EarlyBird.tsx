@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { EARLY_BIRD_END, GIF_REGISTER_URL } from "@/lib/gif-summer-2027";
 
 // The page is statically built, so the Early Bird status is re-checked in the browser after mount and switches by itself
-// once the window has closed. Registration goes through the program's Google Form.
+// once the window has closed. Registration goes through the IELSco Dashboard (/dashboard/gif); no Google Forms.
 const isOpen = () => Date.now() < Date.parse(EARLY_BIRD_END);
 
 function useEarlyBirdOpen() {
@@ -30,7 +30,7 @@ export function EarlyBirdStatus() {
 export function EarlyBirdCta({ className }: { className: string }) {
   const open = useEarlyBirdOpen();
   return (
-    <a href={GIF_REGISTER_URL} target="_blank" rel="noopener noreferrer" className={className} data-testid="gif-early-bird-cta" suppressHydrationWarning>
+    <a href={GIF_REGISTER_URL} className={className} data-testid="gif-early-bird-cta" suppressHydrationWarning>
       {open ? "Register for Early Bird" : "Register for GIF Summer 2027"}
     </a>
   );

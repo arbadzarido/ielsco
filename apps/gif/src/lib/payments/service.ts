@@ -6,7 +6,7 @@ import { audit } from "../audit";
 import { currentCohort } from "../cohort";
 import { siteUrl } from "../request";
 import { sendEmail, deliverQueued } from "../email/send";
-import { onboardingEmail, paymentFailedEmail, paymentReceivedEmail } from "../email/templates";
+import { onboardingEmail, participantUrl, paymentFailedEmail, paymentReceivedEmail } from "../email/templates";
 import { cardAmountIdr, collectionMethod, formatMoney } from "../pricing";
 import { LEGAL_VERSION, PAYMENT_CONSENTS } from "../legal";
 import { recordServerEvent } from "../analytics";
@@ -221,7 +221,7 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
         const who = (await db.query<{ legal_name: string; email: string; owner_email: string }>(
           `select p.legal_name, p.email, acc.email as owner_email from gif.participants p join gif.applications a on a.id = p.application_id
            join gif.accounts acc on acc.id = a.owner_account_id where p.id = $1`, [pay.participant_id])).rows[0];
-        const m = paymentReceivedEmail(who.legal_name, ob.label, paidAmountText(pay), receipt, `${siteUrl()}/portal/receipts/${pay.id}`);
+        const m = paymentReceivedEmail(who.legal_name, ob.label, paidAmountText(pay), receipt, participantUrl(`/portal/receipts/${pay.id}`));
         for (const to of new Set([who.email, who.owner_email])) {
           await sendEmail({ to, template: "payment_received", ...m, dedupeKey: `paid:${pay.id}:${to}`, applicationId: pay.application_id }, db);
         }
@@ -341,7 +341,7 @@ export async function recordManualPayment(staffEmail: string, obligationId: stri
     await afterObligationPaid(db, ob.participant_id, ob.id, ob.kind);
     await audit(staffEmail, "manual_payment_recorded", "payment", id, { obligation: ob.id, amount, currency, reference }, ip, db);
     const pay = (await db.query<{ receipt_no: string }>("select receipt_no from gif.payments where id = $1", [id])).rows[0];
-    const m = paymentReceivedEmail(ob.legal_name, ob.label, formatMoney(amount, currency), pay.receipt_no, `${siteUrl()}/portal/receipts/${id}`);
+    const m = paymentReceivedEmail(ob.legal_name, ob.label, formatMoney(amount, currency), pay.receipt_no, participantUrl(`/portal/receipts/${id}`));
     await sendEmail({ to: ob.email, template: "payment_received", ...m, dedupeKey: `paid:${id}:${ob.email}`, applicationId: ob.application_id }, db);
     await recompute(db, ob.application_id, staffEmail);
     return id;

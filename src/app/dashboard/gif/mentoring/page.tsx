@@ -307,7 +307,7 @@ const handleProjectSubmit = async () => {
                 </Button>
               </Link>
               <Button 
-                onClick={() => window.open("https://forms.gle/D4DMBFshr1JeydZC9", "_blank")}
+                onClick={() => { window.location.href = "/dashboard/gif?pathway=mentoring"; }}
                 className="w-full bg-[#914D4D] hover:bg-[#7a3e3e] py-3 text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
                 Apply for Mentoring

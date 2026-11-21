@@ -10,7 +10,8 @@ import { EARLY_BIRD_END, GIF_REGISTER_URL } from "@/lib/gif-summer-2027";
 
 // Global Impact Fellowship card for dashboard pages (Home, Events). GIF identity: navy #304156 → maroon #914D4D,
 // navy GIF logo on a white plate. Delegates (GIF Singapore, Batch 2) go to their portal; everyone else sees GIF Summer 2027 with
-// the registration form and, while it is open, the Early Bird deadline (EARLY_BIRD_END).
+// the GIF workspace in the dashboard (registration, applications and payments) and, while it was open, the Early Bird
+// deadline (EARLY_BIRD_END).
 export function GifFeatureCard({ className }: { className?: string }) {
   const { gifDelegate } = useNavAccess();
   const earlyBird = Date.now() < Date.parse(EARLY_BIRD_END);
