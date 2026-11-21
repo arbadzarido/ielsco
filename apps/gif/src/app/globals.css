@@ -515,4 +515,11 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 
 /* International payment choice (card in IDR at the fixed rate, or invoice) */
 .pay-options { display: grid; gap: 10px; }
-.pay-option { border: 1px solid var(--hairline); border-radius: 14px; padding: 12px 14px; background: #fff; }
+.pay-option { border: 1px solid var(--hairline); border-radius: 14px; padding: 14px 16px; background: #fff; }
+.pay-option-card { border-color: rgba(184, 134, 46, 0.45); background: linear-gradient(180deg, #FDF8EE, #fff 70%); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 6px 18px rgba(48,65,86,.06); }
+.pay-option-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; font-size: 15px; }
+.card-brands { font-size: 12px; font-weight: 600; color: #304156; letter-spacing: .02em; }
+.pay-figures { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 8px; }
+.pay-figures dt { font-size: 12px; color: var(--muted, #6B7A8F); }
+.pay-figures dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; color: #1A2534; }
+.pay-figures .pay-figure-main { font-size: 18px; color: #304156; }

@@ -43,7 +43,7 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
       <div className="btn-row"><a className="btn btn-secondary btn-sm" href="/api/admin/export?type=payments">Export transactions (CSV)</a><a className="btn btn-secondary btn-sm" href="/api/admin/export?type=obligations">Export obligations (CSV)</a></div>
 
       <h2 id="invoices">Invoice requests</h2>
-      <p className="small muted">International card payments: {s.payments.international_card_enabled || s.payments.allow_idr_for_international ? `on, at USD 1 = ${formatMoney(s.payments.usd_idr_card_rate, "IDR")}` : "off"}. Bank details shown to payers who requested an invoice: {s.payments.invoice_bank_details ? "set" : "not set (payers are told Finance will send them)"}. Both are in Content → Settings → payments.</p>
+      <p className="small muted">International card payments: {s.payments.international_cards !== false ? `on, at USD 1 = ${formatMoney(s.payments.usd_idr_card_rate, "IDR")}` : "off"}. Bank details shown to payers who requested an invoice: {s.payments.invoice_bank_details ? "set" : "not set (payers are told Finance will send them)"}. Both are in Content → Settings → payments.</p>
       {invoices.length === 0 ? <p className="muted">No open invoice requests.</p> : <div className="table-wrap"><table className="t compact" data-testid="invoice-requests">
         <thead><tr><th>Requested</th><th>Application</th><th>Delegate</th><th>Item</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>
         {invoices.map((r) => <tr key={r.id}><td>{fmtDateTime(r.created_at)}</td><td><Link href={`/admin/applicants/${r.app_id}`}>{r.code}</Link></td><td>{r.legal_name}<span className="tiny muted" style={{ display: "block" }}>{r.email}</span></td><td>{r.label}</td>

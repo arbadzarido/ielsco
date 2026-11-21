@@ -51,7 +51,10 @@ export function collectionMethod(s: Settings, currency: Currency, midtransReady:
   return midtransReady && internationalCardEnabled(s) ? "midtrans_idr_option" : "manual";
 }
 
-export const internationalCardEnabled = (s: Settings) => !!(s.payments.international_card_enabled || s.payments.allow_idr_for_international);
+// payments.international_cards is the switch (default on since the founder's go-ahead on 21 Nov 2026). The older
+// international_card_enabled / allow_idr_for_international keys are ignored: a false saved there before the go-ahead must not
+// keep cards off.
+export const internationalCardEnabled = (s: Settings) => s.payments.international_cards !== false;
 
 // The IDR amount charged by card for a USD obligation: USD × fixed rate, rounded to whole rupiah (Midtrans requires an
 // integer). Computed from the stored obligation amount on the server, never from anything the browser sends. Returns null

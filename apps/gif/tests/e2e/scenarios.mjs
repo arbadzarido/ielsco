@@ -445,7 +445,7 @@ export async function run({ base, mt, env, db: dbc }) {
       const ob = await obligation(D.email, "mentoring");
       check("mentoring USD 79 Early Bird obligation (per person)", Number(ob.amount) === 79 && ob.currency === "USD", `${ob.amount} ${ob.currency}`);
       await page.goto("/portal/payments");
-      check("USD payer offered invoice, not a converted IDR charge", (await page.locator("tr", { hasText: "Mentoring" }).innerText()).includes("Request invoice"));
+      check("USD payer offered an invoice (card option alongside)", (await page.locator("tr", { hasText: "Mentoring" }).innerText()).includes("Request invoice"));
       await page.context().close();
       const fp = await newPage();
       await login(fp, "owner@example.test", "/admin");
@@ -481,9 +481,10 @@ export async function run({ base, mt, env, db: dbc }) {
         await page.getByRole("button", { name: "Accept" }).click();
       }
       await page.getByText(/Your acceptance has been recorded|You accepted the current version/).first().waitFor();
+      await setPayments({ international_cards: false });
       await page.goto("/portal/payments");
-      check("card option hidden until Finance switches it on", (await page.getByTestId("intl-card").count()) === 0 && (await page.getByTestId("intl-invoice").count()) === 1);
-      await setPayments({ international_card_enabled: true });
+      check("card option hidden when Finance switches it off", (await page.getByTestId("intl-card").count()) === 0 && (await page.getByTestId("intl-invoice").count()) === 1);
+      await setPayments({ international_cards: true });
       await page.goto("/portal/payments");
       const card = page.getByTestId("intl-card");
       const ct = await card.innerText();
@@ -508,7 +509,7 @@ export async function run({ base, mt, env, db: dbc }) {
       await page.goto(`/portal/receipts/${rc.id}`);
       check("receipt shows the programme price and the fixed rate", (await page.locator("body").innerText()).includes("paid by card at the fixed rate USD 1 = IDR 18,500"));
       check("IDR obligations unchanged (A's Elco Pro still IDR 98,000)", Number((await obligation(A.email, "elco_pro")).amount) === 98000);
-      await setPayments({ international_card_enabled: false });
+      await setPayments({ international_cards: false });
       await page.context().close();
     }
 

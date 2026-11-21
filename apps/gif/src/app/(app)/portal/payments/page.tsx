@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { portalContext } from "@/lib/portal";
 import { paymentsState } from "@/lib/payments/gateway";
-import { cardAmountIdr, collectionMethod, formatMoney } from "@/lib/pricing";
+import { cardAmountIdr, collectionMethod, formatMoney, internationalCardEnabled } from "@/lib/pricing";
 import { PAYMENT_CONSENTS } from "@/lib/legal";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import { PayFlow, InvoiceButton } from "./buttons";
@@ -59,19 +59,22 @@ export default async function Payments() {
                       : o.currency === "USD" ? (
                         <div className="pay-options" data-testid="intl-options">
                           {method === "midtrans_idr_option" && cardIdr && (
-                            <div className="pay-option" data-testid="intl-card">
-                              <p className="small" style={{ margin: 0 }}><strong>Pay by card</strong> · Visa or Mastercard</p>
-                              <p className="small" style={{ margin: "2px 0 8px" }}>Card amount <strong>{formatMoney(cardIdr, "IDR")}</strong>
-                                <span className="tiny muted" style={{ display: "block" }}>Programme price {formatMoney(o.amount, "USD")}, converted at the fixed rate USD 1 = {formatMoney(s.payments.usd_idr_card_rate, "IDR")}. Midtrans charges in IDR; your bank may add its own fees. Card acceptance depends on Midtrans and your bank.</span></p>
+                            <div className="pay-option pay-option-card" data-testid="intl-card">
+                              <div className="pay-option-head"><strong>Pay by card</strong><span className="card-brands" aria-label="Mastercard and Visa">Mastercard · Visa</span></div>
+                              <dl className="pay-figures">
+                                <div><dt>Programme price</dt><dd>{formatMoney(o.amount, "USD")}</dd></div>
+                                <div><dt>Card payment</dt><dd className="pay-figure-main">{formatMoney(cardIdr, "IDR")}</dd></div>
+                              </dl>
+                              <p className="tiny muted" style={{ margin: "0 0 10px" }}>Fixed rate USD 1 = {formatMoney(s.payments.usd_idr_card_rate, "IDR")}. Midtrans charges in IDR; your bank may add its own fees. Card acceptance depends on Midtrans and your bank.</p>
                               {flow(true, attempt ? "Continue card payment" : `Pay ${formatMoney(cardIdr, "IDR")} by card`)}
                             </div>
                           )}
                           <div className="pay-option" data-testid="intl-invoice">
-                            <p className="small" style={{ margin: "0 0 8px" }}><strong>Request an invoice</strong> · bank transfer of {formatMoney(o.amount, "USD")}</p>
+                            <div className="pay-option-head"><strong>Request an invoice</strong><span className="tiny muted">Bank transfer · {formatMoney(o.amount, "USD")}</span></div>
+                            <p className="tiny muted" style={{ margin: "4px 0 10px" }}>IELSco Finance emails you an official invoice with the transfer details. A transfer counts once Finance has verified it.</p>
                             {invoice ? <p className="small" role="status" style={{ margin: 0 }}>{invoice.status === "invoice_sent" ? `Invoice ${invoice.invoice_no ?? ""} sent ${fmtDate(invoice.sent_at)}. Check your email.` : `Invoice requested ${fmtDate(invoice.created_at)}. Finance will email your invoice.`}</p>
                               : <InvoiceButton obligationId={o.id} />}
                           </div>
-                          {method === "midtrans_idr_option" && cardIdr && <p className="tiny muted" style={{ margin: 0 }}>Card declined or not accepted? Request an invoice instead.</p>}
                         </div>
                       )
                       : invoice ? <span className="small">Invoice requested {fmtDate(invoice.created_at)}.</span>
@@ -83,7 +86,7 @@ export default async function Payments() {
           </tbody>
         </table></div>
       )}
-      {obligations.some((o) => o.currency === "USD" && o.status === "open") && <div className="notice" style={{ marginTop: 16 }}><p>{s.payments.bank_transfer_instructions}</p></div>}
+      {!(ready && internationalCardEnabled(s)) && obligations.some((o) => o.currency === "USD" && o.status === "open") && <div className="notice" style={{ marginTop: 16 }}><p>{s.payments.bank_transfer_instructions}</p></div>}
       {/* Finance-approved bank details: only for someone who has requested an invoice, and only once Finance has entered them. */}
       {s.payments.invoice_bank_details && detail.invoiceRequests.some((r) => ["invoice_requested", "invoice_sent"].includes(r.status) && obligations.some((o) => o.id === r.obligation_id)) && (
         <div className="notice" style={{ marginTop: 12 }} data-testid="bank-details"><p><strong>Bank transfer details</strong></p><p style={{ whiteSpace: "pre-line" }}>{s.payments.invoice_bank_details}</p>
