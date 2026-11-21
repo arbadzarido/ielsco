@@ -10,12 +10,20 @@ pg.types.setTypeParser(20, (v) => Number(v));                           // bigin
 
 const g = globalThis as unknown as { __gifPool?: pg.Pool };
 
+// GIF_DATABASE_CA_CERT may be pasted as a multi-line PEM or with "\n" escapes (as .env.example says). A value that is not
+// a PEM certificate is ignored with a log line, so a bad paste cannot take the whole site down; TLS stays on either way.
+function caCert(): string | undefined {
+  const { pem, problem } = normalizeCaCert(process.env.GIF_DATABASE_CA_CERT);
+  if (problem) console.error(`[gif:db] GIF_DATABASE_CA_CERT ignored: ${problem}`);
+  return pem;
+}
+
 function pool(): pg.Pool {
   if (g.__gifPool) return g.__gifPool;
   const url = process.env.GIF_DATABASE_URL;
   if (!url) throw new Error("GIF_DATABASE_URL is not set");
   const local = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
-  const ca = process.env.GIF_DATABASE_CA_CERT?.replace(/\n/g, "\n");
+  const ca = caCert();
   g.__gifPool = new pg.Pool({
     connectionString: url.replace(/[?&]sslmode=[^&]*/g, ""),
     max: Number(process.env.GIF_DATABASE_POOL_MAX || 5),
@@ -28,7 +36,10 @@ function pool(): pg.Pool {
   return g.__gifPool;
 }
 
-export { dbErrorKind, logDbError, type DbErrorKind } from "./db-errors";
+export { dbErrorKind, dbErrorCode, logDbError, type DbErrorKind } from "./db-errors";
+import { normalizeCaCert } from "./db-errors";
+export const dbTlsMode = (): "verified" | "encrypted" | "local" =>
+  /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(process.env.GIF_DATABASE_URL ?? "") ? "local" : normalizeCaCert(process.env.GIF_DATABASE_CA_CERT).pem ? "verified" : "encrypted";
 
 export type Db = Pick<pg.PoolClient, "query">;
 

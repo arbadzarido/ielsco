@@ -13,3 +13,20 @@ test("dbErrorKind labels common production database failures without leaking det
   assert.equal(dbErrorKind(Object.assign(new Error("permission denied for schema gif"), { code: "42501" })), "permission");
   assert.equal(dbErrorKind(new Error("something else")), "other");
 });
+
+test("normalizeCaCert accepts escaped or multi-line PEM and rejects junk", async () => {
+  const { normalizeCaCert, dbErrorCode } = await import("../../src/lib/db-errors.ts");
+  const body = "MIIDxTCCAq2gAwIBAgIU";
+  const multi = `-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----`;
+  const escaped = ["-----BEGIN CERTIFICATE-----", body, "-----END CERTIFICATE-----", ""].join(String.raw`\n`);
+  assert.equal(normalizeCaCert(multi).pem, multi + "\n");
+  assert.equal(normalizeCaCert(escaped).pem, multi + "\n");
+  assert.equal(normalizeCaCert(`"${escaped}"`).pem, multi + "\n");
+  assert.equal(normalizeCaCert(multi.replace(/\n/g, "\r\n")).pem, multi + "\n");
+  assert.deepEqual(normalizeCaCert(""), {});
+  assert.deepEqual(normalizeCaCert(undefined), {});
+  assert.ok(normalizeCaCert("hello").problem);
+  assert.ok(escaped.includes(String.raw`\n`) && !normalizeCaCert(escaped).pem!.includes(String.raw`\n`));
+  assert.equal(dbErrorCode(Object.assign(new Error("x"), { code: "SELF_SIGNED_CERT_IN_CHAIN" })), "SELF_SIGNED_CERT_IN_CHAIN");
+  assert.equal(dbErrorCode(new Error("x")), undefined);
+});

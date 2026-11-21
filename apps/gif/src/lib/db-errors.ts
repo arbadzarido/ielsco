@@ -25,3 +25,17 @@ export function logDbError(where: string, e: unknown) {
   const msg = String(err?.message ?? e).replace(/postgres(ql)?:\/\/[^\s]+/gi, "postgres://<redacted>");
   console.error(`[gif:db] ${where}: kind=${dbErrorKind(e)} code=${err?.code ?? "-"} ${msg.slice(0, 300)}`);
 }
+
+// The pg / Node error code (e.g. 28P01, ENOTFOUND, SELF_SIGNED_CERT_IN_CHAIN). Codes are not secret; messages may be.
+export function dbErrorCode(e: unknown): string | undefined {
+  const code = (e as { code?: unknown })?.code;
+  return typeof code === "string" && /^[A-Z0-9_]{2,60}$/.test(code) ? code : undefined;
+}
+
+// Accepts a multi-line PEM or one with literal "\n" escapes (and stray quotes/CRs from a paste).
+export function normalizeCaCert(raw: string | undefined): { pem?: string; problem?: string } {
+  const v = (raw ?? "").trim().replace(/^["']|["']$/g, "").replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\r/g, "").trim();
+  if (!v) return {};
+  if (!/-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----/.test(v)) return { problem: "not a PEM certificate (expected -----BEGIN CERTIFICATE-----)" };
+  return { pem: v + "\n" };
+}
