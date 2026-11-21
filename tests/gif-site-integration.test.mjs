@@ -69,3 +69,9 @@ test("no GIF page, data or component links to a Google Form", async () => {
   const gifEvent = events.slice(events.indexOf('title: "GIF: Study at NUS Info Session'));
   assert.ok(!/forms\.gle/.test(gifEvent.slice(0, 4000)), "GIF info session registration link");
 });
+
+test("sign-in keeps the GIF pathway preselection (/dashboard/gif?pathway=…)", () => {
+  const proxy = readFileSync(new URL("../src/proxy.ts", import.meta.url), "utf8");
+  assert.match(proxy, /signInUrl\.searchParams\.set\('next', gifNext\)/);
+  assert.match(proxy, /\(fully_funded\|mentoring\|self_funded\)/);
+});

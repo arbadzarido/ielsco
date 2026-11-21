@@ -294,7 +294,10 @@ export async function proxy(request: NextRequest) {
     // Arahkan instan ke /sign-in sebelum halaman sempat di-render
     const signInUrl = new URL(isSchoolSubdomain ? '/sign-in' : '/sign-in', request.url);
     // The careers application keeps its destination, so applicants land back on it after signing in or signing up.
-    if (!isSchoolSubdomain && (pathname.startsWith('/dashboard/careers') || pathname.startsWith('/dashboard/gif'))) signInUrl.searchParams.set('next', pathname);
+    // GIF keeps its ?pathway= preselection through sign-in (only the three real pathways are carried over).
+    const gifPathway = pathname === '/dashboard/gif' ? request.nextUrl.searchParams.get('pathway') : null;
+    const gifNext = gifPathway && /^(fully_funded|mentoring|self_funded)$/.test(gifPathway) ? `${pathname}?pathway=${gifPathway}` : pathname;
+    if (!isSchoolSubdomain && (pathname.startsWith('/dashboard/careers') || pathname.startsWith('/dashboard/gif'))) signInUrl.searchParams.set('next', gifNext);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -306,7 +309,7 @@ export async function proxy(request: NextRequest) {
     // Already signed in: go where the sign-in link was taking them (e.g. the careers application).
     const nextParam = request.nextUrl.searchParams.get('next');
     // GIF: the workspace and the signed hop to gif.ielsco.com (/api/gif/sso validates its own `next`).
-    const keep = nextParam && (/^\/dashboard\/(careers|gif)(\/[a-z0-9-]*)*$/.test(nextParam) || /^\/api\/gif\/sso\?next=%2F(portal|admin|apply)[\w%.-]*$/.test(nextParam));
+    const keep = nextParam && (/^\/dashboard\/(careers|gif)(\/[a-z0-9-]*)*$/.test(nextParam) || /^\/dashboard\/gif\?pathway=(fully_funded|mentoring|self_funded)$/.test(nextParam) || /^\/api\/gif\/sso\?next=%2F(portal|admin|apply)[\w%.-]*$/.test(nextParam));
     const target = keep ? nextParam : '/dashboard';
     return NextResponse.redirect(new URL(target, request.url));
   }
