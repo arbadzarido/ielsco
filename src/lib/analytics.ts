@@ -12,7 +12,8 @@ export type EventName =
   | "connect_room_saved" | "connect_room_registered" | "connect_quick_match_matched" | "connect_call_feedback" | "connect_report_sent"
   | "circle_joined" | "circle_posted" | "pulse_item_opened" | "sea_prompt_used" | "tour_started" | "tour_completed" | "copilot_opened"
   | "copilot_help_opened" | "career_application_submitted" | "opportunity_track" | "opportunity_interest_submitted"
-  | "recruitment_popup_shown" | "recruitment_popup_closed" | "recruitment_popup_apply";
+  | "recruitment_popup_shown" | "recruitment_popup_closed" | "recruitment_popup_apply"
+  | "gif_feature_click" | "gif_popup_shown" | "gif_popup_closed" | "gif_popup_explore" | "gif_popup_apply";
 
 export function track(name: EventName, props: Record<string, string | number | boolean | null> = {}) {
   if (!ANALYTICS_ENABLED) return;

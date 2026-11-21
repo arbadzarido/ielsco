@@ -27,6 +27,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/schools", destination: "/school", permanent: true, has: main },
       { source: "/programs", destination: "/products", permanent: true, has: main },
+      // GIF Summer 2027 lives at gif.ielsco.com (docs/gif-platform/EVENTS-GIF-REDIRECT.md). Only the overview page moves;
+      // the GIF 2026 pages under /events/gif/* (batch2, itinerary, mentoring, project, talk, …) stay.
+      { source: "/events/gif", destination: "https://gif.ielsco.com", permanent: true, has: main },
       { source: "/courses", destination: "/products/courses", permanent: true, has: main },
       { source: "/resources", destination: "/products/resources", permanent: true, has: main },
       // Short legal paths the school sign-in page used to link to (404 in Search Console).

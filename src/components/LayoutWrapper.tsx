@@ -4,6 +4,7 @@
 import { usePathname } from "next/navigation";
 import Header from "@/components/header";
 import { RecruitmentPopup } from "@/components/careers/RecruitmentPopup";
+import { GifRecruitPopup } from "@/components/gif-public/GifRecruitPopup";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +44,8 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
       </main>
       {/* Open Recruitment 2027 poster (once per session; see lib/careers/popup.ts for where it never shows). */}
       <RecruitmentPopup />
+      {/* GIF Summer 2027 recruitment (public pages only, after engagement; never in the same session as the one above). */}
+      <GifRecruitPopup />
     </>
   );
 }

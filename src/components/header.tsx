@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import { ChevronDown, LayoutDashboard, LogOut, Menu, UserCircle, X } from "lucide-react";
 import { btnPrimary, btnSecondary, focusRing } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
+import { GIF_SITE_URL } from "@/lib/gif-summer-2027";
 
 // Public-site header (Opportunities, Community, Programs, Resources, For Schools, Membership). Hidden on dashboards and auth pages, which have their own
 // chrome. Domain-aware: on circle.ielsco.com / school.ielsco.com, main-site links point back to ielsco.com.
@@ -131,7 +132,7 @@ export default function Header() {
         { name: "All programs", path: main("/products") },
         { name: "Private tutoring", path: main("/products/courses") },
         { name: "Events", path: main("/events") },
-        { name: "Global Impact Fellowship", path: main("/events/gif") },
+        { name: "Global Impact Fellowship", path: GIF_SITE_URL }, // the programme site (gif.ielsco.com)
       ],
     },
     { name: "Resources", path: main("/products/resources"), active: !offMain && !!pathname?.startsWith("/products/resources") },

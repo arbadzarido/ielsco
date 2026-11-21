@@ -16,7 +16,7 @@ import { ARTICLES_PATH } from "@/content/articles/types";
 export const revalidate = 3600;
 
 const PAGES = ["/", "/opportunities", "/opportunities/professional", "/membership", "/about", "/products", "/products/courses", "/products/resources", "/events",
-  "/events/gif", "/events/launchpad", "/partners", "/careers", "/privacy-policy", "/terms-of-service"];
+  "/events/launchpad", "/partners", "/careers", "/privacy-policy", "/terms-of-service"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [{ stories }, opportunities, jobs, ielscoStories] = await Promise.all([getPublishedStories(), listPublishedOpportunities(), listPublishedProfessional(), getIelscoStories()]);

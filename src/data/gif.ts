@@ -5,7 +5,7 @@ export const GIF_BATCH = {
   registrationDeadline: "2026-09-21T23:59:59+07:00",
   poster: "/images/contents/events/gif2.png",
   programPage: "/events/gif/batch2",
-  overviewPage: "/events/gif",
+  overviewPage: "https://gif.ielsco.com",
   facts: ["4 days, 3 nights at the National University of Singapore (NUS)", "Leadership and project incubation boot camp", "Self-funded · open to youth across Southeast Asia"],
 };
 

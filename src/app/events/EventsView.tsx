@@ -1,15 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import Footer from "@/components/footer";
 import EventCard from "@/components/events/EventCard";
 import { eventsData } from "@/data/events";
-import { GIF_BATCH, gifRegistrationOpen } from "@/data/gif";
+import { GifFeature } from "@/components/gif-public/GifFeature";
 import { wibDeadline } from "@/lib/events/deadline";
-import { body, cardLink, container, eyebrow, focusRing, h1, h2, h3, lead, pill, siteRoot } from "@/components/site/ui";
+import { body, container, eyebrow, focusRing, h1, h2, lead, siteRoot } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 
 // Public events. Status ("Registration open" / "Past event") comes from each event's own deadline, evaluated in the
@@ -32,7 +30,6 @@ export default function EventsPage() {
       past: match.filter((e) => closes(e) <= now).sort((a, b) => closes(b) - closes(a)),
     };
   }, [q, now]);
-  const gifOpen = now === null ? null : gifRegistrationOpen(new Date(now));
 
   return (
     <div className={cn(siteRoot, "bg-white")} data-testid="events-page">
@@ -57,26 +54,9 @@ export default function EventsPage() {
         </div>
       </section>
 
-      <section className="bg-white py-[48px]">
+      <section className="bg-white py-[48px]" aria-label="Featured programme">
         <div className={container}>
-          <Link href={GIF_BATCH.overviewPage} className={cn(cardLink, "grid overflow-hidden md:grid-cols-[1fr_280px]")} data-testid="events-gif">
-            <div className="p-7 sm:p-9">
-              <div className="flex items-center gap-3">
-                <Image src="/images/logos/events/gif.png" alt="" width={120} height={44} className="h-[44px] w-auto" />
-                <p className="text-[14px] font-semibold text-[#914D4D]">Flagship program · Global Impact Fellowship</p>
-              </div>
-              <h2 className={cn(h3, "mt-5 text-[24px]")}>Lead a project with youth from across Southeast Asia</h2>
-              <ul className={cn(body, "mt-3 list-disc space-y-1 pl-5")}>
-                {GIF_BATCH.facts.map((f) => <li key={f}>{f}</li>)}
-              </ul>
-              <div className="mt-6 flex flex-wrap items-center gap-4">
-                {gifOpen === true && <span className={cn(pill, "border-[#2D7A58]/30 text-[#2D7A58]")}>{GIF_BATCH.name}: registration open</span>}
-                {gifOpen === false && <span className={pill}>{GIF_BATCH.name}: registration closed</span>}
-                <span className="flex items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">About GIF <ArrowRight size={16} aria-hidden="true" /></span>
-              </div>
-            </div>
-            <div className="relative hidden min-h-[260px] md:block"><Image src={GIF_BATCH.poster} alt="" fill sizes="280px" className="object-cover" /></div>
-          </Link>
+          <GifFeature placement="events" />
         </div>
       </section>
 

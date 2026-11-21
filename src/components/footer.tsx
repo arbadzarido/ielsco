@@ -23,7 +23,7 @@ const COLUMNS: { title: string; links: { name: string; url: string; external?: b
       { name: "Member stories", url: "https://circle.ielsco.com/stories", external: true },
       { name: "IELSco Stories", url: "/stories" },
       { name: "Events", url: "/events" },
-      { name: "Global Impact Fellowship", url: "/events/gif" },
+      { name: "Global Impact Fellowship", url: "https://gif.ielsco.com", external: true },
     ],
   },
   {
