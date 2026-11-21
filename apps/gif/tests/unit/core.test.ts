@@ -77,10 +77,10 @@ test("currency by citizenship, no conversion", () => {
   assert.deepEqual(mt.map((o) => [o.currency, o.amount]), [["IDR", 1199000]]);
 });
 
-test("USD obligations are collected manually unless the IDR option is enabled", () => {
+test("USD obligations: card at the fixed rate (on by default) or invoice; manual when Finance switches cards off", () => {
   assert.equal(collectionMethod(DEFAULT_SETTINGS, "IDR", true), "midtrans");
-  assert.equal(collectionMethod(DEFAULT_SETTINGS, "USD", true), "manual");
-  assert.equal(collectionMethod(resolveSettings({ payments: { allow_idr_for_international: true } }), "USD", true), "midtrans_idr_option");
+  assert.equal(collectionMethod(DEFAULT_SETTINGS, "USD", true), "midtrans_idr_option");
+  assert.equal(collectionMethod(resolveSettings({ payments: { international_cards: false } }), "USD", true), "manual");
   assert.equal(collectionMethod(DEFAULT_SETTINGS, "IDR", false), "manual");
   assert.equal(idrPriceFor(DEFAULT_SETTINGS, "deposit"), 5000000);
   assert.equal(formatMoney(14999000, "IDR"), "IDR 14,999,000");

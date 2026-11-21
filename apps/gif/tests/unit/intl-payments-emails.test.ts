@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS, USD_IDR_PAYMENT_RATE, resolveSettings } from "../../s
 import { EMAIL_ASSETS, EMAIL_COLORS, layout, invoiceRequestedEmail, invoiceRequestFinanceEmail, invoiceSentEmail, paymentReceivedEmail, loginCodeEmail,
   applicationSubmittedEmail, resultEmail, onboardingEmail } from "../../src/lib/email/templates.ts";
 
-const on = (over: Record<string, unknown> = {}) => resolveSettings({ payments: { international_card_enabled: true, ...over } });
+const on = (over: Record<string, unknown> = {}) => resolveSettings({ payments: { international_cards: true, ...over } });
 
 test("fixed rate: USD 1 = IDR 18,500, converted on whole rupiah", () => {
   assert.equal(USD_IDR_PAYMENT_RATE, 18500);
@@ -13,7 +13,8 @@ test("fixed rate: USD 1 = IDR 18,500, converted on whole rupiah", () => {
   assert.equal(cardAmountIdr(899, 18500), 16631500);
   assert.equal(cardAmountIdr(99, 18500), 1831500);
   assert.equal(cardAmountIdr(79, 18500), 1461500);
-  assert.equal(cardAmountIdr(300, 18500), 5550000);
+  assert.equal(cardAmountIdr(300, 18500), 5550000, "Self-Funded deposit");
+  assert.equal(cardAmountIdr(599, 18500), 11081500, "Self-Funded balance");
   assert.equal(cardAmountIdr(0.1 + 0.2, 18500), 5550, "float drift handled (0.30000000000000004)");
   assert.equal(cardAmountIdr(12.345, 18500), Math.round(1235 * 185), "cents rounding, integer result");
   assert.ok(Number.isInteger(cardAmountIdr(699.99, 18500)!));
@@ -38,12 +39,14 @@ test("Indonesian payers keep the official IDR flow; nothing is converted twice",
   assert.equal(plannedObligations(s, "fully_funded", "MY")[0].currency, "IDR", "Elco Pro is IDR for everyone");
 });
 
-test("international card option: invoice always, card only when the gateway is ready and Finance switched it on", () => {
-  assert.equal(internationalCardEnabled(DEFAULT_SETTINGS), false, "off by default (no live international charging without a decision)");
-  assert.equal(collectionMethod(DEFAULT_SETTINGS, "USD", true), "manual");
+test("international card option: invoice always, card when the gateway is ready (on by default, Finance can switch it off)", () => {
+  assert.equal(internationalCardEnabled(DEFAULT_SETTINGS), true, "on since the founder's go-ahead (21 Nov 2026)");
+  assert.equal(collectionMethod(DEFAULT_SETTINGS, "USD", true), "midtrans_idr_option");
+  const off = resolveSettings({ payments: { international_cards: false } });
+  assert.equal(collectionMethod(off, "USD", true), "manual", "Finance can switch it off");
+  assert.equal(collectionMethod(resolveSettings({ payments: { international_card_enabled: false } }), "USD", true), "midtrans_idr_option", "an old saved false (before the go-ahead) is ignored");
   assert.equal(collectionMethod(on(), "USD", true), "midtrans_idr_option");
   assert.equal(collectionMethod(on(), "USD", false), "manual");
-  assert.equal(collectionMethod(resolveSettings({ payments: { allow_idr_for_international: true } }), "USD", true), "midtrans_idr_option", "legacy flag still honoured");
   assert.equal(DEFAULT_SETTINGS.payments.invoice_bank_details, null, "no bank details are invented");
 });
 

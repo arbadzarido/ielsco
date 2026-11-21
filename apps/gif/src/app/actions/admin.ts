@@ -239,7 +239,7 @@ const settingsSchema = z.object({
   cashback: z.object({ fully_funded: Money, partial_funded: Money }),
   slots: z.object({ fully_funded: z.number().int().nonnegative(), partial_funded: z.number().int().nonnegative(), capacity: z.number().int().positive() }),
   payments: z.object({ allow_idr_for_international: z.boolean(), bank_transfer_instructions: z.string().min(10).max(1000),
-    international_card_enabled: z.boolean(), usd_idr_card_rate: z.number().int().min(10000).max(30000),
+    international_cards: z.boolean(), international_card_enabled: z.boolean(), usd_idr_card_rate: z.number().int().min(10000).max(30000),
     invoice_bank_details: z.string().trim().min(10).max(1000).nullable() }),
   phase1_tasks: z.object({ enabled: z.boolean(), items: z.array(z.object({ key: z.string().regex(/^[a-z0-9_]{2,40}$/), title: z.string().min(3).max(80), detail: z.string().max(240), link: z.enum(["ielsco", "elco", "post"]).optional() })).max(12) }),
   instagram: z.object({ ielsco: z.string().url(), elco: z.string().url(), recruitment_post: z.string().url().nullable() }),

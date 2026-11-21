@@ -54,6 +54,9 @@ export interface Settings {
     // A) request an invoice (bank transfer, verified by Finance) — always available;
     // B) pay by Visa/Mastercard through Midtrans, which charges IDR: the USD amount × usd_idr_card_rate, computed on the
     //    server (lib/pricing.ts cardAmountIdr). Off until Finance switches it on (international_card_enabled).
+    // Switch for B (since 21 Nov 2026, founder go-ahead): on by default; Finance can set it to false.
+    international_cards: boolean;
+    // Superseded 21 Nov 2026 by international_cards (a false saved here before the go-ahead must not keep cards off).
     international_card_enabled: boolean;
     usd_idr_card_rate: number; // fixed operational rate, IDR per USD 1 (never a live market rate)
     // Legacy flag from 20 Nov 2026 (card option at the published IDR price). Treated as international_card_enabled.
@@ -121,12 +124,14 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   slots: { fully_funded: 10, partial_funded: 10, capacity: 100 },
   payments: {
-    international_card_enabled: false,
+    // On since 21 Nov 2026 (founder go-ahead): international payers may pay USD items by card at the fixed rate.
+    international_cards: true,
+    international_card_enabled: true, // superseded, ignored
     usd_idr_card_rate: USD_IDR_PAYMENT_RATE,
     invoice_bank_details: null,
     allow_idr_for_international: false,
     bank_transfer_instructions:
-      "International payments in USD are handled by IELSco finance. Request an invoice from your portal and we will send bank transfer details from hello@ielsco.com. Your payment is marked as received only after finance verifies it.",
+      "Prefer bank transfer? Request an invoice and IELSco Finance will email it with the transfer details. A transfer counts once Finance has verified it.",
   },
   phase1_tasks: {
     enabled: true,

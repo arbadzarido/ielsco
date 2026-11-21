@@ -105,7 +105,8 @@ export function PayFlow({ obligationId, label, idrOption, openOrderId, openStatu
 
   switch (view.kind) {
     case "idle":
-      return btn(idrOption ? "btn-secondary" : "btn-primary", label, () => pay(), "pay");
+      // Card payment is the main action (for international items too, since 21 Nov 2026); the invoice is the alternative.
+      return btn("btn-primary", label, () => pay(), "pay");
     case "busy":
       return <p className="small muted" role="status">{view.text}</p>;
     case "open":
