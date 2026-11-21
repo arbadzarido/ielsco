@@ -143,6 +143,9 @@ function GifWorkspace() {
   }, []);
 
   const app = ws?.application ?? null;
+  // ?pathway= from a "Join mentoring" / "Apply" link elsewhere (ielsco.com, gif.ielsco.com): preselect it when there is
+  // no application yet. Only the three real pathways are accepted.
+  const chosen = (["fully_funded", "mentoring", "self_funded"] as Pathway[]).find((p) => p === params.get("pathway")) ?? null;
 
   return (
     <DashboardLayout userName={profile.name} userAvatar={profile.avatar}>
@@ -163,7 +166,7 @@ function GifWorkspace() {
 
         {ws && (
           <>
-            <NextStep ws={ws} />
+            <NextStep ws={ws} chosen={app ? null : chosen} />
 
             {app ? (
               <div className="grid gap-6 lg:grid-cols-12">
@@ -175,7 +178,7 @@ function GifWorkspace() {
               </div>
             ) : (
               <div className="grid gap-6 lg:grid-cols-12">
-                <Pathways ws={ws} className={ws.deadlines.length ? "lg:col-span-7" : "lg:col-span-12"} />
+                <Pathways ws={ws} chosen={chosen} className={ws.deadlines.length ? "lg:col-span-7" : "lg:col-span-12"} />
                 {ws.deadlines.length > 0 && <Deadlines ws={ws} className="lg:col-span-5" />}
               </div>
             )}
@@ -310,8 +313,11 @@ function Hero({ ws }: { ws: Workspace | null }) {
 }
 
 // ── Next step: what to do, how much, by when ────────────────────────────────────────────────────────────────────────
-function NextStep({ ws }: { ws: Workspace }) {
-  const next = ws.actions[0];
+function NextStep({ ws, chosen }: { ws: Workspace; chosen: Pathway | null }) {
+  const first = ws.actions[0];
+  // "Start your application" goes straight to the chosen pathway when one was preselected and is open.
+  const next = first && first.href === "/apply" && chosen && ws.pathways.some((p) => p.pathway === chosen && p.open)
+    ? { ...first, href: `/apply?pathway=${chosen}`, detail: ws.pathways.find((p) => p.pathway === chosen)?.label } : first;
   if (!next) {
     return (
       <div className={`${cardGloss} flex items-center gap-3 p-5 text-[15px] text-[#4A5B70] md:px-6`}>
@@ -495,15 +501,16 @@ function DocumentsCard({ ws }: { ws: Workspace }) {
 }
 
 // ── No application yet: choose a pathway ────────────────────────────────────────────────────────────────────────────
-function Pathways({ ws, className }: { ws: Workspace; className?: string }) {
+function Pathways({ ws, chosen, className }: { ws: Workspace; chosen: Pathway | null; className?: string }) {
+  const list = chosen ? [...ws.pathways].sort((a, b) => Number(b.pathway === chosen) - Number(a.pathway === chosen)) : ws.pathways;
   return (
     <Panel title="Choose your pathway" icon={Sparkles} meta="Partial Funded places are awarded through the Fully Funded selection." className={className}
       action={<a href="https://gif.ielsco.com/opportunities" className="text-[13px] font-semibold text-[#2F4157] hover:underline">Compare</a>}>
       <ul className="grid gap-3">
-        {ws.pathways.map((p) => {
+        {list.map((p) => {
           const future = !p.open && daysUntil(p.opensAt) > 0;
           return (
-            <li key={p.pathway} className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center ${p.open ? "border-[#E3E7ED] bg-white" : "border-dashed border-[#D5DCE4] bg-[#FAFBFC]"}`}>
+            <li key={p.pathway} className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center ${p.pathway === chosen ? "border-[#B8862E] bg-[#FDF8EE] ring-1 ring-[#B8862E]/30" : p.open ? "border-[#E3E7ED] bg-white" : "border-dashed border-[#D5DCE4] bg-[#FAFBFC]"}`} aria-current={p.pathway === chosen ? "true" : undefined}>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-heading text-[15px] font-semibold text-[#1A2534]">{p.label}</p>

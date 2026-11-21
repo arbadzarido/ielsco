@@ -148,7 +148,7 @@ export default function SGTripMentoringPage() {
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
             <Button asChild className="bg-white text-[#914D4D] font-bold px-8 py-3 hover:bg-gray-100 shadow-xl">
-              <Link href="https://forms.gle/D4DMBFshr1JeydZC9" target="_blank">
+              <Link href="/dashboard/gif?pathway=mentoring">
                 Apply for Mentoring
               </Link>
             </Button>

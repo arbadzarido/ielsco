@@ -4,9 +4,13 @@
 // and must be updated together with them.
 
 export const GIF_SITE_URL = "https://gif.ielsco.com";
-// Applications start here (sign-in with the IELSco account, then the application form). ?pathway= preselects one.
-export const GIF_APPLY_URL = `${GIF_SITE_URL}/apply`;
-// Kept for older imports: registration now happens on the GIF platform (it used to be a Google Form).
+// The IELSco Dashboard is the single place for GIF participants (21 Nov 2026): registration, applications, submissions and
+// payments start at /dashboard/gif (signed in with the IELSco account), which opens the GIF forms through single sign-on
+// and keeps status and payments in sync. gif.ielsco.com is for programme information and recruitment.
+export const GIF_DASHBOARD_PATH = "/dashboard/gif";
+export const GIF_DASHBOARD_URL = `https://www.ielsco.com${GIF_DASHBOARD_PATH}`;
+export const GIF_APPLY_URL = GIF_DASHBOARD_PATH;
+// Older imports. No GIF registration uses Google Forms any more.
 export const GIF_REGISTER_URL = GIF_APPLY_URL;
 // The old Early Bird (guidebook pricing) ended at 23:59 WIB on 20 November 2026; nothing shows it after that.
 export const EARLY_BIRD_END = "2026-11-20T23:59:00+07:00";
@@ -39,4 +43,4 @@ export const pathwayStatus = (p: GifPathway, now = Date.now()) => {
   const d = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" }).format(new Date(p.opensAt));
   return `Opens ${d}`;
 };
-export const gifApplyHref = (p?: GifPathway["key"]) => (p ? `${GIF_APPLY_URL}?pathway=${p}` : GIF_APPLY_URL);
+export const gifApplyHref = (p?: GifPathway["key"]) => (p ? `${GIF_DASHBOARD_PATH}?pathway=${p}` : GIF_DASHBOARD_PATH);

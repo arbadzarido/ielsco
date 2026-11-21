@@ -7,7 +7,7 @@ import { currentCohort } from "@/lib/cohort";
 import { pathwayOpen, mentoringPrice, balanceOf, type Pathway } from "@/lib/settings";
 import { DOCS, requiredConsents } from "@/lib/legal";
 import ApplyWizard from "./ApplyWizard";
-import { bridgeConfigured, ielscoSignInUrl } from "@/lib/ielsco-bridge";
+import { bridgeConfigured, ielscoDashboardUrl, ielscoSignInUrl } from "@/lib/ielsco-bridge";
 
 export const metadata: Metadata = { title: "Apply", description: "Apply for GIF Summer 2027: Fully Funded, Project Mentoring Program or Self-Funded." };
 export const dynamic = "force-dynamic";
@@ -17,6 +17,8 @@ export default async function Apply({ searchParams }: { searchParams: Promise<{ 
   const pathway = ["fully_funded", "mentoring", "self_funded"].includes(sp.pathway ?? "") ? (sp.pathway as Pathway) : undefined;
   const acct = await getAccount();
   const sso = bridgeConfigured();
+  // Participants register and apply through the IELSco Dashboard (21 Nov 2026), which opens this form signed in.
+  if (!acct && sso) redirect(ielscoDashboardUrl(pathway));
   if (!acct) {
     return (
       <section className="section">
