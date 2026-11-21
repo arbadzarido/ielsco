@@ -86,3 +86,18 @@ Mentoring sessions schedule/attendance and pre-departure checklists are shown th
 No database migration is needed for this change. Linking writes only `gif.accounts.ielsco_user_id` /
 `ielsco_linked_at` on first SSO, through the existing unique index. Single-use tokens reuse `gif.rate_limits`.
 Nothing is dropped, merged or rewritten; existing GIF sessions and email-code accounts keep working.
+
+## 7. The IELSco Dashboard is the participant entry point (21 Nov 2026)
+
+No GIF registration, application, submission or payment uses Google Forms any more (the GIF 2026 Batch 2, mentoring and
+NUS info-session form links were removed; unrelated IELSco forms for English tests, courses, Circle and Launchpad stay).
+
+- `https://www.ielsco.com/dashboard/gif` is where participants register, apply, submit and pay. Every "Apply" / "Join
+  mentoring" link on ielsco.com and gif.ielsco.com leads there (`?pathway=` preselects a pathway); a signed-out visitor
+  to `gif.ielsco.com/apply` is redirected there once IELSCO_GIF_SSO_SECRET is set.
+- The forms themselves (application wizard, Midtrans checkout, uploads, Phase 2/3) still run in the GIF engine and open
+  from the dashboard through single sign-on, so records, payment history and status stay in one place (`gif` schema).
+- Emails: "Open your GIF dashboard" buttons go to the dashboard; buttons for a specific page (payments, receipts, Phase 2/3,
+  results, preparation) open it through IELSco sign-in (`/api/gif/sso?next=…`). The sign-in code email, parent/guardian
+  consent link and staff emails stay on gif.ielsco.com.
+- `gif.ielsco.com` is for programme information and recruitment.

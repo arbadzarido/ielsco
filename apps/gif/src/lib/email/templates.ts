@@ -4,6 +4,13 @@
 // is escaped. Pure: no app imports (node --test imports it).
 const SITE = () => (process.env.GIF_SITE_URL || "https://gif.ielsco.com").replace(/\/+$/, "");
 const SUPPORT = () => process.env.GIF_EMAIL_REPLY_TO || "hello@ielsco.com";
+// Participants act in the IELSco Dashboard (registration, applications, submissions, payments): email buttons go there.
+// With single sign-on configured, a GIF page opens through IELSco (sign in once, then straight to that page); without it
+// (local/test runs before the secret is set) they fall back to the GIF portal.
+const IELSCO = () => (process.env.IELSCO_APP_URL || "https://www.ielsco.com").replace(/\/+$/, "");
+const ssoOn = () => (process.env.IELSCO_GIF_SSO_SECRET ?? "").split(",").some((s) => s.trim().length >= 32);
+export const dashboardUrl = () => (ssoOn() ? `${IELSCO()}/dashboard/gif` : `${SITE()}/portal`);
+export const participantUrl = (path: string) => (ssoOn() ? `${IELSCO()}/api/gif/sso?next=${encodeURIComponent(path)}` : `${SITE()}${path}`);
 const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
 
@@ -96,14 +103,14 @@ export const applicationSubmittedEmail = (name: string, code: string, pathway: s
   heading: `Thank you, ${name}`,
   paras: [`We have received your GIF Summer 2027 application (${pathway}).`, next],
   rows: [["Application ID", code], ["Pathway", pathway]],
-  cta: { label: "Open your portal", href: `${SITE()}/portal` },
+  cta: { label: "Open your GIF dashboard", href: dashboardUrl() },
 });
 
 export const teamInviteEmail = (member: string, leader: string, team: string, code: string) => mail(`You were added to team ${team} for GIF Summer 2027`, {
   heading: `Hi ${member}`,
   paras: [`${leader} added you as a member of team "${team}" in a GIF Summer 2027 application (${code}).`,
-    "Sign in with this email address to check your profile, accept the programme terms and see your payments."],
-  cta: { label: "Sign in to the portal", href: `${SITE()}/login` },
+    "Sign in to IELSco with this email address (or create an IELSco account with it) and open GIF in your dashboard to check your profile, accept the programme terms and see your payments."],
+  cta: { label: "Open your GIF dashboard", href: dashboardUrl() },
   note: "If you don't know this team, reply to this email and we will remove you.",
 });
 
@@ -116,52 +123,52 @@ export const paymentReceivedEmail = (name: string, label: string, amount: string
 
 export const paymentFailedEmail = (name: string, label: string) => mail(`Payment not completed: ${label}`, {
   heading: "Your payment was not completed",
-  paras: [`Hi ${name}, the payment for ${label} was not completed (it failed, expired or was cancelled).`, "You can try again from your portal."],
-  cta: { label: "Go to payments", href: `${SITE()}/portal/payments` },
+  paras: [`Hi ${name}, the payment for ${label} was not completed (it failed, expired or was cancelled).`, "You can try again from your GIF dashboard on ielsco.com."],
+  cta: { label: "Go to payments", href: participantUrl("/portal/payments") },
 });
 
 export const paymentReminderEmail = (name: string, label: string, amount: string, due: string | null) => mail(`Reminder: ${label}`, {
   heading: "Payment reminder",
   paras: [`Hi ${name}, ${label} (${amount}) is still open${due ? `, due ${due}` : ""}.`],
-  cta: { label: "Pay in your portal", href: `${SITE()}/portal/payments` },
+  cta: { label: "Pay in your dashboard", href: participantUrl("/portal/payments") },
 });
 
 export const missingInfoEmail = (name: string, message: string) => mail("Action needed on your GIF application", {
   heading: "We need a little more from you",
   paras: [`Hi ${name},`, message],
-  cta: { label: "Open your portal", href: `${SITE()}/portal` },
+  cta: { label: "Open your GIF dashboard", href: dashboardUrl() },
 });
 
 export const phaseOpenEmail = (name: string, phase: 2 | 3, window: string) => mail(`Phase ${phase} is open`, {
   heading: `Phase ${phase} is open`,
   paras: [`Hi ${name}, Phase ${phase} of the selection is now open (${window}).`,
-    phase === 2 ? "Submit your project essay and pitch deck in the portal. The guidelines are on the Phase 2 page."
-      : "Record and submit your 3–5 minute video presentation in the portal within the 3-day window."],
-  cta: { label: `Open Phase ${phase}`, href: `${SITE()}/portal/phase-${phase}` },
+    phase === 2 ? "Submit your project essay and pitch deck from your GIF dashboard. The guidelines are on the Phase 2 page."
+      : "Record and submit your 3–5 minute video presentation from your GIF dashboard within the 3-day window."],
+  cta: { label: `Open Phase ${phase}`, href: participantUrl(`/portal/phase-${phase}`) },
 });
 
 export const phaseSubmittedEmail = (name: string, phase: 2 | 3, code: string) => mail(`Phase ${phase} submission received (${code})`, {
   heading: `Phase ${phase} received`,
-  paras: [`Hi ${name}, we have received your Phase ${phase} submission. You can review it in your portal.`],
-  cta: { label: "Open your portal", href: `${SITE()}/portal` },
+  paras: [`Hi ${name}, we have received your Phase ${phase} submission. You can review it in your GIF dashboard.`],
+  cta: { label: "Open your GIF dashboard", href: dashboardUrl() },
 });
 
 export const resultEmail = (name: string, outcome: "fully_funded" | "partial_funded" | "not_selected", award?: { covers: string[]; notIncluded: string[]; contribution?: string; depositDays?: number; balanceDue?: string }) => mail("Your GIF Summer 2027 result", {
   heading: outcome === "not_selected" ? "Your selection result" : "Congratulations",
   paras: outcome === "fully_funded"
-    ? [`Hi ${name}, you have been selected as a Fully Funded delegate for GIF Summer 2027.`, award ? `Your award covers: ${award.covers.join(", ").toLowerCase()}. Not included: ${award.notIncluded.join(", ").toLowerCase()}.` : "Open your portal to read the award details.", "Open your portal to accept your offer."]
+    ? [`Hi ${name}, you have been selected as a Fully Funded delegate for GIF Summer 2027.`, award ? `Your award covers: ${award.covers.join(", ").toLowerCase()}. Not included: ${award.notIncluded.join(", ").toLowerCase()}.` : "Open your GIF dashboard to read the award details.", "Open your GIF dashboard to accept your offer."]
     : outcome === "partial_funded"
-      ? [`Hi ${name}, you have been selected as a Partial Funded delegate for GIF Summer 2027.`, award?.contribution ? `Your participant contribution is ${award.contribution}. After you accept, pay a deposit within ${award.depositDays ?? 7} days to secure your seat; the balance is due by ${award.balanceDue ?? "the balance deadline"}. ${award.notIncluded.join(", ")} are not included.` : "Open your portal to read the award details and any remaining payment.", "Open your portal to accept your offer."]
+      ? [`Hi ${name}, you have been selected as a Partial Funded delegate for GIF Summer 2027.`, award?.contribution ? `Your participant contribution is ${award.contribution}. After you accept, pay a deposit within ${award.depositDays ?? 7} days to secure your seat; the balance is due by ${award.balanceDue ?? "the balance deadline"}. ${award.notIncluded.join(", ")} are not included.` : "Open your GIF dashboard to read the award details and any remaining payment.", "Open your GIF dashboard to accept your offer."]
       : [`Hi ${name}, thank you for taking part in the GIF Summer 2027 selection. You were not selected for funding this time.`,
         "Your Elco Pro access and any mentoring you joined are yours to keep. You can still join as a Self-Funded delegate while seats remain."],
-  cta: { label: "Open your portal", href: `${SITE()}/portal/results` },
+  cta: { label: "See your result", href: participantUrl("/portal/results") },
 });
 
 export const onboardingEmail = (name: string) => mail("Your GIF Summer 2027 seat is confirmed", {
   heading: "Your seat is confirmed",
   paras: [`Hi ${name}, your seat for GIF Summer 2027 (27 July – 3 August 2027) is confirmed.`,
-    "Participant preparation starts on 8 June 2027: payment, visa, travel, insurance and orientation. Your portal lists each step."],
-  cta: { label: "Open onboarding", href: `${SITE()}/portal/onboarding` },
+    "Participant preparation starts on 8 June 2027: payment, visa, travel, insurance and orientation. Your GIF dashboard lists each step."],
+  cta: { label: "Open participant preparation", href: participantUrl("/portal/onboarding") },
 });
 
 export const elcoActivatedEmail = (name: string, elcoEmail: string, months: number) => mail("Your Elco Pro access is active", {
@@ -179,7 +186,7 @@ export const sponsorshipReceivedEmail = (name: string) => mail("We received your
 export const announcementEmail = (name: string, title: string, body: string) => mail(title, {
   heading: title,
   paras: [`Hi ${name},`, ...body.split(/\n{2,}/)],
-  cta: { label: "Open your portal", href: `${SITE()}/portal` },
+  cta: { label: "Open your GIF dashboard", href: dashboardUrl() },
 });
 
 export const guardianConsentEmail = (guardian: string, applicant: string, token: string) => mail(`Parent or guardian consent needed for ${applicant} (GIF Summer 2027)`, {
@@ -201,18 +208,18 @@ export const invoiceRequestedEmail = (i: InvoiceInfo) => mail(`Invoice request r
   rows: [kv("Application ID", i.code), kv("Item", i.item), kv("Amount", i.amount), ...(i.reference ? [kv("Request reference", i.reference)] : [])],
   panel: i.bankDetails ? { title: "Bank transfer details", lines: [i.bankDetails, `Please include ${i.code} in the transfer reference.`] }
     : { title: "What happens next", lines: ["Finance will send you the invoice with the bank account to pay into. Please don't transfer any money before you receive it."] },
-  cta: { label: "View your payments", href: `${SITE()}/portal/payments` },
-  note: "IELSco will never ask you to pay into an account that isn't on your invoice or in your portal. If anything looks different, contact us before paying.",
+  cta: { label: "View your payments", href: participantUrl("/portal/payments") },
+  note: "IELSco will never ask you to pay into an account that isn't on your invoice or in your GIF dashboard. If anything looks different, contact us before paying.",
 });
 
 export const invoiceSentEmail = (i: InvoiceInfo) => mail(i.invoiceNo ? `Your invoice ${i.invoiceNo}: ${i.item}` : `Your invoice: ${i.item}`, {
   heading: "Your invoice is ready",
   paras: [`Hi ${i.name}, IELSco Finance has issued your invoice${i.invoiceNo ? ` ${i.invoiceNo}` : ""} for the item below and sends the invoice document to this email address.`,
-    "Your payment shows as received in your portal once Finance has verified the transfer."],
+    "Your payment shows as received in your GIF dashboard once Finance has verified the transfer."],
   rows: [kv("Application ID", i.code), kv("Item", i.item), kv("Amount", i.amount), ...(i.invoiceNo ? [kv("Invoice number", i.invoiceNo)] : [])],
   ...(i.bankDetails ? { panel: { title: "Bank transfer details", lines: [i.bankDetails, `Please include ${i.invoiceNo ?? i.code} in the transfer reference.`] } } : {}),
-  cta: { label: "View your payments", href: `${SITE()}/portal/payments` },
-  note: "IELSco will never ask you to pay into an account that isn't on your invoice or in your portal.",
+  cta: { label: "View your payments", href: participantUrl("/portal/payments") },
+  note: "IELSco will never ask you to pay into an account that isn't on your invoice or in your GIF dashboard.",
 });
 
 // Staff notification: only what Finance needs to issue the invoice (no date of birth, passport or address).

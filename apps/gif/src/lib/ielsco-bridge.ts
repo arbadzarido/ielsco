@@ -78,3 +78,9 @@ export function ielscoSignInUrl(next: string, env: Record<string, string | undef
   const base = (env.IELSCO_APP_URL || "https://www.ielsco.com").replace(/\/+$/, "");
   return `${base}/api/gif/sso?next=${encodeURIComponent(next)}`;
 }
+
+// The participant home: GIF in the IELSco Dashboard (21 Nov 2026: registration, applications and payments start there).
+export function ielscoDashboardUrl(pathway?: string | null, env: Record<string, string | undefined> = process.env): string {
+  const base = (env.IELSCO_APP_URL || "https://www.ielsco.com").replace(/\/+$/, "");
+  return `${base}/dashboard/gif${pathway && /^(fully_funded|mentoring|self_funded)$/.test(pathway) ? `?pathway=${pathway}` : ""}`;
+}

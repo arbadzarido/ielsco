@@ -63,7 +63,8 @@ Verify the sending domain (ielsco.com is already used for notifications@ / norep
 ## 7. After launch
 
 - Redirect `https://www.ielsco.com/events/gif` → `https://gif.ielsco.com` (main app `next.config.ts` redirect), and update
-  the GIF links/banners in the IELSco dashboard (`src/lib/gif-summer-2027.ts` still points to the old Google Form).
+  the GIF links/banners in the IELSco dashboard. Done 21 Nov 2026: no GIF registration uses Google Forms; participants
+  register, apply and pay from `https://www.ielsco.com/dashboard/gif` (see IELSCO-INTEGRATION.md §7).
 - Monitoring: add `https://gif.ielsco.com/api/health` to an uptime monitor (e.g. Better Stack / UptimeRobot, 5-minute
   interval). Vercel → Observability for function errors; Admin → Overview flags payments that are off or in sandbox.
 - Backups: Supabase daily backups depend on the plan; check Database → Backups and enable PITR if available. For an extra

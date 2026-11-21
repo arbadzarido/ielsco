@@ -19,5 +19,5 @@ Then, in the main app (`next.config.ts`, inside `redirects()` → `main` host ru
 
 Keep the GIF 2026 subpages (`/events/gif/batch2`, `/itinerary`, `/mentoring`, `/project`, `/talk`,
 `/timeline-adjustment`) where they are: they document GIF 2026. Also update `src/lib/gif-summer-2027.ts`:
-`GIF_REGISTER_URL = "https://gif.ielsco.com/apply"` (it still points at the old Google Form, used by the IELSco
+`GIF_REGISTER_URL` (since 21 Nov 2026: `/dashboard/gif`, the IELSco Dashboard; the old Google Form is retired. It was used by the IELSco
 dashboard GIF banner and card). The old page's USD 800 Early Bird text then disappears with the redirect.

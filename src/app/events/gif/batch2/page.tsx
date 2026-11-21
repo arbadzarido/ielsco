@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 // ============================================================
 
 const links = {
-  register: "https://forms.gle/nR1P3GVrp4czmA4U8",
+  register: "/dashboard/gif", // GIF registration happens in the IELSco Dashboard (no Google Forms)
   indo: "https://drive.google.com/file/d/13g8i_xJ0uJRESbeYdVv7dcK6qluTNDMm/view?usp=sharing",
   sea: "https://drive.google.com/file/d/1oLVidkbp4WTlOoyOM1d5ywbWEqGWTulz/view?usp=sharing"
 };
