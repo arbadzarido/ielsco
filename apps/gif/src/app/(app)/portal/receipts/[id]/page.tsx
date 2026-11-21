@@ -10,9 +10,9 @@ export default async function Receipt({ params }: { params: Promise<{ id: string
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const a = await requireAccount();
-  const r = await one<{ receipt_no: string; order_id: string; amount: number; currency: "IDR" | "USD"; paid_at: string; gateway: string; payment_type: string | null;
+  const r = await one<{ receipt_no: string; order_id: string; amount: number; currency: "IDR" | "USD"; original_amount: number | null; original_currency: string | null; fx_rate: number | null; paid_at: string; gateway: string; payment_type: string | null;
     status: string; label: string; legal_name: string; email: string; code: string; owner: string; pacct: string | null; manual_reference: string | null }>(
-    `select p.receipt_no, p.order_id, p.amount, p.currency, p.paid_at, p.gateway, p.payment_type, p.status, o.label, pt.legal_name, pt.email, a.code,
+    `select p.receipt_no, p.order_id, p.amount, p.currency, (to_jsonb(p)->>'original_amount')::numeric as original_amount, to_jsonb(p)->>'original_currency' as original_currency, (to_jsonb(p)->>'fx_rate')::numeric as fx_rate, p.paid_at, p.gateway, p.payment_type, p.status, o.label, pt.legal_name, pt.email, a.code,
        a.owner_account_id as owner, pt.account_id as pacct, p.manual_reference
      from gif.payments p join gif.obligations o on o.id = p.obligation_id join gif.participants pt on pt.id = p.participant_id join gif.applications a on a.id = p.application_id
      where p.id = $1 and p.receipt_no is not null`, [id]);
@@ -30,6 +30,7 @@ export default async function Receipt({ params }: { params: Promise<{ id: string
           <dt>Application</dt><dd>{r.code} · GIF Summer 2027</dd>
           <dt>Item</dt><dd>{r.label}</dd>
           <dt>Amount</dt><dd><strong>{formatMoney(r.amount, r.currency)}</strong></dd>
+          {r.original_amount && r.original_currency === "USD" && r.fx_rate && <><dt>Programme price</dt><dd>{formatMoney(Number(r.original_amount), "USD")} · paid by card at the fixed rate USD 1 = {formatMoney(Number(r.fx_rate), "IDR")}</dd></>}
           <dt>Paid</dt><dd>{fmtDateTime(r.paid_at)}</dd>
           <dt>Method</dt><dd>{r.gateway === "manual" ? `Bank transfer verified by IELSco finance${r.manual_reference ? ` (ref. ${r.manual_reference})` : ""}` : `Midtrans${r.payment_type ? ` · ${r.payment_type.replace(/_/g, " ")}` : ""}`}</dd>
           <dt>Payment reference</dt><dd>{r.order_id}</dd>

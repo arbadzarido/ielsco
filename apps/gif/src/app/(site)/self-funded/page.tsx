@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
+import { internationalCardEnabled } from "@/lib/pricing";
 import { balanceOf } from "@/lib/settings";
 import { fmtDate } from "@/lib/format";
 import { CurrencyToggle, Price } from "@/components/Client";
@@ -32,8 +33,10 @@ export default async function SelfFunded() {
       </section>
       <section className="section alt">
         <div className="wrap grid g2">
-          <div className="item"><Eyebrow n="02">How to pay</Eyebrow><h3>IDR online, USD by invoice.</h3>
-            <p className="muted" style={{ marginTop: 12 }}>Indonesian participants pay the IDR price online through Midtrans. International delegates pay in USD by invoice and bank transfer, verified by IELSco finance. We never convert your price with an exchange rate.</p></div>
+          <div className="item"><Eyebrow n="02">How to pay</Eyebrow>{internationalCardEnabled(s) ? <h3>IDR online; USD by invoice or card.</h3> : <h3>IDR online, USD by invoice.</h3>}
+            <p className="muted" style={{ marginTop: 12 }}>{internationalCardEnabled(s)
+              ? `Indonesian participants pay the IDR price online through Midtrans. International delegates keep their USD price and choose: request an invoice and pay by bank transfer, or pay by Visa or Mastercard through Midtrans, which charges in IDR at a fixed rate of USD 1 = IDR ${s.payments.usd_idr_card_rate.toLocaleString("en-US")}.`
+              : "Indonesian participants pay the IDR price online through Midtrans. International delegates pay in USD by invoice and bank transfer, verified by IELSco finance."}</p></div>
           <div className="item"><Eyebrow n="03">Seats</Eyebrow><h3>Up to {s.slots.capacity} delegates in total.</h3>
             <p className="muted" style={{ marginTop: 12 }}>Seats are confirmed in the order deposits are verified. Registration closes when the programme is full; you will see this before paying.</p></div>
           <div className="item"><Eyebrow n="04">Teams</Eyebrow><h3>Register with up to two friends.</h3><p className="muted" style={{ marginTop: 12 }}>Each team member is a delegate with their own profile, deposit and balance.</p></div>

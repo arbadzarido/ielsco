@@ -11,6 +11,7 @@ import { recordManualPayment, refundPayment, recomputeNow, PaymentError } from "
 import { saveEvaluation, setOutcome, publishResults } from "@/lib/phases";
 import { UserError } from "@/lib/applications";
 import { sendEmail, deliverQueued } from "@/lib/email/send";
+import { markInvoiceSent, cancelInvoiceRequest } from "@/lib/payments/invoices";
 import { announcementEmail, elcoActivatedEmail, missingInfoEmail } from "@/lib/email/templates";
 import { resolveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 import { signedDownloadUrl } from "@/lib/storage";
@@ -98,6 +99,20 @@ export async function manualPaymentAction(_: AdminResult, fd: FormData): Promise
     await recordManualPayment(a.email, String(fd.get("obligation_id")), Number(fd.get("amount")), String(fd.get("currency")) as "IDR" | "USD", reference.slice(0, 200), ip);
   } catch (e) { return fail(e); }
   return done("Manual payment recorded, receipt issued and applicant emailed.");
+}
+
+export async function invoiceSentAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
+  const { a, ip } = await staff("finance");
+  const invoiceNo = String(fd.get("invoice_no") ?? "").trim();
+  if (invoiceNo.length < 3 || invoiceNo.length > 60) return { error: "Enter the invoice number (3–60 characters)." };
+  try { await markInvoiceSent(a.email, String(fd.get("request_id")), invoiceNo, ip); } catch (e) { return fail(e); }
+  return done("Marked as sent. The participant has been emailed.", "/admin/payments");
+}
+
+export async function cancelInvoiceRequestAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
+  const { a, ip } = await staff("finance");
+  try { await cancelInvoiceRequest(a.email, String(fd.get("request_id")), ip); } catch (e) { return fail(e); }
+  return done("Invoice request closed.", "/admin/payments");
 }
 
 export async function waiveObligationAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
@@ -223,7 +238,9 @@ const settingsSchema = z.object({
     self_funded_total: Money, self_funded_deposit: Money, partial_funded_payable: Money.nullable() }),
   cashback: z.object({ fully_funded: Money, partial_funded: Money }),
   slots: z.object({ fully_funded: z.number().int().nonnegative(), partial_funded: z.number().int().nonnegative(), capacity: z.number().int().positive() }),
-  payments: z.object({ allow_idr_for_international: z.boolean(), bank_transfer_instructions: z.string().min(10).max(1000) }),
+  payments: z.object({ allow_idr_for_international: z.boolean(), bank_transfer_instructions: z.string().min(10).max(1000),
+    international_card_enabled: z.boolean(), usd_idr_card_rate: z.number().int().min(10000).max(30000),
+    invoice_bank_details: z.string().trim().min(10).max(1000).nullable() }),
   phase1_tasks: z.object({ enabled: z.boolean(), items: z.array(z.object({ key: z.string().regex(/^[a-z0-9_]{2,40}$/), title: z.string().min(3).max(80), detail: z.string().max(240), link: z.enum(["ielsco", "elco", "post"]).optional() })).max(12) }),
   instagram: z.object({ ielsco: z.string().url(), elco: z.string().url(), recruitment_post: z.string().url().nullable() }),
   awards: z.object({ fully_funded_covers: z.array(z.string().min(3)).min(1), partial_funded_covers: z.array(z.string().min(3)), not_included: z.array(z.string().min(3)) }),

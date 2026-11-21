@@ -27,7 +27,7 @@ export type ParticipantRow = { id: string; application_id: string; account_id: s
 export type ObligationRow = { id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD"; amount: number; due_at: string | null; status: string; paid_at: string | null };
 export type PaymentRow = { id: string; obligation_id: string; participant_id: string; kind: string; gateway: string; order_id: string; amount: number; currency: "IDR" | "USD";
   status: string; payment_type: string | null; receipt_no: string | null; paid_at: string | null; created_at: string; is_duplicate: boolean; manual_reference: string | null;
-  cancel_result?: string | null; checkout_expires_at?: string | null };
+  cancel_result?: string | null; checkout_expires_at?: string | null; original_amount?: number | null; original_currency?: string | null; fx_rate?: number | null };
 
 // The application an account belongs to in the current cohort: as its owner (leader) or as an invited member.
 export async function applicationForAccount(accountId: string): Promise<{ app: AppRow; isOwner: boolean; me: ParticipantRow | null } | null> {
@@ -46,7 +46,7 @@ export async function applicationForAccount(accountId: string): Promise<{ app: A
 }
 
 export async function loadApplicationDetail(applicationId: string) {
-  const [participants, obligations, payments, documents, submissions, history, fulfilments, cashbacks] = await Promise.all([
+  const [participants, obligations, payments, documents, submissions, history, fulfilments, cashbacks, invoiceRequests] = await Promise.all([
     q<ParticipantRow>("select * from gif.participants where application_id = $1 order by role, created_at", [applicationId]),
     q<ObligationRow>("select * from gif.obligations where application_id = $1 and status <> 'cancelled' order by created_at", [applicationId]),
     q<PaymentRow>("select * from gif.payments where application_id = $1 order by created_at desc", [applicationId]),
@@ -59,8 +59,12 @@ export async function loadApplicationDetail(applicationId: string) {
       "select f.id, f.participant_id, f.elco_email, f.status, f.months, f.activated_at, f.activated_by, f.notes from gif.elco_fulfilments f join gif.participants p on p.id = f.participant_id where p.application_id = $1", [applicationId]),
     q<{ participant_id: string; outcome: string; currency: string; amount: number; status: string }>(
       "select c.participant_id, c.outcome, c.currency, c.amount, c.status from gif.cashbacks c join gif.participants p on p.id = c.participant_id where p.application_id = $1", [applicationId]),
+    q<{ id: string; obligation_id: string; participant_id: string; status: string; amount: number; currency: "IDR" | "USD"; invoice_no: string | null; created_at: string; sent_at: string | null }>(
+      "select id, obligation_id, participant_id, status, amount::float8 as amount, currency, invoice_no, created_at, sent_at from gif.invoice_requests where application_id = $1 order by created_at desc", [applicationId])
+      // Until migration 20261128 is applied the table doesn't exist: show no requests rather than breaking the portal.
+      .catch((e: { code?: string }) => { if (e?.code === "42P01") return []; throw e; }),
   ]);
-  return { participants, obligations, payments, documents, submissions, history, fulfilments, cashbacks };
+  return { participants, obligations, payments, documents, submissions, history, fulfilments, cashbacks, invoiceRequests };
 }
 
 async function newCode(prefix: string): Promise<string> {

@@ -1,6 +1,8 @@
 // What each participant owes when an application is submitted. Pure (node --test imports it).
-// Prices are per participant (every team member is an individual delegate). No FX conversion happens anywhere:
-// Indonesian citizens are charged the IDR price, everyone else the USD price; Elco Pro is an IDR product for everyone.
+// Prices are per participant (every team member is an individual delegate). Indonesian citizens are charged the IDR
+// price, everyone else the USD price; Elco Pro is an IDR product for everyone. Obligations keep their official currency
+// and amount. The only conversion is for an international payer who chooses to pay a USD item by card through Midtrans
+// (IDR-only): cardAmountIdr() = USD × the fixed rate in settings, recorded on the payment row (21 Nov 2026).
 import { balanceOf, mentoringPrice, type Currency, type Money, type Pathway, type Settings } from "./settings.ts";
 
 export function currencyFor(nationality: string): Currency {
@@ -39,11 +41,25 @@ export function partialFundedObligations(s: Settings, now = new Date()): { kind:
   ];
 }
 
-// Which gateway can collect an obligation, given the currency. Midtrans charges IDR only (docs.midtrans.com:
-// "Midtrans currently only processes transactions in Indonesian Rupiah (IDR)").
+// Which way an obligation can be paid. Midtrans charges IDR only (docs.midtrans.com: "Midtrans currently only processes
+// transactions in Indonesian Rupiah (IDR)").
+// - IDR (Indonesian payers, and Elco Pro for everyone): Midtrans when it is configured, else manual.
+// - USD (international payers): invoice always; plus Visa/Mastercard through Midtrans at the converted IDR amount
+//   ("midtrans_idr_option") when the gateway is ready and Finance has switched international cards on.
 export function collectionMethod(s: Settings, currency: Currency, midtransReady: boolean): "midtrans" | "manual" | "midtrans_idr_option" {
   if (currency === "IDR") return midtransReady ? "midtrans" : "manual";
-  return midtransReady && s.payments.allow_idr_for_international ? "midtrans_idr_option" : "manual";
+  return midtransReady && internationalCardEnabled(s) ? "midtrans_idr_option" : "manual";
+}
+
+export const internationalCardEnabled = (s: Settings) => !!(s.payments.international_card_enabled || s.payments.allow_idr_for_international);
+
+// The IDR amount charged by card for a USD obligation: USD × fixed rate, rounded to whole rupiah (Midtrans requires an
+// integer). Computed from the stored obligation amount on the server, never from anything the browser sends. Returns null
+// for anything that is not a positive USD amount with a sane rate, so a bad setting can't produce a wrong charge.
+export function cardAmountIdr(usdAmount: number, rate: number): number | null {
+  if (!Number.isFinite(usdAmount) || usdAmount <= 0 || !Number.isInteger(rate) || rate < 10000 || rate > 30000) return null;
+  const cents = Math.round(usdAmount * 100); // USD amounts have at most 2 decimals; avoid float drift (e.g. 0.1 × 3)
+  return Math.round((cents * rate) / 100);
 }
 
 export function formatMoney(amount: number, currency: Currency): string {
@@ -51,8 +67,8 @@ export function formatMoney(amount: number, currency: Currency): string {
   return `USD ${new Intl.NumberFormat("en-US", { minimumFractionDigits: amount % 1 ? 2 : 0, maximumFractionDigits: 2 }).format(amount)}`;
 }
 
-// The IDR price an international payer would pay if the founder enables the IDR card option: the published IDR price of
-// the same item, never a converted USD amount.
+// The published IDR price of an item (Indonesian price list). Not used for international card payments any more: since
+// 21 Nov 2026 those use cardAmountIdr(USD amount × fixed rate). Kept for reports and the admin price overview.
 export function idrPriceFor(s: Settings, kind: string, now = new Date(), partial = false): number | null {
   if (partial && (kind === "deposit" || kind === "balance")) {
     const p = partialFundedObligations(s, now).find((o) => o.kind === kind);

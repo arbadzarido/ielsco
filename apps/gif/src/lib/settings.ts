@@ -50,10 +50,18 @@ export interface Settings {
   awards: { fully_funded_covers: string[]; partial_funded_covers: string[]; not_included: string[] };
   slots: { fully_funded: number; partial_funded: number; capacity: number };
   payments: {
-    // Midtrans processes IDR only. When true, international (USD-priced) payers may choose to pay the published IDR
-    // price by card through Midtrans. Off by default: a founder decision (docs/gif/DECISIONS.md).
+    // International (USD-priced) payers (founder decision 21 Nov 2026, docs/gif-platform/PAYMENTS.md "International"):
+    // A) request an invoice (bank transfer, verified by Finance) — always available;
+    // B) pay by Visa/Mastercard through Midtrans, which charges IDR: the USD amount × usd_idr_card_rate, computed on the
+    //    server (lib/pricing.ts cardAmountIdr). Off until Finance switches it on (international_card_enabled).
+    international_card_enabled: boolean;
+    usd_idr_card_rate: number; // fixed operational rate, IDR per USD 1 (never a live market rate)
+    // Legacy flag from 20 Nov 2026 (card option at the published IDR price). Treated as international_card_enabled.
     allow_idr_for_international: boolean;
     bank_transfer_instructions: string; // shown for USD obligations (manual payment verified by finance)
+    // Finance-approved account for invoice payments (may be a designated personal account). Shown only to a payer who
+    // requested an invoice, in their portal and acknowledgement email. Null until Finance enters it; never invented.
+    invoice_bank_details: string | null;
   };
   // Fully Funded Phase 1 also includes social media tasks, each verified by the team. The exact list awaits founder
   // confirmation, so it is data: edit or disable it in Admin → Settings.
@@ -62,6 +70,10 @@ export interface Settings {
   universities: { name: string; country: string; status: "planned" | "confirmed" }[];
   contact: { email: string; whatsapp: string };
 }
+
+// Fixed operational USD → IDR rate for international card payments through Midtrans (founder decision 21 Nov 2026).
+// The single source for the default; Finance can change it in Admin → Content → Settings (payments.usd_idr_card_rate).
+export const USD_IDR_PAYMENT_RATE = 18500;
 
 export const DEFAULT_SETTINGS: Settings = {
   applications_open: true,
@@ -109,6 +121,9 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   slots: { fully_funded: 10, partial_funded: 10, capacity: 100 },
   payments: {
+    international_card_enabled: false,
+    usd_idr_card_rate: USD_IDR_PAYMENT_RATE,
+    invoice_bank_details: null,
     allow_idr_for_international: false,
     bank_transfer_instructions:
       "International payments in USD are handled by IELSco finance. Request an invoice from your portal and we will send bank transfer details from hello@ielsco.com. Your payment is marked as received only after finance verifies it.",

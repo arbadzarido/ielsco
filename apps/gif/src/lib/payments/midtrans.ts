@@ -79,6 +79,8 @@ export type SnapInput = {
   orderId: string; amountIdr: number; itemName: string; itemId: string;
   customer: { name: string; email: string; phone?: string };
   finishUrl: string; notificationUrl: string; expiryMinutes: number;
+  // Restrict the Snap page to these methods (e.g. ["credit_card"] for international Visa/Mastercard payments).
+  enabledPayments?: string[];
 };
 
 export async function createSnap(c: MidtransConfig, i: SnapInput): Promise<{ token: string; redirectUrl: string }> {
@@ -94,6 +96,7 @@ export async function createSnap(c: MidtransConfig, i: SnapInput): Promise<{ tok
       customer_details: { first_name: i.customer.name.slice(0, 255), email: i.customer.email, phone: i.customer.phone?.slice(0, 19) },
       callbacks: { finish: i.finishUrl },
       credit_card: { secure: true },
+      ...(i.enabledPayments?.length ? { enabled_payments: i.enabledPayments } : {}),
       expiry: { unit: "minutes", duration: i.expiryMinutes },
     }),
     signal: AbortSignal.timeout(15_000),

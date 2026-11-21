@@ -7,7 +7,7 @@ import { currentCohort } from "../cohort";
 import { siteUrl } from "../request";
 import { sendEmail, deliverQueued } from "../email/send";
 import { onboardingEmail, paymentFailedEmail, paymentReceivedEmail } from "../email/templates";
-import { collectionMethod, formatMoney, idrPriceFor } from "../pricing";
+import { cardAmountIdr, collectionMethod, formatMoney } from "../pricing";
 import { LEGAL_VERSION, PAYMENT_CONSENTS } from "../legal";
 import { recordServerEvent } from "../analytics";
 import { midtransGateway, paymentsState, type GatewayStatus } from "./gateway";
@@ -69,15 +69,22 @@ export async function startCheckout(accountId: string, obligationId: string, opt
   if (guardianBlocks(ob)) throw new PaymentError("This delegate is under 18: a parent or guardian must give consent before payment. We emailed them a consent link; you can resend it from your dashboard.", "guardian");
   const gw = midtransGateway();
   const method = collectionMethod(s, ob.currency, !!gw);
+  // The amount always comes from the stored obligation (and, for USD, the fixed rate in settings), never from the browser.
   let amountIdr: number;
+  let fx: { originalAmount: number; originalCurrency: "USD"; rate: number } | null = null;
   if (ob.currency === "IDR") {
+    // Indonesian payers and Elco Pro: unchanged, the official IDR amount.
     if (method !== "midtrans") throw new PaymentError("Online payment is not available yet. Request an invoice instead.", "gateway_off");
-    amountIdr = ob.amount;
-  } else {
-    if (method !== "midtrans_idr_option" || !opts.idrOption) throw new PaymentError("USD payments are made by invoice. Request an invoice from your portal.", "usd_manual");
-    const idr = idrPriceFor(s, ob.kind, new Date(), ob.pathway === "fully_funded");
-    if (!idr) throw new PaymentError("No IDR price is published for this item.", "no_idr_price");
+    amountIdr = Math.round(ob.amount);
+  } else if (ob.currency === "USD") {
+    if (method !== "midtrans_idr_option" || !opts.idrOption) throw new PaymentError("Card payment isn't available for this item right now. Request an invoice instead.", "usd_manual");
+    const rate = s.payments.usd_idr_card_rate;
+    const idr = cardAmountIdr(Number(ob.amount), rate);
+    if (!idr) throw new PaymentError("Card payment isn't available for this item right now. Request an invoice instead.", "no_rate");
     amountIdr = idr;
+    fx = { originalAmount: Number(ob.amount), originalCurrency: "USD", rate };
+  } else {
+    throw new PaymentError("Unsupported currency.", "currency");
   }
   if (ob.kind === "balance") {
     const dep = await one("select 1 from gif.obligations where participant_id = $1 and kind = 'deposit' and status in ('paid', 'waived')", [ob.participant_id]);
@@ -108,9 +115,16 @@ export async function startCheckout(accountId: string, obligationId: string, opt
       throw new PaymentError("Cancel your previous payment first (Cancel & change payment method), then choose a new method.", "open_attempt");
     }
     const orderId = newOrderId(cohort.code_prefix, ob.kind);
-    const id = (await db.query<{ id: string }>(`insert into gif.payments (obligation_id, application_id, participant_id, kind, gateway, order_id, amount, currency, status, created_by, checkout_expires_at)
-      values ($1, $2, $3, $4, 'midtrans', $5, $6, 'IDR', 'created', $7, now() + make_interval(mins => $8)) returning id`,
-      [ob.id, ob.application_id, ob.participant_id, ob.kind, orderId, amountIdr, accountId, CHECKOUT_MINUTES])).rows[0].id;
+    // IDR payments use exactly the original insert, so they keep working even before migration 20261128 is applied;
+    // only converted card payments write the conversion columns.
+    const id = (fx
+      ? await db.query<{ id: string }>(`insert into gif.payments (obligation_id, application_id, participant_id, kind, gateway, order_id, amount, currency, status, created_by, checkout_expires_at,
+          original_amount, original_currency, fx_rate, fx_source)
+        values ($1, $2, $3, $4, 'midtrans', $5, $6, 'IDR', 'created', $7, now() + make_interval(mins => $8), $9, $10, $11, 'settings.payments.usd_idr_card_rate') returning id`,
+        [ob.id, ob.application_id, ob.participant_id, ob.kind, orderId, amountIdr, accountId, CHECKOUT_MINUTES, fx.originalAmount, fx.originalCurrency, fx.rate])
+      : await db.query<{ id: string }>(`insert into gif.payments (obligation_id, application_id, participant_id, kind, gateway, order_id, amount, currency, status, created_by, checkout_expires_at)
+          values ($1, $2, $3, $4, 'midtrans', $5, $6, 'IDR', 'created', $7, now() + make_interval(mins => $8)) returning id`,
+        [ob.id, ob.application_id, ob.participant_id, ob.kind, orderId, amountIdr, accountId, CHECKOUT_MINUTES])).rows[0].id;
     // Link the earlier attempts this one replaces (cancelled, expired, failed, or still pending after a refused cancellation).
     await db.query(`update gif.payments set replaced_by = $2 where obligation_id = $1 and id <> $2 and replaced_by is null
       and gateway = 'midtrans' and status in ('cancelled', 'expired', 'failed', 'pending', 'created')`, [ob.id, id]);
@@ -128,6 +142,8 @@ export async function startCheckout(accountId: string, obligationId: string, opt
       customer: { name: ob.legal_name, email: ob.email, phone: ob.whatsapp },
       finishUrl: `${siteUrl()}/portal/payments/return?order_id=${encodeURIComponent(orderId)}`,
       notificationUrl: `${siteUrl()}/api/payments/midtrans/notification`, expiryMinutes: CHECKOUT_MINUTES,
+      // International (USD) items: Visa/Mastercard only, so the converted IDR amount is charged to a card.
+      enabledPayments: fx ? ["credit_card"] : undefined,
     });
     await q("update gif.payments set checkout_url = $2, snap_token = $3, updated_at = now() where order_id = $1", [orderId, redirectUrl, token]);
     await recordServerEvent("payment_initiated", { pathway: ob.pathway, kind: ob.kind });
@@ -137,6 +153,13 @@ export async function startCheckout(accountId: string, obligationId: string, opt
     console.error("[gif] checkout failed", (e as Error).message);
     throw new PaymentError("The payment page could not be opened. Please try again in a moment.", "gateway_error");
   }
+}
+
+// "IDR 16,631,500 (USD 899 at USD 1 = IDR 18,500)" for a converted card payment, else the plain amount.
+export function paidAmountText(p: { amount: number; currency?: string; original_amount: number | null; original_currency: string | null; fx_rate: number | null }) {
+  const paid = formatMoney(Number(p.amount), "IDR");
+  return p.original_amount && p.original_currency === "USD" && p.fx_rate
+    ? `${paid} (${formatMoney(Number(p.original_amount), "USD")} at USD 1 = ${formatMoney(Number(p.fx_rate), "IDR")})` : paid;
 }
 
 function receiptNo(prefix: string) {
@@ -159,8 +182,8 @@ export async function syncFromGateway(orderId: string, source: "webhook" | "stat
 export async function applyStatus(orderId: string, source: "webhook" | "status_check", st: GatewayStatus, notification?: Record<string, unknown>, signatureOk?: boolean) {
   const cohort = await currentCohort();
   const outcome = await tx(async (db) => {
-    const pay = (await db.query<{ id: string; obligation_id: string; application_id: string; participant_id: string; amount: number; currency: string; status: string; kind: string; is_duplicate: boolean; cancel_requested_at: string | null }>(
-      "select id, obligation_id, application_id, participant_id, amount, currency, status, kind, is_duplicate, cancel_requested_at from gif.payments where order_id = $1 for update", [orderId])).rows[0];
+    const pay = (await db.query<{ id: string; obligation_id: string; application_id: string; participant_id: string; amount: number; currency: string; status: string; kind: string; is_duplicate: boolean; original_amount: number | null; original_currency: "USD" | "IDR" | null; fx_rate: number | null; cancel_requested_at: string | null }>(
+      "select * from gif.payments where order_id = $1 for update", [orderId])).rows[0];
     if (!pay) return { applied: false, reason: "unknown_order" };
     const dedupe = `${orderId}:${source}:${st.transactionStatus}:${st.fraudStatus ?? ""}`;
     const ev = await db.query(`insert into gif.payment_events (payment_id, order_id, source, transaction_status, fraud_status, status_code, gross_amount, signature_ok, dedupe_key, payload)
@@ -198,7 +221,7 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
         const who = (await db.query<{ legal_name: string; email: string; owner_email: string }>(
           `select p.legal_name, p.email, acc.email as owner_email from gif.participants p join gif.applications a on a.id = p.application_id
            join gif.accounts acc on acc.id = a.owner_account_id where p.id = $1`, [pay.participant_id])).rows[0];
-        const m = paymentReceivedEmail(who.legal_name, ob.label, formatMoney(pay.amount, "IDR"), receipt, `${siteUrl()}/portal/receipts/${pay.id}`);
+        const m = paymentReceivedEmail(who.legal_name, ob.label, paidAmountText(pay), receipt, `${siteUrl()}/portal/receipts/${pay.id}`);
         for (const to of new Set([who.email, who.owner_email])) {
           await sendEmail({ to, template: "payment_received", ...m, dedupeKey: `paid:${pay.id}:${to}`, applicationId: pay.application_id }, db);
         }
@@ -235,6 +258,11 @@ export async function applyStatus(orderId: string, source: "webhook" | "status_c
 
 // What paying an obligation unlocks.
 export async function afterObligationPaid(db: pg.PoolClient, participantId: string, obligationId: string, kind: string) {
+  // An open invoice request for this item is settled by any verified payment (card or bank transfer).
+  // (Skipped while migration 20261128 isn't applied, so settling a payment never depends on it.)
+  if ((await db.query<{ ok: boolean }>("select to_regclass('gif.invoice_requests') is not null as ok")).rows[0]?.ok) {
+    await db.query(`update gif.invoice_requests set status = 'paid', updated_at = now() where obligation_id = $1 and status in ('invoice_requested', 'invoice_sent')`, [obligationId]);
+  }
   if (kind === "elco_pro") {
     await db.query("update gif.elco_fulfilments set status = 'pending_activation', updated_at = now() where obligation_id = $1 and status = 'awaiting_payment'", [obligationId]);
   }
