@@ -33,3 +33,15 @@ npx next build && OS_GOOGLE_CLIENT_ID=e2e-client.apps.googleusercontent.com OS_G
 # 4. Test (Chromium resolves os.localhost to 127.0.0.1)
 E2E_ANON_KEY=$IELSCO_LOCAL_SUPABASE_ANON_KEY node tests/e2e/company-os.e2e.mjs /tmp/os-shots
 ```
+
+## GIF Summer 2027 workspace
+
+Apply every Company OS migration up to and including `20261129000000_company_os_programmes.sql`, then fixtures for the
+GIF project and its people (PRJ-0033 in IEL / DIV-02, PPL-0001 and PPL-0002 as founders with `arba@ielsco.test` and
+`farrel@ielsco.test`, PPL-0003..0008 as managers with `<name>@ielsco.test`, PPL-0007 managing DIV-02, a DIV-03 member
+`member@ielsco.test`, and existing tasks TSK-0106/0107/0114/0115 in PRJ-0033), then
+`20261129010000_company_os_gif_summer_2027.sql`. Then:
+
+```bash
+node tests/e2e/company-os-gif.e2e.mjs /tmp/os-shots   # 16 tabs on desktop and 360 px, editing, an answer: 62 checks
+```

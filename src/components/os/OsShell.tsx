@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft, BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
-  Hash, Home, Inbox, KeyRound, Layers, LineChart, LogOut, Mail, Megaphone, Menu, PenLine, PiggyBank, ScrollText, Settings, Shield, Target, UserPlus, Users, Wallet, X,
+  Hash, Home, Inbox, KeyRound, Layers, LineChart, LogOut, Mail, Megaphone, Menu, PenLine, PiggyBank, Plane, ScrollText, Settings, Shield, Target, UserPlus, Users, Wallet, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
@@ -43,6 +43,7 @@ const NAV: { group?: string; items: NavItem[] }[] = [
     { href: "/os/calendar", label: "Calendar", icon: CalendarDays },
     { href: "/os/documents", label: "Documents", icon: FileText },
     { href: "/os/timeline", label: "Timeline", icon: CalendarRange },
+    { href: "/os/gif", label: "GIF Summer 2027", icon: Plane },
   ] },
   { group: "Performance", items: [
     { href: "/os/kpis", label: "KPIs", icon: BarChart3 },
