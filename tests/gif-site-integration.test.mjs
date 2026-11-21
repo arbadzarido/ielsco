@@ -55,3 +55,9 @@ test("no navigation or CTA still points at /events/gif", () => {
   assert.match(cfg, /source: "\/events\/gif", destination: "https:\/\/gif\.ielsco\.com", permanent: true/);
   assert.ok(!/source: "\/events\/gif\/:/.test(cfg), "GIF 2026 subpages are not redirected");
 });
+
+test("sign-in keeps the GIF pathway preselection (/dashboard/gif?pathway=…)", () => {
+  const proxy = readFileSync(new URL("../src/proxy.ts", import.meta.url), "utf8");
+  assert.match(proxy, /signInUrl\.searchParams\.set\('next', gifNext\)/);
+  assert.match(proxy, /\(fully_funded\|mentoring\|self_funded\)/);
+});
