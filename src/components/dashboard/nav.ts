@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { CircleCIcon } from "@/components/brand/CircleCIcon";
+import { GifIcon } from "@/components/brand/GifIcon";
 import {
   BadgeCheck, BookOpenText, Bookmark, CalendarDays, ClipboardList, Compass, GraduationCap, HandHeart, HelpCircle, Home, IdCard,
   Library, ListChecks, MessageCircle, Newspaper, BriefcaseBusiness, Settings, Users, UsersRound,
@@ -11,6 +12,8 @@ import {
 //   Social ▾     People, Inbox
 //   Discover ▾   Programs, Opportunities, News & Stories, Learning Materials
 //   Events ▾     Circle, IELSco Events, Other Events
+//   GIF          Global Impact Fellowship workspace (21 Nov 2026: GIF is an IELSco programme, one IELSco account), with
+//                the official GIF mark; its GIF Singapore 2026 delegate pages stay under /dashboard/gif/*.
 // Pages that are no longer in the sidebar keep their routes. Each one is listed in a `match` below so the right group
 // stays highlighted on it: Connections, intro requests and Elco-Pass belong to People; IELSco Talks to IELSco Events;
 // Circle groups, Cultural exchange and Quick Match are hidden but routed (Social).
@@ -58,6 +61,8 @@ export const SECTIONS: Section[] = [
       { label: "Other Events", href: "/dashboard/connect/rooms", icon: HandHeart, id: "other-events" },
     ],
   },
+  // A single item (no group): opens the GIF workspace inside the dashboard. Signed in with the IELSco session.
+  { key: "nav.gif", path: "/dashboard/gif", icon: GifIcon, id: "gif" },
 ];
 
 // Profile card menu (sidebar bottom) and the Account part of the phone More sheet.

@@ -2,11 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Edge proxy for gif.ielsco.com:
 // 1. CSRF: state-changing /api requests must come from this site (Origin check). The Midtrans notification and the
-//    cron endpoint are exempt: they are server-to-server and verify a signature / secret themselves. Server Actions
+//    cron endpoint and the IELSco integration are exempt: they are server-to-server and verify a signature / secret themselves. Server Actions
 //    have Next's own Origin check.
 // 2. A per-instance burst limit on /api as a first line (real limits are in Postgres, see lib/ratelimit.ts).
 // 3. gif_cc: the visitor's country from the edge, used only to pick the default price currency on public pages.
-const EXEMPT = ["/api/payments/midtrans/notification", "/api/cron/", "/api/dev-storage/"];
+const EXEMPT = ["/api/payments/midtrans/notification", "/api/cron/", "/api/dev-storage/", "/api/integrations/ielsco/"];
 const hits = new Map<string, { n: number; t: number }>();
 
 function burst(key: string, max: number, ms: number) {

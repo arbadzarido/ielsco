@@ -14,7 +14,8 @@ import { EARLY_BIRD_END } from "@/lib/gif-summer-2027";
 export function GifBanner({ onNavigate, className }: { onNavigate?: () => void; className?: string }) {
   const { t } = useI18n();
   const { gifDelegate } = useNavAccess();
-  const href = gifDelegate ? "/dashboard/gif" : "/events/gif";
+  // Everyone goes to the GIF workspace in the dashboard (21 Nov 2026: GIF is an IELSco programme, one IELSco account).
+  const href = "/dashboard/gif";
   const earlyBird = !gifDelegate && Date.now() < Date.parse(EARLY_BIRD_END);
   return (
     <Link

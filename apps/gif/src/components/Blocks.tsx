@@ -3,8 +3,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { NextDeadline, Price } from "@/components/Client";
 import { PHOTOS, type Photo, type Mentor, type Testimonial, type Faq } from "@/lib/content";
-import type { Settings } from "@/lib/settings";
-import { balanceOf, mentoringPrice } from "@/lib/settings";
+import type { Pathway, Settings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, balanceOf, mentoringPrice, pathwayOpen, pathwayOpensAt } from "@/lib/settings";
 import { fmtDate } from "@/lib/format";
 import { CAMPUS_PHOTOS, PLACES } from "@/lib/places";
 
@@ -37,7 +37,8 @@ export function Figure({ p, sizes = "(min-width: 900px) 33vw, 100vw", priority =
 
 export function deadlines(s: Settings) {
   return [
-    { to: s.dates.launch, label: "Applications open in" },
+    // Only Fully Funded waits for 25 Nov 2026; Self-Funded and Mentoring registration has been open since 20 Nov 2026.
+    { to: pathwayOpensAt(s, "fully_funded"), label: "Fully Funded applications open in" },
     { to: s.dates.phase1_close, label: "Phase 1 (Fully Funded) closes in" },
     { to: s.dates.phase2_close, label: "Phase 2 closes in" },
     { to: s.dates.phase3_submit_close, label: "Phase 3 video submissions close in" },
@@ -57,7 +58,19 @@ export function DeadlineStrip({ s }: { s: Settings }) {
   );
 }
 
+// "20 November 2026" style label of a pathway's registration opening date (WIB).
+export const opensLabel = (s: Settings, p: Pathway) => fmtDate(pathwayOpensAt(s, p), { day: "numeric", month: "long", year: "numeric" });
+
+// One line for CTAs: which pathways are open right now.
+export function openingLine(s: Settings = DEFAULT_SETTINGS): string {
+  if (pathwayOpen(s, "fully_funded").open) return "Registration is open for every pathway.";
+  const early = (["self_funded", "mentoring"] as Pathway[]).filter((p) => pathwayOpen(s, p).open);
+  if (early.length === 2) return `Self-Funded and Project Mentoring registration is open now. Fully Funded applications open on ${opensLabel(s, "fully_funded")}.`;
+  return `Fully Funded applications open on ${opensLabel(s, "fully_funded")}.`;
+}
+
 export function Pathways({ s, compact = false }: { s: Settings; compact?: boolean }) {
+  const ffOpen = pathwayOpen(s, "fully_funded");
   const m = mentoringPrice(s);
   const bal = balanceOf(s);
   return (
@@ -73,7 +86,9 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
           {!compact && <li>Elco Pro is yours to keep, selected or not</li>}
         </ul>
         <div className="btn-row">
-          <Link className="btn btn-primary" href="/apply?pathway=fully_funded" data-track="pathway_select" data-pathway="fully_funded">Apply</Link>
+          {ffOpen.open
+            ? <Link className="btn btn-primary" href="/apply?pathway=fully_funded" data-track="pathway_select" data-pathway="fully_funded">Apply</Link>
+            : <Link className="btn btn-secondary" href="/fully-funded" data-track="pathway_view" data-pathway="fully_funded">Opens {opensLabel(s, "fully_funded")}</Link>}
           <Link className="btn btn-quiet arrow" href="/fully-funded" data-track="pathway_view" data-pathway="fully_funded">Details </Link>
         </div>
       </article>
@@ -208,7 +223,7 @@ export function PhotoBand() {
   );
 }
 
-export function FinalCta({ title = "Your project deserves a bigger room.", body = "Applications for GIF Summer 2027 open on 25 November 2026. Choose the pathway that fits you and start today; you can save a draft and finish later." }: { title?: string; body?: string }) {
+export function FinalCta({ title = "Your project deserves a bigger room.", body = `${openingLine()} Choose the pathway that fits you and start today; you can save a draft and finish later.` }: { title?: string; body?: string }) {
   return (
     <section className="section dark cta-night">
       <div className="bg" aria-hidden="true"><Image src={PLACES.cbdDusk.src} alt="" fill sizes="100vw" quality={65} /></div>
