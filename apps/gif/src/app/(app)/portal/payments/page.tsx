@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { portalContext } from "@/lib/portal";
 import { paymentsState } from "@/lib/payments/gateway";
-import { collectionMethod, formatMoney, idrPriceFor } from "@/lib/pricing";
+import { cardAmountIdr, collectionMethod, formatMoney } from "@/lib/pricing";
 import { PAYMENT_CONSENTS } from "@/lib/legal";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 import { PayFlow, InvoiceButton } from "./buttons";
@@ -40,7 +40,9 @@ export default async function Payments() {
               const attempt = payments.find((p) => p.obligation_id === o.id && p.gateway === "midtrans" && ["created", "pending", "cancelling"].includes(p.status)
                 && (p.status === "cancelling" || !p.checkout_expires_at || new Date(p.checkout_expires_at).getTime() > Date.now()));
               const pending = attempt?.status === "pending";
-              const idr = idrPriceFor(s, o.kind, new Date(), app.pathway === "fully_funded");
+              // International items: the card amount is computed here only for display; the server recomputes it at checkout.
+              const cardIdr = o.currency === "USD" ? cardAmountIdr(Number(o.amount), s.payments.usd_idr_card_rate) : null;
+              const invoice = detail.invoiceRequests.find((r) => r.obligation_id === o.id && ["invoice_requested", "invoice_sent"].includes(r.status));
               const flow = (idrOption: boolean, label: string) => <PayFlow obligationId={o.id} idrOption={idrOption} label={label}
                 openOrderId={attempt?.order_id ?? null} openStatus={attempt?.status ?? null} cancelResult={attempt?.cancel_result ?? null} />;
               return (
@@ -54,7 +56,25 @@ export default async function Payments() {
                     {o.status === "open" && (depositOpen ? <span className="small muted">Pay the deposit first.</span>
                       : !consented ? <span className="small muted">Accept the terms first.</span>
                       : method === "midtrans" ? flow(false, pending ? "Continue payment" : "Pay online")
-                      : method === "midtrans_idr_option" ? <div style={{ display: "grid", gap: 8 }}><InvoiceButton obligationId={o.id} />{flow(true, `Pay IDR ${idr?.toLocaleString("en-US")} by card instead`)}</div>
+                      : o.currency === "USD" ? (
+                        <div className="pay-options" data-testid="intl-options">
+                          {method === "midtrans_idr_option" && cardIdr && (
+                            <div className="pay-option" data-testid="intl-card">
+                              <p className="small" style={{ margin: 0 }}><strong>Pay by card</strong> · Visa or Mastercard</p>
+                              <p className="small" style={{ margin: "2px 0 8px" }}>Card amount <strong>{formatMoney(cardIdr, "IDR")}</strong>
+                                <span className="tiny muted" style={{ display: "block" }}>Programme price {formatMoney(o.amount, "USD")}, converted at the fixed rate USD 1 = {formatMoney(s.payments.usd_idr_card_rate, "IDR")}. Midtrans charges in IDR; your bank may add its own fees. Card acceptance depends on Midtrans and your bank.</span></p>
+                              {flow(true, attempt ? "Continue card payment" : `Pay ${formatMoney(cardIdr, "IDR")} by card`)}
+                            </div>
+                          )}
+                          <div className="pay-option" data-testid="intl-invoice">
+                            <p className="small" style={{ margin: "0 0 8px" }}><strong>Request an invoice</strong> · bank transfer of {formatMoney(o.amount, "USD")}</p>
+                            {invoice ? <p className="small" role="status" style={{ margin: 0 }}>{invoice.status === "invoice_sent" ? `Invoice ${invoice.invoice_no ?? ""} sent ${fmtDate(invoice.sent_at)}. Check your email.` : `Invoice requested ${fmtDate(invoice.created_at)}. Finance will email your invoice.`}</p>
+                              : <InvoiceButton obligationId={o.id} />}
+                          </div>
+                          {method === "midtrans_idr_option" && cardIdr && <p className="tiny muted" style={{ margin: 0 }}>Card declined or not accepted? Request an invoice instead.</p>}
+                        </div>
+                      )
+                      : invoice ? <span className="small">Invoice requested {fmtDate(invoice.created_at)}.</span>
                       : <InvoiceButton obligationId={o.id} />)}
                   </td>
                 </tr>
@@ -64,6 +84,11 @@ export default async function Payments() {
         </table></div>
       )}
       {obligations.some((o) => o.currency === "USD" && o.status === "open") && <div className="notice" style={{ marginTop: 16 }}><p>{s.payments.bank_transfer_instructions}</p></div>}
+      {/* Finance-approved bank details: only for someone who has requested an invoice, and only once Finance has entered them. */}
+      {s.payments.invoice_bank_details && detail.invoiceRequests.some((r) => ["invoice_requested", "invoice_sent"].includes(r.status) && obligations.some((o) => o.id === r.obligation_id)) && (
+        <div className="notice" style={{ marginTop: 12 }} data-testid="bank-details"><p><strong>Bank transfer details</strong></p><p style={{ whiteSpace: "pre-line" }}>{s.payments.invoice_bank_details}</p>
+          <p className="small muted">Include your application ID ({app.code}) in the transfer reference. Only pay into this account or the one on your invoice.</p></div>
+      )}
 
       <h2>Payment history</h2>
       {payments.length === 0 ? <p className="muted">No payments yet.</p> : (
@@ -73,7 +98,7 @@ export default async function Payments() {
             <tr key={p.id}>
               <td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(p.paid_at ?? p.created_at)}</td>
               <td>{detail.obligations.find((o) => o.id === p.obligation_id)?.label ?? p.kind}{p.is_duplicate && <span className="badge warn" style={{ marginLeft: 6 }}>Duplicate · refund queued</span>}</td>
-              <td style={{ whiteSpace: "nowrap" }}>{formatMoney(p.amount, p.currency)}</td>
+              <td style={{ whiteSpace: "nowrap" }}>{formatMoney(p.amount, p.currency)}{p.original_amount && p.original_currency === "USD" && <span className="tiny muted" style={{ display: "block" }}>{formatMoney(Number(p.original_amount), "USD")} at {formatMoney(Number(p.fx_rate), "IDR")}/USD</span>}</td>
               <td>{p.gateway === "manual" ? "Bank transfer (verified)" : p.payment_type ? p.payment_type.replace(/_/g, " ") : "Midtrans"}</td>
               <td>{STATUS[p.status] ?? p.status}</td>
               <td>{p.receipt_no && ["paid", "refunded", "partially_refunded"].includes(p.status) ? <Link href={`/portal/receipts/${p.id}`}>{p.receipt_no}</Link> : "—"}</td>

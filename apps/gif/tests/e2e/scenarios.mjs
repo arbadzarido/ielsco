@@ -334,6 +334,15 @@ export async function run({ base, mt, env, db: dbc }) {
       await mp.locator("tr", { hasText: "deposit" }).getByRole("button", { name: "Request invoice" }).click();
       await mp.getByText("Invoice requested").waitFor();
       check("invoice request emailed to finance", !!(await one("select 1 from gif.email_outbox where template = 'invoice_request'")));
+      const ir = await one("select r.* from gif.invoice_requests r join gif.participants p on p.id = r.participant_id where p.email = $1", [M.email]);
+      check("invoice request recorded in USD at the official amount", ir && ir.status === "invoice_requested" && Number(ir.amount) === 300 && ir.currency === "USD", JSON.stringify(ir));
+      check("participant gets an invoice acknowledgement email", !!(await one("select 1 from gif.email_outbox where template = 'invoice_requested' and to_email = $1", [M.email])));
+      const finMail = await one("select html, text_body from gif.email_outbox where template = 'invoice_request' order by created_at desc limit 1");
+      check("finance email: shared layout, both logos, no date of birth", finMail.html.includes("public-asset/iels_horizontal_navy.png") && finMail.html.includes("public-asset/gif.png") && !finMail.text_body.includes(M.dob));
+      await mp.reload();
+      const depRow = mp.locator("tr", { hasText: "Self-Funded deposit" }).first();
+      check("second request not possible: status shown instead of the button", (await depRow.innerText()).includes("Invoice requested") && (await depRow.getByRole("button", { name: "Request invoice" }).count()) === 0);
+      check("only one open invoice request per item", (await one("select count(*)::int as n from gif.invoice_requests where obligation_id = $1", [ir.obligation_id])).n === 1);
       // Member can't open the leader's receipt
       const leaderPay = await one("select p.id from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'paid'", [B.email]);
       const rr = await mp.goto(`/portal/receipts/${leaderPay.id}`);
@@ -347,6 +356,13 @@ export async function run({ base, mt, env, db: dbc }) {
       // Finance records the member's USD deposit manually (audited)
       const fp = await newPage();
       await login(fp, "finance@example.test", "/admin");
+      await fp.goto("/admin/payments");
+      const irow = fp.getByTestId("invoice-requests").locator("tr", { hasText: M.name });
+      await irow.getByText("Mark invoice sent").click();
+      await irow.getByLabel("Invoice number").fill("INV-E2E-0001");
+      await irow.getByRole("button", { name: "Mark sent and email participant" }).click();
+      await waitDb(async () => (await one("select r.status from gif.invoice_requests r join gif.participants p on p.id = r.participant_id where p.email = $1", [M.email]))?.status === "invoice_sent");
+      check("finance marks invoice sent → participant emailed", !!(await one("select 1 from gif.email_outbox where template = 'invoice_sent' and to_email = $1 and subject like '%INV-E2E-0001%'", [M.email])));
       await fp.goto(`/admin/applicants/${app.id}`);
       const row = fp.locator("tr", { hasText: "Self-Funded deposit" }).filter({ hasText: "Nur Aisyah" });
       await row.getByText("Record manual payment").click();
@@ -355,6 +371,7 @@ export async function run({ base, mt, env, db: dbc }) {
       await waitDb(async () => (await obligation(M.email, "deposit")).status === "paid");
       const appB = await appOf(B.email);
       check("manual USD deposit → team Confirmed Participant", appB.status === "confirmed_participant", appB.status);
+      check("verified transfer closes the invoice request", (await one("select r.status from gif.invoice_requests r join gif.participants p on p.id = r.participant_id where p.email = $1", [M.email])).status === "paid");
       check("manual payment audited", !!(await one("select 1 from gif.audit_log where action = 'manual_payment_recorded' and actor = 'finance@example.test'")));
       check("onboarding emails sent to both", (await one("select count(*)::int as n from gif.email_outbox where template = 'onboarding' and application_id = $1", [app.id])).n === 2);
       // Wrong manual amount refused
@@ -441,6 +458,58 @@ export async function run({ base, mt, env, db: dbc }) {
       await waitDb(async () => (await obligation(D.email, "mentoring")).status === "paid");
       check("mentee enrolled → Phase 1 Completed (straight to Phase 3)", (await appOf(D.email)).status === "phase_1_completed");
       await fp.context().close();
+    }
+
+    // ── INTL. International card payment (USD price, charged in IDR at the fixed rate USD 1 = IDR 18,500) ────────────
+    const INTL = { name: "Nurul Huda binti Ahmad", email: "nurul.huda@example.test", wa: "+60 13 222 4455", dob: "2004-08-08", nat: "MY", inst: "Universiti Example", level: "undergraduate" };
+    {
+      const setPayments = async (patch) => {
+        const r = await one("select settings from gif.cohorts where is_current");
+        const st = r.settings ?? {};
+        st.payments = { ...(st.payments ?? {}), ...patch };
+        await db.query("update gif.cohorts set settings = $1 where is_current", [JSON.stringify(st)]);
+      };
+      const page = await newPage();
+      await login(page, INTL.email, "/apply?pathway=mentoring");
+      await apply(page, { pathway: "mentoring", leader: INTL });
+      const ob = await obligation(INTL.email, "mentoring");
+      check("E: official USD 79 obligation kept (no conversion on the obligation)", Number(ob.amount) === 79 && ob.currency === "USD");
+      await page.goto("/portal/application");
+      // The terms are normally accepted when submitting; accept here only if the portal still asks.
+      if (await page.getByRole("button", { name: "Accept" }).isVisible().catch(() => false)) {
+        for (const cb of await page.locator("form.panel").getByRole("checkbox").all()) await cb.check();
+        await page.getByRole("button", { name: "Accept" }).click();
+      }
+      await page.getByText(/Your acceptance has been recorded|You accepted the current version/).first().waitFor();
+      await page.goto("/portal/payments");
+      check("card option hidden until Finance switches it on", (await page.getByTestId("intl-card").count()) === 0 && (await page.getByTestId("intl-invoice").count()) === 1);
+      await setPayments({ international_card_enabled: true });
+      await page.goto("/portal/payments");
+      const card = page.getByTestId("intl-card");
+      const ct = await card.innerText();
+      check("card option shows IDR 1,461,500, the USD price and the fixed rate", ct.includes("IDR 1,461,500") && ct.includes("USD 79") && ct.includes("USD 1 = IDR 18,500"), ct);
+      check("invoice option offered next to the card", (await page.getByTestId("intl-invoice").innerText()).includes("Request invoice"));
+      await card.getByRole("button", { name: /Pay IDR 1,461,500 by card/ }).click();
+      const order = await snapOrder(page);
+      const pay = await one("select * from gif.payments where order_id = $1", [order]);
+      check("payment row: IDR amount + original USD amount + rate recorded", Number(pay.amount) === 1461500 && pay.currency === "IDR" && Number(pay.original_amount) === 79 && pay.original_currency === "USD" && Number(pay.fx_rate) === 18500 && pay.fx_source === "settings.payments.usd_idr_card_rate", JSON.stringify(pay));
+      const fake = (await (await fetch(`${mt}/__orders`)).json()).find((o) => o.order_id === order);
+      check("Midtrans receives the integer IDR amount, cards only", fake.gross_amount === "1461500.00" && JSON.stringify(fake.enabled_payments) === JSON.stringify(["credit_card"]), JSON.stringify(fake));
+      // A notification with any other amount (e.g. the USD number) never settles it.
+      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: order, transaction_status: "settlement", gross_amount: "79.00", notify: true }) });
+      check("amount mismatch is not marked paid", (await one("select status from gif.payments where order_id = $1", [order])).status !== "paid");
+      for (let i = 0; i < 2; i++) await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: order, transaction_status: "settlement", gross_amount: "1461500.00", notify: true }) });
+      await waitDb(async () => (await obligation(INTL.email, "mentoring")).status === "paid");
+      check("verified card payment settles the USD obligation once", (await obligation(INTL.email, "mentoring")).status === "paid" && (await one("select count(*)::int as n from gif.payments where obligation_id = $1 and status = 'paid'", [ob.id])).n === 1);
+      const pm = await one("select html, text_body from gif.email_outbox where template = 'payment_received' and to_email = $1", [INTL.email]);
+      check("payment email shows the IDR amount with the USD price and rate", !!pm && pm.text_body.includes("IDR 1,461,500 (USD 79 at USD 1 = IDR 18,500)") && pm.html.includes("public-asset/gif.png"));
+      check("repeated notifications send one email", (await one("select count(*)::int as n from gif.email_outbox where template = 'payment_received' and to_email = $1", [INTL.email])).n === 1);
+      const rc = await one("select id from gif.payments where order_id = $1", [order]);
+      await page.goto(`/portal/receipts/${rc.id}`);
+      check("receipt shows the programme price and the fixed rate", (await page.locator("body").innerText()).includes("paid by card at the fixed rate USD 1 = IDR 18,500"));
+      check("IDR obligations unchanged (A's Elco Pro still IDR 98,000)", Number((await obligation(A.email, "elco_pro")).amount) === 98000);
+      await setPayments({ international_card_enabled: false });
+      await page.context().close();
     }
 
     // ── Phases 2 and 3 with uploads (windows opened through settings) ──────────────────────────────────────────────

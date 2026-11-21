@@ -94,7 +94,7 @@ const server = http.createServer(async (req, res) => {
       const id = b.transaction_details.order_id;
       if (orders.has(id)) return json(res, 400, { error_messages: ["transaction_details.order_id has already been taken"] });
       orders.set(id, { order_id: id, gross_amount: `${b.transaction_details.gross_amount}.00`, transaction_status: null, transaction_id: crypto.randomUUID(),
-        notify: req.headers["x-override-notification"], finish: b.callbacks?.finish, time: new Date().toISOString(), item: b.item_details?.[0]?.name });
+        notify: req.headers["x-override-notification"], finish: b.callbacks?.finish, time: new Date().toISOString(), item: b.item_details?.[0]?.name, enabled_payments: b.enabled_payments ?? null });
       const token = crypto.randomUUID();
       tokens.set(token, id);
       return json(res, 201, { token, redirect_url: `http://127.0.0.1:${PORT}/pay/${encodeURIComponent(id)}` });

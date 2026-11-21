@@ -4,17 +4,15 @@ import { revalidatePath } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { acceptOffer, applicationForAccount, recordConsents, UserError, withdrawApplication } from "@/lib/applications";
 import { startCheckout, PaymentError, syncFromGateway } from "@/lib/payments/service";
+import { requestInvoice } from "@/lib/payments/invoices";
 import { attemptState, cancelAttempt, resumeAttempt, type CancelResult } from "@/lib/payments/attempts";
 import { beginUpload, finishUpload, deleteOwnDocument, UploadError } from "@/lib/documents";
 import { savePhase } from "@/lib/phases";
 import { currentCohort } from "@/lib/cohort";
 import { one } from "@/lib/db";
 import { audit } from "@/lib/audit";
-import { sendEmail } from "@/lib/email/send";
-import { layout } from "@/lib/email/templates";
 import { clientIp, userAgent } from "@/lib/request";
 import { requiredConsents, type ConsentCategory } from "@/lib/legal";
-import { formatMoney } from "@/lib/pricing";
 import { overLimit } from "@/lib/ratelimit";
 import { normalizeHandle, tasksFor } from "@/lib/tasks";
 import { resendGuardianLink } from "@/lib/guardian";
@@ -88,18 +86,20 @@ export async function checkPaymentAction(orderId: string): Promise<{ status: str
   return { status: now?.status ?? "unknown", canContinue: st?.canContinue, canCancel: st?.canCancel, cancelResult: st?.cancelResult, obligationId: now?.obligation_id };
 }
 
+// Request an invoice (bank transfer) instead of paying online. Recorded once per item; Finance and the payer are emailed.
 export async function requestInvoiceAction(_: ActionResult, fd: FormData): Promise<ActionResult> {
   const { account, found } = await ctx();
   if (!found) return { error: "No application." };
-  const ob = await one<{ id: string; label: string; amount: number; currency: "IDR" | "USD"; legal_name: string; email: string; code: string }>(
-    `select o.id, o.label, o.amount, o.currency, p.legal_name, p.email, a.code from gif.obligations o join gif.participants p on p.id = o.participant_id
-     join gif.applications a on a.id = o.application_id where o.id = $1 and o.application_id = $2 and o.status = 'open'`, [String(fd.get("obligation_id")), found.app.id]);
-  if (!ob) return { error: "Payment item not found." };
-  const finance = process.env.GIF_FINANCE_EMAIL || "hello@ielsco.com";
-  const m = layout({ heading: "Invoice requested", paras: [`${ob.legal_name} (${ob.email}) requested an invoice for ${ob.label}: ${formatMoney(ob.amount, ob.currency)}.`, `Application ${ob.code}. Record the payment in Admin → Payments once the transfer is verified.`] });
-  await sendEmail({ to: finance, template: "invoice_request", subject: `Invoice request ${ob.code}: ${ob.label}`, ...m, dedupeKey: `invoice:${ob.id}:${new Date().toISOString().slice(0, 10)}`, applicationId: found.app.id });
-  await audit(account.email, "invoice_requested", "obligation", ob.id, {}, await clientIp());
-  return { ok: true, message: "Invoice requested. Finance will email you bank transfer details." };
+  if (await overLimit(`invoice:${account.id}`, 10, 3600)) return { error: "Too many requests. Please try again later." };
+  try {
+    const r = await requestInvoice(account.id, account.email, found.app.id, String(fd.get("obligation_id") ?? ""), await clientIp());
+    revalidatePath("/portal/payments");
+    return { ok: true, message: r.created ? "Invoice requested. We've emailed you a confirmation; Finance will send the invoice with the bank transfer details."
+      : "You've already requested an invoice for this item. Finance will email it to you." };
+  } catch (e) {
+    if (e instanceof PaymentError) return { error: e.message };
+    throw e;
+  }
 }
 
 export async function acceptTermsAction(_: ActionResult, fd: FormData): Promise<ActionResult> {

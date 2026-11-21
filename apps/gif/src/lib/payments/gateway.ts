@@ -10,7 +10,8 @@ export interface PaymentGateway {
   id: "midtrans";
   currencies: readonly ("IDR" | "USD")[];
   createCheckout(i: { orderId: string; amount: number; currency: "IDR"; itemId: string; itemName: string;
-    customer: { name: string; email: string; phone?: string }; finishUrl: string; notificationUrl: string; expiryMinutes: number }): Promise<{ redirectUrl: string; token: string }>;
+    customer: { name: string; email: string; phone?: string }; finishUrl: string; notificationUrl: string; expiryMinutes: number;
+    enabledPayments?: string[] }): Promise<{ redirectUrl: string; token: string }>;
   fetchStatus(orderId: string): Promise<GatewayStatus | null>;
   refund(orderId: string, refundKey: string, amount: number, reason: string): Promise<{ ok: boolean; raw: Record<string, unknown> }>;
   cancel(orderId: string): Promise<ModifyResult>;
@@ -27,7 +28,7 @@ export function midtransGateway(): PaymentGateway | null {
     currencies: ["IDR"],
     async createCheckout(i) {
       const r = await createSnap(config, { orderId: i.orderId, amountIdr: i.amount, itemId: i.itemId, itemName: i.itemName, customer: i.customer,
-        finishUrl: i.finishUrl, notificationUrl: i.notificationUrl, expiryMinutes: i.expiryMinutes });
+        finishUrl: i.finishUrl, notificationUrl: i.notificationUrl, expiryMinutes: i.expiryMinutes, enabledPayments: i.enabledPayments });
       return { redirectUrl: r.redirectUrl, token: r.token };
     },
     async fetchStatus(orderId) {

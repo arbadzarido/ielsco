@@ -49,7 +49,7 @@ async function setupDb() {
   await admin.end();
   const c = new pg.Client({ host: PGHOST, port: PGPORT, user: PGUSER, database: DB });
   await c.connect();
-  for (const m of ["20261123000000_gif_programme_platform.sql", "20261126000000_gif_accounts_guardians_tasks.sql", "20261127000000_gif_payment_attempts_elco_grants.sql"]) {
+  for (const m of ["20261123000000_gif_programme_platform.sql", "20261126000000_gif_accounts_guardians_tasks.sql", "20261127000000_gif_payment_attempts_elco_grants.sql", "20261128000000_gif_international_card_invoice_requests.sql"].filter((m) => !(process.env.E2E_SKIP_MIGRATION ?? "").split(",").includes(m))) {
     await c.query(readFileSync(join(repo, "supabase", "migrations", m), "utf8"));
   }
   // Applications open on 25 Nov 2026; tests run before that, so open them early in this throwaway database only.

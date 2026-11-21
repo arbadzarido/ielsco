@@ -109,3 +109,31 @@ Midtrans cannot charge USD. Options for an Indonesian PT, from official sources:
   cardholders in USD for this programme. Until confirmed, keep USD on invoice + bank transfer (already built), and
   decide whether to enable the IDR-card option for international delegates.
 - Not integrated, per the brief, because eligibility is unverified. The gateway interface is ready for it.
+
+## 6. International payments: invoice or card at a fixed rate (founder decision 21 Nov 2026)
+
+International participants keep their official **USD** price (`currencyFor(nationality)`, unchanged). Indonesian
+participants and Elco Pro (IDR for everyone) are untouched. For each open USD item the portal offers:
+
+- **Request an invoice** (always): recorded in `gif.invoice_requests` (one open request per item; asking again shows
+  the existing one). Finance is emailed (`GIF_FINANCE_EMAIL`, else the contact email) with only the name, email,
+  application ID, item and amount; the payer gets an acknowledgement. Finance marks the invoice as sent in
+  Admin → Payments → Invoice requests (the payer is emailed), then records the verified transfer on the applicant's page
+  (`recordManualPayment`), which closes the request. Bank details come only from `settings.payments.invoice_bank_details`
+  (entered by Finance, may be an officially approved personal account); null by default and never invented. They are
+  shown only to a payer who has requested an invoice.
+- **Pay by card** (Visa/Mastercard through Midtrans, which charges IDR): only when the gateway is ready and Finance sets
+  `settings.payments.international_card_enabled = true` (off by default). Amount =
+  `cardAmountIdr(obligation USD amount, settings.payments.usd_idr_card_rate)` = USD × 18,500, rounded to whole rupiah,
+  computed on the server at checkout (never from the browser). Snap is limited to `enabled_payments: ["credit_card"]`.
+  The payment row stores `amount` (IDR charged) plus `original_amount`, `original_currency = 'USD'`, `fx_rate` and
+  `fx_source`. Settlement keeps the existing rules: signature-verified notification or server status read, amount must
+  equal the stored IDR amount, at most one paid payment per obligation (a second one is flagged duplicate and queued for
+  refund). Receipts and the payment email show "IDR 16,631,500 (USD 899 at USD 1 = IDR 18,500)".
+
+Change the rate in Admin → Content → Settings → `payments.usd_idr_card_rate` (integer 10,000–30,000). Open checkouts
+created at the old rate are not reused once the amount differs; a new attempt is created at the new rate.
+
+Migration `20261128000000_gif_international_card_invoice_requests.sql` (additive). The code tolerates it not being
+applied yet (IDR checkout, settlement, portal and receipts keep working; invoice requests fall back to email only),
+verified with `E2E_SKIP_MIGRATION=20261128000000_gif_international_card_invoice_requests.sql npm run e2e`.
