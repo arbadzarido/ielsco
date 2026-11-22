@@ -64,7 +64,7 @@ export const COMPARISON: { feature: string; free: string | boolean; starter: str
 export const NOT_INCLUDED = [
   "IELSco does not sell a membership of its own. Benefits come only from an active Elco Starter or Pro subscription.",
   "Benefits reach your IELSco account only after you link your Elco account. We never match accounts by email.",
-  "Private tutoring is separate: Rp90,000 per session, requested per session. It is not part of an Elco plan.",
+  "Private tutoring is separate from an Elco plan: Rp90,000 per session, or a tutoring package that includes one month of Elco AI.",
   "We don't guarantee scholarships, admissions, jobs, visas or selection into any program. We help you find opportunities and prepare strong applications; the decision is always the program's.",
 ];
 
