@@ -1,6 +1,7 @@
 // Opportunity board: types, labels and the public query. Data lives in public.opportunities (RLS: published rows are
 // public; staff manage them in Dashboard → Admin → Opportunities).
-import { publicSupabase } from "@/lib/supabase/public";
+import { cache } from "react";
+import { buildingSite, cachedPublicSupabase, OPPORTUNITIES_CACHE_TAG } from "@/lib/supabase/public";
 
 export type Category = "scholarship" | "fellowship" | "exchange" | "competition" | "conference" | "internship" | "volunteering" | "program";
 export type Funding = "fully_funded" | "partially_funded" | "self_funded" | "free" | "unknown";
@@ -47,26 +48,31 @@ export function deadlineState(deadline: string | null, now = new Date()): "none"
   return end - now.getTime() < 21 * 864e5 ? "soon" : "open";
 }
 
-export async function listPublishedOpportunities(): Promise<Opportunity[]> {
+// Public reads go through Next's data cache (5 minutes, dropped at once when staff save: see
+// app/api/admin/opportunities/revalidate), so the board no longer queries the database for every visitor.
+// `strict` is for pages that must not mistake an outage for "no opportunities": a database error throws, so the page's
+// error boundary shows a retry instead of an empty board (and a failed answer is never cached). Landing sections keep
+// the quiet fallback (an empty list) so a database hiccup never takes the whole home page down.
+export async function listPublishedOpportunities({ strict = false }: { strict?: boolean } = {}): Promise<Opportunity[]> {
   try {
-    const { data, error } = await publicSupabase().from("opportunities").select(OPP_COLUMNS).eq("status", "published")
+    const { data, error } = await cachedPublicSupabase(OPPORTUNITIES_CACHE_TAG).from("opportunities").select(OPP_COLUMNS).eq("status", "published")
       .order("featured", { ascending: false }).order("title");
-    if (error) return [];
+    if (error) throw new Error(error.message);
     return (data ?? []) as Opportunity[];
-  } catch {
+  } catch (e) {
+    if (strict && !buildingSite()) throw e;
     return [];
   }
 }
 
-export async function getOpportunity(slug: string): Promise<Opportunity | null> {
+// null = there is no such published opportunity (a real 404). A database or network error THROWS instead, so a temporary
+// outage shows the retry state and is never turned into (or cached as) "not found".
+export const getOpportunity = cache(async (slug: string): Promise<Opportunity | null> => {
   if (!/^[a-z0-9-]{3,80}$/.test(slug)) return null;
-  try {
-    const { data } = await publicSupabase().from("opportunities").select(OPP_COLUMNS).eq("slug", slug).eq("status", "published").maybeSingle();
-    return (data as Opportunity) ?? null;
-  } catch {
-    return null;
-  }
-}
+  const { data, error } = await cachedPublicSupabase(OPPORTUNITIES_CACHE_TAG).from("opportunities").select(OPP_COLUMNS).eq("slug", slug).eq("status", "published").maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as Opportunity) ?? null;
+});
 
 // Home "Opportunity Spotlight" and Discover recommendations: plain, explainable scoring from the member's own goals
 // (direction + interests chosen in onboarding). No AI and no hidden signals; every pick carries its reason.

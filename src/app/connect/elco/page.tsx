@@ -4,11 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Link2, Loader2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Link2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ELCO_MASCOT, ELCO_URL } from "@/lib/elco";
 import { btnPrimary, btnSecondary, cardGloss, focusRing } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 // Consent screen for linking an Elco account (docs/INTEGRATION-ARCHITECTURE.md §4, B1).
 // Elco sends the member here with ?state=…; IELSco issues a one-time code and sends them back to Elco's fixed
@@ -83,7 +84,7 @@ function ConnectElco() {
         </div>
 
         {view === "checking" && (
-          <p role="status" className="flex items-center justify-center gap-2 text-lg text-[#2F4157]/70"><Loader2 className="animate-spin" size={18} /> Checking your account…</p>
+          <SkeletonRegion label="Checking your account" className="mx-auto max-w-[520px]"><SkeletonList rows={2} /></SkeletonRegion>
         )}
 
         {view === "invalid" && (

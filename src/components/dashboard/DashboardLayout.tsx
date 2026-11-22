@@ -4,8 +4,12 @@ import { ReactNode } from "react";
 import DashboardHeader from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { MobileTabBar } from "./MobileTabBar";
-import { ElcoCopilot } from "@/components/elco/ElcoCopilot";
+import dynamic from "next/dynamic";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+
+// Elco Help is a floating button that opens a panel on demand; its code loads after the page is interactive.
+const ElcoCopilot = dynamic(() => import("@/components/elco/ElcoCopilot").then((m) => m.ElcoCopilot), { ssr: false });
+
 
 interface DashboardLayoutProps {
   children: ReactNode;

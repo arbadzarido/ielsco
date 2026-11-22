@@ -7,6 +7,7 @@ import { btnLink, btnPrimary, card, cardGloss, focusRing, inputClass } from "@/c
 import { cn } from "@/lib/utils";
 import { MESSAGE_TARGET } from "@/lib/gif/eligibility";
 import { CardStudio } from "./CardStudio";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 interface Recipient { delegate_id: string; full_name: string; team_name: string }
 interface Received { id: string; body: string; created_at: string; read_at: string | null; favourite: boolean; wall_status: string; sender_allows_wall: boolean }
@@ -80,7 +81,7 @@ export function WordsWeLeaveBehind({ supabase, myFirstName, onChanged }: { supab
   };
   const openCard = (m: Received) => { setStudio(m); if (!m.read_at) void update(m, { read: true }); };
 
-  if (loading) return <p className="flex items-center gap-2 text-[#2F4157]/70"><Loader2 size={18} className="animate-spin" /> Loading messages…</p>;
+  if (loading) return <SkeletonRegion label="Loading messages"><SkeletonList rows={2} /></SkeletonRegion>;
   const shown = received.filter((m) => filter === "all" || (filter === "unread" ? !m.read_at : m.favourite));
 
   return (

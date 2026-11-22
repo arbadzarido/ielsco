@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { IELSCO_CATEGORIES, IELSCO_CATEGORY_LABELS, IELSCO_STORIES_PATH, ielscoStoryPath, type IelscoCategory, type IelscoStory, type StoryLang } from "@/lib/stories/ielsco";
@@ -15,12 +15,15 @@ const UI = {
   en: { eyebrow: "IELSco Stories", h1: "News and stories from IELSco",
     lead: "Milestones, events, partnerships and community initiatives from IELSco, an English learning community and opportunity platform for young people across Indonesia and Southeast Asia.",
     all: "All", featured: "Featured", read: "Read the story", empty: "No stories in this category yet.", none: "The first IELSco Stories are on their way. In the meantime, read stories from our members.",
-    members: "Read Member Stories", other: "Baca dalam Bahasa Indonesia" },
+    members: "Read Member Stories", other: "Baca dalam Bahasa Indonesia", more: "Show more", showing: "Showing" },
   id: { eyebrow: "IELSco Stories", h1: "Kabar dan cerita dari IELSco",
     lead: "Pencapaian, acara, kemitraan, dan inisiatif komunitas dari IELSco, komunitas belajar bahasa Inggris dan platform peluang bagi anak muda di Indonesia dan Asia Tenggara.",
     all: "Semua", featured: "Pilihan", read: "Baca ceritanya", empty: "Belum ada cerita di kategori ini.", none: "IELSco Stories pertama segera hadir. Sementara itu, baca cerita dari anggota kami.",
-    members: "Baca Cerita Anggota", other: "Read in English" },
+    members: "Baca Cerita Anggota", other: "Read in English", more: "Tampilkan lebih banyak", showing: "Menampilkan" },
 } as const;
+
+// Twelve stories at a time; the filter always runs over the whole list first.
+const PAGE_SIZE = 12;
 
 const pill = (on: boolean) =>
   `rounded-full px-5 py-2 text-[15px] font-semibold transition ${on ? "bg-[#2F4157] text-white" : "border border-[#E6E9EE] bg-white text-[#2F4157] hover:bg-[#F7F8FA]"}`;
@@ -34,6 +37,8 @@ export default function IelscoStoriesIndex({ stories, lang }: { stories: IelscoS
   const featured = filter === "all" ? stories[0] : undefined;
   const list = stories.filter((s) => filter === "all" || s.category === filter).filter((s) => s !== featured);
   const other = lang === "en" ? "id" : "en";
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  useEffect(() => { setVisible(PAGE_SIZE); }, [filter]);
 
   return (
     <div className="bg-white text-[#2F4157]" lang={lang} data-testid="ielsco-stories-index">
@@ -82,7 +87,13 @@ export default function IelscoStoriesIndex({ stories, lang }: { stories: IelscoS
 
           <section className="mx-auto max-w-[1180px] px-4 pb-20 sm:px-6">
             {list.length === 0 && !featured ? <p className="text-[16px] text-[#2F4157]/70">{u.empty}</p>
-              : <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{list.map((s) => <IelscoStoryCard key={s.id} story={s} />)}</div>}
+              : <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{list.slice(0, visible).map((s) => <IelscoStoryCard key={s.id} story={s} />)}</div>}
+            {list.length > visible && (
+              <div className="mt-10 flex flex-col items-center gap-2">
+                <p className="text-[14px] text-[#2F4157]/60" aria-live="polite">{u.showing} {Math.min(visible, list.length)} / {list.length}</p>
+                <button type="button" onClick={() => setVisible((v) => v + PAGE_SIZE)} data-testid="stories-show-more" className={pill(false)}>{u.more}</button>
+              </div>
+            )}
           </section>
         </>
       )}

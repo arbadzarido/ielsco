@@ -1,13 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { ChevronDown, RotateCcw, Search, SearchX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { card, focusRing } from "@/components/site/ui";
 import {
-  activeFilterCount, EMPLOYMENT_LABEL, EMPTY_FILTERS, filterJobs, filterOptions, type JobFilters, type ProfessionalOpportunity,
+  activeFilterCount, countryName, EMPLOYMENT_LABEL, EMPTY_FILTERS, filterJobs, filterOptions, type JobFilters, type ProfessionalOpportunity,
 } from "@/lib/professional/model";
 import { JobCard, JobCardSkeleton } from "./JobCard";
+import { SearchEmpty } from "@/components/feedback/ErrorState";
+
+// Shown 12 at a time ("Show more" adds the next 12); search and filters always run over the whole list first.
+const PAGE_SIZE = 12;
 
 const chip = (on: boolean) => cn("shrink-0 rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors", focusRing,
   on ? "border-[#2F4157] bg-[#2F4157] text-white" : "border-[#D5DBE3] bg-white text-[#2F4157] hover:border-[#2F4157]");
@@ -34,7 +39,11 @@ export function ProfessionalBoard({ items, basePath, initialFilters }: {
   const [f, setF] = useState<JobFilters>({ ...EMPTY_FILTERS, ...initialFilters });
   const set = <K extends keyof JobFilters>(k: K, v: JobFilters[K]) => setF((s) => ({ ...s, [k]: v }));
   const opts = useMemo(() => filterOptions(items ?? []), [items]);
-  const shown = useMemo(() => filterJobs(items ?? [], f), [items, f]);
+  const df = useDeferredValue(f);
+  const shown = useMemo(() => filterJobs(items ?? [], df), [items, df]);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  useEffect(() => { setVisible(PAGE_SIZE); }, [df]);
+  const terms = useMemo(() => (items ?? []).flatMap((o) => [o.title, o.industry, o.city ?? "", countryName(o.country_code), ...o.positions]), [items]);
   const active = activeFilterCount(f);
 
   return (
@@ -86,19 +95,29 @@ export function ProfessionalBoard({ items, basePath, initialFilters }: {
         )}
       </div>
 
-      {items !== null && shown.length === 0 ? (
+      {items !== null && shown.length === 0 && items.length > 0 ? (
+        <div className={cn(card, "mt-4")} data-testid="job-empty">
+          <SearchEmpty query={f.q} terms={terms} onPick={(w) => set("q", w)} onClear={() => setF(EMPTY_FILTERS)}
+            hint="Check the spelling, try another country or industry, or clear the filters to see every listing."
+            actions={<Link href="/opportunities" className={cn("inline-flex min-h-[46px] items-center rounded-full px-5 text-[15px] font-semibold text-[#2F4157] hover:underline", focusRing)}>Scholarships and programs</Link>} />
+        </div>
+      ) : items !== null && shown.length === 0 ? (
         <div className={cn(card, "mt-4 flex flex-col items-center p-10 text-center")} data-testid="job-empty">
           <SearchX size={32} className="text-[#2F4157]/35" aria-hidden="true" />
-          <p className="mt-3 text-[18px] font-bold text-[#1A2534]">{items.length === 0 ? "No international jobs are listed right now" : "No jobs match those filters"}</p>
-          <p className="mt-2 max-w-[460px] text-[15px] text-[#2F4157]/70">
-            {items.length === 0 ? "New countries and roles are added as our recruitment partners confirm them. Please check back soon." : "Try another country or industry, or clear the filters to see every listing."}
-          </p>
-          {active > 0 && <button type="button" onClick={() => setF(EMPTY_FILTERS)} className={cn("mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#D5DBE3] px-4 py-2 text-[14px] font-semibold text-[#2F4157] hover:border-[#2F4157]", focusRing)}>Reset filters</button>}
+          <p className="mt-3 text-[18px] font-bold text-[#1A2534]">No international jobs are listed right now</p>
+          <p className="mt-2 max-w-[460px] text-[15px] text-[#2F4157]/70">New countries and roles are added as our recruitment partners confirm them. Please check back soon.</p>
         </div>
       ) : (
         <ul className="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {items === null ? Array.from({ length: 6 }, (_, i) => <JobCardSkeleton key={i} />) : shown.map((o) => <JobCard key={o.id} o={o} href={`${basePath}/${o.slug}`} />)}
+          {items === null ? Array.from({ length: 6 }, (_, i) => <JobCardSkeleton key={i} />) : shown.slice(0, visible).map((o) => <JobCard key={o.id} o={o} href={`${basePath}/${o.slug}`} />)}
         </ul>
+      )}
+      {shown.length > visible && (
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <p className="text-[14px] text-[#2F4157]/60" aria-live="polite">Showing {Math.min(visible, shown.length)} of {shown.length}</p>
+          <button type="button" onClick={() => setVisible((v) => v + PAGE_SIZE)} data-testid="job-show-more"
+            className={cn("inline-flex min-h-[46px] items-center rounded-full border border-[#D5DBE3] bg-white px-6 text-[15px] font-semibold text-[#2F4157] hover:border-[#2F4157]", focusRing)}>Show more</button>
+        </div>
       )}
     </div>
   );

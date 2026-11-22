@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { opportunityCover } from "@/lib/covers";
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Bookmark, BookmarkCheck, Search, ShieldCheck, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { card, focusRing, pill } from "@/components/site/ui";
@@ -11,6 +11,11 @@ import {
   CATEGORY_LABEL, deadlineState, FUNDING_LABEL, LEVEL_LABEL, regionLabel, type Category, type Funding, type Opportunity,
 } from "@/lib/opportunities";
 import { useTracker } from "./useTracker";
+import { SearchEmpty } from "@/components/feedback/ErrorState";
+
+// Long lists show 12 at a time (a "Show more" button adds the next 12), so a board that grows never renders hundreds of cards
+// and images at once. Search and filters always run over the whole list, then the first page of the result is shown.
+const PAGE_SIZE = 12;
 
 const chip = (on: boolean) => cn("rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors", focusRing,
   on ? "border-[#2F4157] bg-[#2F4157] text-white" : "border-[#D5DBE3] bg-white text-[#2F4157] hover:border-[#2F4157]");
@@ -48,8 +53,11 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
   const [cat, setCat] = useState<Category | "all">("all");
   // ?category= preselects a type (links from Discover). Read after mount so the server render matches.
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get("category");
+    const sp = new URLSearchParams(window.location.search);
+    const c = sp.get("category");
     if (c && c in CATEGORY_LABEL) setCat(c as Category);
+    const search = sp.get("q");
+    if (search) setQ(search.slice(0, 120));
   }, []);
   const [funding, setFunding] = useState<Funding | "all">("all");
   const [region, setRegion] = useState("all");
@@ -62,15 +70,32 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
   // Country and eligibility (study level) filters only list values that exist in the data.
   const regions = useMemo(() => [...new Set(items.flatMap((i) => i.regions))].sort((a, b) => regionLabel(a).localeCompare(regionLabel(b))), [items]);
   const levels = useMemo(() => [...new Set(items.map((i) => i.study_level).filter(Boolean) as string[])], [items]);
+  const dq = useDeferredValue(q);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  // The search box keeps ?q= in the address (debounced, replaceState: no new history entries), so a refresh or a shared
+  // link keeps the search.
+  const firstUrlSync = useRef(true);
+  useEffect(() => {
+    if (firstUrlSync.current) { firstUrlSync.current = false; return undefined; }
+    const t = window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      if (q.trim()) url.searchParams.set("q", q.trim()); else url.searchParams.delete("q");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [q]);
+  useEffect(() => { setVisible(PAGE_SIZE); }, [dq, cat, funding, region, level, closingSoon, hideClosed]);
   const shown = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = dq.trim().toLowerCase();
     return items.filter((o) =>
       (cat === "all" || o.category === cat) && (funding === "all" || o.funding === funding)
       && (region === "all" || o.regions.includes(region)) && (level === "all" || o.study_level === level)
       && (!closingSoon || deadlineState(o.deadline) === "soon")
       && (!hideClosed || deadlineState(o.deadline) !== "closed")
       && (!s || [o.title, o.organizer, o.summary, o.open_to ?? "", o.eligibility ?? "", ...o.regions.map(regionLabel)].join(" ").toLowerCase().includes(s)));
-  }, [items, q, cat, funding, region, level, closingSoon, hideClosed]);
+  }, [items, dq, cat, funding, region, level, closingSoon, hideClosed]);
+  const terms = useMemo(() => items.flatMap((o) => [o.title, o.organizer, CATEGORY_LABEL[o.category], ...o.regions.map(regionLabel)]), [items]);
+  const clearAll = () => { setQ(""); setCat("all"); setFunding("all"); setRegion("all"); setLevel("all"); setClosingSoon(false); setHideClosed(true); };
   const select = cn("rounded-full border border-[#D5DBE3] bg-white px-4 py-2 text-[14px] font-semibold text-[#2F4157]", focusRing);
 
   return (
@@ -127,13 +152,17 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
 
       <p className="mt-8 text-[14px] text-[#2F4157]/60" aria-live="polite">{shown.length} {shown.length === 1 ? "opportunity" : "opportunities"}</p>
       {shown.length === 0 ? (
-        <div className={cn(card, "mt-4 p-10 text-center")}>
-          <p className="text-[18px] font-bold text-[#1A2534]">Nothing matches those filters</p>
-          <p className="mt-2 text-[15px] text-[#2F4157]/70">Try another type, or include closed opportunities.</p>
+        <div className={cn(card, "mt-4")} data-testid="opp-empty">
+          <SearchEmpty query={q} terms={terms} onPick={setQ} onClear={clearAll}
+            hint="Check the spelling, try another type, or include closed opportunities."
+            actions={<>
+              <Link href="/products/resources" className={cn("inline-flex min-h-[46px] items-center rounded-full px-5 text-[15px] font-semibold text-[#2F4157] hover:underline", focusRing)}>Free resources</Link>
+              <Link href="/opportunities?type=professional" className={cn("inline-flex min-h-[46px] items-center rounded-full px-5 text-[15px] font-semibold text-[#2F4157] hover:underline", focusRing)}>Jobs abroad</Link>
+            </>} />
         </div>
       ) : (
         <ul className="mt-4 grid gap-5 md:grid-cols-2">
-          {shown.map((o) => (
+          {shown.slice(0, visible).map((o) => (
             <li key={o.id} className={cn(card, "flex flex-col overflow-hidden p-6")} data-testid={`opp-${o.slug}`}>
               <div className="relative -mx-6 -mt-6 mb-5 aspect-[16/7] bg-[#F1F4F8]">
                 <Image src={opportunityCover(o.category, o.slug)} alt="" fill sizes="(min-width: 768px) 45vw, 100vw" className="object-cover" />
@@ -161,6 +190,13 @@ export default function OpportunityBoard({ items }: { items: Opportunity[] }) {
             </li>
           ))}
         </ul>
+      )}
+      {shown.length > visible && (
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <p className="text-[14px] text-[#2F4157]/60" aria-live="polite">Showing {Math.min(visible, shown.length)} of {shown.length}</p>
+          <button type="button" onClick={() => setVisible((v) => v + PAGE_SIZE)} data-testid="opp-show-more"
+            className={cn("inline-flex min-h-[46px] items-center rounded-full border border-[#D5DBE3] bg-white px-6 text-[15px] font-semibold text-[#2F4157] hover:border-[#2F4157]", focusRing)}>Show more</button>
+        </div>
       )}
     </div>
   );

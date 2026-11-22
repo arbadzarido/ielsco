@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getUserOnce } from "@/lib/supabase/getUser";
 import { track } from "@/lib/analytics";
 
 // The signed-in visitor's tracked opportunity ids (public.opportunity_tracker, owner-only RLS). Saving inserts a row with
@@ -16,7 +17,7 @@ export function useTracker() {
 
   useEffect(() => {
     let alive = true;
-    supabase.auth.getUser().then(async ({ data }) => {
+    getUserOnce(supabase).then(async ({ data }) => {
       if (!alive) return;
       const uid = data.user?.id ?? null;
       setUserId(uid);
