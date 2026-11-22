@@ -11,10 +11,12 @@ import { ELCO_MASCOT, elcoHref } from "@/lib/elco";
 import { SINGLE_SESSION_IDR, ELCO_STARTER_MONTHLY_IDR, MENTOR_FULL_TITLE, MENTOR_TITLE, TUTORING_PACKAGES, depositRequestUrl, generalRequestUrl, packageMath, packageRequestUrl } from "@/components/tutoring/packages";
 import { buildSchedule, depositAllowed } from "@/lib/tutoring/payments";
 import { tutorRequestUrl } from "@/components/tutoring/links";
+import { CourseProducts } from "@/components/courses/CourseProducts";
+import { COLLECTIVE_MONTHLY_IDR, STUDIO_MONTHLY_IDR } from "@/components/courses/products";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Private English tutoring with Elco AI and IELS Circle | IELSco",
-  description: "Learn English with AI, community and a mentor. Private tutoring packages with Arbadza Rido, one month of Elco AI and IELS Circle access, for IELTS, TOEFL ITP, TOEIC, speaking, writing and career English.",
+  title: "IELScourse: English classes, small groups and private tutoring | IELSco",
+  description: "IELScourse has three ways to learn English: Collective group classes, Studio small groups and One private tutoring with Arbadza Rido. Each includes Elco AI and IELS Circle.",
   path: "/products/courses",
 });
 
@@ -44,6 +46,17 @@ const STEPS = [
 ];
 
 const FAQS: { q: string; a: string }[] = [
+  { q: "What is the difference between Collective, Studio and One?", a: `Collective is a public group class (up to 20 students, ${idr(COLLECTIVE_MONTHLY_IDR)} a month). Studio is a small group of 3 to 5 students with more tutor attention (${idr(STUDIO_MONTHLY_IDR)} a month). One is private 1-on-1 tutoring with a dedicated mentor, sold as 2, 4 or 8 sessions.` },
+  { q: "Which product is suitable for beginners?", a: "All three accept beginners. Collective follows a structured General English curriculum. Studio gives a beginner more speaking time and feedback. One starts from your level with a personal plan. Tell us your level when you register." },
+  { q: "Can I join with friends?", a: "Yes. Studio is designed for small groups of 3 to 5, including friends who want to learn together. Message us with your group so we can place you in the same cohort." },
+  { q: "How many students are in a Studio group?", a: "3 to 5 students. This is a maximum for the intended experience; we do not open a group that is not ready, and we add you to a waiting list if no cohort has space." },
+  { q: "How often are Collective classes held?", a: "The Collective plan is 3 live classes a week, a target of 12 a month. The team confirms your class days and times when you register." },
+  { q: "Is Elco AI included?", a: "Yes in all three. In Collective and Studio, Elco AI is included while your monthly membership is active. In One, it is one month of Elco AI with your package. The team activates it after your payment is verified." },
+  { q: "Is IELS Circle included?", a: "Yes. Collective and Studio memberships include IELS Circle membership, and One includes IELS Circle access with your package. Community sessions are separate from your paid live classes." },
+  { q: "Can I change my class or cohort?", a: "Ask the team on WhatsApp. We move you when another cohort has space and a suitable schedule; we cannot guarantee a change in the middle of a month." },
+  { q: "What happens if a cohort has not reached its minimum size?", a: "We do not start a group that is not ready. You are told before you pay whether a cohort is open. If it is not, you join the waiting list and nothing is charged until a class with a confirmed schedule is available." },
+  { q: "How do monthly renewals work?", a: "Collective and Studio are monthly. We send an invoice before the next month starts and your membership continues once the payment is verified. There is no automatic card charge." },
+  { q: "What payment methods are available?", a: "Bank transfer. We verify each payment manually and send a receipt. One also offers a deposit arrangement on Intensive." },
   { q: "What is included in every package?", a: "Private one-to-one sessions with Arbadza Rido, one month of Elco AI (Starter) access, IELS Circle community access, and personalised feedback and learning direction." },
   { q: "How does the free Elco AI access work?", a: `Every package includes one month of Elco AI Starter, which normally costs ${idr(ELCO_STARTER_MONTHLY_IDR)} per month. The IELSco team activates it for you after your booking is confirmed.` },
   { q: "Do I need prior English experience?", a: "No. Tell us your level and goal when you message us and your mentor will start from where you are. If you are a complete beginner, say so and we will advise you honestly on whether this is the right fit." },
@@ -63,38 +76,30 @@ export default function CoursesPage() {
   const intensiveSchedule = { total: intensive.priceIdr, rows: buildSchedule({ totalIdr: intensive.priceIdr, sessions: intensive.sessions, option: "deposit" }) };
   return (
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="courses-page">
-      {/* 1. Hero */}
-      <section className="bg-white pb-[48px] pt-[40px] md:pb-[72px] md:pt-[64px]" aria-labelledby="hero">
-        <div className={cn(container, "grid items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16")}>
+      <CourseProducts />
+
+      {/* IELScourse One: private 1-on-1 tutoring (previously approved packages, payment rules and dashboard are unchanged). */}
+      <section id="one" className="scroll-mt-20 border-t border-[#E6E9EE] bg-white py-[64px] md:py-[96px]" aria-labelledby="one-h">
+        <div className={cn(container, "grid items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-16")}>
           <div>
-            <p className={eyebrow}>IELSco Private Tutoring</p>
-            <h1 id="hero" className={cn(h1, "mt-4")}>Learn English with AI, Community &amp; Personal Mentorship.</h1>
-            <p className={cn(lead, "mt-6 max-w-[600px]")}>
+            <p className={eyebrow}>IELScourse One · Private 1-on-1 Tutoring</p>
+            <h2 id="one-h" className={cn(h2, "mt-3")}>Learn English with AI, Community &amp; Personal Mentorship.</h2>
+            <p className={cn(lead, "mt-5 max-w-[600px]")}>
               Daily practice with Elco AI. A supportive English community in IELS Circle. One-to-one guidance from a real
               mentor. Every package includes all three, so your English does not stop when the lesson ends.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="#packages" className={btnPrimary} data-testid="hero-primary-cta">Explore packages</a>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <a href="#packages" className={btnPrimary} data-testid="one-primary-cta">Explore packages</a>
               <a href="#mentor" className={btnSecondary}>Meet your mentor</a>
             </div>
             <p className="mt-5 text-[14px] text-[#2F4157]/65">Includes one month of Elco AI. Online sessions. Booked through WhatsApp.</p>
           </div>
-
           <div className={cn(card, "p-5 sm:p-6")} aria-label="What every package includes">
             <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#577E90]">In every package</p>
             <ul className="mt-4 divide-y divide-[#E6E9EE]">
-              <li className="flex items-center gap-4 py-4">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7]"><Image src={ELCO_MASCOT} alt="" width={38} height={38} /></span>
-                <div><p className="text-[17px] font-bold">1 month of Elco AI</p><p className="text-[14px] text-[#2F4157]/70">Daily practice and AI feedback</p></div>
-              </li>
-              <li className="flex items-center gap-4 py-4">
-                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#EEF2F7]"><Image src="/images/site/discussion.webp" alt="" fill sizes="56px" className="object-cover" /></span>
-                <div><p className="text-[17px] font-bold">IELS Circle access</p><p className="text-[14px] text-[#2F4157]/70">Practise with other learners</p></div>
-              </li>
-              <li className="flex items-center gap-4 py-4">
-                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#EEF2F7]"><Image src="/images/people/leadership/arbadza.png" alt="" fill sizes="56px" className="object-cover object-top mix-blend-multiply" /></span>
-                <div><p className="text-[17px] font-bold">Sessions with Arbadza Rido</p><p className="text-[14px] text-[#2F4157]/70">IELTS 8.0 · TOEFL ITP 610</p></div>
-              </li>
+              <li className="flex items-center gap-4 py-4"><span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EEF2F7]"><Image src={ELCO_MASCOT} alt="" width={38} height={38} /></span><div><p className="text-[17px] font-bold">1 month of Elco AI</p><p className="text-[14px] text-[#2F4157]/70">Daily practice and AI feedback</p></div></li>
+              <li className="flex items-center gap-4 py-4"><span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#EEF2F7]"><Image src="/images/site/discussion.webp" alt="" fill sizes="56px" className="object-cover" /></span><div><p className="text-[17px] font-bold">IELS Circle access</p><p className="text-[14px] text-[#2F4157]/70">Practise with other learners</p></div></li>
+              <li className="flex items-center gap-4 py-4"><span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#EEF2F7]"><Image src="/images/people/leadership/arbadza.png" alt="" fill sizes="56px" className="object-cover object-top mix-blend-multiply" /></span><div><p className="text-[17px] font-bold">Sessions with Arbadza Rido</p><p className="text-[14px] text-[#2F4157]/70">IELTS 8.0 · TOEFL ITP 610</p></div></li>
             </ul>
           </div>
         </div>
