@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Download } from "lucide-react";
 import { btnSecondary, card, inputClass, tag } from "@/components/dashboard/ui";
+import { PagerBar } from "@/components/dashboard/PagerBar";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
+import FeedbackError, { SearchEmpty } from "@/components/feedback/ErrorState";
+import { classifyError } from "@/lib/errorKind";
 import { cn } from "@/lib/utils";
 import { dateTimeWib } from "@/lib/format";
 import { divisions, roleById } from "@/data/careers/divisions";
@@ -19,6 +23,9 @@ type App = {
   role_2_id: string | null; batch_year: number | null; domicile_country: string | null; domicile_city: string | null; campaign_tasks: Record<string, string> | null; user_id: string | null;
   submitted_at: string | null; updated_at: string; tasks_confirmed_at: string | null; privacy_accepted_at: string | null; declaration_accepted_at: string | null;
 };
+// The list page asks for these columns only (not select *), 25 rows at a time, with an exact count for the pager.
+const COLUMNS = "id, full_name, email, whatsapp, university, academic_year, division, role_id, instagram_url, linkedin_url, cv_path, portfolio_path, portfolio_url, motivation, status, campaign_verification, admin_notes, created_at, role_2_id, batch_year, domicile_country, domicile_city, campaign_tasks, user_id, submitted_at, updated_at, tasks_confirmed_at, privacy_accepted_at, declaration_accepted_at";
+const PAGE_SIZE = 25;
 const STATUSES = ["submitted", "under_review", "invited", "shortlisted", "accepted", "reserve", "rejected", "withdrawn"];
 const VERIFY = ["pending", "verified", "incomplete"];
 const divisionTitle = (slug: string) => divisions.find((d) => d.slug === slug)?.title ?? slug;
@@ -38,16 +45,43 @@ function csv(rows: App[]) {
 export function CareerApplications({ supabase }: { supabase: SupabaseClient }) {
   const [division, setDivision] = useState("all");
   const [status, setStatus] = useState("all");
+  const [search, setSearch] = useState("");
+  const [term, setTerm] = useState("");
+  const [page, setPage] = useState(0);
   const [rows, setRows] = useState<App[] | null>(null);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const latest = useRef(0);
 
-  const reload = useCallback(() => {
-    let q = supabase.from("career_applications").select("*").eq("cohort", "2027").order("created_at", { ascending: false }).limit(1000);
+  // Typing in the search box waits for a pause (300 ms) before it asks the database.
+  useEffect(() => {
+    const t = window.setTimeout(() => setTerm(search.trim().replace(/[%,()*\\]/g, " ").slice(0, 80)), 300);
+    return () => window.clearTimeout(t);
+  }, [search]);
+  useEffect(() => { setPage(0); }, [division, status, term]);
+
+  // Filters and search are applied by the database (division, status, name or email), then one page is fetched with an
+  // exact count. Only the newest request may update the list.
+  const query = useCallback(() => {
+    let q = supabase.from("career_applications").select(COLUMNS, { count: "exact" }).eq("cohort", "2027").order("created_at", { ascending: false });
     // A division matches the first choice (division) or the second choice (role_2_id in that division).
     if (division !== "all") q = q.or(`division.eq.${division},role_2_id.in.(${divisions.find((d) => d.slug === division)?.roles.map((r) => r.id).join(",") ?? ""})`);
     if (status !== "all") q = q.eq("status", status);
-    q.then(({ data, error: e }) => { tasksRef.current = {}; setError(e?.message ?? null); setRows((data as App[]) ?? []); });
-  }, [supabase, division, status]);
+    if (term) q = q.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
+    return q;
+  }, [supabase, division, status, term]);
+
+  const reload = useCallback(() => {
+    const mine = ++latest.current;
+    setRows(null);
+    query().range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1).then(({ data, error: e, count }) => {
+      if (mine !== latest.current) return;
+      tasksRef.current = {};
+      setError(e?.message ?? null);
+      setRows((data as unknown as App[]) ?? []);
+      setTotal(count ?? (data?.length ?? 0));
+    });
+  }, [query, page]);
   useEffect(() => { reload(); }, [reload]);
 
   async function update(id: string, patch: Partial<App>) {
@@ -71,9 +105,16 @@ export function CareerApplications({ supabase }: { supabase: SupabaseClient }) {
     if (e || !data) return setError(e?.message ?? "Couldn't open the file.");
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
-  function exportCsv() {
-    if (!rows?.length) return;
-    const url = URL.createObjectURL(new Blob([csv(rows)], { type: "text/csv" }));
+  // The CSV holds every application that matches the filters, not just the page on screen: fetched 500 at a time.
+  async function exportCsv() {
+    if (!total) return;
+    const all: App[] = [];
+    for (let from = 0; from < Math.min(total, 5000); from += 500) {
+      const { data, error: e } = await query().range(from, from + 499);
+      if (e) { setError(e.message); return; }
+      all.push(...((data as unknown as App[]) ?? []));
+    }
+    const url = URL.createObjectURL(new Blob([csv(all)], { type: "text/csv" }));
     const a = Object.assign(document.createElement("a"), { href: url, download: `career-applications-2027-${division}-${status}.csv` });
     a.click(); URL.revokeObjectURL(url);
   }
@@ -87,11 +128,15 @@ export function CareerApplications({ supabase }: { supabase: SupabaseClient }) {
         <select value={status} onChange={(e) => setStatus(e.target.value)} className={cn(inputClass, "w-auto py-1.5 text-sm")} aria-label="Status">
           <option value="all">All statuses</option>{STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
         </select>
-        <span className="text-sm text-[#2F4157]/70">{rows ? `${rows.length} application${rows.length === 1 ? "" : "s"}` : "Loading…"}</span>
-        <button type="button" onClick={exportCsv} disabled={!rows?.length} className={cn(btnSecondary, "ml-auto py-1.5 text-sm")}><Download size={14} aria-hidden="true" /> CSV</button>
+        <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or email" aria-label="Search applications"
+          className={cn(inputClass, "w-auto min-w-[200px] py-1.5 text-sm")} data-testid="admin-career-search" />
+        <span className="text-sm text-[#2F4157]/70" aria-live="polite">{rows ? `${total} application${total === 1 ? "" : "s"}` : "Loading…"}</span>
+        <button type="button" onClick={exportCsv} disabled={!total} className={cn(btnSecondary, "ml-auto py-1.5 text-sm")}><Download size={14} aria-hidden="true" /> CSV</button>
       </div>
-      {error && <p className="mb-3 text-[#A23B3D]">{error}</p>}
-      {rows?.length === 0 && <p className="text-[#2F4157]/70">No applications yet.</p>}
+      {error && <FeedbackError kind={classifyError({ message: error })} body={error} onRetry={reload} compact />}
+      {rows === null && !error && <SkeletonRegion label="Loading applications"><SkeletonList rows={4} leading={false} /></SkeletonRegion>}
+      {rows?.length === 0 && !error && (term ? <SearchEmpty query={term} onClear={() => { setSearch(""); setDivision("all"); setStatus("all"); }} hint="Search matches names and email addresses." />
+        : <p className="text-[#2F4157]/70">{division !== "all" || status !== "all" ? "No applications match these filters." : "No applications yet."}</p>)}
       <ul className="space-y-3">
         {rows?.map((r) => (
           <li key={r.id} className={cn(card, "p-4 text-sm")}>
@@ -144,6 +189,7 @@ export function CareerApplications({ supabase }: { supabase: SupabaseClient }) {
           </li>
         ))}
       </ul>
+      <PagerBar page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} busy={rows === null} />
     </div>
   );
 }

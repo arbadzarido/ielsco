@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchDirectoryPage, type DirectoryQuery } from "@/lib/dashboard/profile";
 import type { DirectoryMember } from "@/lib/dashboard/types";
@@ -16,13 +16,17 @@ export function useDirectory(supabase: SupabaseClient, query: DirectoryQuery, en
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const { direction, search, origin, destination, interest } = query;
+  // Only the newest request may update the list: a slow answer to an earlier search never overwrites a newer one.
+  const latest = useRef(0);
 
   const load = useCallback(
     async (offset: number) => {
+      const mine = ++latest.current;
       setStatus("loading");
       setError(null);
       try {
         const res = await fetchDirectoryPage(supabase, { direction, search, origin, destination, interest, offset, limit: PAGE_SIZE });
+        if (mine !== latest.current) return;
         if (!res.available) {
           setStatus("unavailable");
           return;
@@ -31,6 +35,7 @@ export function useDirectory(supabase: SupabaseClient, query: DirectoryQuery, en
         setHasMore(res.members.length === PAGE_SIZE);
         setStatus("ready");
       } catch (e) {
+        if (mine !== latest.current) return;
         setError((e as Error).message);
         setStatus("error");
       }

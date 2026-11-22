@@ -10,6 +10,7 @@ import { ChevronDown, LayoutDashboard, LogOut, Menu, UserCircle, X } from "lucid
 import { btnPrimary, btnSecondary, focusRing } from "@/components/site/ui";
 import { cn } from "@/lib/utils";
 import { GIF_SITE_URL } from "@/lib/gif-summer-2027";
+import { getUserOnce } from "@/lib/supabase/getUser";
 
 // Public-site header (Opportunities, Community, Programs, Resources, For Schools, Membership). Hidden on dashboards and auth pages, which have their own
 // chrome. Domain-aware: on circle.ielsco.com / school.ielsco.com, main-site links point back to ielsco.com.
@@ -34,6 +35,9 @@ export default function Header() {
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  // On dashboards and auth pages the header renders nothing, so it must not ask for the user and the profile either
+  // (those pages load them themselves; this used to duplicate two requests on every dashboard page load).
+  const hidden = HIDDEN_PATHS.some((p) => pathname?.startsWith(p));
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -51,6 +55,7 @@ export default function Header() {
   }, [pathname]);
 
   useEffect(() => {
+    if (hidden) return undefined;
     const supabase = createClient();
     async function fetchProfile(userId: string) {
       const { data: userData } = await supabase.from("users").select("full_name, avatar_url").eq("id", userId).single();
@@ -59,7 +64,7 @@ export default function Header() {
         setUserAvatar(userData.avatar_url ?? null);
       }
     }
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    getUserOnce(supabase).then(({ data: { user } }) => {
       if (user) { setUser(user); fetchProfile(user.id); }
       setAuthLoading(false);
     });
@@ -70,7 +75,7 @@ export default function Header() {
       else { setUserName(null); setUserAvatar(null); }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [hidden]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -101,7 +106,7 @@ export default function Header() {
     router.refresh();
   }
 
-  if (HIDDEN_PATHS.some((p) => pathname?.startsWith(p))) return null;
+  if (hidden) return null;
 
   const offMain = host.school || host.circle;
   const main = (path: string) => (offMain ? `${host.main}${path}` : path);

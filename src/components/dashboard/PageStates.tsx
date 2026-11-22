@@ -1,35 +1,41 @@
 import Link from "next/link";
-import { AlertCircle, Info, Loader2 } from "lucide-react";
+import { Info } from "lucide-react";
 import type { ReactNode } from "react";
-import { btnPrimary, btnSecondary, card } from "./ui";
+import { btnSecondary } from "./ui";
 import { cn } from "@/lib/utils";
+import ElcoActor from "@/components/brand/ElcoActorLazy";
+import ElcoLoader from "@/components/feedback/ElcoLoader";
+import FeedbackErrorState from "@/components/feedback/ErrorState";
+import { SkeletonList, SkeletonPage } from "@/components/feedback/Skeleton";
+import { classifyError } from "@/lib/errorKind";
 
+// Loading, error and empty states for dashboard pages. They use the shared components (components/feedback, mirroring
+// Elco AI): a skeleton right away, Elco and a tip only if the wait is long; errors told apart as offline / session /
+// our side with a retry; empty states with Elco and a next step. The exports keep their old names and props.
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div role="status" data-testid="loading-state" className="flex min-h-[50vh] items-center justify-center gap-3 text-lg text-[#2F4157]/70">
-      <Loader2 className="animate-spin text-[#577E90]" size={22} /> {label}
+    <div className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-10">
+      <ElcoLoader testid="loading-state" message={label === "Loading…" ? undefined : label} label={label}
+        skeleton={<SkeletonPage><SkeletonList rows={4} /></SkeletonPage>} />
     </div>
   );
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const kind = classifyError({ message });
   return (
-    <div role="alert" data-testid="error-state" className={cn(card, "mx-auto my-12 max-w-lg p-8 text-center")}>
-      <AlertCircle className="mx-auto mb-3 text-[#E56668]" size={28} />
-      <h2 className="mb-2 text-xl font-bold">Something went wrong</h2>
-      <p className="mb-6 text-lg text-[#2F4157]/70">{message}</p>
-      {onRetry && (
-        <button type="button" data-testid="error-retry-button" onClick={onRetry} className={btnPrimary}>
-          Try again
-        </button>
-      )}
+    <div className="px-4 py-10">
+      <FeedbackErrorState kind={kind} body={kind === "server" ? message : undefined} onRetry={onRetry} testid="error-state" retryTestid="error-retry-button" />
     </div>
   );
 }
 
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
   return (
-    <div data-testid="empty-state" className="rounded-2xl border border-dashed border-[#E3E7ED] bg-white/60 px-6 py-12 text-center">
+    <div data-testid="empty-state" className="rounded-2xl border border-dashed border-[#E3E7ED] bg-white/60 px-6 py-10 text-center">
+      <span className="mx-auto mb-3 flex h-[84px] w-[84px] items-end justify-center rounded-full bg-[#EEF2F6]">
+        <ElcoActor pose="thinking" act="think" style={{ height: 76 }} testid="empty-elco" />
+      </span>
       <h3 className="mb-2 text-xl font-bold">{title}</h3>
       <p className="mx-auto mb-5 max-w-md text-lg text-[#2F4157]/70">{body}</p>
       {action}

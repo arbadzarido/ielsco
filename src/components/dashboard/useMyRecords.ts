@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getUserOnce } from "@/lib/supabase/getUser";
 import { loadMyRecords, type MyRecords } from "@/lib/me/records";
 
 // The member's records (lib/me/records.ts), shared by the top bar badges and the pages that use them. Dashboard pages
@@ -40,7 +41,7 @@ export function useMyRecords(userId?: string | null) {
   useEffect(() => {
     if (userId !== undefined) { setUid(userId); return; }
     let alive = true;
-    supabase.auth.getUser().then(({ data }) => alive && setUid(data.user?.id ?? null));
+    getUserOnce(supabase).then(({ data }) => alive && setUid(data.user?.id ?? null));
     return () => { alive = false; };
   }, [supabase, userId]);
 

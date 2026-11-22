@@ -7,6 +7,7 @@ import type { Opportunity } from "@/lib/opportunities";
 import { parseTrack, type OpportunityTrack, type ProfessionalOpportunity, type RecruitmentPartner } from "@/lib/professional/model";
 import { track as trackEvent } from "@/lib/analytics";
 import OpportunityBoard from "./OpportunityBoard";
+import { SkeletonGrid, SkeletonRegion } from "@/components/feedback/Skeleton";
 import { ProfessionalBoard } from "./ProfessionalBoard";
 import { Disclaimer, PartnerCard, RoleSplit } from "./PartnerPanel";
 import { TrackSwitch } from "./TrackSwitch";
@@ -52,7 +53,7 @@ export function OpportunitiesExplorer({ academic, professional, initialTrack, jo
               Scholarships, exchanges, fellowships and study programs abroad. A short list we maintain by hand: every listing links to
               the official page and says what we have checked.
             </p>
-            {academic === null ? <div className="grid gap-5 md:grid-cols-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-[260px] animate-pulse rounded-[20px] bg-[#F1F4F8]" aria-hidden="true" />)}</div>
+            {academic === null ? <SkeletonRegion label="Loading opportunities"><SkeletonGrid count={4} card={{ media: "image", chip: true }} /></SkeletonRegion>
               : academic.length > 0 ? <OpportunityBoard items={academic} /> : academicEmpty}
           </div>
         ) : (

@@ -6,7 +6,9 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { BookOpen, BriefcaseBusiness, CalendarDays, HelpCircle, Newspaper, Search, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DashboardPage, type DashboardCtx } from "@/components/dashboard/DashboardPage";
-import { EmptyState, PageHeader } from "@/components/dashboard/PageStates";
+import { PageHeader } from "@/components/dashboard/PageStates";
+import { SearchEmpty } from "@/components/feedback/ErrorState";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 import { cardGloss, focusRing, inputClass } from "@/components/dashboard/ui";
 import { connectApi } from "@/lib/connect/api";
 import { loadStoriesFeed, type FeedStory } from "@/lib/content/stories-feed";
@@ -40,6 +42,14 @@ function SearchView({ supabase }: DashboardCtx) {
   const [corpus, setCorpus] = useState<Corpus | null>(null);
   const [people, setPeople] = useState<Hit[] | null>(null);
   useEffect(() => setQ(initial), [initial]);
+  // Typing updates the address (and so the search) after a short pause instead of on every key: one request per
+  // pause, not one per letter. Enter still searches at once. The people request below ignores answers that arrive late.
+  useEffect(() => {
+    const next = q.trim();
+    if (next === initial.trim()) return undefined;
+    const t = window.setTimeout(() => router.replace(`/dashboard/search?q=${encodeURIComponent(next)}`), 300);
+    return () => window.clearTimeout(t);
+  }, [q, initial, router]);
 
   useEffect(() => {
     Promise.all([loadOpportunities(supabase), loadProfessional(supabase).catch(() => []), loadStoriesFeed(supabase).then((f) => f.items).catch(() => [])])
@@ -74,6 +84,13 @@ function SearchView({ supabase }: DashboardCtx) {
       { id: "help", label: "Help", icon: HelpCircle, hits: searchTopics(term).map((t) => ({ id: t.id, title: t.q, detail: t.cta, href: t.href })) },
     ];
   }, [term, corpus, people]);
+  // What this page can find, for "Did you mean …?" (titles and names from the same lists the search runs over).
+  const vocabulary = useMemo(() => [
+    ...(corpus?.opps ?? []).flatMap((o) => [o.title, o.organizer, CATEGORY_LABEL[o.category]]),
+    ...(corpus?.jobs ?? []).flatMap((j) => [j.title, j.industry]),
+    ...(corpus?.stories ?? []).flatMap((st) => [st.title, ...st.tags]),
+    ...officialEvents().map((e) => e.title), ...COLLECTIONS.map((col) => col.title),
+  ], [corpus]);
   const total = groups.reduce((n, g) => n + g.hits.length, 0);
   const loading = term.length >= 2 && (!corpus || people === null);
 
@@ -87,13 +104,19 @@ function SearchView({ supabase }: DashboardCtx) {
           className={cn(inputClass, "rounded-full py-3.5 pl-14 text-[16px]")} data-testid="global-search-input" />
       </form>
       {term.length < 2 ? (
-        <p className="text-[15px] text-[#2F4157]/65">Type at least two letters and press Enter.</p>
+        <p className="text-[15px] text-[#2F4157]/65">Type at least two letters. Results appear as you type, or press Enter.</p>
       ) : (
         <>
           <p className="text-[14px] text-[#2F4157]/60" aria-live="polite">{loading ? "Searching…" : `${total} result${total === 1 ? "" : "s"} for “${term}”`}</p>
+          {loading && <SkeletonRegion label="Searching"><SkeletonList rows={3} /></SkeletonRegion>}
           {!loading && total === 0 && (
-            <EmptyState title="Nothing found" body="Try a shorter word, a country or a type like “internship”. People appear only if they chose to be listed in Discover."
-              action={<Link href="/dashboard/discover" className={cn("font-semibold text-[#577E90] hover:underline", focusRing)}>Browse Discover</Link>} />
+            <SearchEmpty query={term} terms={vocabulary} onPick={(w) => { setQ(w); router.replace(`/dashboard/search?q=${encodeURIComponent(w)}`); }}
+              onClear={() => { setQ(""); router.replace("/dashboard/search"); }} clearLabel="Clear search"
+              hint="Try a shorter word, a country or a type like “internship”. People appear only if they chose to be listed in Discover."
+              actions={<>
+                <Link href="/dashboard/discover/opportunities" className={cn("inline-flex min-h-[46px] items-center rounded-full px-5 text-[15px] font-semibold text-[#2F4157] hover:underline", focusRing)}>Opportunities</Link>
+                <Link href="/dashboard/discover" className={cn("inline-flex min-h-[46px] items-center rounded-full px-5 text-[15px] font-semibold text-[#2F4157] hover:underline", focusRing)}>Browse Discover</Link>
+              </>} />
           )}
           <div className="space-y-8" data-testid="search-results">
             {groups.filter((g) => g.hits.length > 0).map((g) => (
@@ -119,5 +142,5 @@ function SearchView({ supabase }: DashboardCtx) {
 }
 
 export default function SearchPage() {
-  return <DashboardPage>{(ctx) => <Suspense fallback={null}><SearchView {...ctx} /></Suspense>}</DashboardPage>;
+  return <DashboardPage>{(ctx) => <Suspense fallback={<SkeletonRegion label="Loading search"><SkeletonList rows={3} className="mx-auto max-w-5xl px-4 py-8 md:px-6" /></SkeletonRegion>}><SearchView {...ctx} /></Suspense>}</DashboardPage>;
 }

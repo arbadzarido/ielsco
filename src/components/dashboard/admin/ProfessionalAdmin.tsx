@@ -1,11 +1,15 @@
 "use client";
 
+import { revalidateOpportunities } from "@/lib/opportunities-revalidate";
 import { useCallback, useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Plus, Save } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, card, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
+import { PagerBar } from "@/components/dashboard/PagerBar";
+
+const PAGE_SIZE = 25;
 import { countryName, EMPLOYMENT_LABEL, JOB_COLUMNS, PARTNER_COLUMNS, STATUS_LABEL, type ProfessionalOpportunity, type RecruitmentPartner } from "@/lib/professional/model";
 
 // Staff editor for public.professional_opportunities (RLS: admins only). A new country, industry or partner is just a
@@ -31,7 +35,7 @@ function PartnerEditor({ supabase, partners, onSaved }: { supabase: SupabaseClie
       name: String(f.get("name")).trim(), website_url: text(f.get("website_url")), email: text(f.get("email")), whatsapp: text(f.get("whatsapp")),
       phone: text(f.get("phone")), about: text(f.get("about")),
     }).eq("id", id);
-    setMsg(error ? error.message : "Partner saved."); if (!error) onSaved();
+    setMsg(error ? error.message : "Partner saved."); if (!error) { void revalidateOpportunities(); onSaved(); }
   }
   if (!partners.length) return null;
   return (
@@ -58,15 +62,19 @@ export function ProfessionalAdmin({ supabase }: { supabase: SupabaseClient }) {
   const [partners, setPartners] = useState<RecruitmentPartner[]>([]);
   const [edit, setEdit] = useState<Partial<Row> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const load = useCallback(async () => {
-    const [{ data, error }, { data: p }] = await Promise.all([
-      supabase.from("professional_opportunities").select(`${JOB_COLUMNS}, publication`).order("updated_at", { ascending: false }),
+    const [{ data, error, count }, { data: p }] = await Promise.all([
+      supabase.from("professional_opportunities").select(`${JOB_COLUMNS}, publication`, { count: "exact" }).order("updated_at", { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1),
       supabase.from("recruitment_partners").select(PARTNER_COLUMNS).order("name"),
     ]);
     if (error) setMsg(error.message);
     setRows((data as Row[]) ?? []);
+    setTotal(count ?? (data?.length ?? 0));
     setPartners((p as RecruitmentPartner[]) ?? []);
-  }, [supabase]);
+  }, [supabase, page]);
   useEffect(() => { load(); }, [load]);
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
@@ -89,6 +97,7 @@ export function ProfessionalAdmin({ supabase }: { supabase: SupabaseClient }) {
     const q = edit.id ? supabase.from("professional_opportunities").update(row).eq("id", edit.id) : supabase.from("professional_opportunities").insert(row);
     const { error } = await q;
     if (error) { setMsg(error.message); return; }
+    void revalidateOpportunities();
     setMsg("Saved."); setEdit(null); load();
   }
 
@@ -181,6 +190,7 @@ export function ProfessionalAdmin({ supabase }: { supabase: SupabaseClient }) {
           </li>
         ))}
       </ul>
+      <PagerBar page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} busy={rows === null} />
     </div>
   );
 }

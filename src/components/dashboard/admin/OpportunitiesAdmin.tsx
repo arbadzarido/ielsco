@@ -6,6 +6,11 @@ import { Plus, Save } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, card, inputClass, labelClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
+import { PagerBar } from "@/components/dashboard/PagerBar";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
+
+const PAGE_SIZE = 25;
+import { revalidateOpportunities } from "@/lib/opportunities-revalidate";
 import { CATEGORY_LABEL, FUNDING_LABEL, LEVEL_LABEL, OPP_COLUMNS, type Opportunity } from "@/lib/opportunities";
 
 // Staff editor for public.opportunities (RLS: admins only). Rules shown in the form: only confirmed dates go in
@@ -19,8 +24,12 @@ export function OpportunitiesAdmin({ supabase }: { supabase: SupabaseClient }) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [edit, setEdit] = useState<Partial<Row> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const load = useCallback(() => supabase.from("opportunities").select(`${OPP_COLUMNS}, status`).order("updated_at", { ascending: false })
-    .then(({ data, error }) => { if (error) setMsg(error.message); setRows((data as Row[]) ?? []); }), [supabase]);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  // 25 listings per page, newest edits first, with an exact count for the pager.
+  const load = useCallback(() => supabase.from("opportunities").select(`${OPP_COLUMNS}, status`, { count: "exact" }).order("updated_at", { ascending: false })
+    .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
+    .then(({ data, error, count }) => { if (error) setMsg(error.message); setRows((data as Row[]) ?? []); setTotal(count ?? (data?.length ?? 0)); }), [supabase, page]);
   useEffect(() => { load(); }, [load]);
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
@@ -41,6 +50,7 @@ export function OpportunitiesAdmin({ supabase }: { supabase: SupabaseClient }) {
     const q = edit.id ? supabase.from("opportunities").update(row).eq("id", edit.id) : supabase.from("opportunities").insert(row);
     const { error } = await q;
     if (error) { setMsg(error.message); return; }
+    void revalidateOpportunities();
     setMsg("Saved."); setEdit(null); load();
   }
 
@@ -86,6 +96,7 @@ export function OpportunitiesAdmin({ supabase }: { supabase: SupabaseClient }) {
         </form>
       )}
 
+      {rows === null && <SkeletonRegion label="Loading listings"><SkeletonList rows={4} leading={false} /></SkeletonRegion>}
       <ul className="space-y-3">
         {(rows ?? []).map((r) => (
           <li key={r.id} className={cn(card, "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between")}>
@@ -97,6 +108,7 @@ export function OpportunitiesAdmin({ supabase }: { supabase: SupabaseClient }) {
           </li>
         ))}
       </ul>
+      <PagerBar page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} busy={rows === null} />
     </div>
   );
 }

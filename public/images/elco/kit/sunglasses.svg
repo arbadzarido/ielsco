@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="360" height="120">
+  <!-- Elco's sunglasses: original artwork for Elco AI (front view, sized to sit across the face plate over both eyes). -->
+  <defs>
+    <linearGradient id="lens" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1F2A3A"/>
+      <stop offset="1" stop-color="#05080D"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 22 Q8 10 22 10 L338 10 Q352 10 352 22 L352 30 Q352 34 348 34 L12 34 Q8 34 8 30 Z" fill="#0B1320"/>
+  <path d="M20 24 L156 24 Q170 24 168 40 L162 80 Q158 106 132 106 L60 106 Q32 106 26 80 L18 40 Q16 24 20 24 Z" fill="url(#lens)" stroke="#0B1320" stroke-width="6"/>
+  <path d="M340 24 L204 24 Q190 24 192 40 L198 80 Q202 106 228 106 L300 106 Q328 106 334 80 L342 40 Q344 24 340 24 Z" fill="url(#lens)" stroke="#0B1320" stroke-width="6"/>
+  <path d="M164 34 Q180 26 196 34" fill="none" stroke="#0B1320" stroke-width="8" stroke-linecap="round"/>
+  <path d="M40 40 L84 40 L58 86 L40 86 Q36 70 40 40 Z" fill="#FFFFFF" opacity="0.16"/>
+  <path d="M218 40 L262 40 L236 86 L218 86 Q214 70 218 40 Z" fill="#FFFFFF" opacity="0.16"/>
+</svg>

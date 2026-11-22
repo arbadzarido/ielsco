@@ -20,7 +20,7 @@ function AcademicEmpty() {
 
 // Shared by /opportunities (?type=academic|professional) and /opportunities/professional.
 export async function OpportunitiesDirectory({ initialTrack }: { initialTrack: OpportunityTrack }) {
-  const [academic, professional] = await Promise.all([listPublishedOpportunities(), listPublishedProfessional()]);
+  const [academic, professional] = await Promise.all([listPublishedOpportunities({ strict: true }), listPublishedProfessional({ strict: true })]);
   return (
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="opportunities-page">
       <section className="bg-white pb-[32px] pt-[40px] md:pt-[64px]" aria-labelledby="hero">

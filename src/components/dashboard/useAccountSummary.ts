@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getUserOnce } from "@/lib/supabase/getUser";
 import { AVATAR_CHANGED_EVENT } from "@/lib/dashboard/avatar";
 
 // What the account menu shows about the signed-in member: name, photo and role from member_profiles. Pages pass a
@@ -20,7 +21,7 @@ function load(): Promise<AccountSummary | null> {
   if (!cached) {
     cached = (async () => {
       const supabase = createClient();
-      const { data: auth } = await supabase.auth.getUser();
+      const { data: auth } = await getUserOnce(supabase);
       if (!auth.user) return null;
       const { data, error } = await supabase.from("member_profiles")
         .select("display_name, avatar_url, role_status").eq("user_id", auth.user.id).maybeSingle();
