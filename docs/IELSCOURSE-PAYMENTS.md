@@ -38,8 +38,8 @@ IELSco Vercel project that serves www.ielsco.com (team ielscommunity), Productio
 |---|---|
 | `MIDTRANS_ENV` | `production` |
 | `MIDTRANS_PRODUCTION_ENABLED` | `true` |
-| `MIDTRANS_PRODUCTION_SERVER_KEY` | the merchant's production Server Key (secret; same value as Elco's Railway service if IELScourse uses Elco's merchant) |
-| `MIDTRANS_PRODUCTION_CLIENT_KEY` | the matching production Client Key |
+| `MIDTRANS_PRODUCTION_SERVER_KEY` | Elco's production Server Key (secret; copy the value from Elco's Railway service variables) |
+| `MIDTRANS_PRODUCTION_CLIENT_KEY` | Elco's production Client Key (`Mid-client-bx73…`, from the same Railway service) |
 | `IELSCOURSE_CHECKOUT_ENABLED` | `true` (the on/off switch; notifications for existing orders are still verified when it's off) |
 | `CRON_SECRET` | a random string ≥ 16 characters (daily reconcile + renewal reminders) |
 
@@ -47,7 +47,7 @@ IELSco Vercel project that serves www.ielsco.com (team ielscommunity), Productio
 
 ## 4. Decisions for the founder
 
-1. **Merchant account.** Reusing Elco's merchant means Snap and bank statements show the Elco merchant name, and settlement lands in that account. Confirm that is acceptable for IELSco revenue, or provide a separate IELSco merchant (then only the two key variables differ).
+1. **Merchant account: DECIDED 22 Nov 2026 by the founder — use Elco AI's existing Midtrans production merchant.** IELScourse uses the same `MIDTRANS_PRODUCTION_SERVER_KEY` / `MIDTRANS_PRODUCTION_CLIENT_KEY` values as Elco's Railway service. Snap and bank statements show the Elco merchant name and settlement lands in that account; IELScourse orders stay separable by their `IELS-C-` ids and `custom_field1 = product:ielscourse_*`.
 2. Elco AI for Collective/Studio is recorded as "being activated" until the team grants it in Elco and clicks *Mark granted* (no automatic Elco grant: which Elco plan the membership includes is not decided).
 3. Refund policy text (refunds are made in the Midtrans dashboard; IELSco then ends the month and puts the order in the review queue automatically).
 
