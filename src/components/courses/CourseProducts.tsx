@@ -3,15 +3,23 @@ import { body, btnAccent, btnPrimary, btnSecondary, card, container, eyebrow, h1
 import { cn } from "@/lib/utils";
 import { COMPARISON_ROWS, IELSCOURSE_TAGLINE, PATHS, PRODUCT_CARDS, helpMeChooseUrl, joinUrl, waitlistUrl } from "./products";
 
-const JOIN_STEPS = [
+const JOIN_STEPS_WHATSAPP = [
   ["Message us", "Tap Join. The message is prefilled; add your level and goal."],
   ["Confirm your class", "The team confirms an open cohort and its schedule with you. If none is open, you join the waiting list for the next one."],
   ["Pay by bank transfer", "You receive an invoice for the month and pay in full before your membership starts."],
   ["Start learning", "Once your payment is verified, your membership is activated, you are assigned to your class and you get your schedule and Elco AI access."],
 ];
+// When online checkout is open (Midtrans production): pick a class group with a confirmed schedule and pay in My Courses.
+const JOIN_STEPS_ONLINE = [
+  ["Sign in and choose a class", "Tap Join, sign in, and pick an open class group with its confirmed schedule. If every group is full, join the waiting list."],
+  ["Pay online", "Bank transfer (virtual account), QRIS, e-wallet or card through Midtrans. Your seat is held for 60 minutes while you pay."],
+  ["Confirmed automatically", "As soon as Midtrans confirms the payment, your month starts, your receipt is issued and your class details appear in My Courses."],
+  ["Renew monthly", "Renew from My Courses before your month ends; the next month starts when the current one ends, so you keep your seat."],
+];
 
 // IELScourse landing sections 1-6: hero, three product cards, comparison, which-fits-you, Collective and Studio details.
-export function CourseProducts() {
+export function CourseProducts({ online = false }: { online?: boolean }) {
+  const JOIN_STEPS = online ? JOIN_STEPS_ONLINE : JOIN_STEPS_WHATSAPP;
   return (
     <>
       <section className="bg-white pb-[48px] pt-[40px] md:pb-[72px] md:pt-[64px]" aria-labelledby="hero">
@@ -110,10 +118,17 @@ export function CourseProducts() {
               <p className="mt-5 text-[28px] font-extrabold tracking-[-0.02em]">{p.price}</p>
               <ul className="mt-5 space-y-3">{p.facts.map((t) => <li key={t} className="flex gap-3 text-[16px] leading-snug text-[#2F4157]"><Check size={19} className="mt-0.5 shrink-0 text-[#2D7A58]" aria-hidden="true" />{t}</li>)}</ul>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <a href={joinUrl(p.id)} target="_blank" rel="noopener noreferrer" className={btnAccent} data-testid={`join-${p.id}`}>Join {p.id === "collective" ? "Collective" : "Studio"} <ArrowUpRight size={18} aria-hidden="true" /></a>
-                <a href={waitlistUrl(p.id)} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Join the waiting list</a>
+                {online ? <>
+                  <a href={`/dashboard/courses?join=${p.id}`} className={btnAccent} data-testid={`join-${p.id}`}>Join {p.id === "collective" ? "Collective" : "Studio"} <ArrowUpRight size={18} aria-hidden="true" /></a>
+                  <a href={joinUrl(p.id)} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Ask us on WhatsApp</a>
+                </> : <>
+                  <a href={joinUrl(p.id)} target="_blank" rel="noopener noreferrer" className={btnAccent} data-testid={`join-${p.id}`}>Join {p.id === "collective" ? "Collective" : "Studio"} <ArrowUpRight size={18} aria-hidden="true" /></a>
+                  <a href={waitlistUrl(p.id)} target="_blank" rel="noopener noreferrer" className={btnSecondary}>Join the waiting list</a>
+                </>}
               </div>
-              <p className="mt-4 text-[14px] text-[#2F4157]/65">No place is held until you pay and the team confirms a class with an open schedule. If no class is open yet, we add you to the waiting list for the next one.</p>
+              <p className="mt-4 text-[14px] text-[#2F4157]/65">{online
+                ? "You can only pay for a class group with a confirmed schedule, and your place starts only after Midtrans confirms the payment. If no group is open, join the waiting list in My Courses."
+                : "No place is held until you pay and the team confirms a class with an open schedule. If no class is open yet, we add you to the waiting list for the next one."}</p>
             </div>
             <div>
               <h3 className={cn(h3, "text-[20px]")}>How joining works</h3>
@@ -123,7 +138,7 @@ export function CourseProducts() {
                     <div><p className="text-[17px] font-bold">{t}</p><p className={cn(body, "mt-1 text-[15px]")}>{d}</p></div></li>
                 ))}
               </ol>
-              <p className="mt-6 text-[14px] text-[#2F4157]/65">Memberships are monthly and renew by a new invoice each month. Your Elco AI access and class place run for the month you have paid for.</p>
+              <p className="mt-6 text-[14px] text-[#2F4157]/65">Memberships are monthly and renew by a new payment each month. Your Elco AI access and class place run for the month you have paid for.</p>
             </div>
           </div>
         </section>

@@ -43,10 +43,11 @@ export const SECTIONS: Section[] = [
   },
   {
     key: "nav.discover", path: "/dashboard/programs", icon: Compass, id: "discover",
-    match: ["/dashboard/discover", "/dashboard/opportunities", "/dashboard/explore", "/dashboard/pulse", "/dashboard/programs", "/dashboard/tutoring", "/dashboard/search"],
+    match: ["/dashboard/discover", "/dashboard/opportunities", "/dashboard/explore", "/dashboard/pulse", "/dashboard/programs", "/dashboard/tutoring", "/dashboard/courses", "/dashboard/search"],
     children: [
       { label: "Programs", href: "/dashboard/programs", icon: GraduationCap, id: "programs" },
-      { label: "Private Tutoring", href: "/dashboard/tutoring", icon: BookOpenText, id: "tutoring", match: ["/dashboard/tutoring"] },
+      // IELScourse (22 Nov 2026): Collective, Studio and One in one hub; One's tutoring workspace stays under it.
+      { label: "My Courses", href: "/dashboard/courses", icon: BookOpenText, id: "tutoring", match: ["/dashboard/courses", "/dashboard/tutoring"] },
       { label: "Opportunities", href: "/dashboard/discover/opportunities", icon: BriefcaseBusiness, id: "opportunities", match: ["/dashboard/opportunities"] },
       { label: "News & Stories", href: "/dashboard/discover/stories", icon: Newspaper, id: "stories" },
       { label: "Learning Materials", href: "/dashboard/explore", icon: Library, id: "materials", match: ["/dashboard/pulse"] },

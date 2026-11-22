@@ -10,14 +10,14 @@ Brand IELScourse, tagline "Learn English. Practice Daily. Connect Globally." Men
 | Model | Recurring monthly membership, assigned to a cohort | Recurring monthly membership, assigned to a cohort | Fixed-session package, student proposes, mentor confirms |
 | Elco AI | While membership active | While membership active | 1 month |
 | IELS Circle | Included | Included | With package |
-| Payment | Monthly invoice, full, manual verification | Monthly invoice, full, manual verification | Full, or deposit 50/25/25 on Intensive |
+| Payment | Monthly, online via Midtrans (docs/IELSCOURSE-PAYMENTS.md) | Monthly, online via Midtrans | Full, or deposit 50/25/25 on Intensive, each online via Midtrans |
 
 Prices, the Wednesday/Saturday community sessions and the inclusions are from the founder's brief of 22 Nov 2026. Unit economics: `docs/IELSCOURSE-UNIT-ECONOMICS.md`.
 
 ## Phase 1 (this release): public page
 `/products/courses` now presents all three products (hero, cards, comparison with a stacked mobile layout, "which fits you", Collective and Studio sections, One unchanged below, merged FAQ). Collective and Studio use a **registration by WhatsApp** flow: no place is held until payment is verified and the team confirms a cohort with an open schedule; otherwise the customer is waitlisted. No self-serve purchase exists, so nobody can buy a cohort without a schedule. GIF eligibility is deliberately NOT shown on the page (see below). IELScourse One (packages, deposit, `/dashboard/tutoring`, mentor dashboard) is untouched.
 
-## Phase 2: data model for memberships and cohorts (not built)
+## Phase 2: data model for memberships and cohorts (built 22 Nov 2026 as course_* tables, see docs/IELSCOURSE-PAYMENTS.md; attendance/materials not yet)
 Reuse `auth.users`, `staff_roles`, `tutoring_mentors` (as the tutor registry), the invoice/instalment/payment/receipt tables, `tutoring_notifications`, `tutoring_audit`. Proposed additions, all additive:
 - `course_products` (collective, studio, one) and `course_plans` (price, billing period, sessions per month).
 - `course_memberships` (student, plan, status pending_payment/active/expired/cancelled, period_start, period_end, renewal_of) with one row per month paid.
