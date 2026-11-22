@@ -4,8 +4,8 @@ import { audit } from "../audit";
 import { currentCohort } from "../cohort";
 import { sendEmail, deliverQueued } from "../email/send";
 import { invoiceRequestedEmail, invoiceRequestFinanceEmail, invoiceSentEmail } from "../email/templates";
-import { formatMoney } from "../pricing";
-import { PaymentError } from "./service";
+import { checkInstallmentIdr, formatMoney, installmentBounds, isInstallmentKind } from "../pricing";
+import { PaymentError, mergeLegacyFee } from "./service";
 
 // Invoice requests (founder decision 21 Nov 2026): a payer — usually international, paying in USD — asks for an invoice
 // and pays by bank transfer to the account Finance designates. Recorded in gif.invoice_requests (one open request per
@@ -14,21 +14,36 @@ import { PaymentError } from "./service";
 
 export type InvoiceRequestRow = { id: string; obligation_id: string; status: string; amount: number; currency: "IDR" | "USD"; invoice_no: string | null; created_at: string; sent_at: string | null };
 
-export async function requestInvoice(accountId: string, accountEmail: string, applicationId: string, obligationId: string, ip: string | null):
+export async function requestInvoice(accountId: string, accountEmail: string, applicationId: string, obligationIdIn: string, ip: string | null, amountIdr?: number):
   Promise<{ created: boolean; request: InvoiceRequestRow }> {
   const s = (await currentCohort()).settings;
-  const ob = await one<{ id: string; label: string; amount: number; currency: "IDR" | "USD"; legal_name: string; email: string; code: string; participant_id: string; owner_account_id: string; participant_account_id: string | null }>(
-    `select o.id, o.label, o.amount, o.currency, p.legal_name, p.email, a.code, o.participant_id, a.owner_account_id, p.account_id as participant_account_id
+  const obligationId = (await mergeLegacyFee(obligationIdIn)) ?? obligationIdIn;
+  const ob = await one<{ id: string; label: string; amount: number; kind: string; paid_amount: number; currency: "IDR" | "USD"; legal_name: string; email: string; code: string; participant_id: string; owner_account_id: string; participant_account_id: string | null }>(
+    `select o.id, o.label, o.amount::float8 as amount, o.currency, o.kind, o.paid_amount::float8 as paid_amount, p.legal_name, p.email, a.code, o.participant_id, a.owner_account_id, p.account_id as participant_account_id
      from gif.obligations o join gif.participants p on p.id = o.participant_id join gif.applications a on a.id = o.application_id
      where o.id = $1 and o.application_id = $2 and o.status = 'open'`, [obligationId, applicationId]);
   if (!ob || (ob.owner_account_id !== accountId && ob.participant_account_id !== accountId)) throw new PaymentError("Payment item not found.", "not_found");
   if (!(Number(ob.amount) > 0)) throw new PaymentError("This item has no amount to invoice.", "amount");
+  // Installments: the payer chooses the amount (IDR, at least the minimum, at most what is outstanding); the invoice is in
+  // the item's currency (USD-priced delegates: the USD equivalent at the card rate, shown with the IDR amount).
+  let invoiceAmount = Number(ob.amount);
+  let amountText = formatMoney(invoiceAmount, ob.currency);
+  if (isInstallmentKind(ob.kind)) {
+    const b = installmentBounds(s, ob.currency, ob.amount - ob.paid_amount);
+    if (!b) throw new PaymentError("Nothing is outstanding on this item.", "not_open");
+    const chk = checkInstallmentIdr(b, Number(amountIdr ?? b.maxIdr));
+    if (!chk.ok) throw new PaymentError(chk.error, "amount");
+    invoiceAmount = chk.applied;
+    amountText = ob.currency === "USD"
+      ? `${formatMoney(invoiceAmount, "USD")} (${formatMoney(chk.chargedIdr, "IDR")} at USD 1 = ${formatMoney(s.payments.usd_idr_card_rate, "IDR")})`
+      : formatMoney(invoiceAmount, "IDR");
+  }
 
   const out = await tx(async (db) => {
     // Before migration 20261128 is applied there is no table: keep the earlier behaviour (email Finance and the payer,
     // nothing recorded) instead of failing.
     if (!(await db.query<{ ok: boolean }>("select to_regclass('gif.invoice_requests') is not null as ok")).rows[0]?.ok) {
-      const amount = formatMoney(Number(ob.amount), ob.currency);
+      const amount = amountText;
       const day = new Date().toISOString().slice(0, 10);
       const finance = process.env.GIF_FINANCE_EMAIL || s.contact.email;
       await sendEmail({ to: finance, template: "invoice_request", applicationId, dedupeKey: `invoice:${ob.id}:${day}`,
@@ -36,7 +51,7 @@ export async function requestInvoice(accountId: string, accountEmail: string, ap
       await sendEmail({ to: ob.email, template: "invoice_requested", applicationId, dedupeKey: `invoice:${ob.id}:${day}:payer`,
         ...invoiceRequestedEmail({ name: ob.legal_name, code: ob.code, item: ob.label, amount, bankDetails: s.payments.invoice_bank_details }) }, db);
       await audit(accountEmail, "invoice_requested", "obligation", ob.id, { unrecorded: true }, ip, db);
-      return { created: true, request: { id: "", obligation_id: ob.id, status: "invoice_requested", amount: Number(ob.amount), currency: ob.currency, invoice_no: null, created_at: new Date().toISOString(), sent_at: null } };
+      return { created: true, request: { id: "", obligation_id: ob.id, status: "invoice_requested", amount: invoiceAmount, currency: ob.currency, invoice_no: null, created_at: new Date().toISOString(), sent_at: null } };
     }
     // The amount and currency are the obligation's own (USD stays USD); nothing comes from the browser.
     const ins = (await db.query<InvoiceRequestRow>(
@@ -44,21 +59,21 @@ export async function requestInvoice(accountId: string, accountEmail: string, ap
        values ($1, $2, $3, $4, $5, $6)
        on conflict (obligation_id) where status in ('invoice_requested', 'invoice_sent') do nothing
        returning id, obligation_id, status, amount::float8 as amount, currency, invoice_no, created_at, sent_at`,
-      [ob.id, applicationId, ob.participant_id, accountId, ob.amount, ob.currency])).rows[0];
+      [ob.id, applicationId, ob.participant_id, accountId, invoiceAmount, ob.currency])).rows[0];
     if (!ins) {
       const existing = (await db.query<InvoiceRequestRow>(
         `select id, obligation_id, status, amount::float8 as amount, currency, invoice_no, created_at, sent_at from gif.invoice_requests
          where obligation_id = $1 and status in ('invoice_requested', 'invoice_sent')`, [ob.id])).rows[0];
       return { created: false, request: existing };
     }
-    const amount = formatMoney(Number(ob.amount), ob.currency);
+    const amount = amountText;
     const ref = ins.id.slice(0, 8).toUpperCase();
     const finance = process.env.GIF_FINANCE_EMAIL || s.contact.email;
     await sendEmail({ to: finance, template: "invoice_request", applicationId, dedupeKey: `invoice-req:${ins.id}:finance`,
       ...invoiceRequestFinanceEmail({ name: ob.legal_name, email: ob.email, code: ob.code, item: ob.label, amount, reference: ref }) }, db);
     await sendEmail({ to: ob.email, template: "invoice_requested", applicationId, dedupeKey: `invoice-req:${ins.id}:payer`,
       ...invoiceRequestedEmail({ name: ob.legal_name, code: ob.code, item: ob.label, amount, reference: ref, bankDetails: s.payments.invoice_bank_details }) }, db);
-    await audit(accountEmail, "invoice_requested", "obligation", ob.id, { request: ins.id, amount: Number(ob.amount), currency: ob.currency }, ip, db);
+    await audit(accountEmail, "invoice_requested", "obligation", ob.id, { request: ins.id, amount: invoiceAmount, currency: ob.currency }, ip, db);
     return { created: true, request: ins };
   });
   await deliverQueued().catch(() => {});

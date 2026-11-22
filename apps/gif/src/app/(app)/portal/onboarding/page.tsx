@@ -12,9 +12,9 @@ export default async function Onboarding() {
   const docs = detail.documents;
   const has = (k: string) => docs.some((d) => d.kind === k && (!me || d.participant_id === me.id || c.isOwner));
   const minor = me ? ageOn(me.date_of_birth, new Date("2027-07-27T00:00:00Z")) < 18 : false;
-  const balanceOpen = detail.obligations.some((o) => o.kind === "balance" && o.status === "open" && (c.isOwner || o.participant_id === me?.id));
+  const balanceOpen = detail.obligations.some((o) => ["balance", "full"].includes(o.kind) && o.status === "open" && (c.isOwner || o.participant_id === me?.id));
   const items: [string, boolean, React.ReactNode][] = [
-    ["Seat confirmed", confirmed, confirmed ? "Your seat is confirmed." : "Your seat is confirmed when your deposit (Self-Funded) or offer acceptance (selected delegates) is complete."],
+    ["Seat confirmed", confirmed, confirmed ? "Your seat is confirmed." : "Your seat is confirmed when your first payment (Self-Funded, Partial Funded) is verified, or when you accept a Fully Funded offer."],
     ["Balance paid", !balanceOpen, balanceOpen ? <Link href="/portal/payments">Pay the balance</Link> : "Nothing outstanding."],
     ["Passport uploaded", has("passport"), <Link key="p" href="/portal/documents">Upload a passport scan (valid at least 6 months after the programme)</Link>],
     ["Visa checked", false, <Link key="v" href="/travel-visa-disclaimer">Check what your passport needs for Singapore, Malaysia and Thailand</Link>],

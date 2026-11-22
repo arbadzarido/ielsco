@@ -27,7 +27,7 @@ export type Workspace = {
   steps: Step[];
   actions: { label: string; href: string; detail?: string; tone?: "warn" | "info" }[];
   deadlines: { label: string; at: string }[];
-  obligations: { label: string; kind: string; amount: number; currency: "IDR" | "USD"; status: string; dueAt: string | null; paidAt: string | null }[];
+  obligations: { label: string; kind: string; amount: number; currency: "IDR" | "USD"; status: string; dueAt: string | null; paidAt: string | null; paidAmount: number; remaining: number }[];
   payments: { kind: string; amount: number; currency: "IDR" | "USD"; status: string; createdAt: string; paidAt: string | null; receiptNo: string | null }[];
   documents: { kind: string; filename: string; status: string; createdAt: string }[];
   submissions: { phase: number; submittedAt: string | null }[];
@@ -70,7 +70,11 @@ export async function workspaceFor(user: IelscoUser, now = new Date()): Promise<
     mode: app.mode, teamName: app.team_name, isOwner: c.isOwner, submittedAt: app.submitted_at, outcome: published,
   };
   base.steps = progressSteps(app.pathway, app.status, paid || PAID_STATUSES.includes(app.status), tasks);
-  base.obligations = mine(detail.obligations).map((o) => ({ label: o.label, kind: o.kind, amount: o.amount, currency: o.currency, status: o.status, dueAt: o.due_at, paidAt: o.paid_at }));
+  base.obligations = mine(detail.obligations).map((o) => {
+    const paidAmount = o.status === "paid" || o.status === "waived" ? Number(o.amount) : Number(o.paid_amount ?? 0);
+    return { label: o.label, kind: o.kind, amount: Number(o.amount), currency: o.currency, status: o.status, dueAt: o.due_at, paidAt: o.paid_at,
+      paidAmount, remaining: Math.max(0, Math.round((Number(o.amount) - paidAmount) * 100) / 100) };
+  });
   base.payments = mine(detail.payments).filter((p) => !p.is_duplicate || p.status === "paid").slice(0, 20)
     .map((p) => ({ kind: p.kind, amount: p.amount, currency: p.currency, status: p.status, createdAt: p.created_at, paidAt: p.paid_at, receiptNo: p.receipt_no }));
   base.documents = mine(detail.documents).map((d) => ({ kind: d.kind, filename: d.filename, status: d.status, createdAt: d.created_at }));

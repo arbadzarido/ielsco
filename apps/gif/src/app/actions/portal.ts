@@ -29,11 +29,11 @@ async function ctx() {
 export type CheckoutResult = { error?: string; orderId?: string; token?: string | null; redirectUrl?: string; snap?: { clientKey: string; scriptUrl: string } | null } | null;
 
 // Opens (or reopens) the payment for an obligation. The browser shows Snap in a popup when it can, else follows redirectUrl.
-export async function payAction(obligationId: string, opts: { idrOption?: boolean; forceNew?: boolean } = {}): Promise<CheckoutResult> {
+export async function payAction(obligationId: string, opts: { idrOption?: boolean; forceNew?: boolean; amountIdr?: number } = {}): Promise<CheckoutResult> {
   const account = await requireAccount();
   try {
     if (await overLimit(`checkout:${account.id}`, 20, 3600)) return { error: "Too many payment attempts. Please wait a while." };
-    const r = await startCheckout(account.id, String(obligationId), { idrOption: !!opts.idrOption, forceNew: !!opts.forceNew });
+    const r = await startCheckout(account.id, String(obligationId), { idrOption: !!opts.idrOption, forceNew: !!opts.forceNew, amountIdr: opts.amountIdr == null ? undefined : Number(opts.amountIdr) });
     revalidatePath("/portal/payments");
     return { orderId: r.orderId, token: r.token, redirectUrl: r.redirectUrl, snap: r.snap };
   } catch (e) {
@@ -92,7 +92,8 @@ export async function requestInvoiceAction(_: ActionResult, fd: FormData): Promi
   if (!found) return { error: "No application." };
   if (await overLimit(`invoice:${account.id}`, 10, 3600)) return { error: "Too many requests. Please try again later." };
   try {
-    const r = await requestInvoice(account.id, account.email, found.app.id, String(fd.get("obligation_id") ?? ""), await clientIp());
+    const amt = fd.get("amount_idr");
+    const r = await requestInvoice(account.id, account.email, found.app.id, String(fd.get("obligation_id") ?? ""), await clientIp(), amt ? Number(String(amt).replace(/[^\d]/g, "")) : undefined);
     revalidatePath("/portal/payments");
     return { ok: true, message: r.created ? "Invoice requested. We've emailed you a confirmation; Finance will send the invoice with the bank transfer details."
       : "You've already requested an invoice for this item. Finance will email it to you." };

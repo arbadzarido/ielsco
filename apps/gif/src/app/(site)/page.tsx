@@ -3,7 +3,8 @@ import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
 import { getContent } from "@/lib/cms";
 import { PHOTOS, KEY_DATES, ELCO_PRO_FEATURES } from "@/lib/content";
-import { balanceOf, mentoringPrice } from "@/lib/settings";
+import { mentoringPrice } from "@/lib/settings";
+import { minInstallment } from "@/lib/pricing";
 import { fmtRange } from "@/lib/format";
 import { CurrencyToggle, Price } from "@/components/Client";
 import { DeadlineStrip, Eyebrow, FaqList, FinalCta, openingLine, Figure, MentorPlaceholders, Pathways, PhotoBand, Testimonials, Universities } from "@/components/Blocks";
@@ -15,7 +16,6 @@ export default async function Home() {
   const s = await currentSettingsSafe();
   const [faq, mentors, testimonials] = await Promise.all([getContent("faq"), getContent("mentors"), getContent("testimonials")]);
   const m = mentoringPrice(s);
-  const bal = balanceOf(s);
   const ld = { "@context": "https://schema.org", "@type": "EducationEvent", name: "Global Impact Fellowship Summer 2027", startDate: "2027-07-27", endDate: "2027-08-03",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode", eventStatus: "https://schema.org/EventScheduled",
     location: [{ "@type": "Place", name: "Singapore", address: { "@type": "PostalAddress", addressCountry: "SG" } }, { "@type": "Place", name: "Malaysia", address: { "@type": "PostalAddress", addressCountry: "MY" } }, { "@type": "Place", name: "Thailand", address: { "@type": "PostalAddress", addressCountry: "TH" } }],
@@ -151,8 +151,8 @@ export default async function Home() {
             <p className="lead">Secure a place by paying the deposit. Your seat is confirmed only when the deposit is verified; the balance is paid during participant preparation.</p></div>
           <div className="grid g3">
             <div className="item"><span className="kicker">Programme fee</span><p className="big-number"><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p></div>
-            <div className="item"><span className="kicker">Deposit (confirms your seat)</span><p className="big-number"><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p></div>
-            <div className="item"><span className="kicker">Balance</span><p className="big-number"><Price idr={bal.IDR} usd={bal.USD} /></p></div>
+            <div className="item"><span className="kicker">Deposit from (confirms your seat)</span><p className="big-number"><Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} /></p><p className="small muted">You choose how much to pay upfront.</p></div>
+            <div className="item"><span className="kicker">Balance</span><p className="big-number" style={{ fontSize: 22 }}>In installments</p><p className="small muted">Each payment from <Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} />, until the balance deadline.</p></div>
           </div>
           <p className="small muted" style={{ marginTop: 20 }}>Indonesian participants pay the IDR price; international participants pay the USD price. <Link href="/self-funded">What the fee covers and how to pay</Link>.</p>
         </div>

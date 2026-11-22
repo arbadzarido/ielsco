@@ -98,7 +98,7 @@ export async function manualPaymentAction(_: AdminResult, fd: FormData): Promise
   try {
     await recordManualPayment(a.email, String(fd.get("obligation_id")), Number(fd.get("amount")), String(fd.get("currency")) as "IDR" | "USD", reference.slice(0, 200), ip);
   } catch (e) { return fail(e); }
-  return done("Manual payment recorded, receipt issued and applicant emailed.");
+  return done("Payment recorded, receipt issued and applicant emailed (installments: the outstanding balance is updated).");
 }
 
 export async function invoiceSentAction(_: AdminResult, fd: FormData): Promise<AdminResult> {
@@ -122,7 +122,7 @@ export async function waiveObligationAction(_: AdminResult, fd: FormData): Promi
   const o = await one<{ application_id: string; participant_id: string; kind: string }>("update gif.obligations set status = 'waived', updated_at = now() where id = $1 and status = 'open' returning application_id, participant_id, kind", [id]);
   if (!o) return { error: "Obligation not open." };
   if (o.kind === "elco_pro") await q("update gif.elco_fulfilments set status = 'pending_activation' where obligation_id = $1 and status = 'awaiting_payment'", [id]);
-  if (o.kind === "deposit") await q("update gif.participants set seat_status = 'confirmed', seat_confirmed_at = now() where id = $1 and seat_status = 'none'", [o.participant_id]);
+  if (o.kind === "deposit" || o.kind === "full") await q("update gif.participants set seat_status = 'confirmed', seat_confirmed_at = now() where id = $1 and seat_status = 'none'", [o.participant_id]);
   await audit(a.email, "obligation_waived", "obligation", id, { reason }, ip);
   await recomputeNow(o.application_id, a.email);
   await autoActivatePending(o.application_id).catch(() => 0);
@@ -235,12 +235,12 @@ const settingsSchema = z.object({
   pathways_open: z.object({ fully_funded: z.boolean(), mentoring: z.boolean(), self_funded: z.boolean() }),
   dates: z.object(Object.fromEntries(Object.entries(DEFAULT_SETTINGS.dates).map(([k, v]) => [k, typeof v === "number" || k === "deposit_due_days" ? z.number().int().positive().nullable() : v === null ? iso.nullable() : iso]))),
   prices: z.object({ elco_pro_idr: z.number().int().positive(), elco_pro_months: z.number().int().positive(), mentoring_early: Money, mentoring_regular: Money,
-    self_funded_total: Money, self_funded_deposit: Money, partial_funded_payable: Money.nullable() }),
+    self_funded_total: Money, self_funded_deposit: Money, partial_funded_payable: Money.nullable(), self_funded_early_total: Money }),
   cashback: z.object({ fully_funded: Money, partial_funded: Money }),
-  slots: z.object({ fully_funded: z.number().int().nonnegative(), partial_funded: z.number().int().nonnegative(), capacity: z.number().int().positive() }),
+  slots: z.object({ fully_funded: z.number().int().nonnegative(), partial_funded: z.number().int().nonnegative(), capacity: z.number().int().positive(), self_funded_early: z.number().int().nonnegative() }),
   payments: z.object({ allow_idr_for_international: z.boolean(), bank_transfer_instructions: z.string().min(10).max(1000),
     international_cards: z.boolean(), international_card_enabled: z.boolean(), usd_idr_card_rate: z.number().int().min(10000).max(30000),
-    invoice_bank_details: z.string().trim().min(10).max(1000).nullable() }),
+    invoice_bank_details: z.string().trim().min(10).max(1000).nullable(), min_installment_idr: z.number().int().min(100000).max(100000000) }),
   phase1_tasks: z.object({ enabled: z.boolean(), items: z.array(z.object({ key: z.string().regex(/^[a-z0-9_]{2,40}$/), title: z.string().min(3).max(80), detail: z.string().max(240), link: z.enum(["ielsco", "elco", "post"]).optional() })).max(12) }),
   instagram: z.object({ ielsco: z.string().url(), elco: z.string().url(), recruitment_post: z.string().url().nullable() }),
   awards: z.object({ fully_funded_covers: z.array(z.string().min(3)).min(1), partial_funded_covers: z.array(z.string().min(3)), not_included: z.array(z.string().min(3)) }),

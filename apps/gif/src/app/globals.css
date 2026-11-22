@@ -523,3 +523,16 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 .pay-figures dt { font-size: 12px; color: var(--muted, #6B7A8F); }
 .pay-figures dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; color: #1A2534; }
 .pay-figures .pay-figure-main { font-size: 18px; color: #304156; }
+
+/* Flexible deposit / installments panel (22 Nov 2026) */
+.fee-panels { display: grid; gap: 16px; margin: 8px 0 28px; }
+.fee-panel { border: 1px solid rgba(184, 134, 46, 0.4); border-radius: 20px; padding: 20px 22px; background: linear-gradient(180deg, #FDF8EE, #fff 55%); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 8px 24px rgba(48,65,86,.06); }
+.fee-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+.fee-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; padding: 14px 16px; border-radius: 14px; background: #fff; border: 1px solid var(--hairline); }
+.fee-figures dt { font-size: 12px; color: #6B7A8F; }
+.fee-figures dd { margin: 2px 0 0; font-weight: 700; color: #1A2534; }
+.fee-figures .fee-strong { color: #304156; font-size: 18px; }
+.fee-pay input { font-size: 18px; font-weight: 600; letter-spacing: .01em; max-width: 280px; }
+.chip-btn { border: 1px solid var(--hairline); background: #fff; color: #304156; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chip-btn:hover { border-color: #304156; }
+@media (max-width: 640px) { .fee-figures { grid-template-columns: 1fr; } .fee-panel { padding: 16px; } }

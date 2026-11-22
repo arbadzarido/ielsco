@@ -30,8 +30,10 @@ type View = { kind: "idle" } | { kind: "busy"; text: string } | { kind: "open"; 
 
 const WHATSAPP = "https://wa.me/6288297253491";
 
-export function PayFlow({ obligationId, label, idrOption, openOrderId, openStatus, cancelResult }: {
-  obligationId: string; label: string; idrOption?: boolean; openOrderId?: string | null; openStatus?: string | null; cancelResult?: string | null }) {
+export function PayFlow({ obligationId, label, idrOption, openOrderId, openStatus, cancelResult, amountIdr, disabled }: {
+  obligationId: string; label: string; idrOption?: boolean; openOrderId?: string | null; openStatus?: string | null; cancelResult?: string | null;
+  // Installments: the amount the payer chose (IDR); the server checks it again. `disabled` while the amount is invalid.
+  amountIdr?: number; disabled?: boolean }) {
   const router = useRouter();
   const initial: View = openOrderId && openStatus === "cancelling" ? { kind: "cancelling", orderId: openOrderId }
     : openOrderId && openStatus && cancelResult === "not_cancellable" ? { kind: "not_cancellable", orderId: openOrderId, note: "The payment provider didn't allow cancelling your previous payment." }
@@ -84,7 +86,7 @@ export function PayFlow({ obligationId, label, idrOption, openOrderId, openStatu
     busy.current = true; setView({ kind: "busy", text });
     try { await f(); } finally { busy.current = false; }
   };
-  const pay = (forceNew = false) => run("Opening payment…", async () => open(await payAction(obligationId, { idrOption, forceNew })));
+  const pay = (forceNew = false) => run("Opening payment…", async () => open(await payAction(obligationId, { idrOption, forceNew, amountIdr })));
   const resume = (orderId: string) => run("Reopening your payment…", async () => {
     const r = await resumePaymentAction(orderId);
     if (r?.status === "paid") { setView({ kind: "paid", note: "Payment completed. Thank you!" }); router.refresh(); return; }
@@ -101,7 +103,7 @@ export function PayFlow({ obligationId, label, idrOption, openOrderId, openStatu
   });
 
   const btn = (cls: string, text: string, onClick: () => void, testId?: string) =>
-    <button type="button" className={`btn ${cls} btn-sm`} onClick={onClick} data-testid={testId}>{text}</button>;
+    <button type="button" className={`btn ${cls} btn-sm`} onClick={onClick} data-testid={testId} disabled={disabled && testId === "pay"}>{text}</button>;
 
   switch (view.kind) {
     case "idle":
@@ -147,13 +149,14 @@ export function PayFlow({ obligationId, label, idrOption, openOrderId, openStatu
   }
 }
 
-export function InvoiceButton({ obligationId }: { obligationId: string }) {
+export function InvoiceButton({ obligationId, amountIdr, disabled }: { obligationId: string; amountIdr?: number; disabled?: boolean }) {
   const [s, action, pending] = useActionState<ActionResult, FormData>(requestInvoiceAction, null);
   if (s?.ok) return <p className="small" role="status">{s.message}</p>;
   return (
     <form action={action}>
       <input type="hidden" name="obligation_id" value={obligationId} />
-      <button className="btn btn-secondary btn-sm" disabled={pending}>{pending ? "Requesting…" : "Request invoice"}</button>
+      {amountIdr != null && <input type="hidden" name="amount_idr" value={amountIdr} />}
+      <button className="btn btn-secondary btn-sm" disabled={pending || disabled}>{pending ? "Requesting…" : "Request invoice"}</button>
       {s?.error && <p className="error small" role="alert">{s.error}</p>}
     </form>
   );

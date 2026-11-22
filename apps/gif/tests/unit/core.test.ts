@@ -70,7 +70,7 @@ test("currency by citizenship, no conversion", () => {
   assert.equal(currencyFor("ID"), "IDR");
   assert.equal(currencyFor("MY"), "USD");
   const sf = plannedObligations(DEFAULT_SETTINGS, "self_funded", "SG");
-  assert.deepEqual(sf.map((o) => [o.kind, o.currency, o.amount]), [["deposit", "USD", 300], ["balance", "USD", 599]]);
+  assert.deepEqual(sf.map((o) => [o.kind, o.currency, o.amount]), [["full", "USD", 899]], "one programme fee, paid in installments");
   const ff = plannedObligations(DEFAULT_SETTINGS, "fully_funded", "VN");
   assert.deepEqual(ff.map((o) => [o.kind, o.currency, o.amount]), [["elco_pro", "IDR", 98000]]);
   const mt = plannedObligations(DEFAULT_SETTINGS, "mentoring", "ID");
@@ -188,23 +188,22 @@ import { isMinor } from "../../src/lib/validation.ts";
 import { legalDocs } from "../../src/lib/legal-docs.ts";
 import { defaultFaq } from "../../src/lib/content.ts";
 
-test("Partial Funded: deposit within 7 days, balance by 30 June, totals USD 699 / IDR 10,999,000", () => {
+test("Partial Funded: one contribution of USD 699 / IDR 10,999,000, first payment within 7 days, rest by 30 June", () => {
   const now = new Date("2027-06-02T00:00:00Z");
-  const [dep, bal] = partialFundedObligations(DEFAULT_SETTINGS, now);
-  assert.deepEqual(dep.amount, { IDR: 5000000, USD: 300 });
-  assert.deepEqual(bal.amount, { IDR: 5999000, USD: 399 });
-  assert.equal(dep.amount.USD + bal.amount.USD, 699);
-  assert.equal(dep.amount.IDR + bal.amount.IDR, 10999000);
-  assert.equal(dep.dueAt, new Date(now.getTime() + 7 * 86400000).toISOString());
-  assert.equal(bal.dueAt, "2027-06-30T23:59:59+07:00");
-  assert.equal(idrPriceFor(DEFAULT_SETTINGS, "balance", now, true), 5999000);
-  assert.equal(idrPriceFor(DEFAULT_SETTINGS, "balance", now, false), 9999000);
+  const [fee, ...rest] = partialFundedObligations(DEFAULT_SETTINGS, now);
+  assert.equal(rest.length, 0);
+  assert.equal(fee.kind, "full");
+  assert.deepEqual(fee.amount, { IDR: 10999000, USD: 699 });
+  assert.equal(fee.firstDueAt, new Date(now.getTime() + 7 * 86400000).toISOString());
+  assert.equal(fee.dueAt, "2027-06-30T23:59:59+07:00");
+  assert.equal(idrPriceFor(DEFAULT_SETTINGS, "full", now, true), 10999000);
 });
 
-test("self-funded deposit due 7 days after registration", () => {
+test("self-funded first payment due 7 days after registration", () => {
   const now = new Date("2026-12-01T00:00:00Z");
-  const [dep] = plannedObligations(DEFAULT_SETTINGS, "self_funded", "ID", now);
-  assert.equal(dep.dueAt, "2026-12-08T00:00:00.000Z");
+  const [fee] = plannedObligations(DEFAULT_SETTINGS, "self_funded", "ID", now);
+  assert.equal(fee.firstDueAt, "2026-12-08T00:00:00.000Z", "first payment (deposit) due 7 days after registering");
+  assert.equal(fee.dueAt, DEFAULT_SETTINGS.dates.balance_due, "rest by the balance deadline");
 });
 
 test("under-18 rule uses the first programme day", () => {

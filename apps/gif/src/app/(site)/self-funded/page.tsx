@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
-import { internationalCardEnabled } from "@/lib/pricing";
-import { balanceOf } from "@/lib/settings";
+import { internationalCardEnabled, minInstallment } from "@/lib/pricing";
 import { fmtDate } from "@/lib/format";
 import { CurrencyToggle, Price } from "@/components/Client";
 import { Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
@@ -12,7 +11,6 @@ export const revalidate = 300;
 
 export default async function SelfFunded() {
   const s = await currentSettingsSafe();
-  const bal = balanceOf(s);
   return (
     <>
       <PageHero eyebrow="Pathway C · Self-Funded" title="Register directly. Confirm with a deposit."
@@ -21,12 +19,12 @@ export default async function SelfFunded() {
       </PageHero>
       <section className="section">
         <div className="wrap">
-          <div className="head side"><div><Eyebrow n="01">Price</Eyebrow><h2>One fee, two payments.</h2></div><CurrencyToggle /></div>
+          <div className="head side"><div><Eyebrow n="01">Price</Eyebrow><h2>One fee, paid your way.</h2></div><CurrencyToggle /></div>
           <div className="grid g3">
             <div className="item"><span className="kicker">Programme fee</span><p className="big-number"><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p><p className="small muted">Per delegate.</p></div>
-            <div className="item"><span className="kicker">1 · Deposit</span><p className="big-number"><Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} /></p>
-              <p className="small muted">{s.dates.deposit_due_days ? `Due within ${s.dates.deposit_due_days} days of registering.` : "Pay any time after registering; your seat is held only once it is verified."}</p></div>
-            <div className="item"><span className="kicker">2 · Balance</span><p className="big-number"><Price idr={bal.IDR} usd={bal.USD} /></p>
+            <div className="item"><span className="kicker">1 · Deposit, from</span><p className="big-number"><Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} /></p>
+              <p className="small muted">You choose the amount, up to the full fee. {s.dates.deposit_due_days ? `Due within ${s.dates.deposit_due_days} days of registering; ` : ""}your seat is confirmed once it is verified.</p></div>
+            <div className="item"><span className="kicker">2 · Balance, in installments</span><p className="big-number" style={{ fontSize: 22 }}>Each payment from <Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} /></p>
               <p className="small muted">{s.dates.balance_due ? `Due by ${fmtDate(s.dates.balance_due, { day: "numeric", month: "long", year: "numeric" })}.` : "Due during participant preparation; the exact date is shown in your portal."}</p></div>
           </div>
         </div>
