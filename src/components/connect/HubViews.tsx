@@ -24,6 +24,7 @@ import { PulseCard, usePulse } from "./PulseView";
 import { RoomCard } from "./RoomsView";
 import { PromptActions, promptOfTheWeek } from "./SeaExchangeView";
 import { ConnectFrame, LoadGate, PersonCard, useLoad, when } from "./shared";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 // Steps that make a Passport useful to others. A checklist, not a percentage.
 export function passportGaps(p: Passport) {
@@ -296,7 +297,7 @@ export function ElcoConnectView({ supabase }: DashboardCtx) {
           {ELCO_ENABLED ? (
             next ? <a href={next.href} className={btnPrimary} data-testid="elco-open" data-step={next.id}>
               {next.label} <ArrowUpRight size={16} aria-hidden="true" />
-            </a> : <p className="text-base text-[#2F4157]/60">Loading…</p>
+            </a> : <SkeletonRegion label="Loading"><SkeletonList rows={2} /></SkeletonRegion>
           ) : (
             <p className="text-base font-semibold text-[#8A5A00]" data-testid="elco-not-enabled">Elco AI isn&apos;t available from here yet.</p>
           )}

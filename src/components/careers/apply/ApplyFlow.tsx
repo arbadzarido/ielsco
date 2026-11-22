@@ -25,6 +25,7 @@ import {
 import { ApplicationStatus, type MyApplication } from "./ApplicationStatus";
 import { CountryField } from "./CountryField";
 import { codeForName, countryName, isCountryCode } from "@/lib/dashboard/countries";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 // Careers 2027 application: the signed-in member (Elco-Pass = their IELSco account) fills a six-step form. Progress is
 // saved to public.career_application_drafts (own row, RLS); PDFs go to the private bucket career-applications under
@@ -106,7 +107,7 @@ export function ApplyFlow() {
       </div>
     );
   }
-  if (!loaded) return <div className="flex justify-center py-24" data-testid="apply-loading"><Loader2 className="h-7 w-7 animate-spin text-[#2F4157]" aria-label="Loading" /></div>;
+  if (!loaded) return <SkeletonRegion label="Loading the application" className="mx-auto max-w-[720px] px-4 py-16" testid="apply-loading"><SkeletonList rows={4} leading={false} /></SkeletonRegion>;
 
   const phase = recruitmentPhase();
   if (loaded.app && !editing) {

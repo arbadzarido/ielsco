@@ -260,3 +260,17 @@ html { scroll-behavior: smooth; }
   html[data-elco-panel] #os-main .os-rows-table { display: none; }
   html[data-elco-panel] #os-main .os-rows-cards { display: block; }
 }
+
+/* Shared loading and error states (components/feedback, mirroring Elco AI): skeleton pulse, the "still working" bar and a
+   soft fade-in for Elco's late appearance. All three are still with prefers-reduced-motion. */
+.sk { background: #EEF1F5; animation: skPulse 1.6s ease-in-out infinite; }
+@keyframes skPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.elco-bar { position: relative; }
+.elco-bar > span { position: absolute; inset: 0 auto 0 0; width: 40%; border-radius: 9999px; animation: elcoBar 1.4s cubic-bezier(.65, 0, .35, 1) infinite; }
+@keyframes elcoBar { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.elco-fade { animation: elcoFade 0.4s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes elcoFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sk, .elco-bar > span, .elco-fade { animation: none; }
+  .elco-bar > span { width: 100%; opacity: 0.5; }
+}

@@ -2,7 +2,7 @@
 
 import { PeopleTabs } from "./PeopleTabs";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DashboardCtx } from "@/components/dashboard/DashboardPage";
 import { EmptyState, ErrorState, LoadingState, Notice } from "@/components/dashboard/PageStates";
 import { btnPrimary, btnSecondary, inputClass, labelClass } from "@/components/dashboard/ui";
@@ -49,14 +49,19 @@ export function DiscoverView({ supabase, initial }: DashboardCtx & { initial?: P
   const [hasMore, setHasMore] = useState(false);
   const set = (k: keyof DiscoverFilters) => (v: string) => setFilters((f) => ({ ...f, [k]: v }));
 
+  // Only the newest request may update the list: a slow answer to an earlier search never overwrites a newer one.
+  const latest = useRef(0);
   const load = async (offset: number) => {
+    const mine = ++latest.current;
     setStatus("loading");
     try {
       const page = await connectApi.discover(supabase, filters, offset, PAGE);
+      if (mine !== latest.current) return;
       setRows((prev) => (offset === 0 ? page : [...prev, ...page]));
       setHasMore(page.length === PAGE);
       setStatus("ready");
     } catch (e) {
+      if (mine !== latest.current) return;
       if (isUnavailable(e)) return setStatus("unavailable");
       setError((e as Error).message);
       setStatus("error");

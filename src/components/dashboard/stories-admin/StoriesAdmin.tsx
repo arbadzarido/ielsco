@@ -64,8 +64,23 @@ function SectionSwitch({ section }: { section: StorySection }) {
   );
 }
 
+const PAGE_ROWS = 25;
+
+function ShowMore({ shown, total, onMore }: { shown: number; total: number; onMore: () => void }) {
+  if (total <= shown) return null;
+  return (
+    <div className="mt-[16px] flex flex-col items-center gap-[8px]">
+      <p className="text-[14px] text-[#2F4157]/60" aria-live="polite">Showing {shown} of {total}</p>
+      <button type="button" onClick={onMore} className={cn(btnSecondary, "px-4 py-2")} data-testid="stories-show-more">Show more</button>
+    </div>
+  );
+}
+
 export function StoriesAdmin({ supabase, section = "member" }: { supabase: SupabaseClient; section?: StorySection }) {
   const [tab, setTab] = useState<TabId>("pending");
+  // The tables show 25 rows at a time ("Show more" adds 25), so a long queue never renders hundreds of rows at once.
+  const [visible, setVisible] = useState(PAGE_ROWS);
+  useEffect(() => { setVisible(PAGE_ROWS); }, [tab]);
   const [state, setState] = useState<{ status: "loading" } | { status: "error"; message: string } | { status: "ready"; rows: Row[]; subs: SubmissionListRow[] }>({ status: "loading" });
 
   const load = useCallback(async () => {
@@ -139,7 +154,7 @@ export function StoriesAdmin({ supabase, section = "member" }: { supabase: Supab
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => {
+              {rows.slice(0, visible).map((r) => {
                 const s = r.submission_id ? subById.get(r.submission_id) : undefined;
                 const issues = issuesFor(r, s);
                 const country = r.author_country || r.target_country;
@@ -173,6 +188,7 @@ export function StoriesAdmin({ supabase, section = "member" }: { supabase: Supab
               })}
             </tbody>
           </table>
+          <ShowMore shown={Math.min(visible, rows.length)} total={rows.length} onMore={() => setVisible((v) => v + PAGE_ROWS)} />
         </div>
       )}
     </div>
@@ -265,6 +281,8 @@ function IelscoAdmin({ rows, onRefresh }: { rows: Row[]; onRefresh: () => void }
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<IelscoCategory | "">("");
   const [lang, setLang] = useState<"" | "en" | "id">("");
+  const [visible, setVisible] = useState(PAGE_ROWS);
+  useEffect(() => { setVisible(PAGE_ROWS); }, [tab, q, cat, lang]);
   const query = q.trim().toLowerCase();
   const shown = rows
     .filter((r) => inIelscoTab(r, tab))
@@ -307,7 +325,7 @@ function IelscoAdmin({ rows, onRefresh }: { rows: Row[]; onRefresh: () => void }
               <tr><th className="px-[16px] py-[12px]">Title</th><th className="px-[12px]">Category</th><th className="px-[12px]">Language</th><th className="px-[12px]">Status</th><th className="px-[12px]">Date</th><th className="px-[12px]">Needs attention</th></tr>
             </thead>
             <tbody>
-              {shown.map((r) => {
+              {shown.slice(0, visible).map((r) => {
                 const issues = ielscoIssues(r, rows);
                 const date = r.published_at ?? r.updated_at;
                 return (
@@ -330,6 +348,7 @@ function IelscoAdmin({ rows, onRefresh }: { rows: Row[]; onRefresh: () => void }
               })}
             </tbody>
           </table>
+          <ShowMore shown={Math.min(visible, shown.length)} total={shown.length} onMore={() => setVisible((v) => v + PAGE_ROWS)} />
         </div>
       )}
     </div>

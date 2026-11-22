@@ -2,7 +2,8 @@
 // browser client. RLS returns published listings and active partners only (staff also see drafts, so callers that
 // render public lists filter on publication through the query below).
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { publicSupabase } from "@/lib/supabase/public";
+import { cache } from "react";
+import { buildingSite, cachedPublicSupabase, OPPORTUNITIES_CACHE_TAG } from "@/lib/supabase/public";
 import { attachPartners, JOB_COLUMNS, PARTNER_COLUMNS, type ProfessionalOpportunity, type RecruitmentPartner } from "./model";
 
 type Row = Omit<ProfessionalOpportunity, "partner">;
@@ -33,10 +34,12 @@ export async function loadProfessionalBySlug(supabase: SupabaseClient, slug: str
   return (await withPartners(supabase, [data as Row]))[0] ?? null;
 }
 
-export async function listPublishedProfessional(): Promise<ProfessionalOpportunity[]> {
-  try { return await loadProfessional(publicSupabase()); } catch { return []; }
+// Server reads for public pages go through Next's data cache (5 minutes; dropped when staff save in the admin editors).
+export async function listPublishedProfessional({ strict = false }: { strict?: boolean } = {}): Promise<ProfessionalOpportunity[]> {
+  try { return await loadProfessional(cachedPublicSupabase(OPPORTUNITIES_CACHE_TAG)); } catch (e) { if (strict && !buildingSite()) throw e; return []; }
 }
 
-export async function getProfessional(slug: string): Promise<ProfessionalOpportunity | null> {
-  try { return await loadProfessionalBySlug(publicSupabase(), slug); } catch { return null; }
-}
+// null = no such published job (a real 404); a database or network error throws so the page shows a retry, not a 404.
+export const getProfessional = cache(async (slug: string): Promise<ProfessionalOpportunity | null> => {
+  return loadProfessionalBySlug(cachedPublicSupabase(OPPORTUNITIES_CACHE_TAG), slug);
+});

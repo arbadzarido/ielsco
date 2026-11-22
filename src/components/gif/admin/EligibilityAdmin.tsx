@@ -14,6 +14,7 @@ import type { RosterRow } from "@/lib/gif/report";
 import { ProgressBar, StatusPill } from "../shared";
 import { CardStudio } from "../messages/CardStudio";
 import type { AdminData } from "./GifAdmin";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 interface AdminMessage { id: string; sender_delegate_id: string; sender_name: string; recipient_delegate_id: string | null; recipient_name: string | null; recipient_staff: string | null;
   body: string; sender_allows_wall: boolean; wall_status: string; read_at: string | null; hidden_at: string | null; hidden_reason: string | null; created_at: string }
@@ -49,7 +50,7 @@ export function EligibilityAdmin({ supabase, user, data: d, openSubmission }: { 
   })), [e, team, d.allAssignments, d.submissions]);
 
   if (err) return <p className="text-[#B4383A]">{err}</p>;
-  if (!e) return <p className="flex items-center gap-2"><Loader2 size={18} className="animate-spin" /> Loading eligibility…</p>;
+  if (!e) return <SkeletonRegion label="Loading eligibility"><SkeletonList rows={2} /></SkeletonRegion>;
 
   if (delegate) {
     const row = rows.find((x) => x.r.delegate_id === delegate);

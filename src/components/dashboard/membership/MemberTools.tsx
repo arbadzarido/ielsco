@@ -10,6 +10,7 @@ import { idr } from "@/lib/format";
 import { loadSnap, type Checkout, type Plan } from "./useMembership";
 import { track } from "@/lib/analytics";
 import { FEEDBACK_WINDOW_DAYS } from "@/data/membership";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 // Member tools. Every action goes through a database function that checks the membership itself
 // (supabase/migrations/20261026000000_membership_platform.sql), so these components only present the result.
@@ -40,7 +41,7 @@ export function CommunityLinks({ supabase }: { supabase: SupabaseClient }) {
   }, [supabase]);
   return (
     <Section icon={MessageCircle} title="Member group" testId="member-links">
-      {links === null ? <p className="text-base text-[#2F4157]/60">Loading…</p>
+      {links === null ? <SkeletonRegion label="Loading"><SkeletonList rows={2} /></SkeletonRegion>
         : links.length === 0 ? <p className="text-base text-[#2F4157]/70">The invite link will appear here as soon as the team opens the group.</p>
         : (
           <ul className="space-y-3">
@@ -111,7 +112,7 @@ export function MemberSessions({ supabase, isMember, elco = [] }: { supabase: Su
 
   return (
     <Section icon={CalendarClock} title="Member sessions" testId="member-sessions">
-      {rows === null ? <p className="text-base text-[#2F4157]/60">Loading…</p>
+      {rows === null ? <SkeletonRegion label="Loading"><SkeletonList rows={2} /></SkeletonRegion>
         : rows.length === 0 ? <p className="text-base text-[#2F4157]/70">No sessions are scheduled yet. New ones are published here at least two weeks ahead.</p>
         : (
           <ul className="divide-y divide-[#E3E7ED]">
@@ -231,7 +232,7 @@ export function BuddyMatching({ supabase, userId }: { supabase: SupabaseClient; 
 
   return (
     <Section icon={UserPlus} title="Study buddy" testId="member-buddy">
-      {row === undefined ? <p className="text-base text-[#2F4157]/60">Loading…</p>
+      {row === undefined ? <SkeletonRegion label="Loading"><SkeletonList rows={2} /></SkeletonRegion>
         : row && row.status === "matched" ? (
           <div className="space-y-3">
             <span className={tag}>Matched{row.matched_at ? ` on ${fmt.date(row.matched_at)}` : ""}</span>

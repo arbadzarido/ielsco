@@ -7,6 +7,9 @@ import { btnSecondary, card, inputClass, tag } from "@/components/dashboard/ui";
 import { cn } from "@/lib/utils";
 import { dateTimeWib } from "@/lib/format";
 import { countryName } from "@/lib/professional/model";
+import { PagerBar } from "@/components/dashboard/PagerBar";
+
+const PAGE_SIZE = 25;
 
 // Staff inbox for expressions of interest in professional listings (RLS: admins only). "Forward" opens an email to the
 // listing's recruitment partner with the person's details; mark the row Forwarded once it's sent.
@@ -21,16 +24,20 @@ export function OpportunityInterests({ supabase }: { supabase: SupabaseClient })
   const [rows, setRows] = useState<Interest[] | null>(null);
   const [partners, setPartners] = useState<Record<string, Partner>>({});
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setPage(0); }, [status]);
   const load = useCallback(async () => {
-    let q = supabase.from("opportunity_interests").select("id, opportunity_title, country_code, partner_id, full_name, email, whatsapp, country_of_interest, position, statement, occupation, experience, linkedin_url, cv_path, preferred_contact, source, status, admin_notes, created_at")
-      .order("created_at", { ascending: false }).limit(300);
+    let q = supabase.from("opportunity_interests").select("id, opportunity_title, country_code, partner_id, full_name, email, whatsapp, country_of_interest, position, statement, occupation, experience, linkedin_url, cv_path, preferred_contact, source, status, admin_notes, created_at", { count: "exact" })
+      .order("created_at", { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
     if (status !== "all") q = q.eq("status", status);
-    const [{ data, error: e }, { data: p }] = await Promise.all([q, supabase.from("recruitment_partners").select("id, name, email")]);
+    const [{ data, error: e, count }, { data: p }] = await Promise.all([q, supabase.from("recruitment_partners").select("id, name, email")]);
     setError(e?.message ?? null);
     setRows((data as Interest[]) ?? []);
+    setTotal(count ?? (data?.length ?? 0));
     setPartners(Object.fromEntries(((p as Partner[]) ?? []).map((x) => [x.id, x])));
-  }, [supabase, status]);
+  }, [supabase, status, page]);
   useEffect(() => { load(); }, [load]);
 
   async function update(id: string, patch: Partial<Interest>) {
@@ -80,6 +87,7 @@ export function OpportunityInterests({ supabase }: { supabase: SupabaseClient })
           </li>
         ))}
       </ul>
+      <PagerBar page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} busy={rows === null} />
     </div>
   );
 }

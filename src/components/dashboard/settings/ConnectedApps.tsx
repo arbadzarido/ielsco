@@ -9,6 +9,7 @@ import { ELCO_URL } from "@/lib/elco";
 import { EXAM_NAMES, elcoConnectUrl, elcoNextStep, useElcoState } from "@/lib/elco-state";
 import { isMissingRelation } from "@/lib/dashboard/profile";
 import { cn } from "@/lib/utils";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 interface Link { id: string; scopes: string[]; created_at: string; elco_display_name: string | null }
 interface Summary { level_estimate: string | null; focus_skills: string[]; practice_count_30d: number; last_active_at: string | null; updated_at: string }
@@ -66,7 +67,7 @@ export function ConnectedApps({ supabase }: { supabase: SupabaseClient }) {
         </div>
       </div>
 
-      {state.s === "loading" && <p className="text-base text-[#2F4157]/60">Loading…</p>}
+      {state.s === "loading" && <SkeletonRegion label="Loading"><SkeletonList rows={2} /></SkeletonRegion>}
       {state.s === "unavailable" && <p className="text-base text-[#2F4157]/70" data-testid="connected-apps-unavailable">Connecting Elco isn&apos;t switched on yet.</p>}
       {state.s === "error" && <p role="alert" className="text-base text-[#C04C4E]">Couldn&apos;t load connected apps: {state.message}</p>}
       {state.s === "ready" && !state.link && (

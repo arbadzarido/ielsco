@@ -20,11 +20,12 @@ import { Suspense, useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, Check, ChevronRight, CreditCard, FileText, Loader2, Megaphone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, CreditCard, FileText, Megaphone, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useNavAccess } from "@/components/dashboard/useNavAccess";
 import { cardGloss, focusRing } from "@/components/dashboard/ui";
 import { createClient } from "@/lib/supabase/client";
+import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 type Pathway = "fully_funded" | "mentoring" | "self_funded";
 type Workspace = {
@@ -153,7 +154,7 @@ function GifWorkspace() {
         <Hero ws={ws} />
 
         {!ws && !error && (
-          <div className={`${cardGloss} flex items-center gap-3 p-6 text-[15px] text-[#4A5B70]`}><Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />Loading your GIF journey…</div>
+          <SkeletonRegion label="Loading your GIF journey"><SkeletonList rows={3} /></SkeletonRegion>
         )}
 
         {error && !ws && (

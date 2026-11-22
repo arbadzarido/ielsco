@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Skeleton, SkeletonRegion } from "@/components/feedback/Skeleton";
 
 const SignInSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -149,7 +150,7 @@ function SignInContent() {
 export default function SignInPage() {
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to continue to your IELSco dashboard.">
-      <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="h-[24px] w-[24px] animate-spin text-[#2F4157]" aria-hidden="true" /></div>}>
+      <Suspense fallback={<SkeletonRegion label="Loading" className="space-y-[16px] py-[8px]"><Skeleton className="h-[48px] w-full" /><Skeleton className="h-[48px] w-full" /><Skeleton className="h-[46px] w-full" rounded="rounded-full" /></SkeletonRegion>}>
         <SignInContent />
       </Suspense>
     </AuthLayout>
