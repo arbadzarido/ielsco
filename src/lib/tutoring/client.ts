@@ -8,7 +8,7 @@ export type Enrolment = {
   id: string; student_id: string; mentor_id: string; package_code: "starter" | "growth" | "intensive"; sessions_total: number; sessions_completed: number;
   total_price_idr: number; payment_option: "full" | "deposit"; status: "pending_payment" | "active" | "payment_review" | "completed" | "cancelled";
   activated_at: string | null; elco_access_status: "not_granted" | "granted" | "expired"; elco_access_expires_at: string | null; circle_access: boolean;
-  exam_deadline: string | null; created_at: string;
+  exam_deadline: string | null; created_at: string; agreement_confirmed_at?: string | null;
 };
 export type Instalment = { id: string; enrolment_id: string; seq: number; kind: MilestoneKind; pct: number; amount_idr: number; trigger_text: string; due_date: string | null; status: "due" | "verified"; verified_at: string | null };
 export type Payment = { id: string; enrolment_id: string; instalment_id: string; amount_idr: number; method: string; reference: string | null; verified_at: string };

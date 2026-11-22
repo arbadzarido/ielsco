@@ -18,6 +18,7 @@ import {
   type Booking, type Bundle, type Enrolment,
 } from "@/lib/tutoring/client";
 import { Notifications } from "./Notifications";
+import { payOnline, useCourseConfig } from "@/components/ielscourse/checkout";
 import { MENTOR_TITLE, generalRequestUrl } from "@/components/tutoring/packages";
 
 const BANK_DETAILS = process.env.NEXT_PUBLIC_TUTORING_BANK_DETAILS || "the IELSco bank account the team sends you on WhatsApp";
@@ -81,7 +82,7 @@ function Workspace({ supabase, e, userName, onChange }: { supabase: SupabaseClie
 
   // One clear next action.
   let action: { text: string; cta?: React.ReactNode };
-  if (e.status === "pending_payment") action = { text: `Your invoice ${ledger.invoiceNo} is ready. Pay ${idr(sum.nextPayment?.amountIdr ?? 0)} and send the transfer proof on WhatsApp. Your workspace unlocks once the team verifies it.` };
+  if (e.status === "pending_payment") action = { text: `Your invoice ${ledger.invoiceNo} is ready. Pay ${idr(sum.nextPayment?.amountIdr ?? 0)} online below. Your workspace unlocks as soon as Midtrans confirms the payment.` };
   else if (e.status === "payment_review") action = { text: "A payment is overdue and your account is under review. Please contact the team so we can sort it out and keep your sessions going.", cta: <a className={btnSecondary} href={generalRequestUrl()} target="_blank" rel="noopener noreferrer">Message the team</a> };
   else if (proposal) action = { text: "Your mentor proposed a different time. Accept it or ask for another.", cta: <AcceptButton supabase={supabase} b={proposal} onDone={reload} /> };
   else if (!b.goals) action = { text: "Tell us your goals so your mentor can build your plan before the first session.", cta: <button className={btnPrimary} onClick={() => setGoalsOpen(true)}>Complete onboarding</button> };
@@ -238,6 +239,7 @@ function Sessions({ b }: { b: Bundle }) {
 function Payments({ e, b, ledger, name }: { e: Enrolment; b: Bundle; ledger: ReturnType<typeof toLedger>; name: string }) {
   const fmt = useLocalFormat();
   const sum = ledgerSummary(ledger);
+  const nextDue = [...b.instalments].sort((x, y) => x.seq - y.seq).find((i) => i.status !== "verified");
   return (
     <section className={cn(card, "p-5 sm:p-6")} aria-label="Payments and invoices" data-testid="payments">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -256,12 +258,12 @@ function Payments({ e, b, ledger, name }: { e: Enrolment; b: Bundle; ledger: Ret
               <div><p className="font-semibold">{i.kind === "full" ? "Full payment" : i.kind === "deposit" ? "Deposit" : i.kind === "instalment_1" ? "Instalment 1" : "Instalment 2"} · {idr(Number(i.amount_idr))}</p>
                 <p className="text-sm text-[#2F4157]/70">{i.status === "verified" ? `Paid and verified ${fmt.date(i.verified_at!)}` : `${i.trigger_text}${i.due_date ? ` (by ${fmt.date(i.due_date)})` : ""}`}</p></div>
               {rc ? <button className={btnSecondary} onClick={() => downloadHtml(`${rc.receipt_no}.html`, receiptHtml(ledger, ledger.payments.find((p) => p.milestone === i.kind)!, rc.receipt_no, { name }))}><Receipt size={16} aria-hidden="true" /> {rc.receipt_no}</button>
-                : <span className={tag}>Due</span>}
+                : nextDue?.id === i.id ? <PayInstalment instalmentId={i.id} amount={Number(i.amount_idr)} needsAgreement={!e.agreement_confirmed_at} /> : <span className={tag}>Due</span>}
             </li>
           );
         })}
       </ul>
-      {sum.nextPayment && <p className="mt-3 text-base">Next payment: <strong>{sum.nextPayment.label}, {idr(sum.nextPayment.amountIdr)}</strong>, {sum.nextPayment.trigger.toLowerCase()}{sum.nextPayment.dueDate ? ` (by ${fmt.date(sum.nextPayment.dueDate)})` : ""}. Pay by bank transfer and send the proof on WhatsApp; it counts once the team verifies it.</p>}
+      {sum.nextPayment && <p className="mt-3 text-base">Next payment: <strong>{sum.nextPayment.label}, {idr(sum.nextPayment.amountIdr)}</strong>, {sum.nextPayment.trigger.toLowerCase()}{sum.nextPayment.dueDate ? ` (by ${fmt.date(sum.nextPayment.dueDate)})` : ""}. Pay online with Midtrans (bank transfer, QRIS, e-wallet or card): it is confirmed automatically and your receipt appears here.</p>}
     </section>
   );
 }
@@ -342,5 +344,25 @@ function BookSheet({ supabase, e, onClose, onDone }: { supabase: SupabaseClient;
       {err && <p role="alert" className="text-base text-[#B3373A]">{err}</p>}
       <div className="flex gap-3"><button className={btnPrimary} disabled={busy} data-testid="submit-booking">Send request{all.length ? ` (${all.length})` : ""}</button><button type="button" className={btnSecondary} onClick={onClose}>Cancel</button></div>
     </form>
+  );
+}
+
+// Online payment of the next due instalment (Midtrans production). Hidden, with the old bank-transfer note kept, while
+// online checkout is closed. The amount comes from the instalment in the database, not from this button.
+function PayInstalment({ instalmentId, amount, needsAgreement }: { instalmentId: string; amount: number; needsAgreement: boolean }) {
+  const { cfg } = useCourseConfig();
+  const [agreed, setAgreed] = useState(!needsAgreement);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  if (!cfg?.checkout.enabled) return <span className={tag} title={`Pay by bank transfer to ${BANK_DETAILS} and send the proof on WhatsApp`}>Due</span>;
+  return (
+    <span className="flex flex-col items-end gap-1" data-testid="pay-online">
+      {needsAgreement && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={agreed} onChange={(ev) => setAgreed(ev.target.checked)} /> I agree to the payment schedule</label>}
+      <button className={btnPrimary} disabled={!agreed || busy} onClick={async () => {
+        setBusy(true); setErr("");
+        try { await payOnline({ product: "one", instalment_id: instalmentId, agreed }); } catch (x) { setErr(x instanceof Error ? x.message : "Couldn't start the payment."); setBusy(false); }
+      }}>{busy ? "Opening payment…" : `Pay ${idr(amount)} online`}</button>
+      {err && <span role="alert" className="text-sm text-[#B42318]">{err}</span>}
+    </span>
   );
 }

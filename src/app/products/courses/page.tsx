@@ -12,6 +12,7 @@ import { SINGLE_SESSION_IDR, ELCO_STARTER_MONTHLY_IDR, MENTOR_FULL_TITLE, MENTOR
 import { buildSchedule, depositAllowed } from "@/lib/tutoring/payments";
 import { tutorRequestUrl } from "@/components/tutoring/links";
 import { CourseProducts } from "@/components/courses/CourseProducts";
+import { courseGateway } from "@/lib/payments/gateway";
 import { COLLECTIVE_MONTHLY_IDR, STUDIO_MONTHLY_IDR } from "@/components/courses/products";
 
 export const metadata: Metadata = pageMetadata({
@@ -45,6 +46,8 @@ const STEPS = [
   ["Start learning", "Sign in to your tutoring dashboard to complete your goals and request your first session. Meet your mentor online, practise with Elco AI between sessions, and join IELS Circle."],
 ];
 
+const PAYMENT_ONLINE = "Online payment through Midtrans: bank transfer (virtual account), QRIS, e-wallets and cards, depending on what Midtrans shows at checkout. Your payment is confirmed automatically and your receipt appears in My Courses. One Intensive can also be paid as a 50% deposit and two 25% instalments.";
+const PAYMENT_MANUAL = "Bank transfer. We verify each payment manually and send a receipt. One also offers a deposit arrangement on Intensive.";
 const FAQS: { q: string; a: string }[] = [
   { q: "What is the difference between Collective, Studio and One?", a: `Collective is a public group class (up to 20 students, ${idr(COLLECTIVE_MONTHLY_IDR)} a month). Studio is a small group of 3 to 5 students with more tutor attention (${idr(STUDIO_MONTHLY_IDR)} a month). One is private 1-on-1 tutoring with a dedicated mentor, sold as 2, 4 or 8 sessions.` },
   { q: "Which product is suitable for beginners?", a: "All three accept beginners. Collective follows a structured General English curriculum. Studio gives a beginner more speaking time and feedback. One starts from your level with a personal plan. Tell us your level when you register." },
@@ -56,7 +59,7 @@ const FAQS: { q: string; a: string }[] = [
   { q: "Can I change my class or cohort?", a: "Ask the team on WhatsApp. We move you when another cohort has space and a suitable schedule; we cannot guarantee a change in the middle of a month." },
   { q: "What happens if a cohort has not reached its minimum size?", a: "We do not start a group that is not ready. You are told before you pay whether a cohort is open. If it is not, you join the waiting list and nothing is charged until a class with a confirmed schedule is available." },
   { q: "How do monthly renewals work?", a: "Collective and Studio are monthly. We send an invoice before the next month starts and your membership continues once the payment is verified. There is no automatic card charge." },
-  { q: "What payment methods are available?", a: "Bank transfer. We verify each payment manually and send a receipt. One also offers a deposit arrangement on Intensive." },
+  { q: "What payment methods are available?", a: "PAYMENT_METHODS_ANSWER" },
   { q: "What is included in every package?", a: "Private one-to-one sessions with Arbadza Rido, one month of Elco AI (Starter) access, IELS Circle community access, and personalised feedback and learning direction." },
   { q: "How does the free Elco AI access work?", a: `Every package includes one month of Elco AI Starter, which normally costs ${idr(ELCO_STARTER_MONTHLY_IDR)} per month. The IELSco team activates it for you after your booking is confirmed.` },
   { q: "Do I need prior English experience?", a: "No. Tell us your level and goal when you message us and your mentor will start from where you are. If you are a complete beginner, say so and we will advise you honestly on whether this is the right fit." },
@@ -72,11 +75,13 @@ const FAQS: { q: string; a: string }[] = [
 ];
 
 export default function CoursesPage() {
+  // Online checkout open (Midtrans production configured)? Decided on the server at build/render; never exposes a key.
+  const online = courseGateway().gateway?.env === "production";
   const intensive = TUTORING_PACKAGES.find((p) => p.sessions > 4)!;
   const intensiveSchedule = { total: intensive.priceIdr, rows: buildSchedule({ totalIdr: intensive.priceIdr, sessions: intensive.sessions, option: "deposit" }) };
   return (
     <div className={cn(siteRoot, "min-h-screen overflow-x-hidden bg-white text-[#1A2534]")} data-testid="courses-page">
-      <CourseProducts />
+      <CourseProducts online={online} />
 
       {/* IELScourse One: private 1-on-1 tutoring (previously approved packages, payment rules and dashboard are unchanged). */}
       <section id="one" className="scroll-mt-20 border-t border-[#E6E9EE] bg-white py-[64px] md:py-[96px]" aria-labelledby="one-h">
@@ -182,7 +187,7 @@ export default function CoursesPage() {
                     <p className="font-semibold text-[#1A2534]">You save {idr(m.savingsIdr)}</p>
                     <p className="mt-1 text-[#2F4157]/75">Bought separately: {p.sessions} sessions {idr(m.sessionsAtListIdr)} + Elco AI month {idr(ELCO_STARTER_MONTHLY_IDR)} = {idr(m.separateTotalIdr)}</p>
                   </div>
-                  <a href={packageRequestUrl(p)} target="_blank" rel="noopener noreferrer" className={cn(p.recommended ? btnAccent : btnPrimary, "mt-6")} data-testid={`package-cta-${p.id}`}>
+                  <a href={online ? "/dashboard/courses?join=one" : packageRequestUrl(p)} {...(online ? {} : { target: "_blank", rel: "noopener noreferrer" })} className={cn(p.recommended ? btnAccent : btnPrimary, "mt-6")} data-testid={`package-cta-${p.id}`}>
                     Choose {p.name} <ArrowUpRight size={18} aria-hidden="true" />
                   </a>
                   {depositAllowed(p.sessions) && (
@@ -292,7 +297,7 @@ export default function CoursesPage() {
       <section className={cn(section, "border-t border-[#E6E9EE]")} aria-labelledby="faq">
         <div className={cn(container, "max-w-[860px]")}>
           <h2 id="faq" className={h2}>Questions</h2>
-          <Faq className="mt-8" items={FAQS} />
+          <Faq className="mt-8" items={FAQS.map((f) => (f.a === "PAYMENT_METHODS_ANSWER" ? { ...f, a: online ? PAYMENT_ONLINE : PAYMENT_MANUAL } : f))} />
         </div>
       </section>
 
