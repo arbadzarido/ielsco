@@ -14,6 +14,8 @@ import { idr } from "@/lib/format";
 import { IELSCOURSE_TAGLINE, joinUrl } from "@/components/courses/products";
 import { TUTORING_PACKAGES, type PackageId } from "@/components/tutoring/packages";
 import { generalRequestUrl } from "@/components/tutoring/packages";
+import { ClassroomPanel } from "@/components/ielscourse/ClassroomPanel";
+import { useTutoringRole } from "@/components/tutoring/dashboard/useStaff";
 import { ORDER_STATUS, PRODUCT_NAME, payOnline, useCourseConfig, type Cohort, type CourseConfig } from "@/components/ielscourse/checkout";
 
 type Membership = { id: string; product: "collective" | "studio"; cohort_id: string; order_id: string; period_start: string; period_end: string; status: string };
@@ -36,6 +38,7 @@ function Hub({ supabase }: { supabase: SupabaseClient }) {
   const fmt = useLocalFormat();
   const join = useSearchParams().get("join");
   const { cfg } = useCourseConfig();
+  const role = useTutoringRole(supabase);
   const [data, setData] = useState<{ memberships: Membership[]; ents: Entitlement[]; cohorts: CohortRow[]; orders: OrderRow[]; enrolments: Enrolment[]; waitlist: { product: string }[] } | null>(null);
   const [err, setErr] = useState("");
 
@@ -68,6 +71,7 @@ function Hub({ supabase }: { supabase: SupabaseClient }) {
   return (
     <>
       <PageHeader title="My Courses" description={`IELScourse. ${IELSCOURSE_TAGLINE}`} />
+      {role?.staff && <p className="mt-2 text-base">You teach IELScourse groups. <Link className="font-semibold underline" href="/dashboard/courses/teach">Open Teach</Link></p>}
       {!cfg.checkout.enabled && (
         <Notice testId="checkout-closed">Online payment is opening soon. Until then, register with the team on WhatsApp and they will confirm your class and payment.</Notice>
       )}
@@ -96,6 +100,7 @@ function Hub({ supabase }: { supabase: SupabaseClient }) {
                   {c?.meeting_url && activeNow && <a className={btnPrimary} href={c.meeting_url} target="_blank" rel="noopener noreferrer">Join class <ArrowUpRight size={16} aria-hidden="true" /></a>}
                   {renewSoon && cfg.checkout.enabled && <PayButton label={`Renew 1 month · ${idr(cfg.plans.find((p) => p.product === m.product)?.price_idr ?? 0)}`} body={{ product: m.product, cohort_id: m.cohort_id }} secondary={!!c?.meeting_url && activeNow} />}
                 </div>
+                <ClassroomPanel supabase={supabase} cohortId={m.cohort_id} />
               </article>
             );
           })}

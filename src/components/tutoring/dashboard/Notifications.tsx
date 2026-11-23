@@ -13,6 +13,7 @@ const TEXT: Record<string, string> = {
   payment_verified: "Your payment was verified and your receipt is ready.", booking_requested: "A student requested a session.",
   booking_confirm: "Your session is confirmed.", booking_propose: "Your mentor proposed a different time.", booking_reject: "Your booking request was declined. See the note on the request.",
   alternative_accepted: "A student accepted your proposed time.", booking_cancelled: "A session was cancelled.", session_completed: "Your session feedback is ready.",
+  course_announcement: "New announcement in your class.", course_progress: "Your tutor added feedback on your progress.",
 };
 
 export function Notifications({ supabase }: { supabase: SupabaseClient }) {
