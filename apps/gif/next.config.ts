@@ -30,7 +30,8 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: root,
   poweredByHeader: false,
   reactStrictMode: true,
-  images: { formats: ["image/avif", "image/webp"] },
+  // Cost: one format (WebP) halves the variants generated per image; a 30-day cache avoids re-transforming static images.
+  images: { formats: ["image/webp"], minimumCacheTTL: 60 * 60 * 24 * 30 },
   async headers() {
     return [{
       source: "/:path*",

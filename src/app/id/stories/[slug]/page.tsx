@@ -3,7 +3,7 @@ import { IelscoStoryPage, ielscoStoryMetadata } from "@/components/stories/Ielsc
 type Props = { params: Promise<{ slug: string }> };
 
 // One IELSco story (id). Rendered on demand and cached (5 minutes, revalidated on editor saves).
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: Props) {
   return ielscoStoryMetadata("id", (await params).slug);

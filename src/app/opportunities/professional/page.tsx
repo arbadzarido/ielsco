@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { OpportunitiesDirectory } from "@/components/opportunities/OpportunitiesDirectory";
 import { pageMetadata } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // The Professional tab of /opportunities as its own indexable URL (the switcher still works here without a reload).
 export const metadata: Metadata = pageMetadata({

@@ -8,7 +8,7 @@ import { pageMetadata } from "@/lib/seo";
 import { countryName, locationLabel } from "@/lib/professional/model";
 import { getProfessional } from "@/lib/professional/queries";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const o = await getProfessional((await params).slug);

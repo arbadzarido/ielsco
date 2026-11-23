@@ -3,7 +3,7 @@ import { getStoryBySlug } from "@/lib/stories/public";
 import { CATEGORY_LABELS } from "@/lib/stories/types";
 
 // Open Graph / Twitter card generated from the story record: banner photo, title, author and category.
-export const revalidate = 300;
+export const revalidate = 3600;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "IELS Circle member story";

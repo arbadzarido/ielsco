@@ -9,7 +9,7 @@ import { relatedStories, storyDescription } from "@/lib/stories/types";
 // Published stories come from Supabase (public.published_member_stories). Pages are cached and refreshed every
 // 5 minutes, and immediately when an admin saves (tag revalidation). Unknown or unpublished slugs return a 404;
 // old slugs of a published story redirect permanently to the current one.
-export const revalidate = 300;
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{ slug: string }>;
