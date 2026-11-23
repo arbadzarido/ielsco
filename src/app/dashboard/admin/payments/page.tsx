@@ -80,6 +80,7 @@ function Centre({ supabase }: { supabase: SupabaseClient }) {
   return (
     <>
       <PageHeader title="IELScourse payments" description="Midtrans production orders for Collective, Studio and One." />
+      <p className="text-base">Tutor assignment, sessions, attendance, materials and announcements: <Link className="font-semibold underline" href="/dashboard/courses/teach">Teach</Link>.</p>
       <p className="text-base" data-testid="gateway-state">Checkout: <strong>{cfg.checkout.enabled ? `open (${cfg.checkout.environment})` : "closed"}</strong>{!cfg.checkout.enabled ? " — set the Midtrans production variables and IELSCOURSE_CHECKOUT_ENABLED on Vercel (docs/IELSCOURSE-PAYMENTS.md)." : ""}</p>
 
       <section className="mt-4 grid gap-3 sm:grid-cols-4" aria-label="Totals">

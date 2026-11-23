@@ -64,3 +64,11 @@ IELSco Vercel project that serves www.ielsco.com (team ielscommunity), Productio
 3. Admin: `/dashboard/admin/payments` → create a class group with its confirmed schedule (status Open).
 4. Signed in, start a checkout and close the Snap window without paying: an order appears as *Waiting for payment* and expires; nothing is charged. This proves the production keys and Snap.
 5. First real payment (founder-approved, smallest amount, e.g. a real Starter or Collective purchase): confirm in the admin audit trail that the notification arrived with a valid signature and the order became Paid with a receipt. Only then announce online payment.
+
+## 7. Classroom (added 23 Nov 2026, migration 20261212000000)
+
+Collective and Studio groups now have a classroom: `course_class_sessions`, `course_attendance`, `course_materials`, `course_announcements`, `course_progress_notes`, and `course_cohorts.tutor_id`. Additive; rollback `supabase/manual/ROLLBACK-20261212-ielscourse-classroom.sql`.
+- Admin assigns a tutor (an active mentor) per group. Tutors see and manage only their groups and never see payments; admins see all.
+- Teach page `/dashboard/courses/teach`: add or cancel sessions, mark attendance (only students whose paid month covers the session), share materials (https links), post announcements (members are notified), write per-student progress feedback.
+- My Courses shows each paying student their upcoming sessions, announcements, materials, own attendance and own feedback. Access ends when the paid month ends.
+- Tests: `tests/db/ielscourse-classroom.pglite.mjs` 28/28; payments 63/63 and tutoring 45/45 unchanged. Teach and My Courses were exercised in a browser against the local database (tutor flow and student view, desktop and mobile width).
