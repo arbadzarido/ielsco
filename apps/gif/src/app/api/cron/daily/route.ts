@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
-import { q } from "@/lib/db";
+import { q, tx } from "@/lib/db";
 import { currentCohort } from "@/lib/cohort";
 import { deliverQueued, sendEmail } from "@/lib/email/send";
 import { paymentReminderEmail, phaseOpenEmail } from "@/lib/email/templates";
-import { syncFromGateway } from "@/lib/payments/service";
+import { assignEarlyBirds, syncFromGateway } from "@/lib/payments/service";
 import { phaseWindow } from "@/lib/phases";
 import { formatMoney } from "@/lib/pricing";
 import { fmtDate, fmtRange } from "@/lib/format";
@@ -37,11 +37,18 @@ export async function GET(req: Request) {
   // A checkout nobody opened never reaches Midtrans: close it after a day so the portal doesn't show it as waiting.
   out.expired = (await q("update gif.payments set status = 'expired', updated_at = now() where gateway = 'midtrans' and status = 'created' and created_at < now() - interval '1 day' returning id")).length;
 
+  // 1b. Early-bird fees (first slots.self_funded_early Self-Funded seats confirmed), including seats confirmed before 22 Nov 2026.
+  out.earlyBirds = await tx(async (db) => assignEarlyBirds(db, (await currentCohort()).settings)).catch(() => 0);
+
   // 2. Payment reminders: open obligations due within 14 days (or overdue), at most once a week each.
+  // Installments: remind about the first payment before first_due_at (nothing paid yet), and about what is left before due_at.
   const due = await q<{ id: string; label: string; amount: number; currency: "IDR" | "USD"; due_at: string; legal_name: string; email: string; application_id: string }>(
-    `select o.id, o.label, o.amount, o.currency, o.due_at, p.legal_name, p.email, o.application_id from gif.obligations o
+    `select o.id, o.label, (o.amount - o.paid_amount)::float8 as amount, o.currency,
+       case when o.paid_amount = 0 and o.first_due_at is not null and o.first_due_at > now() - interval '30 days' then o.first_due_at else o.due_at end as due_at,
+       p.legal_name, p.email, o.application_id from gif.obligations o
      join gif.participants p on p.id = o.participant_id join gif.applications a on a.id = o.application_id
-     where o.status = 'open' and o.due_at is not null and o.due_at < now() + interval '14 days' and a.status <> 'withdrawn' and p.withdrawn_at is null`);
+     where o.status = 'open' and a.status <> 'withdrawn' and p.withdrawn_at is null
+       and coalesce(case when o.paid_amount = 0 and o.first_due_at is not null and o.first_due_at > now() - interval '30 days' then o.first_due_at else o.due_at end, now() + interval '1 year') < now() + interval '14 days'`);
   const week = Math.floor(Date.now() / (7 * 86400000));
   for (const o of due) {
     await sendEmail({ to: o.email, template: o.label.includes("balance") ? "balance_reminder" : "payment_reminder", ...paymentReminderEmail(o.legal_name, o.label, formatMoney(o.amount, o.currency), fmtDate(o.due_at)),

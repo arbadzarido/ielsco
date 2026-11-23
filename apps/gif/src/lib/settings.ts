@@ -42,13 +42,16 @@ export interface Settings {
     mentoring_early: Money;
     mentoring_regular: Money;
     self_funded_total: Money;
-    self_funded_deposit: Money;
+    self_funded_deposit: Money; // legacy fixed deposit (registrations before 22 Nov 2026); new fees are paid in installments
+    // Early bird (founder decision 22 Nov 2026): the first `slots.self_funded_early` Self-Funded delegates whose first
+    // payment is verified pay this fee instead of self_funded_total. Not advertised on the public site.
+    self_funded_early_total: Money;
     partial_funded_payable: Money | null; // the Partial Funded participant contribution
   };
   cashback: { fully_funded: Money; partial_funded: Money };
   // What each funded outcome covers, as published (founder decision 20 Nov 2026). Shown on the site and in result emails.
   awards: { fully_funded_covers: string[]; partial_funded_covers: string[]; not_included: string[] };
-  slots: { fully_funded: number; partial_funded: number; capacity: number };
+  slots: { fully_funded: number; partial_funded: number; capacity: number; self_funded_early: number };
   payments: {
     // International (USD-priced) payers (founder decision 21 Nov 2026, docs/gif-platform/PAYMENTS.md "International"):
     // A) request an invoice (bank transfer, verified by Finance) — always available;
@@ -65,6 +68,10 @@ export interface Settings {
     // Finance-approved account for invoice payments (may be a designated personal account). Shown only to a payer who
     // requested an invoice, in their portal and acknowledgement email. Null until Finance enters it; never invented.
     invoice_bank_details: string | null;
+    // Flexible deposit (founder decision 22 Nov 2026): every payment towards the Self-Funded fee or the Partial Funded
+    // contribution is at least this much (IDR; USD-priced delegates: the USD equivalent at usd_idr_card_rate), up to the
+    // outstanding amount. A final payment may be smaller when it clears the remainder.
+    min_installment_idr: number;
   };
   // Fully Funded Phase 1 also includes social media tasks, each verified by the team. The exact list awaits founder
   // confirmation, so it is data: edit or disable it in Admin → Settings.
@@ -115,6 +122,7 @@ export const DEFAULT_SETTINGS: Settings = {
     // 20 Nov price change, so it stays an admin setting (docs/gif-platform/DECISIONS.md).
     self_funded_deposit: { IDR: 5000000, USD: 300 },
     partial_funded_payable: { IDR: 10999000, USD: 699 },
+    self_funded_early_total: { IDR: 13999000, USD: 799 },
   },
   cashback: { fully_funded: { IDR: 299000, USD: 19 }, partial_funded: { IDR: 749000, USD: 49 } },
   awards: {
@@ -122,13 +130,14 @@ export const DEFAULT_SETTINGS: Settings = {
     partial_funded_covers: ["A reduced participant contribution instead of the Self-Funded fee"],
     not_included: ["International flights to Singapore and from Thailand"],
   },
-  slots: { fully_funded: 10, partial_funded: 10, capacity: 100 },
+  slots: { fully_funded: 10, partial_funded: 10, capacity: 100, self_funded_early: 10 },
   payments: {
     // On since 21 Nov 2026 (founder go-ahead): international payers may pay USD items by card at the fixed rate.
     international_cards: true,
     international_card_enabled: true, // superseded, ignored
     usd_idr_card_rate: USD_IDR_PAYMENT_RATE,
     invoice_bank_details: null,
+    min_installment_idr: 2500000,
     allow_idr_for_international: false,
     bank_transfer_instructions:
       "Prefer bank transfer? Request an invoice and IELSco Finance will email it with the transfer details. A transfer counts once Finance has verified it.",

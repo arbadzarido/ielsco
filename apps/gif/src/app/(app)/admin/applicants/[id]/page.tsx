@@ -5,7 +5,7 @@ import { one, q } from "@/lib/db";
 import { loadApplicationDetail, type AppRow } from "@/lib/applications";
 import { STATUSES, STATUS_LABEL, PATHWAY_LABEL } from "@/lib/status";
 import { CRITERIA, EDUCATION_LEVELS, UPLOAD_RULES } from "@/lib/validation";
-import { formatMoney } from "@/lib/pricing";
+import { isInstallmentKind, formatMoney } from "@/lib/pricing";
 import { bytes, countryName, fmtDate, fmtDateTime } from "@/lib/format";
 import { ActionForm, DocLink } from "@/components/ActionForm";
 import { addNoteAction, addObligationAction, assignEvaluatorAction, cashbackAction, changeStatusAction, documentLinkAction, elcoActivateAction, elcoRetryAction,
@@ -112,11 +112,27 @@ export default async function Applicant({ params }: { params: Promise<{ id: stri
         <ActionForm action={missingInfoAction} submit="Send email"><input type="hidden" name="application_id" value={id} /><textarea name="message" rows={4} placeholder="What do you need from them, and by when?" /></ActionForm></details>}
 
       <h2>Payments</h2>
-      <div className="table-wrap"><table className="t compact"><thead><tr><th>Obligation</th><th>Delegate</th><th>Amount</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        {d.obligations.map((o) => <tr key={o.id}><td>{o.label}</td><td>{pname(o.participant_id)}</td><td>{formatMoney(o.amount, o.currency)}</td><td>{fmtDate(o.due_at)}</td><td>{o.status}</td>
+      {/* Programme fee per delegate (installments since 22 Nov 2026): total, verified so far, outstanding, early bird. */}
+      {d.obligations.some((o) => isInstallmentKind(o.kind)) && <div className="table-wrap" style={{ marginBottom: 12 }}><table className="t compact" data-testid="fee-summary"><thead><tr><th>Delegate</th><th>Programme fee</th><th>Verified payments</th><th>Outstanding</th><th>Installments</th><th>Seat</th></tr></thead><tbody>
+        {d.participants.map((p) => {
+          const fee = d.obligations.filter((o) => o.participant_id === p.id && isInstallmentKind(o.kind));
+          if (!fee.length) return null;
+          const cur = fee[0].currency;
+          const total = fee.reduce((a, o) => a + Number(o.amount), 0);
+          const paid = fee.reduce((a, o) => a + (o.status === "paid" || o.status === "waived" ? Number(o.amount) : Number(o.paid_amount ?? 0)), 0);
+          const inst = d.payments.filter((x) => fee.some((o) => o.id === x.obligation_id) && x.status === "paid" && !x.is_duplicate).length;
+          const early = (p as typeof p & { early_bird_at?: string | null }).early_bird_at;
+          return <tr key={p.id}><td>{p.legal_name}</td><td>{formatMoney(total, cur)}{early && <span className="badge ok" style={{ marginLeft: 6 }}>Early bird</span>}</td><td>{formatMoney(Math.round(paid * 100) / 100, cur)}</td>
+            <td><strong>{formatMoney(Math.max(0, Math.round((total - paid) * 100) / 100), cur)}</strong></td><td>{inst}</td><td>{p.seat_status}</td></tr>;
+        })}
+      </tbody></table></div>}
+      <div className="table-wrap"><table className="t compact"><thead><tr><th>Obligation</th><th>Delegate</th><th>Amount</th><th>Paid</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        {d.obligations.map((o) => <tr key={o.id}><td>{o.label}</td><td>{pname(o.participant_id)}</td><td>{formatMoney(o.amount, o.currency)}</td>
+          <td>{formatMoney(o.status === "paid" || o.status === "waived" ? Number(o.amount) : Number(o.paid_amount ?? 0), o.currency)}</td><td>{fmtDate(o.due_at)}</td><td>{o.status}</td>
           <td>{o.status === "open" && can(role, "finance") && <>
             <details><summary className="small">Record manual payment</summary><ActionForm action={manualPaymentAction} submit="Record payment"><input type="hidden" name="obligation_id" value={o.id} /><input type="hidden" name="currency" value={o.currency} />
-              <label className="field"><span className="label">Amount ({o.currency})</span><input name="amount" type="number" step="any" defaultValue={o.amount} /></label>
+              <label className="field"><span className="label">Amount ({o.currency}){isInstallmentKind(o.kind) ? ` · installment, outstanding ${formatMoney(Math.round((Number(o.amount) - Number(o.paid_amount ?? 0)) * 100) / 100, o.currency)}` : ""}</span>
+                <input name="amount" type="number" step="any" defaultValue={isInstallmentKind(o.kind) ? Math.round((Number(o.amount) - Number(o.paid_amount ?? 0)) * 100) / 100 : o.amount} /></label>
               <label className="field"><span className="label">Bank reference / proof</span><input name="reference" required /></label></ActionForm></details>
             <details><summary className="small">Waive</summary><ActionForm action={waiveObligationAction} submit="Waive" danger><input type="hidden" name="obligation_id" value={o.id} /><input name="reason" placeholder="Reason (audited)" /></ActionForm></details></>}</td></tr>)}
       </tbody></table></div>

@@ -5,7 +5,7 @@ import { applicationForAccount, consentState, loadApplicationDetail, type AppRow
 import { currentCohort, type Cohort } from "./cohort";
 import { eligibleFor, phaseWindow } from "./phases";
 import { requiredConsents } from "./legal";
-import { formatMoney } from "./pricing";
+import { formatMoney, isInstallmentKind } from "./pricing";
 import { fmtDate } from "./format";
 import { tasksFor, tasksSummary } from "./tasks";
 import { guardianBlocks } from "./guardian";
@@ -48,6 +48,15 @@ export function requiredActions(c: PortalCtx): Action[] {
     const who = detail.participants.find((p) => p.id === o.participant_id);
     const blockedByDeposit = o.kind === "balance" && detail.obligations.some((d) => d.participant_id === o.participant_id && d.kind === "deposit" && d.status === "open");
     if (blockedByDeposit) continue;
+    if (isInstallmentKind(o.kind)) {
+      // Installments (22 Nov 2026): what is left, and the minimum for the next payment.
+      const left = Math.round((Number(o.amount) - Number(o.paid_amount ?? 0)) * 100) / 100;
+      const s0 = c.cohort.settings;
+      const firstPay = Number(o.paid_amount ?? 0) <= 0;
+      out.push({ label: `Pay: ${o.label}`, href: "/portal/payments", tone: firstPay ? "warn" : undefined,
+        detail: `${firstPay ? "Deposit from" : "Next payment from"} ${formatMoney(Math.min(s0.payments.min_installment_idr, left * (o.currency === "USD" ? s0.payments.usd_idr_card_rate : 1)), "IDR")} · ${formatMoney(left, o.currency)} left${who && c.isOwner && detail.participants.length > 1 ? ` · ${who.legal_name}` : ""}${firstPay && o.first_due_at ? ` · first payment by ${fmtDate(o.first_due_at)}` : o.due_at ? ` · balance by ${fmtDate(o.due_at)}` : ""}` });
+      continue;
+    }
     out.push({ label: `Pay: ${o.label}`, href: "/portal/payments", detail: `${formatMoney(o.amount, o.currency)}${who && c.isOwner && detail.participants.length > 1 ? ` · ${who.legal_name}` : ""}${o.due_at ? ` · due ${fmtDate(o.due_at)}` : ""}` });
   }
   const s = c.cohort.settings;

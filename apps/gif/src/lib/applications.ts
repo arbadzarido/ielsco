@@ -6,7 +6,7 @@ import { currentCohort } from "./cohort";
 import { sendEmail, deliverQueued } from "./email/send";
 import { applicationSubmittedEmail, guardianConsentEmail, teamInviteEmail } from "./email/templates";
 import { pathwayOpen, type Pathway } from "./settings";
-import { currencyFor, plannedObligations, partialFundedObligations, formatMoney } from "./pricing";
+import { currencyFor, plannedObligations, partialFundedObligations, formatMoney, minInstallment } from "./pricing";
 import { applicationSchema, firstErrors, isMinor, normalizePhone, type ApplicationInput } from "./validation";
 import { LEGAL_VERSION, requiredConsents, type ConsentCategory } from "./legal";
 import { PATHWAY_LABEL, type Status } from "./status";
@@ -24,10 +24,10 @@ export type ParticipantRow = { id: string; application_id: string; account_id: s
   country_of_study: string; emergency_name: string; emergency_relation: string; emergency_phone: string; currency: "IDR" | "USD"; seat_status: string; withdrawn_at: string | null;
   guardian_name: string | null; guardian_email: string | null; guardian_consent_at: string | null; guardian_consent_method: string | null;
   instagram: string | null; social_tasks: Record<string, { status: "submitted" | "verified" | "not_found"; at: string; by?: string; note?: string }> };
-export type ObligationRow = { id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD"; amount: number; due_at: string | null; status: string; paid_at: string | null };
+export type ObligationRow = { id: string; participant_id: string; kind: string; label: string; currency: "IDR" | "USD"; amount: number; due_at: string | null; status: string; paid_at: string | null; paid_amount?: number; first_due_at?: string | null };
 export type PaymentRow = { id: string; obligation_id: string; participant_id: string; kind: string; gateway: string; order_id: string; amount: number; currency: "IDR" | "USD";
   status: string; payment_type: string | null; receipt_no: string | null; paid_at: string | null; created_at: string; is_duplicate: boolean; manual_reference: string | null;
-  cancel_result?: string | null; checkout_expires_at?: string | null; original_amount?: number | null; original_currency?: string | null; fx_rate?: number | null };
+  cancel_result?: string | null; checkout_expires_at?: string | null; original_amount?: number | null; original_currency?: string | null; fx_rate?: number | null; applied_amount?: number | null };
 
 // The application an account belongs to in the current cohort: as its owner (leader) or as an invited member.
 export async function applicationForAccount(accountId: string): Promise<{ app: AppRow; isOwner: boolean; me: ParticipantRow | null } | null> {
@@ -155,8 +155,8 @@ export async function submitApplication(account: { id: string; email: string }, 
             dedupeKey: `guardian:${pid}:1`, applicationId: app.id }, db);
         }
         for (const ob of plannedObligations(s, a.pathway, p.nationality)) {
-          const oid = (await db.query<{ id: string }>(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, due_at, created_by)
-            values ($1, $2, $3, $4, $5, $6, $7, 'system') returning id`, [app.id, pid, ob.kind, ob.label, ob.currency, ob.amount, ob.dueAt])).rows[0].id;
+          const oid = (await db.query<{ id: string }>(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, due_at, first_due_at, created_by)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, 'system') returning id`, [app.id, pid, ob.kind, ob.label, ob.currency, ob.amount, ob.dueAt, ob.firstDueAt ?? null])).rows[0].id;
           if (ob.kind === "elco_pro") {
             await db.query("insert into gif.elco_fulfilments (participant_id, obligation_id, elco_email, months) values ($1, $2, $3, $4)", [pid, oid, p.email, s.prices.elco_pro_months]);
           }
@@ -171,7 +171,7 @@ export async function submitApplication(account: { id: string; email: string }, 
       const obs = (await db.query<{ label: string; amount: number; currency: "IDR" | "USD" }>("select o.label, o.amount, o.currency from gif.obligations o join gif.participants p on p.id = o.participant_id where o.application_id = $1 and p.role = 'leader'", [app.id])).rows;
       const next = a.pathway === "fully_funded" ? `Next: activate Phase 1 by paying for Elco Pro (${obs.map((o) => formatMoney(o.amount, o.currency)).join(", ")}) in your portal.`
         : a.pathway === "mentoring" ? `Next: pay the mentoring fee (${obs.map((o) => formatMoney(o.amount, o.currency)).join(", ")}) in your portal to enrol.`
-        : `Next: pay the deposit (${obs.filter((o) => o.label.includes("deposit")).map((o) => formatMoney(o.amount, o.currency)).join(", ")}). Your seat is confirmed when the deposit is verified.`;
+        : `Next: make your first payment (the deposit) of at least ${formatMoney(s.payments.min_installment_idr, "IDR")}${obs.some((o) => o.currency === "USD") ? ` (${formatMoney(minInstallment(s, "USD"), "USD")} at USD 1 = ${formatMoney(s.payments.usd_idr_card_rate, "IDR")})` : ""}. You choose how much to pay upfront, up to the full fee (${obs.map((o) => formatMoney(o.amount, o.currency)).join(", ")}). Your seat is confirmed when your first payment is verified.`;
       await sendEmail({ to: account.email, template: "application_submitted", ...applicationSubmittedEmail(a.leader.legal_name, app.code, PATHWAY_LABEL[a.pathway], next),
         dedupeKey: `submitted:${app.id}`, applicationId: app.id }, db);
       for (const m of a.members) {
@@ -226,19 +226,19 @@ export async function acceptOffer(account: { id: string; email: string }, ip: st
     if (!app) throw new UserError("There is no offer to accept.");
     await db.query("update gif.applications set offer_accepted_at = coalesce(offer_accepted_at, now()) where id = $1", [app.id]);
     if (app.status === "selected_partial_funded") {
-      // Partial Funded contribution (USD 699 / IDR 10,999,000) follows the same rule as every seat: a deposit within
-      // deposit_due_days of accepting secures the seat; the rest is due by the balance deadline (30 June 2027).
+      // Partial Funded contribution (USD 699 / IDR 10,999,000) is paid in installments like the Self-Funded fee: the first
+      // payment (at least the minimum) within deposit_due_days of accepting secures the seat; the rest by the balance deadline.
       for (const ob of partialFundedObligations(cohort.settings)) {
         const ps = (await db.query<{ id: string; currency: "IDR" | "USD" }>("select id, currency from gif.participants where application_id = $1 and withdrawn_at is null", [app.id])).rows;
         for (const p of ps) {
           if (!(ob.amount[p.currency] > 0)) continue;
-          await db.query(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, due_at, created_by)
-            values ($1, $2, $3, $4, $5, $6, $7, 'system') on conflict do nothing`, [app.id, p.id, ob.kind, ob.label, p.currency, ob.amount[p.currency], ob.dueAt]);
+          await db.query(`insert into gif.obligations (application_id, participant_id, kind, label, currency, amount, due_at, first_due_at, created_by)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, 'system') on conflict do nothing`, [app.id, p.id, ob.kind, ob.label, p.currency, ob.amount[p.currency], ob.dueAt, ob.firstDueAt]);
         }
       }
     }
     await audit(account.email, "offer_accepted", "application", app.id, {}, ip, db);
-    // Fully Funded: confirmed on acceptance. Partial Funded: confirmed once its deposit is verified (recompute).
+    // Fully Funded: confirmed on acceptance. Partial Funded: confirmed once its first payment is verified (recompute).
     await recompute(db, app.id, account.email);
   });
   await deliverQueued().catch(() => {});

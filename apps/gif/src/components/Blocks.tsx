@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { NextDeadline, Price } from "@/components/Client";
 import { PHOTOS, type Photo, type Mentor, type Testimonial, type Faq } from "@/lib/content";
 import type { Pathway, Settings } from "@/lib/settings";
-import { DEFAULT_SETTINGS, balanceOf, mentoringPrice, pathwayOpen, pathwayOpensAt } from "@/lib/settings";
+import { DEFAULT_SETTINGS, mentoringPrice, pathwayOpen, pathwayOpensAt } from "@/lib/settings";
+import { minInstallment } from "@/lib/pricing";
 import { fmtDate } from "@/lib/format";
 import { CAMPUS_PHOTOS, PLACES } from "@/lib/places";
 
@@ -72,7 +73,6 @@ export function openingLine(s: Settings = DEFAULT_SETTINGS): string {
 export function Pathways({ s, compact = false }: { s: Settings; compact?: boolean }) {
   const ffOpen = pathwayOpen(s, "fully_funded");
   const m = mentoringPrice(s);
-  const bal = balanceOf(s);
   return (
     <div className="grid g3">
       <article className="pathway ff">
@@ -113,8 +113,8 @@ export function Pathways({ s, compact = false }: { s: Settings; compact?: boolea
         <div className="price"><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></div>
         <ul>
           <li>Direct registration: no essay, deck or video</li>
-          <li>Deposit <Price idr={s.prices.self_funded_deposit.IDR} usd={s.prices.self_funded_deposit.USD} />, balance <Price idr={bal.IDR} usd={bal.USD} /></li>
-          <li>Seat confirmed when your deposit is verified</li>
+          <li>Deposit from <Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} />, the rest in installments</li>
+          <li>Seat confirmed when your first payment is verified</li>
         </ul>
         <div className="btn-row">
           <Link className="btn btn-primary" href="/apply?pathway=self_funded" data-track="pathway_select" data-pathway="self_funded">Register</Link>

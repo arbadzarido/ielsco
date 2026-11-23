@@ -79,8 +79,8 @@ export function progressSteps(pathway: Pathway, status: Status, paid: boolean, t
   if (pathway === "self_funded") {
     return [
       mk("apply", "Registration", "Profile and team details", r >= rank("submitted"), status === "draft"),
-      mk("deposit", "Deposit", "Your seat is confirmed when the deposit is verified", status === "confirmed_participant", ["submitted", "awaiting_payment", "payment_verification"].includes(status)),
-      mk("prep", "Preparation", "Balance, visa, travel, insurance, orientation", false, status === "confirmed_participant"),
+      mk("deposit", "Deposit", "Your first payment (from IDR 2,500,000, your choice) confirms your seat", status === "confirmed_participant", ["submitted", "awaiting_payment", "payment_verification"].includes(status)),
+      mk("prep", "Preparation", "Remaining balance (in installments), visa, travel, insurance, orientation", false, status === "confirmed_participant"),
       mk("programme", "Programme", "27 Jul – 3 Aug 2027", false, false),
     ];
   }

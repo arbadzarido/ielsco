@@ -114,10 +114,11 @@ export const teamInviteEmail = (member: string, leader: string, team: string, co
   note: "If you don't know this team, reply to this email and we will remove you.",
 });
 
-export const paymentReceivedEmail = (name: string, label: string, amount: string, receipt: string, receiptUrl: string) => mail(`Payment received: ${label}`, {
+// `remaining`: for installments (Self-Funded fee, Partial Funded contribution), what is still outstanding, or "Fully paid".
+export const paymentReceivedEmail = (name: string, label: string, amount: string, receipt: string, receiptUrl: string, remaining?: string) => mail(`Payment received: ${label}`, {
   heading: "Payment received",
-  paras: [`Hi ${name}, we have verified your payment.`],
-  rows: [["Item", label], ["Amount", amount], ["Receipt", receipt]],
+  paras: [`Hi ${name}, we have verified your payment.${remaining && remaining !== "Fully paid" ? " You can pay the rest in one or more payments before the balance deadline." : ""}`],
+  rows: [["Item", label], ["Amount", amount], ...(remaining ? [["Remaining balance", remaining] as [string, string]] : []), ["Receipt", receipt]],
   cta: { label: "View receipt", href: receiptUrl },
 });
 

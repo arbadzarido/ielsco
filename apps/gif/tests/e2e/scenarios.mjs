@@ -156,6 +156,8 @@ export async function run({ base, mt, env, db: dbc }) {
       check("home states Fully Funded coverage, flights excluded", text.includes("accommodation") && /not international flights|flights not included/i.test(text));
       // Sponsorship form
       await page.goto("/sponsorship");
+      // Wait for hydration: typing into the server-rendered form before React attaches gets the fields reset (flaky).
+      await page.waitForLoadState("networkidle");
       await page.getByLabel("Full name").fill("Sari Wulandari");
       await page.getByLabel("Email", { exact: true }).fill("sponsor.seeker@example.test");
       await page.getByLabel("WhatsApp (with country code)").fill("+62 811 2222 3333");
@@ -276,48 +278,75 @@ export async function run({ base, mt, env, db: dbc }) {
       check("cross-site POST to API refused (CSRF origin check)", r.status === 403);
     }
 
-    // ── B. Team Self-Funded: Indonesian leader + Malaysian member ───────────────────────────────────────────────────
+    // ── B. Team Self-Funded with a flexible deposit and installments: Indonesian leader + Malaysian member ──────────────
     const B = { name: "Budi Santoso", email: "budi@example.test", wa: "+62 813 3333 4444", dob: "2004-08-01", nat: "ID", inst: "Universitas Example", level: "undergraduate" };
     const M = { name: "Nur Aisyah", email: "aisyah@example.test", wa: "+60 12 345 6789", dob: "2005-01-20", nat: "MY", inst: "Universiti Example", level: "undergraduate" };
     {
+      const fee = (email) => one("select o.*, o.amount::float8 as amt, o.paid_amount::float8 as paid from gif.obligations o join gif.participants p on p.id = o.participant_id where p.email = $1 and o.kind = 'full' and o.status <> 'cancelled'", [email]);
+      // Pay a chosen amount from the fee panel of one delegate (the owner sees one panel per team member).
+      async function payFee(page, who, amountIdr, outcome = "settlement", full = false) {
+        await page.goto("/portal/payments");
+        const panel = page.getByTestId("fee-panel").filter({ hasText: who }).first();
+        if (full) await panel.getByTestId("fee-full").click(); else await panel.getByTestId("fee-amount").fill(String(amountIdr));
+        await panel.getByTestId("pay").click();
+        const order = await snapOrder(page);
+        await page.locator(`#pay-${outcome}`).click();
+        if (outcome === "settlement" || outcome === "pending") await page.waitForURL((u) => u.pathname === "/portal/payments/return" && u.searchParams.get("order_id") === order);
+        else await waitDb(async () => ["failed", "expired", "cancelled"].includes((await one("select status from gif.payments where order_id = $1", [order]))?.status));
+        return order;
+      }
       const page = await newPage();
       await login(page, B.email, "/apply?pathway=self_funded");
       await apply(page, { pathway: "self_funded", team: "River Keepers", leader: B, members: [M], selfFunded: true });
       const app = await appOf(B.email);
       check("team self-funded submitted with 2 participants", app.mode === "team" && (await one("select count(*)::int as n from gif.participants where application_id = $1", [app.id])).n === 2);
-      const dl = await obligation(B.email, "deposit"), bl = await obligation(B.email, "balance");
-      const dm = await obligation(M.email, "deposit");
-      check("leader IDR deposit 5,000,000 + balance 9,999,000 (total 14,999,000)", Number(dl.amount) === 5000000 && dl.currency === "IDR" && Number(bl.amount) === 9999000);
-      check("deposit due within 7 days, balance due 30 June 2027", Math.abs(new Date(dl.due_at).getTime() - Date.now() - 7 * 86400000) < 3600000 && new Date(bl.due_at).toISOString() === "2027-06-30T16:59:59.000Z");
-      check("member USD deposit 300 (no FX conversion)", Number(dm.amount) === 300 && dm.currency === "USD");
+      const fb = await fee(B.email), fm = await fee(M.email);
+      check("leader: one programme fee IDR 14,999,000 (no fixed deposit split)", fb && fb.amt === 14999000 && fb.currency === "IDR" && !(await obligation(B.email, "deposit")));
+      check("first payment due within 7 days, the rest by 30 June 2027", Math.abs(new Date(fb.first_due_at).getTime() - Date.now() - 7 * 86400000) < 3600000 && new Date(fb.due_at).toISOString() === "2027-06-30T16:59:59.000Z");
+      check("member: programme fee USD 899 (official USD price)", fm && fm.amt === 899 && fm.currency === "USD");
+      check("registration email: deposit from IDR 2,500,000, you choose the amount", !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'application_submitted' and text_body like '%at least IDR 2,500,000%' and text_body like '%You choose how much%'", [B.email])));
       check("team invite email to member", !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'team_invite'", [M.email])));
       await page.goto("/portal/payments");
-      check("balance blocked until deposit paid", (await page.locator("tr", { hasText: "balance" }).first().innerText()).includes("Pay the deposit first"));
-      // Payment failure path
-      await payOnline(page, "Self-Funded deposit", "deny");
-      await page.getByText(/payment failed/).waitFor({ timeout: 30_000 });
-      check("denied payment → failed, obligation still open", (await obligation(B.email, "deposit")).status === "open" && !!(await one("select 1 from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'failed'", [B.email])));
-      // Expired path via webhook from fake gateway (pending → expire)
-      await payOnline(page, "Self-Funded deposit", "pending");
-      const pend = await one("select order_id from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'pending'", [B.email]);
+      const bp = page.getByTestId("fee-panel").filter({ hasText: B.name }).first();
+      const bt = await bp.innerText();
+      check("fee panel: 'Choose your deposit amount', minimum IDR 2,500,000, fee / verified / remaining", bt.includes("Choose your deposit amount") && bt.includes("IDR 2,500,000") && bt.includes("IDR 14,999,000") && bt.includes("Remaining balance"));
+      await bp.getByTestId("fee-amount").fill("2000000");
+      check("below the minimum: explained, Pay disabled", (await bp.innerText()).includes("The minimum is IDR 2,500,000") && (await bp.getByTestId("pay").isDisabled()));
+      await bp.getByTestId("fee-amount").fill("3000000");
+      check("balance after the proposed payment shown", (await bp.getByTestId("fee-after").innerText()) === "IDR 11,999,000");
+      // Failure path: the payer's chosen amount is what is charged.
+      const o1 = await payFee(page, B.name, 3000000, "deny");
+      const p1 = await one("select * from gif.payments where order_id = $1", [o1]);
+      check("charged exactly the chosen IDR 3,000,000", Number(p1.amount) === 3000000 && Number(p1.applied_amount) === 3000000 && p1.currency === "IDR");
+      check("denied payment → failed, nothing credited", p1.status === "failed" && (await fee(B.email)).paid === 0);
+      // Expired path via webhook (pending → expire)
+      const o2 = await payFee(page, B.name, 3000000, "pending");
       check("pending payment → Payment Verification", (await appOf(B.email)).status === "payment_verification");
-      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: pend.order_id, transaction_status: "expire", notify: true }) });
+      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: o2, transaction_status: "expire", notify: true }) });
       await new Promise((r) => setTimeout(r, 1000));
-      check("expired payment → failed email + back to Awaiting Payment", (await one("select status from gif.payments where order_id = $1", [pend.order_id])).status === "expired" && (await appOf(B.email)).status === "awaiting_payment"
+      check("expired payment → failed email + back to Awaiting Payment", (await one("select status from gif.payments where order_id = $1", [o2])).status === "expired" && (await appOf(B.email)).status === "awaiting_payment"
         && !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'payment_failed'", [B.email])));
-      // Amount mismatch is never accepted
-      await payOnline(page, "Self-Funded deposit", "pending");
-      const pend2 = await one("select order_id from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'pending' order by p.created_at desc limit 1", [B.email]);
-      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: pend2.order_id, transaction_status: "settlement", gross_amount: "5000.00", notify: true }) });
+      // Amount mismatch is never accepted; the correct notification is.
+      const o3 = await payFee(page, B.name, 3000000, "pending");
+      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: o3, transaction_status: "settlement", gross_amount: "5000.00", notify: true }) });
       await new Promise((r) => setTimeout(r, 1000));
-      check("amount mismatch not marked paid (audited)", (await obligation(B.email, "deposit")).status === "open" && !!(await one("select 1 from gif.audit_log where action = 'payment_amount_mismatch'")));
-      await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: pend2.order_id, transaction_status: "settlement", gross_amount: "5000000.00", notify: true }) });
-      await new Promise((r) => setTimeout(r, 1000));
-      check("leader deposit settled → seat confirmed", (await one("select seat_status from gif.participants where email = $1", [B.email])).seat_status === "confirmed");
-      check("app not confirmed until every member's deposit is verified", (await appOf(B.email)).status !== "confirmed_participant");
+      check("amount mismatch not marked paid (audited)", (await fee(B.email)).paid === 0 && !!(await one("select 1 from gif.audit_log where action = 'payment_amount_mismatch'")));
+      for (let i = 0; i < 2; i++) await fetch(`${mt}/__control/set`, { method: "POST", body: JSON.stringify({ order_id: o3, transaction_status: "settlement", gross_amount: "3000000.00", notify: true }) });
+      await waitDb(async () => (await fee(B.email)).paid > 0);
+      const fb2 = await fee(B.email);
+      check("first installment verified → seat confirmed", (await one("select seat_status from gif.participants where email = $1", [B.email])).seat_status === "confirmed");
+      check("early bird: first Self-Funded seat → fee IDR 13,999,000", fb2.amt === 13999000 && !!(await one("select early_bird_at from gif.participants where email = $1", [B.email])).early_bird_at);
+      check("IDR 3,000,000 credited once (repeated notification ignored)", fb2.paid === 3000000 && fb2.status === "open");
+      const pm = await one("select text_body from gif.email_outbox where template = 'payment_received' and to_email = $1 order by created_at desc limit 1", [B.email]);
+      check("payment email shows the remaining balance", !!pm && pm.text_body.includes("Remaining balance: IDR 10,999,000"));
+      check("app not confirmed until every member's first payment is verified", (await appOf(B.email)).status !== "confirmed_participant");
+      await page.goto("/portal/payments");
+      const bp2 = page.getByTestId("fee-panel").filter({ hasText: B.name }).first();
+      const bt2 = await bp2.innerText();
+      check("after the deposit: 'Pay towards your balance', early-bird price, verified IDR 3,000,000", bt2.includes("Pay towards your balance") && bt2.includes("IDR 13,999,000") && bt2.includes("IDR 3,000,000") && (await bp2.getByTestId("early-bird").count()) === 1);
       await page.context().close();
 
-      // Member signs in: sees team, accepts terms, sees only own obligations, requests USD invoice
+      // Member signs in: sees team, accepts terms, sees only own USD fee, requests an invoice for a chosen amount
       const mp = await newPage();
       await login(mp, M.email);
       const t = await mp.locator("body").innerText();
@@ -330,18 +359,22 @@ export async function run({ base, mt, env, db: dbc }) {
       await mp.getByText(/Your acceptance has been recorded|You accepted the current version/).first().waitFor();
       await mp.goto("/portal/payments");
       const mtext = await mp.locator("body").innerText();
-      check("member sees only own USD obligations", mtext.includes("USD 300") && !mtext.includes("IDR 5,000,000"));
-      await mp.locator("tr", { hasText: "deposit" }).getByRole("button", { name: "Request invoice" }).click();
+      check("member sees only own USD fee", mtext.includes("USD 899") && !mtext.includes("IDR 14,999,000"));
+      const mpanel = mp.getByTestId("fee-panel").first();
+      check("USD fee: minimum IDR 2,500,000 = USD 135.14 at USD 1 = IDR 18,500", (await mpanel.innerText()).includes("USD 135.14") && (await mpanel.innerText()).includes("USD 1 = IDR 18,500"));
+      await mpanel.getByTestId("fee-amount").fill("3000000");
+      check("USD equivalent of the chosen IDR amount shown", (await mpanel.innerText()).includes("Counts as USD 162.16"));
+      await mpanel.getByRole("button", { name: "Request invoice" }).click();
       await mp.getByText("Invoice requested").waitFor();
       check("invoice request emailed to finance", !!(await one("select 1 from gif.email_outbox where template = 'invoice_request'")));
       const ir = await one("select r.* from gif.invoice_requests r join gif.participants p on p.id = r.participant_id where p.email = $1", [M.email]);
-      check("invoice request recorded in USD at the official amount", ir && ir.status === "invoice_requested" && Number(ir.amount) === 300 && ir.currency === "USD", JSON.stringify(ir));
-      check("participant gets an invoice acknowledgement email", !!(await one("select 1 from gif.email_outbox where template = 'invoice_requested' and to_email = $1", [M.email])));
+      check("invoice request recorded in USD for the chosen amount (IDR 3,000,000 = USD 162.16)", ir && ir.status === "invoice_requested" && Number(ir.amount) === 162.16 && ir.currency === "USD", JSON.stringify(ir));
+      check("participant gets an invoice acknowledgement email", !!(await one("select 1 from gif.email_outbox where template = 'invoice_requested' and to_email = $1 and text_body like '%USD 162.16%'", [M.email])));
       const finMail = await one("select html, text_body from gif.email_outbox where template = 'invoice_request' order by created_at desc limit 1");
       check("finance email: shared layout, both logos, no date of birth", finMail.html.includes("public-asset/iels_horizontal_navy.png") && finMail.html.includes("public-asset/gif.png") && !finMail.text_body.includes(M.dob));
       await mp.reload();
-      const depRow = mp.locator("tr", { hasText: "Self-Funded deposit" }).first();
-      check("second request not possible: status shown instead of the button", (await depRow.innerText()).includes("Invoice requested") && (await depRow.getByRole("button", { name: "Request invoice" }).count()) === 0);
+      const mpanel2 = mp.getByTestId("fee-panel").first();
+      check("second request not possible: status shown instead of the button", (await mpanel2.innerText()).includes("Invoice requested") && (await mpanel2.getByRole("button", { name: "Request invoice" }).count()) === 0);
       check("only one open invoice request per item", (await one("select count(*)::int as n from gif.invoice_requests where obligation_id = $1", [ir.obligation_id])).n === 1);
       // Member can't open the leader's receipt
       const leaderPay = await one("select p.id from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'paid'", [B.email]);
@@ -353,7 +386,7 @@ export async function run({ base, mt, env, db: dbc }) {
       check("candidate cannot export CSV", ex.status() === 403);
       await mp.context().close();
 
-      // Finance records the member's USD deposit manually (audited)
+      // Finance: invoice sent, then the member's transfer of USD 162.16 recorded as an installment (audited)
       const fp = await newPage();
       await login(fp, "finance@example.test", "/admin");
       await fp.goto("/admin/payments");
@@ -364,32 +397,42 @@ export async function run({ base, mt, env, db: dbc }) {
       await waitDb(async () => (await one("select r.status from gif.invoice_requests r join gif.participants p on p.id = r.participant_id where p.email = $1", [M.email]))?.status === "invoice_sent");
       check("finance marks invoice sent → participant emailed", !!(await one("select 1 from gif.email_outbox where template = 'invoice_sent' and to_email = $1 and subject like '%INV-E2E-0001%'", [M.email])));
       await fp.goto(`/admin/applicants/${app.id}`);
-      const row = fp.locator("tr", { hasText: "Self-Funded deposit" }).filter({ hasText: "Nur Aisyah" });
-      await row.getByText("Record manual payment").click();
-      await row.getByLabel("Bank reference / proof").fill("SWIFT-REF-E2E-001");
-      await row.getByRole("button", { name: "Record payment" }).click();
-      await waitDb(async () => (await obligation(M.email, "deposit")).status === "paid");
+      const row = () => fp.locator("tr", { hasText: "Self-Funded programme fee" }).filter({ hasText: "Nur Aisyah" });
+      // Below the minimum is refused.
+      await row().getByText("Record manual payment").click();
+      await row().getByLabel(/Amount \(USD\)/).fill("100");
+      await row().getByLabel("Bank reference / proof").fill("TOO-SMALL");
+      await row().getByRole("button", { name: "Record payment" }).click();
+      await row().getByText(/minimum payment is USD 135.14/).waitFor();
+      check("manual payment below the minimum refused", (await fee(M.email)).paid === 0);
+      await fp.goto(`/admin/applicants/${app.id}`);
+      await row().getByText("Record manual payment").click();
+      await row().getByLabel(/Amount \(USD\)/).fill("162.16");
+      await row().getByLabel("Bank reference / proof").fill("SWIFT-REF-E2E-001");
+      await row().getByRole("button", { name: "Record payment" }).click();
+      await waitDb(async () => (await fee(M.email)).paid > 0);
+      const fm2 = await fee(M.email);
+      check("manual installment USD 162.16 credited; early bird → fee USD 799", fm2.paid === 162.16 && fm2.amt === 799 && fm2.status === "open", JSON.stringify({ paid: fm2.paid, amt: fm2.amt }));
       const appB = await appOf(B.email);
-      check("manual USD deposit → team Confirmed Participant", appB.status === "confirmed_participant", appB.status);
+      check("both seats confirmed → team Confirmed Participant", appB.status === "confirmed_participant", appB.status);
       check("verified transfer closes the invoice request", (await one("select r.status from gif.invoice_requests r join gif.participants p on p.id = r.participant_id where p.email = $1", [M.email])).status === "paid");
       check("manual payment audited", !!(await one("select 1 from gif.audit_log where action = 'manual_payment_recorded' and actor = 'finance@example.test'")));
       check("onboarding emails sent to both", (await one("select count(*)::int as n from gif.email_outbox where template = 'onboarding' and application_id = $1", [app.id])).n === 2);
-      // Wrong manual amount refused
-      const brow = fp.locator("tr", { hasText: "Self-Funded balance" }).filter({ hasText: "Nur Aisyah" });
-      await brow.getByText("Record manual payment").click();
-      await brow.getByLabel("Amount (USD)").fill("100");
-      await brow.getByLabel("Bank reference / proof").fill("PARTIAL");
-      await brow.getByRole("button", { name: "Record payment" }).click();
-      await brow.getByText(/must equal the obligation/).waitFor();
-      check("partial manual payment refused", (await obligation(M.email, "balance")).status === "open");
+      await fp.goto(`/admin/applicants/${app.id}`);
+      const summary = await fp.getByTestId("fee-summary").innerText();
+      check("admin: fee, verified payments and outstanding per delegate", summary.includes("USD 799") && summary.includes("USD 162.16") && summary.includes("USD 636.84") && summary.includes("IDR 10,999,000") && summary.includes("Early bird"));
       await fp.context().close();
 
-      // Leader pays the balance online; then a duplicate payment is detected and refunded
+      // Leader: a second installment, then the full remaining balance.
       const lp = await newPage();
       await login(lp, B.email);
-      await payOnline(lp, "Self-Funded balance", "settlement");
-      await lp.getByText("Payment verified").waitFor({ timeout: 30_000 });
-      check("leader balance paid", (await obligation(B.email, "balance")).status === "paid");
+      await payFee(lp, B.name, 4000000, "settlement");
+      await waitDb(async () => (await fee(B.email)).paid === 7000000);
+      check("second installment IDR 4,000,000 → IDR 7,000,000 verified, IDR 6,999,000 left", (await fee(B.email)).paid === 7000000 && (await fee(B.email)).status === "open");
+      const ofull = await payFee(lp, B.name, 0, "settlement", true);
+      await waitDb(async () => (await fee(B.email)).status === "paid");
+      check("full balance: charged exactly IDR 6,999,000 and the fee is paid", Number((await one("select amount from gif.payments where order_id = $1", [ofull])).amount) === 6999000 && (await fee(B.email)).paid === 13999000);
+      check("three verified installments on the fee", (await one("select count(*)::int as n from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'paid'", [B.email])).n === 3);
       await lp.context().close();
     }
 
@@ -643,28 +686,30 @@ export async function run({ base, mt, env, db: dbc }) {
       await ap.context().close();
     }
 
-    // ── Partial Funded acceptance: deposit (7 days) + balance (30 June), seat secured by the verified deposit ──────────
+    // ── Partial Funded acceptance: one contribution in installments, seat secured by the first verified payment ──────────
     {
       const dp = await newPage();
       await login(dp, D.email, "/portal/results");
       await dp.goto("/portal/results");
       check("Partial Funded result shows USD 699 contribution", (await dp.locator("body").innerText()).includes("USD 699"));
       await dp.getByRole("button", { name: "Accept my offer" }).click();
-      await waitDb(async () => !!(await obligation(D.email, "balance")));
-      const pdep = await obligation(D.email, "deposit"), pbal = await obligation(D.email, "balance");
-      check("Partial Funded obligations: deposit USD 300 + balance USD 399", Number(pdep.amount) === 300 && Number(pbal.amount) === 399 && pdep.currency === "USD");
-      check("Partial Funded not confirmed before deposit", (await appOf(D.email)).status === "selected_partial_funded");
+      await waitDb(async () => !!(await obligation(D.email, "full")));
+      const pfee = await obligation(D.email, "full");
+      check("Partial Funded: one contribution of USD 699, paid in installments", Number(pfee.amount) === 699 && pfee.currency === "USD" && pfee.label === "Partial Funded contribution" && !!pfee.first_due_at);
+      check("Partial Funded not confirmed before the first payment", (await appOf(D.email)).status === "selected_partial_funded");
       await dp.context().close();
       const fp = await newPage();
       await login(fp, "finance@example.test", "/admin");
       const appD = await appOf(D.email);
       await fp.goto(`/admin/applicants/${appD.id}`);
-      const row = fp.locator("tr", { hasText: "Partial Funded deposit" });
+      const row = fp.locator("tr", { hasText: "Partial Funded contribution" });
       await row.getByText("Record manual payment").click();
+      await row.getByLabel(/Amount \(USD\)/).fill("200");
       await row.getByLabel("Bank reference / proof").fill("WISE-PF-DEP");
       await row.getByRole("button", { name: "Record payment" }).click();
-      await waitDb(async () => (await obligation(D.email, "deposit")).status === "paid");
-      check("Partial Funded deposit verified → Confirmed Participant", (await appOf(D.email)).status === "confirmed_participant");
+      await waitDb(async () => Number((await obligation(D.email, "full")).paid_amount) === 200);
+      check("Partial Funded: USD 200 first installment, USD 499 left", Number((await obligation(D.email, "full")).paid_amount) === 200 && (await obligation(D.email, "full")).status === "open");
+      check("Partial Funded first payment verified → Confirmed Participant", (await appOf(D.email)).status === "confirmed_participant");
       await fp.context().close();
     }
 
@@ -689,7 +734,7 @@ export async function run({ base, mt, env, db: dbc }) {
       const mail = await one("select html from gif.email_outbox where to_email = 'dewi.guardian@example.test' and template = 'guardian_consent'");
       check("guardian consent email sent", !!mail);
       await page.goto("/portal/payments");
-      await page.locator("tr", { hasText: "Self-Funded deposit" }).getByRole("button", { name: /Pay online/ }).click();
+      await page.getByTestId("fee-panel").first().getByTestId("pay").click();
       await page.getByText(/parent or guardian must give consent/).waitFor();
       check("payment refused until guardian consents", !(await one("select 1 from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1", [E.email])));
       const link = mail.html.match(/href="([^"]*guardian-consent\/[^"]+)"/)[1].replace(/^https?:\/\/[^/]+/, "");
@@ -705,7 +750,7 @@ export async function run({ base, mt, env, db: dbc }) {
       check("used guardian link no longer valid", (await gp.locator("body").innerText()).includes("no longer valid"));
       await gp.context().close();
       await page.goto("/portal/payments");
-      await page.locator("tr", { hasText: "Self-Funded deposit" }).getByRole("button", { name: /Pay online/ }).click();
+      await page.getByTestId("fee-panel").first().getByTestId("pay").click();
       check("payment opens after guardian consent", !!(await snapOrder(page)));
       await page.context().close();
     }

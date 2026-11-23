@@ -23,7 +23,7 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
       `select r.id, a.id as app_id, a.code, r.amount, r.currency, r.reason, r.created_at from gif.refunds r join gif.payments p on p.id = r.payment_id join gif.applications a on a.id = p.application_id
        where a.cohort_id = $1 and r.status in ('requested', 'failed') order by r.created_at`, [cohort.id]),
     q<{ app_id: string; code: string; legal_name: string; label: string; amount: number; currency: "IDR" | "USD"; due_at: string | null }>(
-      `select a.id as app_id, a.code, p.legal_name, o.label, o.amount, o.currency, o.due_at from gif.obligations o join gif.applications a on a.id = o.application_id
+      `select a.id as app_id, a.code, p.legal_name, o.label, (o.amount - o.paid_amount)::float8 as amount, o.currency, o.due_at from gif.obligations o join gif.applications a on a.id = o.application_id
        join gif.participants p on p.id = o.participant_id where a.cohort_id = $1 and o.status = 'open' and a.status not in ('draft', 'withdrawn') and p.withdrawn_at is null
        order by o.due_at nulls last, a.code limit 300`, [cohort.id]),
     q<{ n: number }>("select count(*)::int as n from gif.payment_events where signature_ok = false and received_at > now() - interval '7 days'"),
@@ -61,6 +61,7 @@ export default async function AdminPayments({ searchParams }: { searchParams: Pr
         {refundQueue.map((r) => <tr key={r.id}><td>{fmtDateTime(r.created_at)}</td><td><Link href={`/admin/applicants/${r.app_id}`}>{r.code}</Link></td><td>{formatMoney(r.amount, r.currency as "IDR")}</td><td>{r.reason}</td></tr>)}</tbody></table></div>}
 
       <h2>Outstanding</h2>
+      <p className="small muted">Amounts still to be paid (installments included). Each delegate&rsquo;s fee, verified payments and installments are on their applicant page.</p>
       <div className="table-wrap"><table className="t compact"><thead><tr><th>Application</th><th>Delegate</th><th>Item</th><th>Amount</th><th>Due</th></tr></thead><tbody>
         {outstanding.map((o, i) => <tr key={i}><td><Link href={`/admin/applicants/${o.app_id}`}>{o.code}</Link></td><td>{o.legal_name}</td><td>{o.label}</td><td>{formatMoney(o.amount, o.currency)}</td><td>{fmtDate(o.due_at)}</td></tr>)}
       </tbody></table></div>

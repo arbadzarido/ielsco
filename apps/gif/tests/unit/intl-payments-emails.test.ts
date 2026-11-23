@@ -34,8 +34,8 @@ test("Indonesian payers keep the official IDR flow; nothing is converted twice",
   // Obligations keep their official currency and amount: IDR stays IDR, USD stays USD (conversion happens only at card checkout).
   const id = plannedObligations(s, "self_funded", "ID", new Date("2026-11-21T00:00:00Z"));
   const intl = plannedObligations(s, "self_funded", "MY", new Date("2026-11-21T00:00:00Z"));
-  assert.deepEqual(id.map((o) => [o.currency, o.amount]), [["IDR", s.prices.self_funded_deposit.IDR], ["IDR", s.prices.self_funded_total.IDR - s.prices.self_funded_deposit.IDR]]);
-  assert.deepEqual(intl.map((o) => [o.currency, o.amount]), [["USD", s.prices.self_funded_deposit.USD], ["USD", s.prices.self_funded_total.USD - s.prices.self_funded_deposit.USD]]);
+  assert.deepEqual(id.map((o) => [o.currency, o.amount]), [["IDR", s.prices.self_funded_total.IDR]]);
+  assert.deepEqual(intl.map((o) => [o.currency, o.amount]), [["USD", s.prices.self_funded_total.USD]]);
   assert.equal(plannedObligations(s, "fully_funded", "MY")[0].currency, "IDR", "Elco Pro is IDR for everyone");
 });
 
