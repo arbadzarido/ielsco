@@ -72,3 +72,6 @@ Collective and Studio groups now have a classroom: `course_class_sessions`, `cou
 - Teach page `/dashboard/courses/teach`: add or cancel sessions, mark attendance (only students whose paid month covers the session), share materials (https links), post announcements (members are notified), write per-student progress feedback.
 - My Courses shows each paying student their upcoming sessions, announcements, materials, own attendance and own feedback. Access ends when the paid month ends.
 - Tests: `tests/db/ielscourse-classroom.pglite.mjs` 28/28; payments 63/63 and tutoring 45/45 unchanged. Teach and My Courses were exercised in a browser against the local database (tutor flow and student view, desktop and mobile width).
+
+## 8. Go-live log
+- 23 Nov 2026: founder reports the production variables are set on the IELSco Vercel project. This docs-only change redeploys production so the variables take effect (Vercel applies changed variables only to new deployments, and `/products/courses` reads the checkout switch at build time).
