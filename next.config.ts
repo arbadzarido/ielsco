@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
 
   // 2. LOGIC LAMA: Remote Patterns
   images: {
+    // Cost: optimised images are re-generated when the cache entry expires (default 4h on Next 16). Static site images
+    // never change under the same URL, so keep them 30 days: fewer transformations and cache writes.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: '*.googleusercontent.com' },

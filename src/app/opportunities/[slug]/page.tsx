@@ -12,7 +12,7 @@ import { CATEGORY_LABEL, deadlineState, FUNDING_LABEL, getOpportunity, LEVEL_LAB
 import { ElcoPractice } from "@/components/elco/ElcoCallout";
 import { OPPORTUNITY_ELCO_CONTEXT } from "@/lib/elco";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const o = await getOpportunity((await params).slug);

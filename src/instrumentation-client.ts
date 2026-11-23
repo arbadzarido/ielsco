@@ -11,14 +11,14 @@ Sentry.init({
   integrations: [Sentry.replayIntegration()],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  tracesSampleRate: 0.1, // cost: 100% sampling made every request send a trace through the /monitoring tunnel (a function invocation each)
   // Enable logs to be sent to Sentry
-  enableLogs: true,
+  enableLogs: false, // cost: structured logs are not read anywhere; errors still reported in full
 
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
+  replaysSessionSampleRate: 0.02,
 
   // Define how likely Replay events are sampled when an error occurs.
   replaysOnErrorSampleRate: 1.0,

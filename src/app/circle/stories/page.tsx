@@ -5,7 +5,7 @@ import StoriesSectionTabs from "@/components/stories/StoriesSectionTabs";
 import { getPublishedStories } from "@/lib/stories/public";
 
 // Listing of published member stories (Supabase, cached; refreshed every 5 minutes and on admin saves).
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Member Stories | IELS Circle English speaking community",
