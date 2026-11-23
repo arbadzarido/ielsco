@@ -17,7 +17,7 @@ import { EventSheet, EVENT_COLUMNS, askScope, syncEvent, type EventDefaults, typ
 import { Agenda, MonthGrid, TimeGrid, type Drop, type Item } from "@/components/os/calendar-views";
 import { MarketingBoard } from "@/components/os/marketing-board";
 import { ErrorLine, PageTitle, Select, btn, btnGhost, btnPrimary, muted, panel, ring } from "@/components/os/ui";
-import { WORKSPACES } from "@/lib/os/meta";
+import { STREAMS, inStream, streamFromParams } from "@/lib/os/streams";
 import { CATEGORIES, CATEGORY_STYLE, DEFAULT_TZ, addDays, daysBetween, itemDays, minutesToTime, monthWeeks, weekday, zonedInstant, zonedParts } from "@/lib/os/calendar";
 import { expandSeries, type ExceptionLike } from "@/lib/os/recurrence";
 import { busyBlocks, findConflicts, linkWarnings, rescheduleReasons, type BusyRow } from "@/lib/os/conflicts";
@@ -26,14 +26,14 @@ import { cn } from "@/lib/utils";
 
 const VIEWS = [{ key: "month", label: "Month" }, { key: "week", label: "Week" }, { key: "day", label: "Day" }, { key: "upcoming", label: "Upcoming" }] as const;
 type View = (typeof VIEWS)[number]["key"];
-const SPACES = [{ key: "all", label: "All" }, { key: "my", label: "My calendar" }, { key: "project", label: "Project" }, { key: "marketing", label: "Marketing" }, { key: "company", label: "Company" }] as const;
+const SPACES = [{ key: "all", label: "All" }, { key: "my", label: "My calendar" }, { key: "project", label: "Project" }, { key: "marketing", label: "Marketing" }, { key: "company", label: "Stream" }] as const;
 type Space = (typeof SPACES)[number]["key"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-type TaskRow = { id: string; title: string; status: string; company_code: string; division_id: string | null; project_id: string | null; owner_person_id: string | null; due_date: string | null; scheduled_start: string | null; scheduled_end: string | null; on_calendar: boolean };
-type MilestoneRow = { id: string; title: string; due_date: string; status: string; company_code: string; lead_division_id: string | null; is_major: boolean; workstream_name: string | null; project_id: string | null };
-type ContentRow = { id: string; title: string; status: string; company_code: string; division_id: string | null; campaign_id: string | null; channel: string | null; publish_at: string | null; planned_publish_date: string | null; owner_person_id: string | null; creator_person_id: string | null; reviewer_person_id: string | null; related_project_id: string | null };
-type CampaignRow = { id: string; name: string; status: string; company_code: string; division_id: string | null; start_date: string | null; end_date: string | null; project_id: string | null; owner_person_id: string | null };
+type TaskRow = { id: string; title: string; status: string; company_code: string | null; streams: string[]; division_id: string | null; project_id: string | null; owner_person_id: string | null; due_date: string | null; scheduled_start: string | null; scheduled_end: string | null; on_calendar: boolean };
+type MilestoneRow = { id: string; title: string; due_date: string; status: string; company_code: string | null; streams: string[]; lead_division_id: string | null; is_major: boolean; workstream_name: string | null; project_id: string | null };
+type ContentRow = { id: string; title: string; status: string; company_code: string | null; streams: string[]; division_id: string | null; campaign_id: string | null; channel: string | null; publish_at: string | null; planned_publish_date: string | null; owner_person_id: string | null; creator_person_id: string | null; reviewer_person_id: string | null; related_project_id: string | null };
+type CampaignRow = { id: string; name: string; status: string; company_code: string | null; streams: string[]; division_id: string | null; start_date: string | null; end_date: string | null; project_id: string | null; owner_person_id: string | null };
 
 export default function CalendarPage() { return <Suspense fallback={null}><Calendar /></Suspense>; }
 
@@ -48,8 +48,8 @@ function Calendar() {
   const space: Space = SPACES.find((s) => s.key === params.get("ws"))?.key ?? "all";
   const anchor = /^\d{4}-\d{2}-\d{2}$/.test(params.get("d") ?? "") ? params.get("d")! : today;
   const project = params.get("p") ?? "";
-  const myCompanies = WORKSPACES.filter((w) => me.isAdmin || me.companies.includes(w.code) || w.code === "HQ");
-  const company = params.get("c") ?? (space === "company" ? (me.companies[0] ?? "HQ") : "");
+  // ?stream= (or the older ?c= / ?company= links). Every stream is open to everyone; RLS still filters each record.
+  const stream = streamFromParams((k) => params.get(k) ?? (k === "company" ? params.get("c") : null)) ?? (space === "company" ? "HQ" : "");
   const [division, setDivision] = useState("");
   const [category, setCategory] = useState("");
   const [layers, setLayers] = useState({ milestones: true, deadlines: false, google: true, content: true });
@@ -94,14 +94,14 @@ function Calendar() {
       const [one, series, tk, dl, ml, ct, cp, mine] = await Promise.all([
         supabase.from("os_events").select(EVENT_COLUMNS).is("recurrence", null).lt("starts_at", to).gte("ends_at", from).order("starts_at").limit(800),
         supabase.from("os_events").select(EVENT_COLUMNS).not("recurrence", "is", null).lt("starts_at", to).or(`series_ends_at.is.null,series_ends_at.gt.${from}`).limit(300),
-        supabase.from("os_tasks").select("id, title, status, company_code, division_id, project_id, owner_person_id, due_date, scheduled_start, scheduled_end, on_calendar")
+        supabase.from("os_tasks").select("id, title, status, company_code, streams, division_id, project_id, owner_person_id, due_date, scheduled_start, scheduled_end, on_calendar")
           .or(`and(scheduled_start.lt.${to},scheduled_end.gt.${from}),and(on_calendar.eq.true,due_date.gte.${range.from},due_date.lte.${range.to})`).neq("status", "Cancelled").limit(500),
-        layers.deadlines ? supabase.from("os_tasks").select("id, title, status, company_code, division_id, project_id, owner_person_id, due_date, scheduled_start, scheduled_end, on_calendar")
+        layers.deadlines ? supabase.from("os_tasks").select("id, title, status, company_code, streams, division_id, project_id, owner_person_id, due_date, scheduled_start, scheduled_end, on_calendar")
           .gte("due_date", range.from).lte("due_date", range.to).not("status", "in", "(Done,Cancelled)").limit(500) : none,
-        layers.milestones ? supabase.from("os_timeline_items").select("id, title, due_date, status, company_code, lead_division_id, is_major, workstream_name, project_id").gte("due_date", range.from).lte("due_date", range.to).neq("status", "Cancelled").limit(300) : none,
-        layers.content ? supabase.from("os_campaign_items").select("id, title, status, company_code, division_id, campaign_id, channel, publish_at, planned_publish_date, owner_person_id, creator_person_id, reviewer_person_id, related_project_id")
+        layers.milestones ? supabase.from("os_timeline_items").select("id, title, due_date, status, company_code, streams, lead_division_id, is_major, workstream_name, project_id").gte("due_date", range.from).lte("due_date", range.to).neq("status", "Cancelled").limit(300) : none,
+        layers.content ? supabase.from("os_campaign_items").select("id, title, status, company_code, streams, division_id, campaign_id, channel, publish_at, planned_publish_date, owner_person_id, creator_person_id, reviewer_person_id, related_project_id")
           .gte("planned_publish_date", range.from).lte("planned_publish_date", range.to).neq("status", "Cancelled").limit(500) : none,
-        supabase.from("os_campaigns").select("id, name, status, company_code, division_id, start_date, end_date, project_id, owner_person_id").not("status", "in", "(Cancelled)").limit(300),
+        supabase.from("os_campaigns").select("id, name, status, company_code, streams, division_id, start_date, end_date, project_id, owner_person_id").not("status", "in", "(Cancelled)").limit(300),
         Promise.all([supabase.from("os_event_attendees").select("event_id").eq("person_id", myId), supabase.from("os_task_assignees").select("task_id").eq("person_id", myId)]),
       ]);
       if (!live) return;
@@ -126,7 +126,7 @@ function Calendar() {
         const canMove = e.status !== "Cancelled";
         out.push({ key: occ ? `${e.id}@${occ.occurrence_start}` : e.id, title: e.status === "Cancelled" ? `Cancelled: ${t}` : t, first: d.first, last: d.last, allDay: e.all_day, startTime: d.startTime,
           endTime: !e.all_day && d.first === d.last ? (endP.date > d.first ? "24:00" : endP.time) : undefined, kind: e.category, source: "event", style: e.category, label: e.recurrence ? `${e.category}, repeats` : e.category,
-          company: e.company_code, division: e.division_id, project: e.project_id ?? (e.campaign_id ? campProject.get(e.campaign_id) ?? null : null), campaign: e.campaign_id,
+          streams: e.streams, division: e.division_id, project: e.project_id ?? (e.campaign_id ? campProject.get(e.campaign_id) ?? null : null), campaign: e.campaign_id,
           mine: e.created_by === myId || attending.has(e.id), event: e, occ, starts_at: s, ends_at: en, movable: canMove, resizable: canMove && !e.all_day, recurring: Boolean(e.recurrence),
           sub: [occ?.exception?.location ?? e.location, e.google_event_id ? "In Google Calendar" : null].filter(Boolean).join(" · ") || undefined });
       };
@@ -141,7 +141,7 @@ function Calendar() {
         if (t.scheduled_start && t.scheduled_end && Date.parse(t.scheduled_start) < Date.parse(to) && Date.parse(t.scheduled_end) > Date.parse(from)) {
           const d = itemDays(t.scheduled_start, t.scheduled_end, false, DEFAULT_TZ);
           out.push({ key: `t:${t.id}`, title: `${t.status === "Done" ? "✓ " : ""}${t.title}`, first: d.first, last: d.last, allDay: false, startTime: d.startTime, endTime: d.first === d.last ? zonedParts(t.scheduled_end, DEFAULT_TZ).time : undefined,
-            kind: "Scheduled task", source: "task", style: "Scheduled task", label: "Task, scheduled work", company: t.company_code, division: t.division_id, project: t.project_id, mine: mineT, href: `/os/tasks/${t.id}`,
+            kind: "Scheduled task", source: "task", style: "Scheduled task", label: "Task, scheduled work", streams: t.streams, division: t.division_id, project: t.project_id, mine: mineT, href: `/os/tasks/${t.id}`,
             sub: `${t.id}${t.due_date ? ` · due ${t.due_date}` : ""}`, starts_at: t.scheduled_start, ends_at: t.scheduled_end, movable: t.status !== "Done", resizable: t.status !== "Done" });
         }
         if (t.on_calendar && t.due_date && t.due_date >= range.from && t.due_date <= range.to) { seenTask.add(t.id); out.push(deadline(t, mineT)); }
@@ -152,19 +152,19 @@ function Calendar() {
       }
       for (const t of (ml.data ?? []) as MilestoneRow[]) {
         out.push({ key: `m:${t.id}`, title: `${t.is_major ? "◆ " : "◇ "}${t.title}`, first: t.due_date, last: t.due_date, allDay: true, kind: "Milestone", source: "milestone", style: "Milestone", label: t.is_major ? "Major milestone (Timeline)" : "Milestone (Timeline)",
-          company: t.company_code, division: t.lead_division_id, project: t.project_id, mine: false, href: `/os/timeline/${t.id}`, sub: [t.id, t.workstream_name].filter(Boolean).join(" · "), movable: false, resizable: false });
+          streams: t.streams, division: t.lead_division_id, project: t.project_id, mine: false, href: `/os/timeline/${t.id}`, sub: [t.id, t.workstream_name].filter(Boolean).join(" · "), movable: false, resizable: false });
       }
       for (const c of (ct.data ?? []) as ContentRow[]) {
         const date = c.publish_at ? zonedParts(c.publish_at, DEFAULT_TZ).date : c.planned_publish_date!;
         out.push({ key: `c:${c.id}`, title: `${c.status === "Published" ? "✓ " : ""}${c.title}`, first: date, last: date, allDay: !c.publish_at, startTime: c.publish_at ? zonedParts(c.publish_at, DEFAULT_TZ).time : undefined,
-          kind: "Content", source: "content", style: "Content", label: `Content${c.channel ? ` for ${c.channel}` : ""}, ${c.status}`, company: c.company_code, division: c.division_id, campaign: c.campaign_id,
+          kind: "Content", source: "content", style: "Content", label: `Content${c.channel ? ` for ${c.channel}` : ""}, ${c.status}`, streams: c.streams, division: c.division_id, campaign: c.campaign_id,
           project: c.related_project_id ?? (c.campaign_id ? campProject.get(c.campaign_id) ?? null : null), mine: [c.owner_person_id, c.creator_person_id, c.reviewer_person_id].includes(myId),
           href: `/os/campaigns?open=${c.id}`, sub: c.id, movable: false, resizable: false });
       }
       for (const c of cps) {
         if (!c.start_date || c.start_date > range.to || (c.end_date ?? c.start_date) < range.from) continue;
         out.push({ key: `p:${c.id}`, title: c.name, first: c.start_date, last: c.end_date ?? c.start_date, allDay: true, kind: "Campaign span", source: "campaign", style: "Campaign span", label: `Campaign period, ${c.status}`,
-          company: c.company_code, division: c.division_id, project: c.project_id, campaign: c.id, mine: c.owner_person_id === myId, href: `/os/campaigns/${c.id}`, sub: c.id, movable: false, resizable: false });
+          streams: c.streams, division: c.division_id, project: c.project_id, campaign: c.id, mine: c.owner_person_id === myId, href: `/os/campaigns/${c.id}`, sub: c.id, movable: false, resizable: false });
       }
       setItems(out);
       setGErr(null);
@@ -176,7 +176,7 @@ function Calendar() {
         const g: Item[] = (j.events ?? []).filter((x: { os_event_id: string | null }) => !x.os_event_id || !osIds.has(x.os_event_id)).map((x: { id: string; title: string; starts_at: string; ends_at: string; all_day: boolean; html_link: string | null; location: string | null }) => {
           const d = itemDays(x.starts_at, x.ends_at, x.all_day, DEFAULT_TZ);
           return { key: `g:${x.id}`, title: x.title, first: d.first, last: d.last, allDay: x.all_day, startTime: d.startTime, endTime: !x.all_day && d.first === d.last ? zonedParts(x.ends_at, DEFAULT_TZ).time : undefined,
-            kind: "Google", source: "google", style: "Google", label: "My Google Calendar", company: null, division: null, project: null, mine: true, external: x.html_link ?? undefined,
+            kind: "Google", source: "google", style: "Google", label: "My Google Calendar", streams: [], division: null, project: null, mine: true, external: x.html_link ?? undefined,
             sub: [x.location, "Google Calendar"].filter(Boolean).join(" · "), movable: false, resizable: false } satisfies Item;
         });
         setItems((cur) => (cur ? [...cur.filter((i) => i.source !== "google"), ...g] : g));
@@ -186,16 +186,16 @@ function Calendar() {
   }, [supabase, range, layers, google?.connected, me.person.id, tick]);
 
   const visible = useMemo(() => (items ?? []).filter((i) => {
-    if (i.source === "google") return (space === "all" || space === "my") && !company && !division && !category;
+    if (i.source === "google") return (space === "all" || space === "my") && !stream && !division && !category;
     if (space === "my" && !i.mine) return false;
     if (space === "project" && (!project || i.project !== project)) return false;
     if (space === "marketing" && !(i.source === "content" || i.source === "campaign" || i.campaign || (i.source === "event" && i.style === "Campaign"))) return false;
     if (space !== "marketing" && space !== "project" && i.source === "campaign") return false;
-    if (company && i.company !== company) return false;
+    if (stream && !inStream(i.streams, stream)) return false;
     if (division && i.division !== division) return false;
     if (category && i.style !== category && !(category === "Task" && (i.source === "task" || i.source === "deadline"))) return false;
     return true;
-  }), [items, space, project, company, division, category]);
+  }), [items, space, project, stream, division, category]);
 
   const open = useCallback((i: Item) => {
     if (i.event) return setSheet({ open: true, event: i.event, occ: i.event.recurrence ? i.occ ?? null : null });
@@ -204,7 +204,7 @@ function Calendar() {
   }, [router]);
   const newEvent = (date: string, startTime?: string) => {
     const endTime = startTime ? minutesToTime(Math.min(23 * 60 + 45, Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3)) + 60)) : undefined;
-    setSheet({ open: true, event: null, defaults: { date, startTime, endTime, project_id: space === "project" ? project || null : null, company_code: company || undefined, category: space === "marketing" ? "Campaign" : undefined } });
+    setSheet({ open: true, event: null, defaults: { date, startTime, endTime, project_id: space === "project" ? project || null : null, streams: stream ? [stream] : undefined, category: space === "marketing" ? "Campaign" : undefined } });
   };
 
   // ── Drag and drop rescheduling ──────────────────────────────────────────────────────────────────────────────────
@@ -316,7 +316,7 @@ function Calendar() {
       </div>
       <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" data-testid="os-cal-filters">
         {space === "project" && <Select ariaLabel="Project" value={project} onChange={(v) => nav({ p: v || null })} placeholder="Choose a project" options={projects.map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} className="col-span-2 sm:w-64" />}
-        <Select ariaLabel="Company" value={company} onChange={(v) => nav({ c: v || null })} placeholder="All companies" options={myCompanies.map((w) => ({ value: w.code, label: w.name }))} className="sm:w-40" />
+        <Select ariaLabel="Stream" value={stream} onChange={(v) => nav({ stream: v || null, c: null })} placeholder="All streams" options={STREAMS.map((w) => ({ value: w.code, label: w.code === "HQ" ? "HQ (incl. not assigned)" : w.name }))} className="sm:w-44" />
         <Select ariaLabel="Division" value={division} onChange={setDivision} placeholder="All divisions" options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} className="sm:w-44" />
         <Select ariaLabel="Category" value={category} onChange={setCategory} placeholder="All kinds" options={[...CATEGORIES, { value: "Task", label: "Tasks" }, "Milestone", "Content"]} className="sm:w-40" />
         <div className="col-span-2 flex flex-wrap items-center gap-x-3 text-xs text-[#3A4B60]" role="group" aria-label="Layers">
@@ -341,7 +341,7 @@ function Calendar() {
 
 function deadline(t: TaskRow, mine: boolean): Item {
   return { key: `d:${t.id}`, title: `${t.status === "Done" ? "✓ " : ""}${t.title}`, first: t.due_date!, last: t.due_date!, allDay: true, kind: "Task deadline", source: "deadline", style: "Task deadline", label: t.on_calendar ? "Task deadline (pinned)" : "Task deadline",
-    company: t.company_code, division: t.division_id, project: t.project_id, mine, href: `/os/tasks/${t.id}`, sub: `${t.id} · due`, movable: false, resizable: false };
+    streams: t.streams, division: t.division_id, project: t.project_id, mine, href: `/os/tasks/${t.id}`, sub: `${t.id} · due`, movable: false, resizable: false };
 }
 
 const fmt = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });

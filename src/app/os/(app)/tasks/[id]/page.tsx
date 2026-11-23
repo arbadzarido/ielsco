@@ -13,8 +13,10 @@ import { PersonSelect } from "@/components/os/pickers";
 import { TaskPlanning } from "@/components/os/task-planning";
 import { TASK_COLUMNS, TaskSheet, type TaskRow } from "@/components/os/work-forms";
 import { Avatar, Empty, ErrorLine, KeyValue, Loading, PageTitle, Section, Select, StatusBadge, btn, btnDanger, btnGhost, panel, ring } from "@/components/os/ui";
-import { TASK_STATUSES, companyName, fmtDate, fmtDateTime, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
+import { TASK_STATUSES, fmtDate, fmtDateTime, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
+import { streamsLabel } from "@/lib/os/streams";
 
 export default function TaskPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -62,7 +64,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
     <div>
       <PageTitle title={t.title}
         crumbs={[{ href: "/os/tasks", label: "Tasks" }, ...(project.data ? [{ href: `/os/projects/${project.data.id}`, label: project.data.name }] : []), ...(t.parent_task_id ? [{ href: `/os/tasks/${t.parent_task_id}`, label: t.parent_task_id }] : [])]}
-        description={<span className="flex flex-wrap items-center gap-2">{t.id} · {companyName(t.company_code)}{due && <span className={cn(due.overdue ? "font-medium text-[#A12D2F]" : "")} data-testid="os-task-due">{due.label}</span>}</span>}
+        description={<span className="flex flex-wrap items-center gap-2">{t.id} · {streamsLabel(t.streams)}{due && <span className={cn(due.overdue ? "font-medium text-[#A12D2F]" : "")} data-testid="os-task-due">{due.label}</span>}</span>}
         actions={<>
           <Select ariaLabel="Status" value={t.status} onChange={(v) => update({ status: v })} options={TASK_STATUSES} className="w-40" />
           <button type="button" className={btn} onClick={() => setEditing(true)}>Edit</button>
@@ -97,7 +99,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
             </Section>
           )}
           <TaskPlanning id={t.id} onChanged={() => task.reload()} />
-          <Section title="Events"><LinkedEvents type="task" id={t.id} company={t.company_code} /></Section>
+          <Section title="Events"><LinkedEvents type="task" id={t.id} streams={t.streams} /></Section>
           <Section title="Documents and attachments"><LinkedDocuments type="task" id={t.id} /></Section>
           <EntityFeed type="task" id={t.id} />
         </div>
@@ -105,6 +107,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
         <aside className="space-y-4">
           <section className={cn(panel, "p-4")}>
             <KeyValue items={[
+              { label: "Streams", value: <StreamsEditor table="os_tasks" id={t.id} value={t.streams} onSaved={task.reload} /> },
               { label: "Owner", value: <span className="flex items-center gap-1.5"><Avatar name={personLabel(people, t.owner_person_id)} size={20} />{personLabel(people, t.owner_person_id)}</span> },
               { label: "Reviewer", value: t.reviewer_person_id ? personLabel(people, t.reviewer_person_id) : "—" },
               { label: "Priority", value: <StatusBadge value={t.priority} /> },
@@ -135,7 +138,7 @@ export default function TaskPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       <TaskSheet open={editing} task={t} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); task.reload(); }} />
-      <TaskSheet open={subOpen} defaults={{ parent_task_id: t.id, company_code: t.company_code }} onClose={() => setSubOpen(false)} onSaved={() => { setSubOpen(false); subs.reload(); }} />
+      <TaskSheet open={subOpen} defaults={{ parent_task_id: t.id }} onClose={() => setSubOpen(false)} onSaved={() => { setSubOpen(false); subs.reload(); }} />
     </div>
   );
 }

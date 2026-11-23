@@ -186,8 +186,8 @@ export default function CandidatePage() {
           {(team || (assignments.data ?? []).some((x) => x.person_id === myId)) && (
             <Section title="Interviews">
               <p className={cn("mb-2 text-xs", muted)}>Interviews are Restricted calendar events: only founders, the organiser and invited interviewers see them.</p>
-              {edit ? <LinkedEvents type="candidate" id={a.id} company="HQ" defaults={{ title: `Interview: ${a.full_name}`, category: "Meeting", sensitivity: "Restricted" }} />
-                : <LinkedEvents type="candidate" id={a.id} company="HQ" />}
+              {edit ? <LinkedEvents type="candidate" id={a.id} streams={["HQ"]} defaults={{ title: `Interview: ${a.full_name}`, category: "Meeting", sensitivity: "Restricted" }} />
+                : <LinkedEvents type="candidate" id={a.id} streams={["HQ"]} />}
             </Section>
           )}
 

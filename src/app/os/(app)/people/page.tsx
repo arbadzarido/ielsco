@@ -25,14 +25,14 @@ export default function PeoplePage() {
       && (!q || `${p.id} ${p.full_name} ${p.short_name ?? ""} ${prof.get(p.id)?.title ?? ""}`.toLowerCase().includes(q.toLowerCase())));
   return (
     <div>
-      <PageTitle title="People" description="Everyone with a Company OS account, their roles and reporting lines. Employment details and reviews are private." />
+      <PageTitle title="People" description="Everyone with a Company OS account, their roles and reporting lines. Everyone can work on every stream; the employer only says which entity employs them. Employment details and reviews are private." />
       <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
         <label className="relative col-span-2 md:w-64">
           <span className="sr-only">Search people</span>
           <Search size={15} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8593A3]" aria-hidden="true" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people" className={cn(input, "pl-8")} />
         </label>
-        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.filter((w) => w.code !== "HQ").map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-36" />
+        <Select ariaLabel="Employing entity" value={company} onChange={setCompany} options={WORKSPACES.filter((w) => w.code !== "HQ").map((w) => ({ value: w.code, label: w.name }))} placeholder="Any employer" className="md:w-40" />
         <Select ariaLabel="Division" value={division} onChange={setDivision} options={dir.divisions.map((d) => ({ value: d.id, label: d.name }))} placeholder="All divisions" className="md:w-44" />
         <Select ariaLabel="Role" value={role} onChange={setRole} options={(["founder", "manager", "member"] as const).map((r) => ({ value: r, label: ROLE_LABEL[r] }))} placeholder="Any role" className="col-span-2 md:w-36" />
       </div>

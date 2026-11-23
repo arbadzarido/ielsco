@@ -84,7 +84,7 @@ export function NewTrxSheet({ open, onClose, kind: initialKind = "expense", fin,
   const [payee, setPayee] = useState(me.person.id);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").eq("company_code", company).not("status", "in", "(Completed,Cancelled)").order("name").limit(300), [company]);
+  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").not("status", "in", "(Completed,Cancelled)").order("name").limit(400), []);
   const div = division || (divisions.length === 1 ? divisions[0].id : "");
   const value = parseIDR(amount);
   const submit = async () => {
@@ -116,7 +116,7 @@ export function NewTrxSheet({ open, onClose, kind: initialKind = "expense", fin,
             ? "Income counts as received only after Finance verifies it and records the receipt."
             : "A founder approves it first, then Finance verifies and pays. Approved is not paid: it shows as committed until Finance records the payment."}</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Company">{(id) => <CompanySelect id={id} value={company} onChange={(v) => { setCompany(v); setProject(""); }} includeHq={fin.operate} />}</Field>
+            <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => <CompanySelect id={id} value={company} onChange={(v) => { setCompany(v); setProject(""); }} includeHq={fin.operate} />}</Field>
             <Field label="Division">{(id) => <Select id={id} value={div} onChange={setDivision} placeholder="Choose a division" options={divisions.map((d) => ({ value: d.id, label: d.name }))} />}</Field>
           </div>
           <Field label="What it's for">{(id) => <input id={id} className={input} value={description} maxLength={1000} onChange={(e) => setDescription(e.target.value)} placeholder="Chairs for the open day" />}</Field>

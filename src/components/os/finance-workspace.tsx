@@ -68,14 +68,14 @@ export function FinanceLedger({ initialStatus, queue }: { initialStatus?: string
   const totals = ledgerTotals(shown);
   const people = dir?.peopleById ?? new Map();
   const exportCsv = () => downloadCsv(`ledger-${todayJakarta()}.csv`, toCsv(
-    ["ID", "Type", "Company", "Division", "Project", "Category", "Description", "Counterparty", "Amount (IDR)", "Direction", "Status", "Date", "Due", "Settled on", "Requested by", "Request"],
-    shown.map((t) => [t.id, KIND_LABEL[t.kind], t.company_code, dir?.divisionById.get(t.division_id ?? "")?.name ?? "", t.project_id, t.category_code, t.description, t.counterparty, t.amount, t.direction, trxStage(t).label, t.txn_date, t.due_date, t.settled_on, personLabel(people, t.requested_by), t.request_id])));
+    ["ID", "Type", "Legal entity", "Streams", "Division", "Project", "Category", "Description", "Counterparty", "Amount (IDR)", "Direction", "Status", "Date", "Due", "Settled on", "Requested by", "Request"],
+    shown.map((t) => [t.id, KIND_LABEL[t.kind], t.company_code, (t.streams ?? []).join(" + "), dir?.divisionById.get(t.division_id ?? "")?.name ?? "", t.project_id, t.category_code, t.description, t.counterparty, t.amount, t.direction, trxStage(t).label, t.txn_date, t.due_date, t.settled_on, personLabel(people, t.requested_by), t.request_id])));
   return (
     <Section title="Transactions" action={<button type="button" className={btn} onClick={exportCsv} disabled={!shown.length}>Download CSV</button>}>
       <div className="mb-3 grid gap-2 sm:grid-cols-5" data-testid="os-fin-filters">
         <Select ariaLabel="Status" value={status} onChange={setStatus} placeholder="Any status" options={[{ value: "queue:verify", label: "To verify" }, { value: "queue:reconcile", label: "To reconcile" }, ...STATUSES.map((s) => ({ value: s, label: TRX_STATUS_LABEL[s] }))]} />
         <Select ariaLabel="Type" value={kind} onChange={setKind} placeholder="Any type" options={(["expense", "reimbursement", "income"] as const).map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
-        <Select ariaLabel="Company" value={company} onChange={setCompany} placeholder="Any company" options={[{ value: "IEL", label: "IELSco" }, { value: "ELC", label: "Elco AI" }, { value: "HQ", label: "HQ" }]} />
+        <Select ariaLabel="Legal entity" value={company} onChange={setCompany} placeholder="Any legal entity" options={[{ value: "IEL", label: "IELSco" }, { value: "ELC", label: "Elco AI" }, { value: "HQ", label: "HQ" }]} />
         <Select ariaLabel="Division" value={division} onChange={setDivision} placeholder="Any division" options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} />
         <input aria-label="Search" className={input} placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
@@ -128,7 +128,7 @@ export function FinanceBudgets() {
         ) : <p className={cn("text-sm", muted)}>No budgets waiting.</p>}
       </Section>
       <Section title="Budgets against spending">
-        <div className="mb-3 max-w-xs"><Select ariaLabel="Company" value={company} onChange={setCompany} placeholder="All companies" options={[{ value: "IEL", label: "IELSco" }, { value: "ELC", label: "Elco AI" }, { value: "HQ", label: "HQ" }]} /></div>
+        <div className="mb-3 max-w-xs"><Select ariaLabel="Legal entity" value={company} onChange={setCompany} placeholder="All legal entities" options={[{ value: "IEL", label: "IELSco" }, { value: "ELC", label: "Elco AI" }, { value: "HQ", label: "HQ" }]} /></div>
         <p className={cn("mb-3 text-xs", muted)}>Spent counts paid and reconciled expenses in the budget&apos;s period, company, division, project and category. Committed is approved or verified but not yet paid.</p>
         <BudgetTable rows={summary.data} testId="os-budgets" />
         {fin.operate && (summary.data ?? []).some((b) => b.status === "approved") && (
@@ -163,7 +163,7 @@ function BudgetSheet({ onClose }: { onClose: () => void }) {
   const [notes, setNotes] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").eq("company_code", company).order("name").limit(300), [company]);
+  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").not("status", "in", "(Cancelled)").order("name").limit(400), []);
   const requests = useQuery<{ id: string; title: string }[]>((s) => s.from("os_requests").select("id, title").in("type_code", ["budget", "campaign_expense"]).order("created_at", { ascending: false }).limit(100), []);
   const value = parseIDR(amount);
   const save = async () => {
@@ -178,7 +178,7 @@ function BudgetSheet({ onClose }: { onClose: () => void }) {
     <SheetShell title="Propose a budget" onClose={onClose} onSave={save} disabled={busy || !value || name.trim().length < 3} saveLabel="Propose">
       <Field label="Name">{(id) => <input id={id} className={input} value={name} maxLength={160} onChange={(e) => setName(e.target.value)} placeholder="Operations, November" />}</Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Company">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
+        <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
         <Field label="Division">{(id) => <Select id={id} value={division} onChange={setDivision} placeholder="Company-wide" options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} />}</Field>
         <Field label="Project">{(id) => <Select id={id} value={project} onChange={setProject} placeholder="No project" options={(projects.data ?? []).map((p) => ({ value: p.id, label: p.name }))} />}</Field>
         <Field label="Category">{(id) => <Select id={id} value={category} onChange={setCategory} placeholder="Any category" options={(cats.data ?? []).filter((c) => c.direction === "expense").map((c) => ({ value: c.code, label: c.name }))} />}</Field>
@@ -217,7 +217,7 @@ export function FinanceCashflow() {
     <div className="space-y-6">
       <Section title="Cash flow" action={<button type="button" className={btn} onClick={exportCsv} disabled={!flow.data?.length}>Download CSV</button>}>
         <div className="mb-3 grid gap-2 sm:grid-cols-3">
-          <Field label="Company">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
+          <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
           <Field label="Period">{(id) => <Select id={id} value={months} onChange={setMonths} options={[{ value: "3", label: "Last 3 months" }, { value: "6", label: "Last 6 months" }, { value: "12", label: "Last 12 months" }]} />}</Field>
           <Field label="Division">{(id) => <Select id={id} value={division} onChange={setDivision} placeholder="All divisions" options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} />}</Field>
         </div>

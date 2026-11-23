@@ -11,9 +11,10 @@ import { DivisionSelect, PersonSelect } from "@/components/os/pickers";
 import { Badge, Empty, ErrorLine, Field, KeyValue, Loading, PageTitle, Section, Select, Sheet, StatusBadge, btn, btnPrimary, input, linkCls, muted, panel } from "@/components/os/ui";
 import { DOC_STATUSES, DOC_TYPES, SENSITIVITIES, companyName, fmtDate, fmtDateTime, personLabel } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
 
 type Doc = {
-  id: string; reference_number: string | null; title: string; company_code: string; division_id: string | null; doc_type: string; category: string | null;
+  id: string; reference_number: string | null; title: string; company_code: string; streams: string[]; division_id: string | null; doc_type: string; category: string | null;
   status: string; sensitivity: string; owner_person_id: string | null; approver_person_id: string | null; approved_at: string | null; version: string | null;
   next_review_date: string | null; notes: string | null; drive_file_id: string | null; drive_url: string | null; drive_mime_type: string | null;
   template_file_id: string | null; drive_modified_at: string | null; drive_checked_at: string | null; created_at: string; updated_at: string;
@@ -104,6 +105,8 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
         <aside>
           <section className={cn(panel, "p-4")}>
             <KeyValue items={[
+              { label: "Streams", value: <StreamsEditor table="os_documents" id={d.id} value={d.streams} onSaved={doc.reload} /> },
+              { label: "Legal entity", value: companyName(d.company_code) },
               { label: "Type", value: `${d.doc_type} · ${typeLabel}` },
               { label: "Category", value: d.category ?? "—" },
               { label: "Sensitivity", value: <StatusBadge value={d.sensitivity} /> },

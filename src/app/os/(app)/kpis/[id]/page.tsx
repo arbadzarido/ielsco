@@ -10,8 +10,10 @@ import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
 import { RecordSheet } from "@/components/os/records";
 import { Empty, ErrorLine, Field, KeyValue, Loading, PageTitle, Section, StatusBadge, btn, btnPrimary, input, linkCls, muted, panel } from "@/components/os/ui";
-import { companyName, fmtDate, fmtDateTime, personLabel } from "@/lib/os/meta";
+import { fmtDate, fmtDateTime, personLabel } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
+import { streamsLabel } from "@/lib/os/streams";
 
 type Kpi = Record<string, string | number | boolean | null> & { id: string; name: string; company_code: string; division_id: string | null; values_restricted: boolean; unit: string | null; target_value: number | null };
 type Val = { id: string; period_label: string; period_end: string; value: number; value_basis: string | null; recorded_by: string | null; recorded_at: string; evidence_link: string | null };
@@ -45,7 +47,7 @@ export default function KpiPage({ params }: { params: Promise<{ id: string }> })
   return (
     <div>
       <PageTitle title={k.name} crumbs={[{ href: "/os/kpis", label: "KPIs" }]}
-        description={`${k.id} · ${companyName(k.company_code)} · ${txt("level")} · ${txt("function")}`}
+        description={`${k.id} · ${streamsLabel(k.streams as unknown as string[])} · ${txt("level")} · ${txt("function")}`}
         actions={<button type="button" className={btn} onClick={() => setEditing(true)}>Edit target and thresholds</button>} />
       <ErrorLine message={err} />
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -112,6 +114,7 @@ export default function KpiPage({ params }: { params: Promise<{ id: string }> })
         <aside>
           <section className={cn(panel, "p-4")}>
             <KeyValue items={[
+              { label: "Streams", value: <StreamsEditor table="os_kpis" id={k.id} value={k.streams as unknown as string[]} onSaved={kpi.reload} /> },
               { label: "Owner", value: k.owner_text ? String(k.owner_text) : "—" },
               { label: "Reporting period", value: txt("reporting_period") },
               { label: "Unit", value: txt("unit") },

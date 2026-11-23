@@ -6,7 +6,7 @@ import {
   AGENTS, MAX_ACTIONS, aiConfigured, autoRunnable, callModel, costUsd, executeIntent, extractActions, gatherContext, loadDirectory, maxOutputFor, pickTier,
   previewFor, runRank, schemaFor, systemPrompt, type ActionType, type AgentKey, type Created, type Failed, type SimpleActionType,
 } from "@/lib/os/ai";
-import { cardItems, draftsOf, intentPreview, isIntent, payloadFor, resolveCompany, resolveIntent, type Directory, type IntentType, type ProjectDraftT, type ResolvedItem } from "@/lib/os/ai-intents";
+import { cardItems, draftsOf, intentPreview, isIntent, payloadFor, resolveIntent, resolveStreams, type Directory, type IntentType, type ProjectDraftT, type ResolvedItem } from "@/lib/os/ai-intents";
 import { parsePage } from "@/lib/os/ai-page";
 
 export const runtime = "nodejs";
@@ -16,6 +16,9 @@ export const maxDuration = 60;
 const Body = z.object({
   agent: z.enum(["assistant", "operations", "partnerships", "growth"]),
   conversation_id: z.string().uuid().optional(),
+  // The business stream the conversation is about (HQ, IEL, ELC, GIF). It narrows what the assistant reads first and is
+  // the default stream for new records; it never limits who can be assigned. company_code is the older name for it.
+  stream: z.enum(["HQ", "IEL", "ELC", "GIF"]).nullable().optional(),
   company_code: z.enum(["HQ", "IEL", "ELC"]).nullable().optional(),
   message: z.string().trim().min(1).max(6000),
   deep: z.boolean().optional(),
@@ -46,13 +49,13 @@ export async function POST(req: Request) {
 
   // The conversation is created and read with the person's own session (RLS: their own only).
   let conversationId = parsed.data.conversation_id;
-  let company = parsed.data.company_code ?? page?.company ?? null;
+  let stream: string | null = parsed.data.stream ?? page?.stream ?? parsed.data.company_code ?? null;
   if (conversationId) {
     const { data: c } = await supabase.from("os_ai_conversations").select("id, agent, company_code").eq("id", conversationId).maybeSingle();
     if (!c || c.agent !== agent) return jsonError("Conversation not found.", 404);
-    company = c.company_code ?? page?.company ?? null;
+    stream = page?.stream ?? parsed.data.stream ?? c.company_code ?? null;
   } else {
-    const { data: c, error } = await supabase.from("os_ai_conversations").insert({ agent, company_code: parsed.data.company_code ?? null, title: message.slice(0, 80) }).select("id").single();
+    const { data: c, error } = await supabase.from("os_ai_conversations").insert({ agent, company_code: parsed.data.company_code ?? (stream && stream !== "GIF" ? stream : null), title: message.slice(0, 80) }).select("id").single();
     if (error || !c) return jsonError("The conversation couldn't be started.", 403);
     conversationId = c.id as string;
   }
@@ -63,9 +66,9 @@ export async function POST(req: Request) {
   const tier = pickTier(message, Boolean(deep));
   const model = tier === "complex" ? settings.complex_model : settings.routine_model;
   const maxOutput = maxOutputFor(tier, message);
-  const context = await gatherContext(supabase, personId, agent as AgentKey, company, message, page, conversationId);
+  const context = await gatherContext(supabase, personId, agent as AgentKey, stream, message, page, conversationId);
   const userTurn = [
-    `DATA (records the person can access, as of ${context.today}; company scope: ${context.company}):\n${JSON.stringify(context.data)}`,
+    `DATA (records the person can access, as of ${context.today}; stream scope: ${context.stream}):\n${JSON.stringify(context.data)}`,
     ...(page ? [`PAGE (the person is on ${page.label}; filters ${JSON.stringify(page.filters)}):\n${JSON.stringify(context.page)}`] : []),
     ...(context.records.length ? [`conversation_records (what this conversation already proposed or did, oldest first):\n${JSON.stringify(context.records)}`] : []),
     `QUESTION:\n${message}`,
@@ -104,10 +107,12 @@ export async function POST(req: Request) {
   // Resolve and run in dependency order: projects, then tasks, then assignments and updates. Each step sees what the
   // steps before it created, so "create the project and its tasks" works in one instruction.
   const dir: Directory = await loadDirectory(supabase, personId);
+  dir.pageStream = stream;
   dir.pendingProjects = actions.filter((a) => a.type === "create_project").map((a) => {
     const d = a.payload as ProjectDraftT;
-    return { name: d.name, company_code: resolveCompany(d.company ?? d.company_code, dir).code ?? (dir.myCompanies.length === 1 ? dir.myCompanies[0] : ""), division_id: null };
-  }).filter((p) => p.company_code);
+    const named = resolveStreams([...(d.streams ?? []), ...(d.company ?? d.company_code ? [String(d.company ?? d.company_code)] : [])]).codes;
+    return { name: d.name, streams: named.length ? named : stream ? [stream] : [], division_id: null };
+  });
   const proposed: Proposed[] = [];
   const done: Created[] = [], failed: Failed[] = [], waiting: string[] = [];
   const now = () => new Date().toISOString();
@@ -166,7 +171,7 @@ function learn(dir: Directory, type: IntentType, items: ResolvedItem[], created:
   if (type === "create_project") {
     for (const c of created.filter((x) => x.kind === "project" && !x.note)) {
       const ins = items.find((i) => i.insert)?.insert ?? {};
-      dir.projects.unshift({ id: c.id, name: c.title, company_code: String(ins.company_code ?? ""), division_id: (ins.division_id as string) ?? null, status: "Active" });
+      dir.projects.unshift({ id: c.id, name: c.title, streams: (ins.streams as string[]) ?? [], division_id: (ins.division_id as string) ?? null, status: "Active" });
       dir.pendingProjects = (dir.pendingProjects ?? []).filter((p) => p.name !== c.title);
     }
     for (const i of items.filter((x) => x.skip)) dir.pendingProjects = (dir.pendingProjects ?? []).filter((p) => p.name !== (i.draft as ProjectDraftT).name);
@@ -174,7 +179,7 @@ function learn(dir: Directory, type: IntentType, items: ResolvedItem[], created:
   if (type === "create_task" || type === "create_tasks") {
     for (const c of created.filter((x) => x.kind === "task" && !x.note)) {
       const ins = items.find((i) => (i.insert as { title?: string } | null)?.title === c.title)?.insert ?? {};
-      dir.tasks.unshift({ id: c.id, title: c.title, company_code: String(ins.company_code ?? ""), project_id: (ins.project_id as string) ?? null, status: "Backlog", due_date: (ins.due_date as string) ?? null, priority: (ins.priority as string) ?? null });
+      dir.tasks.unshift({ id: c.id, title: c.title, streams: (ins.streams as string[]) ?? [], project_id: (ins.project_id as string) ?? null, status: "Backlog", due_date: (ins.due_date as string) ?? null, priority: (ins.priority as string) ?? null });
     }
   }
 }

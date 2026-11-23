@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export type CalSource = "event" | "task" | "deadline" | "milestone" | "content" | "campaign" | "google";
 export type Item = CalItem & {
-  source: CalSource; style: string; label: string; company: string | null; division: string | null; project: string | null; campaign?: string | null;
+  source: CalSource; style: string; label: string; streams: string[]; division: string | null; project: string | null; campaign?: string | null;
   mine: boolean; href?: string; event?: EventRow; occ?: OccurrenceRef | null; external?: string; sub?: string;
   starts_at?: string; ends_at?: string; movable: boolean; resizable: boolean; recurring?: boolean; endTime?: string;
 };

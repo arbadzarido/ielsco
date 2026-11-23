@@ -15,6 +15,7 @@ import { searchTerms, type AgentKey, type SimpleActionType } from "./ai-core";
 import type { PageContext } from "./ai-page";
 import { FUNCTION_DECLARATIONS, type DirEvent, type Directory, type IntentType, type ResolvedItem } from "./ai-intents";
 import { moveEvent, type MoveScope } from "./event-moves";
+import { streamOrFilter, isStreamCode } from "./streams";
 export * from "./ai-core";
 
 // ── Retrieval, through the person's own session ─────────────────────────────────────────────────────────────────
@@ -46,13 +47,17 @@ function compact(rows: Rows): Rows {
 async function pageData(supabase: SupabaseClient, page: PageContext, t: string, taskCols: string): Promise<Record<string, Rows>> {
   const out: Record<string, Rows> = {};
   const id = page.id;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrows any query builder by company
-  const co = (x: any) => (page.company ? x.eq("company_code", page.company) : x);
+  // A stream workspace or a ?stream= filter narrows the lists to that stream (HQ also lists unassigned records). Streams
+  // describe the work only: RLS still decides every row. A legal-entity filter narrows documents only.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrows any query builder by stream
+  const co = (x: any) => (isStreamCode(page.stream) ? x.or(streamOrFilter(page.stream)) : x);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- and documents by legal entity
+  const entity = (x: any) => (page.company && page.filters.legal_entity ? x.eq("company_code", page.company) : x);
   const jobs: Record<string, PromiseLike<Rows>> = {};
   switch (page.kind) {
     case "project":
       if (!id) break;
-      jobs.project = q(supabase.from("os_projects").select("id, name, company_code, division_id, status, priority, start_date, due_date, owner_person_id, description").eq("id", id));
+      jobs.project = q(supabase.from("os_projects").select("id, name, streams, division_id, status, priority, start_date, due_date, owner_person_id, description").eq("id", id));
       jobs.project_tasks = q(supabase.from("os_tasks").select(`${taskCols}, parent_task_id`).eq("project_id", id).neq("status", "Cancelled").order("due_date", { nullsFirst: false }).limit(80));
       jobs.project_milestones = q(supabase.from("os_timeline_items").select("id, title, due_date, status, is_major").eq("project_id", id).limit(20));
       jobs.project_events = q(supabase.from("os_events").select("id, title, starts_at, status").eq("project_id", id).gte("starts_at", `${plus(t, -7)}T00:00:00+07:00`).order("starts_at").limit(15));
@@ -74,21 +79,21 @@ async function pageData(supabase: SupabaseClient, page: PageContext, t: string, 
       break;
     }
     case "projects":
-      jobs.page_projects = q(co(supabase.from("os_projects").select("id, name, company_code, division_id, status, priority, due_date, owner_person_id")).not("status", "in", "(Completed,Cancelled)").limit(60));
+      jobs.page_projects = q(co(supabase.from("os_projects").select("id, name, streams, division_id, status, priority, due_date, owner_person_id")).not("status", "in", "(Completed,Cancelled)").limit(60));
       break;
     case "documents":
       jobs.templates = q(supabase.from("os_doc_templates").select("id, name, category, doc_type, sensitivity, company_codes, legal_status").eq("active", true).limit(40));
-      jobs.recent_documents = q(co(supabase.from("os_documents").select("id, reference_number, title, doc_type, status, sensitivity, company_code, updated_at")).order("updated_at", { ascending: false }).limit(25));
+      jobs.recent_documents = q(entity(co(supabase.from("os_documents").select("id, reference_number, title, doc_type, status, sensitivity, company_code, streams, updated_at"))).order("updated_at", { ascending: false }).limit(25));
       break;
     case "document":
-      if (id) jobs.document = q(supabase.from("os_documents").select("id, reference_number, title, doc_type, category, status, sensitivity, company_code, division_id, owner_person_id, version, next_review_date, generation_status, notes").eq("id", id));
+      if (id) jobs.document = q(supabase.from("os_documents").select("id, reference_number, title, doc_type, category, status, sensitivity, company_code, streams, division_id, owner_person_id, version, next_review_date, generation_status, notes").eq("id", id));
       break;
     case "calendar": {
       const d = /^\d{4}-\d{2}-\d{2}$/.test(page.filters.d ?? "") ? page.filters.d! : t;
       const view = page.filters.view ?? "month";
       const from = view === "month" ? `${d.slice(0, 8)}01` : plus(d, -1);
       const to = view === "month" ? plus(`${d.slice(0, 8)}01`, 35) : plus(d, view === "day" ? 1 : 8);
-      jobs.calendar_events = q(co(supabase.from("os_events").select("id, title, category, starts_at, ends_at, all_day, recurrence, status, company_code")).neq("status", "Cancelled").or(`and(starts_at.gte.${from}T00:00:00+07:00,starts_at.lt.${to}T00:00:00+07:00),recurrence.not.is.null`).order("starts_at").limit(80));
+      jobs.calendar_events = q(co(supabase.from("os_events").select("id, title, category, starts_at, ends_at, all_day, recurrence, status, streams")).neq("status", "Cancelled").or(`and(starts_at.gte.${from}T00:00:00+07:00,starts_at.lt.${to}T00:00:00+07:00),recurrence.not.is.null`).order("starts_at").limit(80));
       if (id) jobs.event = q(supabase.from("os_events").select("id, title, category, starts_at, ends_at, location, meeting_url, description, recurrence, status").eq("id", id));
       jobs.calendar_range = Promise.resolve([{ from, to, view }]);
       break;
@@ -104,28 +109,30 @@ async function pageData(supabase: SupabaseClient, page: PageContext, t: string, 
       jobs.open_task_owners = q(supabase.from("os_tasks").select("owner_person_id").not("status", "in", "(Done,Cancelled)").not("owner_person_id", "is", null).limit(1000));
       break;
     case "timeline": case "milestone":
-      jobs.timeline = q(co(supabase.from("os_timeline_items").select("id, workstream_code, title, due_date, status, owner_name, is_major, project_id")).gte("due_date", plus(t, -14)).not("status", "in", "(Done,Cancelled)").order("due_date").limit(60));
+      jobs.timeline = q(co(supabase.from("os_timeline_items").select("id, workstream_code, title, due_date, status, owner_name, is_major, project_id, streams")).gte("due_date", plus(t, -14)).not("status", "in", "(Done,Cancelled)").order("due_date").limit(60));
       if (id) jobs.milestone = q(supabase.from("os_timeline_items").select("id, title, due_date, status, owner_name, deliverable, project_id").eq("id", id));
       break;
     case "kpis": case "kpi": case "okrs":
-      jobs.kpis = q(co(supabase.from("os_kpis").select("id, name, function, unit, reporting_period, target_value, target_status, sheet_latest_value, values_restricted")).limit(60));
-      jobs.objectives = q(co(supabase.from("os_objectives").select("id, title, status, period, company_code")).limit(30));
+      jobs.kpis = q(co(supabase.from("os_kpis").select("id, name, function, unit, reporting_period, target_value, target_status, sheet_latest_value, values_restricted, streams")).limit(60));
+      jobs.objectives = q(co(supabase.from("os_objectives").select("id, title, status, period, streams")).limit(30));
       break;
     case "campaigns": case "campaign":
-      jobs.campaigns = q(co(supabase.from("os_campaigns").select("id, name, status, start_date, end_date, project_id")).limit(30));
+      jobs.campaigns = q(co(supabase.from("os_campaigns").select("id, name, status, start_date, end_date, project_id, streams")).limit(30));
       if (id) jobs.campaign_items = q(supabase.from("os_campaign_items").select("id, title, channel, status, planned_publish_date").eq("campaign_id", id).limit(60));
       break;
     case "partnerships":
-      jobs.partnerships = q(co(supabase.from("os_partnerships").select("id, organisation, opportunity_type, stage, evidence_status, owner_person_id, next_action, follow_up_date")).limit(60));
+      jobs.partnerships = q(co(supabase.from("os_partnerships").select("id, organisation, opportunity_type, stage, evidence_status, owner_person_id, next_action, follow_up_date, streams")).limit(60));
       break;
     case "division":
       if (page.division) {
-        jobs.division_projects = q(supabase.from("os_projects").select("id, name, company_code, status, due_date").eq("division_id", page.division).not("status", "in", "(Completed,Cancelled)").limit(30));
+        jobs.division_projects = q(supabase.from("os_projects").select("id, name, streams, status, due_date").eq("division_id", page.division).not("status", "in", "(Completed,Cancelled)").limit(30));
         jobs.division_tasks = q(supabase.from("os_tasks").select(taskCols).eq("division_id", page.division).not("status", "in", "(Done,Cancelled)").limit(60));
       }
       break;
     case "workspace":
-      jobs.workspace_projects = q(co(supabase.from("os_projects").select("id, name, status, due_date, owner_person_id")).not("status", "in", "(Completed,Cancelled)").limit(40));
+      jobs.workspace_projects = q(co(supabase.from("os_projects").select("id, name, status, due_date, owner_person_id, streams")).not("status", "in", "(Completed,Cancelled)").limit(40));
+      jobs.workspace_open_tasks = q(co(supabase.from("os_tasks").select(taskCols)).not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(40));
+      jobs.workspace_events = q(co(supabase.from("os_events").select("id, title, category, starts_at, all_day, recurrence, project_id")).neq("status", "Cancelled").gte("starts_at", `${t}T00:00:00+07:00`).order("starts_at").limit(15));
       break;
   }
   if (page.selection.length) jobs.selected_tasks = q(supabase.from("os_tasks").select(taskCols).in("id", page.selection.filter((x) => x.startsWith("TSK-"))));
@@ -157,12 +164,14 @@ export async function conversationRecords(supabase: SupabaseClient, conversation
   });
 }
 
-export async function gatherContext(supabase: SupabaseClient, personId: string, agent: AgentKey, company: string | null, message: string, page: PageContext | null = null, conversationId: string | null = null) {
+/** `stream` narrows the overview lists to one business stream (HQ, IEL, ELC, GIF); null means every stream. It never
+ * widens or narrows access: everything is still read with the person's own session. */
+export async function gatherContext(supabase: SupabaseClient, personId: string, agent: AgentKey, stream: string | null, message: string, page: PageContext | null = null, conversationId: string | null = null) {
   const t = today();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrows any query builder by company
-  const co = (x: any) => (company ? x.eq("company_code", company) : x);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrows any query builder by stream
+  const co = (x: any) => (isStreamCode(stream) ? x.or(streamOrFilter(stream)) : x);
   const ctx: Record<string, Rows> = {};
-  const taskCols = "id, title, status, priority, due_date, owner_person_id, project_id, company_code, blocker";
+  const taskCols = "id, title, status, priority, due_date, owner_person_id, project_id, streams, blocker";
   const want = (k: keyof typeof WANTS) => WANTS[k].test(message);
   const [me, assigned] = await Promise.all([
     q(supabase.from("os_people").select("id, full_name, short_name, org_role").eq("id", personId)),
@@ -173,7 +182,7 @@ export async function gatherContext(supabase: SupabaseClient, personId: string, 
   const jobs: Record<string, PromiseLike<Rows>> = {
     my_open_tasks: q(supabase.from("os_tasks").select(taskCols).or(`owner_person_id.eq.${personId}${assignedIds.length ? `,id.in.(${assignedIds.map((x) => x.replace(/[^A-Z0-9-]/g, "")).join(",")})` : ""}`).not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(20)),
     // Every live project, briefly: so the assistant reuses one instead of creating a duplicate.
-    projects: q(co(supabase.from("os_projects").select("id, name, company_code, division_id, status")).not("status", "in", "(Completed,Cancelled)").order("id", { ascending: false }).limit(60)),
+    projects: q(co(supabase.from("os_projects").select("id, name, streams, division_id, status")).not("status", "in", "(Completed,Cancelled)").order("id", { ascending: false }).limit(60)),
     people: q(supabase.from("os_people").select("id, full_name, short_name").in("status", ["active", "onboarding"]).limit(80)),
   };
   if (agent === "operations" || want("overdue")) {
@@ -208,7 +217,7 @@ export async function gatherContext(supabase: SupabaseClient, personId: string, 
   const match: Record<string, PromiseLike<Rows>[]> = { match_projects: [], match_tasks: [], match_documents: [], match_events: [], match_timeline: [], match_campaigns: [] };
   for (const term of terms) {
     const pat = `%${term}%`;
-    match.match_projects.push(q(supabase.from("os_projects").select("id, name, status, due_date, owner_person_id, company_code").ilike("name", pat).limit(8)));
+    match.match_projects.push(q(supabase.from("os_projects").select("id, name, status, due_date, owner_person_id, streams").ilike("name", pat).limit(8)));
     match.match_tasks.push(q(supabase.from("os_tasks").select(taskCols).ilike("title", pat).neq("status", "Cancelled").limit(10)));
     match.match_documents.push(q(supabase.from("os_documents").select("id, reference_number, title, doc_type, status").ilike("title", pat).limit(6)));
     match.match_events.push(q(supabase.from("os_events").select("id, title, category, starts_at, all_day, recurrence, status, project_id").ilike("title", pat).order("starts_at", { ascending: false }).limit(6)));
@@ -246,7 +255,7 @@ export async function gatherContext(supabase: SupabaseClient, personId: string, 
       campaign_not_verified: (ctx.recruitment_candidates ?? []).filter((c) => c.campaign_verification !== "verified").length,
     }];
   }
-  return { today: t, company: company ?? page?.company ?? "all companies the person works in", data: ctx, page: pageCtx, records };
+  return { today: t, stream: isStreamCode(stream) ? stream : "all streams (HQ, IEL, ELC, GIF)", data: ctx, page: pageCtx, records };
 }
 
 /** Runs a confirmed action with the person's own session, so RLS and the database rules apply. */
@@ -287,19 +296,19 @@ export async function executeAction(supabase: SupabaseClient, type: SimpleAction
 /** Everything an instruction may refer to, read with the person's own session (RLS: only what they can see). */
 export async function loadDirectory(supabase: SupabaseClient, personId: string): Promise<Directory> {
   const from = `${plus(today(), -14)}T00:00:00+07:00`, until = `${plus(today(), 180)}T00:00:00+07:00`;
-  const evCols = "id, title, company_code, category, starts_at, ends_at, all_day, timezone, recurrence, status, google_event_id";
+  const evCols = "id, title, company_code, streams, category, starts_at, ends_at, all_day, timezone, recurrence, status, google_event_id";
   const [people, pc, pd, divisions, projects, timeline, tasks, oneOff, series, campaigns, partnerships] = await Promise.all([
     q(supabase.from("os_people").select("id, full_name, short_name, org_role, status").limit(500)),
     q(supabase.from("os_person_companies").select("person_id, company_code").limit(2000)),
     q(supabase.from("os_person_divisions").select("person_id, division_id, is_manager").limit(2000)),
     q(supabase.from("os_divisions").select("id, code, name").order("id")),
-    q(supabase.from("os_projects").select("id, name, company_code, division_id, status").order("id", { ascending: false }).limit(500)),
-    q(supabase.from("os_timeline_items").select("id, title, company_code, workstream_code, workstream_name").order("id").limit(1000)),
-    q(supabase.from("os_tasks").select("id, title, company_code, project_id, status, due_date, priority").order("id", { ascending: false }).limit(1500)),
+    q(supabase.from("os_projects").select("id, name, company_code, streams, division_id, status").order("id", { ascending: false }).limit(500)),
+    q(supabase.from("os_timeline_items").select("id, title, company_code, streams, workstream_code, workstream_name").order("id").limit(1000)),
+    q(supabase.from("os_tasks").select("id, title, company_code, streams, project_id, status, due_date, priority").order("id", { ascending: false }).limit(1500)),
     q(supabase.from("os_events").select(evCols).is("recurrence", null).gte("ends_at", from).lt("starts_at", until).order("starts_at").limit(500)),
     q(supabase.from("os_events").select(evCols).not("recurrence", "is", null).or(`series_ends_at.is.null,series_ends_at.gt.${from}`).limit(200)),
-    q(supabase.from("os_campaigns").select("id, name, company_code, project_id, timeline_item_id, status").limit(300)),
-    q(supabase.from("os_partnerships").select("id, organisation, company_code").limit(500)),
+    q(supabase.from("os_campaigns").select("id, name, company_code, streams, project_id, timeline_item_id, status").limit(300)),
+    q(supabase.from("os_partnerships").select("id, organisation, company_code, streams").limit(500)),
   ]);
   const comp = new Map<string, string[]>(), divs = new Map<string, string[]>(), managed = new Map<string, string[]>();
   for (const r of pc) comp.set(String(r.person_id), [...(comp.get(String(r.person_id)) ?? []), String(r.company_code)]);
@@ -310,14 +319,14 @@ export async function loadDirectory(supabase: SupabaseClient, personId: string):
   const exRows = series.length ? await q(supabase.from("os_event_exceptions").select("event_id, occurrence_start, cancelled, starts_at, ends_at").in("event_id", series.map((e) => String(e.id)))) : [];
   const events: DirEvent[] = [...oneOff, ...series].map((e) => ({ ...(e as unknown as DirEvent), exceptions: exRows.filter((x) => x.event_id === e.id) as unknown as DirEvent["exceptions"] }));
   const ws = new Map<string, Directory["workstreams"][number]>();
-  for (const t of timeline) if (!ws.has(String(t.workstream_code))) ws.set(String(t.workstream_code), { code: String(t.workstream_code), name: String(t.workstream_name), company_code: String(t.company_code) });
+  for (const t of timeline) if (!ws.has(String(t.workstream_code))) ws.set(String(t.workstream_code), { code: String(t.workstream_code), name: String(t.workstream_name), company_code: (t.company_code as string) ?? null });
   return {
     me: personId, today: today(), myCompanies: comp.get(personId) ?? [],
     people: people.map((p) => ({ id: String(p.id), full_name: String(p.full_name), short_name: (p.short_name as string) ?? null, org_role: String(p.org_role), status: String(p.status), companies: comp.get(String(p.id)) ?? [], divisions: divs.get(String(p.id)) ?? [], managed: managed.get(String(p.id)) ?? [] })),
     divisions: divisions as Directory["divisions"],
     projects: projects as Directory["projects"],
     workstreams: [...ws.values()].sort((a, b) => Number(a.code.slice(2)) - Number(b.code.slice(2))),
-    milestones: timeline.map((t) => ({ id: String(t.id), title: String(t.title), company_code: String(t.company_code) })),
+    milestones: timeline.map((t) => ({ id: String(t.id), title: String(t.title), company_code: (t.company_code as string) ?? null, streams: (t.streams as string[]) ?? [] })),
     tasks: tasks as Directory["tasks"],
     events, campaigns: campaigns as Directory["campaigns"], partnerships: partnerships as Directory["partnerships"],
   };

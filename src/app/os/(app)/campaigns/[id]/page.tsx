@@ -12,8 +12,10 @@ import { LinkedDocuments } from "@/components/os/linked-docs";
 import { LinkedEvents } from "@/components/os/linked-events";
 import { RecordSheet } from "@/components/os/records";
 import { Empty, KeyValue, Loading, PageTitle, Progress, RowList, Section, StatusBadge, btn, btnPrimary, panel } from "@/components/os/ui";
-import { companyName, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
+import { fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
+import { streamsLabel } from "@/lib/os/streams";
 
 export default function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -46,7 +48,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   return (
     <div data-testid="os-campaign-detail">
       <PageTitle title={camp.name} crumbs={[{ href: "/os/campaigns?tab=campaigns", label: "Campaigns" }]}
-        description={`${camp.id} · ${companyName(camp.company_code)}${camp.start_date ? ` · ${fmtDate(camp.start_date)}${camp.end_date ? ` – ${fmtDate(camp.end_date)}` : ""}` : ""}`}
+        description={`${camp.id} · ${streamsLabel(camp.streams)}${camp.start_date ? ` · ${fmtDate(camp.start_date)}${camp.end_date ? ` – ${fmtDate(camp.end_date)}` : ""}` : ""}`}
         actions={<><button type="button" className={btn} onClick={() => setEditing(true)}>Edit</button><button type="button" className={btnPrimary} onClick={() => setAdding(true)} data-testid="os-campaign-add-content"><Plus size={16} aria-hidden="true" />Content item</button></>} />
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 space-y-6">
@@ -73,13 +75,14 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
                 { key: "d", label: "Publish", className: "w-28", render: (i) => { const r = i.status !== "Published" ? relativeDue(i.planned_publish_date) : null; return <span className={cn("text-xs", r?.overdue && "font-medium text-[#A12D2F]")}>{fmtDate(i.actual_publish_date ?? i.planned_publish_date)}</span>; } },
               ]} />
           </Section>
-          <Section title="Events"><LinkedEvents type="campaign" id={camp.id} company={camp.company_code} defaults={{ category: "Campaign", project_id: camp.project_id, timeline_item_id: camp.timeline_item_id }} /></Section>
+          <Section title="Events"><LinkedEvents type="campaign" id={camp.id} streams={camp.streams} defaults={{ category: "Campaign", project_id: camp.project_id, timeline_item_id: camp.timeline_item_id }} /></Section>
           <Section title="Documents"><LinkedDocuments type="campaign_plan" id={camp.id} /></Section>
           <EntityFeed type="campaign_plan" id={camp.id} />
         </div>
         <aside className="space-y-4">
           <section className={cn(panel, "p-4")}>
             <KeyValue items={[
+              { label: "Streams", value: <StreamsEditor table="os_campaigns" id={camp.id} value={camp.streams} onSaved={c.reload} /> },
               { label: "Owner", value: personLabel(people, camp.owner_person_id) },
               { label: "Project", value: links.data?.project ? <Link className="underline" href={`/os/projects/${links.data.project.id}`}>{links.data.project.name}</Link> : camp.project_id ?? "—" },
               { label: "Timeline milestone", value: links.data?.milestone ? <Link className="underline" href={`/os/timeline/${links.data.milestone.id}`}>{links.data.milestone.is_major ? "◆ " : ""}{links.data.milestone.title} ({fmtDate(links.data.milestone.due_date)})</Link> : camp.timeline_item_id ?? "—" },
@@ -91,7 +94,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
       </div>
       <RecordSheet open={editing} title={`${camp.id} ${camp.name}`} table="os_campaigns" record={camp} fields={campaignFields} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); c.reload(); }} />
       <RecordSheet open={adding || !!editingItem} title={editingItem ? `${editingItem.id} ${editingItem.title}` : "New content item"} table="os_campaign_items" record={editingItem}
-        defaults={{ company_code: camp.company_code, status: "Planned", division_id: camp.division_id ?? "DIV-03", campaign_id: camp.id }} fields={contentFields(campOpts)}
+        defaults={{ status: "Planned", division_id: camp.division_id ?? "DIV-03", campaign_id: camp.id }} fields={contentFields(campOpts)}
         onClose={() => { setAdding(false); setOpenId(null); }} onSaved={() => { setAdding(false); setOpenId(null); content.reload(); }} />
     </div>
   );

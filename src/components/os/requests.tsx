@@ -101,7 +101,7 @@ export function NewRequestSheet({ open, onClose, defaultType }: { open: boolean;
               {chosen.needs_approval ? " Your division's lead approves it first." : ""} {chosen.description}
             </p>
           )}
-          <Field label="Company">{(id) => <CompanySelect id={id} value={co} onChange={(v) => { setCo(v); setRelated(""); }} />}</Field>
+          <Field label="Legal entity" hint="Whose books a budget or expense request would use. It doesn't limit who can pick it up.">{(id) => <CompanySelect id={id} value={co} onChange={setCo} />}</Field>
           <Field label="Title">{(id) => <input id={id} className={input} value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} />}</Field>
           <Field label="Brief" hint="What you need, for whom, and what done looks like. Link files from Drive after sending.">{(id) => <textarea id={id} className={cn(input, "min-h-32")} value={brief} maxLength={5000} onChange={(e) => setBrief(e.target.value)} />}</Field>
           <div className="grid gap-3 sm:grid-cols-2">

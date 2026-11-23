@@ -17,7 +17,7 @@ export type LinkType = "project" | "task" | "campaign" | "partnership" | "timeli
 const COLUMN: Record<Exclude<LinkType, "task">, string> = { project: "project_id", campaign: "campaign_id", partnership: "partnership_id", timeline: "timeline_item_id", candidate: "candidate_id" };
 const DEFAULT_KEY: Record<LinkType, keyof EventDefaults> = { project: "project_id", task: "task_id", campaign: "campaign_id", partnership: "partnership_id", timeline: "timeline_item_id", candidate: "candidate_id" };
 
-export function LinkedEvents({ type, id, company, defaults }: { type: LinkType; id: string; company: string; defaults?: EventDefaults }) {
+export function LinkedEvents({ type, id, streams, defaults }: { type: LinkType; id: string; streams?: string[]; defaults?: EventDefaults }) {
   const events = useQuery<EventRow[]>(async (s) => {
     if (type === "task") {
       const links = await s.from("os_event_tasks").select("event_id").eq("task_id", id).limit(200);
@@ -61,7 +61,7 @@ export function LinkedEvents({ type, id, company, defaults }: { type: LinkType; 
         {hiddenPast > 0 && <button type="button" className={btn} onClick={() => setPast((p) => !p)}>{past ? "Hide past" : `Show ${hiddenPast} past`}</button>}
         <Link href={type === "project" ? `/os/calendar?ws=project&p=${id}` : type === "campaign" ? "/os/calendar?ws=marketing" : "/os/calendar"} className={btn}>Open calendar</Link>
       </div>
-      <EventSheet open={sheet.open} event={sheet.event} google={google} defaults={{ company_code: company, [DEFAULT_KEY[type]]: id, ...defaults }}
+      <EventSheet open={sheet.open} event={sheet.event} google={google} defaults={{ streams, [DEFAULT_KEY[type]]: id, ...defaults }}
         onClose={() => setSheet({ open: false, event: null })} onSaved={() => { setSheet({ open: false, event: null }); events.reload(); }} />
     </div>
   );

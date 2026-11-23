@@ -8,12 +8,14 @@ import { useOsMe } from "./OsProvider";
 import { friendlyError, useDirectory, useQuery } from "./data";
 import { EntityFeed } from "./feed";
 import { LinkedDocuments } from "./linked-docs";
-import { CompanySelect, PersonSelect, useDefaultCompany } from "./pickers";
+import { PersonSelect } from "./pickers";
 import { Badge, Empty, ErrorLine, Field, KeyValue, Loading, RowList, Section, Select, Sheet, btn, btnGhost, btnPrimary, input, linkCls, muted, panel } from "./ui";
 import { fmtDate, personLabel, todayJakarta } from "@/lib/os/meta";
 import { MEETING_COLUMNS, MEETING_TONE, MEETING_TYPES, STEP_LABEL, meetingSteps, type ActionRow, type MeetingRow, type MeetingStep } from "@/lib/os/meetings";
 import type { MyWorkspace } from "@/lib/os/workspaces";
 import { cn } from "@/lib/utils";
+import { StreamPicker } from "./streams";
+import { normalizeStreams, type StreamCode } from "@/lib/os/streams";
 
 const OWN = /^(Meeting not found|That step isn't available for this meeting|Write the minutes before sending them for review|Approved minutes can't be changed\. Reopen them first\.|Action item not found)$/;
 const meetingError = (m: string | null | undefined) => (!m ? null : OWN.test(m) ? m : friendlyError(m));
@@ -41,12 +43,11 @@ export function WorkspaceMeetings({ ws }: { ws: MyWorkspace }) {
   );
 }
 
-export function MeetingSheet({ open, onClose, divisionId, meeting, onSaved }: { open: boolean; onClose: () => void; divisionId: string | null; meeting?: MeetingRow; onSaved: (id?: string) => void }) {
+export function MeetingSheet({ open, onClose, divisionId, meeting, onSaved, stream }: { open: boolean; onClose: () => void; divisionId: string | null; meeting?: MeetingRow; onSaved: (id?: string) => void; stream?: StreamCode }) {
   const { supabase, me } = useOsMe();
   const dir = useDirectory();
-  const company = useDefaultCompany();
   const [f, setF] = useState(() => ({
-    company_code: meeting?.company_code ?? company, title: meeting?.title ?? "", meeting_type: meeting?.meeting_type ?? "Division Stand-up", held_on: meeting?.held_on ?? todayJakarta(),
+    streams: normalizeStreams(meeting?.streams ?? (stream ? [stream] : [])), title: meeting?.title ?? "", meeting_type: meeting?.meeting_type ?? "Division Stand-up", held_on: meeting?.held_on ?? todayJakarta(),
     facilitator_person_id: meeting?.facilitator_person_id ?? me.person.id, reviewer_person_id: meeting?.reviewer_person_id ?? "", agenda: meeting?.agenda ?? "", objectives: meeting?.objectives ?? "",
     attendees: meeting?.attendees ?? [me.person.id], sensitivity: meeting?.sensitivity ?? "Internal",
   }));
@@ -57,9 +58,9 @@ export function MeetingSheet({ open, onClose, divisionId, meeting, onSaved }: { 
   const save = async () => {
     setBusy(true); setErr(null);
     const body = { title: f.title.trim(), meeting_type: f.meeting_type, held_on: f.held_on, facilitator_person_id: f.facilitator_person_id || null,
-      reviewer_person_id: f.reviewer_person_id || null, agenda: f.agenda.trim() || null, objectives: f.objectives.trim() || null, attendees: f.attendees, sensitivity: f.sensitivity };
+      reviewer_person_id: f.reviewer_person_id || null, agenda: f.agenda.trim() || null, objectives: f.objectives.trim() || null, attendees: f.attendees, sensitivity: f.sensitivity, streams: f.streams };
     const q = meeting ? supabase.from("os_meetings").update(body).eq("id", meeting.id).select("id").maybeSingle()
-      : supabase.from("os_meetings").insert({ ...body, company_code: f.company_code, division_id: divisionId }).select("id").maybeSingle();
+      : supabase.from("os_meetings").insert({ ...body, streams: f.streams, division_id: divisionId }).select("id").maybeSingle();
     const { data, error } = await q;
     setBusy(false);
     if (error || !data) return setErr(meetingError(error?.message) ?? "You can't save this meeting.");
@@ -72,7 +73,7 @@ export function MeetingSheet({ open, onClose, divisionId, meeting, onSaved }: { 
         <button type="button" className={btnPrimary} disabled={busy || f.title.trim().length < 3 || !f.held_on} onClick={save} data-testid="os-meeting-save">{busy ? "Saving…" : "Save meeting"}</button>
       </>}>
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save(); }} data-testid="os-meeting-form">
-        {!meeting && <Field label="Company">{(id) => <CompanySelect id={id} value={f.company_code} onChange={(v) => set("company_code", v)} />}</Field>}
+        <Field label="Business streams" hint="What the meeting is about. Anyone can attend, whatever their stream.">{(id) => <StreamPicker id={id} value={f.streams} onChange={(v) => set("streams", v)} />}</Field>
         <Field label="Title">{(id) => <input id={id} className={input} value={f.title} maxLength={200} onChange={(e) => set("title", e.target.value)} />}</Field>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Type">{(id) => <Select id={id} value={f.meeting_type} onChange={(v) => set("meeting_type", v)} options={MEETING_TYPES} />}</Field>
@@ -93,7 +94,7 @@ export function MeetingSheet({ open, onClose, divisionId, meeting, onSaved }: { 
             ))}
           </div>
         </fieldset>
-        <Field label="Who can see it" hint="Internal: everyone in the company. Confidential: this division and people given access.">{(id) => <Select id={id} value={f.sensitivity} onChange={(v) => set("sensitivity", v)} options={["Internal", "Confidential"]} />}</Field>
+        <Field label="Who can see it" hint="Internal: everyone on the team. Confidential: this division and people given access.">{(id) => <Select id={id} value={f.sensitivity} onChange={(v) => set("sensitivity", v)} options={["Internal", "Confidential"]} />}</Field>
         <ErrorLine message={err} />
       </form>
     </Sheet>

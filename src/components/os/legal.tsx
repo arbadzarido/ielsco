@@ -105,7 +105,7 @@ export function LegalLetters() {
       <div className="flex flex-wrap items-center gap-2">
         {leg.operate && <button type="button" className={btnPrimary} onClick={() => setSheet("outgoing")} data-testid="os-letter-new">Draft an outgoing letter</button>}
         {leg.operate && <button type="button" className={btn} onClick={() => setSheet("incoming")} data-testid="os-letter-incoming">Register an incoming letter</button>}
-        <div className="ml-auto w-48"><Select ariaLabel="Company" value={company} onChange={setCompany} placeholder="All companies" options={[{ value: "IEL", label: "IELSco" }, { value: "ELC", label: "Elco AI" }, { value: "HQ", label: "HQ" }]} /></div>
+        <div className="ml-auto w-48"><Select ariaLabel="Legal entity" value={company} onChange={setCompany} placeholder="All legal entities" options={[{ value: "IEL", label: "IELSco" }, { value: "ELC", label: "Elco AI" }, { value: "HQ", label: "HQ" }]} /></div>
       </div>
       <ErrorLine message={letters.error} />
       <Section title="Outgoing">{letters.data ? <LetterList rows={rows.filter((l) => l.direction === "outgoing")} testId="os-letters-out" /> : <Loading />}</Section>
@@ -155,7 +155,7 @@ export function LetterSheet({ direction, onClose, letter }: { direction: "outgoi
       disabled={busy || !chosen || subject.trim().length < 3 || !counterparty.trim()} saveLabel={letter ? "Save" : direction === "incoming" ? "Register and number" : "Save draft"}>
       <p className={cn("text-xs", muted)}>{direction === "incoming" ? "It gets the next incoming number as soon as it's registered." : "The number is generated when a signatory approves it, never before."}</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Company">{(id) => <CompanySelect id={id} value={company} onChange={(v) => { setCompany(v); setRule(""); }} />}</Field>
+        <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => <CompanySelect id={id} value={company} onChange={(v) => { setCompany(v); setRule(""); }} />}</Field>
         <Field label="Numbering rule">{(id) => <Select id={id} value={chosen?.id ?? ""} onChange={setRule} placeholder={options.length ? "Choose a rule" : "No rule set up for this company"} options={options.map((r) => ({ value: r.id, label: `${r.type_code} · ${r.name}` }))} />}</Field>
         <Field label="Issuing division" hint="Used for {division} in the number.">{(id) => <Select id={id} value={division} onChange={setDivision} placeholder="None" options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: `${d.code} · ${d.name}` }))} />}</Field>
         <Field label="Sensitivity">{(id) => <Select id={id} value={sensitivity} onChange={setSensitivity} options={["Internal", "Confidential", "Restricted"]} />}</Field>
@@ -176,10 +176,12 @@ export function LetterSheet({ direction, onClose, letter }: { direction: "outgoi
 }
 
 /** Link a Legal record to a project or partnership the viewer can see. */
-export function RelatedSelect({ value, onChange, company, requests }: { value: string; onChange: (v: string) => void; company: string; requests?: boolean }) {
-  const reqs = useQuery<{ id: string; title: string }[]>((s) => (requests ? s.from("os_requests").select("id, title").eq("company_code", company).in("type_code", ["contract_review", "employment_document"]).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [], error: null })) as never, [company, requests]);
-  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").eq("company_code", company).order("name").limit(300), [company]);
-  const partners = useQuery<{ id: string; organisation: string }[]>((s) => s.from("os_partnerships").select("id, organisation").eq("company_code", company).order("organisation").limit(300), [company]);
+/** Link a legal or finance record to the work it is for. Any project or partner can be picked, whichever legal entity
+ * the record is under: a GIF project can have an agreement signed by the HQ entity. */
+export function RelatedSelect({ value, onChange, requests }: { value: string; onChange: (v: string) => void; company?: string; requests?: boolean }) {
+  const reqs = useQuery<{ id: string; title: string }[]>((s) => (requests ? s.from("os_requests").select("id, title").in("type_code", ["contract_review", "employment_document"]).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [], error: null })) as never, [requests]);
+  const projects = useQuery<{ id: string; name: string }[]>((s) => s.from("os_projects").select("id, name").not("status", "in", "(Cancelled)").order("name").limit(400), []);
+  const partners = useQuery<{ id: string; organisation: string }[]>((s) => s.from("os_partnerships").select("id, organisation").order("organisation").limit(400), []);
   return (
     <Field label="About">{(id) => <Select id={id} value={value} onChange={onChange} placeholder="Not linked" options={[
       ...(reqs.data ?? []).map((r) => ({ value: `request:${r.id}`, label: `Request · ${r.id} ${r.title}` })),
@@ -260,7 +262,7 @@ export function AgreementSheet({ onClose, agreement }: { onClose: () => void; ag
     <SheetShell title={a ? "Edit agreement" : "New agreement"} onClose={onClose} onSave={save} disabled={busy || title.trim().length < 3 || !counterparty.trim() || (Boolean(value) && !parseIDR(value))}>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Type">{(id) => <Select id={id} value={kind} onChange={setKind} disabled={locked} options={Object.entries(AGREEMENT_KIND).map(([k, v]) => ({ value: k, label: v }))} />}</Field>
-        <Field label="Company">{(id) => locked ? <input id={id} className={input} value={companyName(company)} disabled /> : <CompanySelect id={id} value={company} onChange={(v) => { setCompany(v); setRule(""); }} />}</Field>
+        <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => locked ? <input id={id} className={input} value={companyName(company)} disabled /> : <CompanySelect id={id} value={company} onChange={(v) => { setCompany(v); setRule(""); }} />}</Field>
       </div>
       <Field label="Title">{(id) => <input id={id} className={input} value={title} maxLength={300} onChange={(e) => setTitle(e.target.value)} />}</Field>
       <Field label="With (other party)">{(id) => <input id={id} className={input} value={counterparty} maxLength={200} disabled={locked} onChange={(e) => setCounterparty(e.target.value)} />}</Field>
@@ -339,7 +341,7 @@ export function LegalCompliance() {
         <Section title="Add a deadline">
           <form className={cn(panel, "grid gap-3 p-4 sm:grid-cols-3")} onSubmit={(e) => { e.preventDefault(); add(); }} data-testid="os-compliance-form">
             <Field label="What" className="sm:col-span-2">{(id) => <input id={id} className={input} value={form.title} maxLength={200} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Annual tax report" />}</Field>
-            <Field label="Company">{(id) => <CompanySelect id={id} value={form.company} onChange={(v) => setForm({ ...form, company: v })} />}</Field>
+            <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => <CompanySelect id={id} value={form.company} onChange={(v) => setForm({ ...form, company: v })} />}</Field>
             <Field label="Due">{(id) => <input id={id} type="date" className={input} value={form.due} onChange={(e) => setForm({ ...form, due: e.target.value })} />}</Field>
             <Field label="Repeats">{(id) => <Select id={id} value={form.recurrence} onChange={(v) => setForm({ ...form, recurrence: v })} options={[{ value: "none", label: "Once" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }, { value: "yearly", label: "Yearly" }]} />}</Field>
             <Field label="Owner">{(id) => <PersonSelect id={id} value={form.owner} onChange={(v) => setForm({ ...form, owner: v })} placeholder="No owner" />}</Field>
@@ -432,7 +434,7 @@ function RuleSheet({ rule, onClose }: { rule?: NumberRule; onClose: () => void }
         </div>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Company">{(id) => rule ? <input id={id} className={input} disabled value={companyName(company)} /> : <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
+        <Field label="Legal entity" hint="Whose books, letterhead and numbering this uses.">{(id) => rule ? <input id={id} className={input} disabled value={companyName(company)} /> : <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
         <Field label="For">{(id) => <Select id={id} value={kind} onChange={(v) => setKind(v as RuleKind)} disabled={Boolean(rule)} options={Object.entries(RULE_KIND_LABEL).map(([k, v]) => ({ value: k, label: v }))} />}</Field>
         <Field label="Type code" hint="Letters and numbers, e.g. SK">{(id) => <input id={id} className={input} value={type} disabled={Boolean(rule)} maxLength={12} onChange={(e) => setType(e.target.value.toUpperCase())} />}</Field>
         <Field label="Name">{(id) => <input id={id} className={input} value={name} maxLength={120} onChange={(e) => setName(e.target.value)} />}</Field>

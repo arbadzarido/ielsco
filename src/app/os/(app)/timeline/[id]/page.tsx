@@ -12,13 +12,15 @@ import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
 import { LinkedEvents } from "@/components/os/linked-events";
 import { Empty, ErrorLine, KeyValue, Loading, PageTitle, RowList, Section, Select, StatusBadge, btn, btnGhost, muted, panel } from "@/components/os/ui";
-import { companyName, fmtDate, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
+import { fmtDate, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
+import { streamsLabel } from "@/lib/os/streams";
 
-type Milestone = { id: string; company_code: string; workstream_code: string | null; workstream_name: string | null; title: string; description: string | null; deliverable: string | null; owner_person_id: string | null;
+type Milestone = { id: string; company_code: string | null; streams: string[]; workstream_code: string | null; workstream_name: string | null; title: string; description: string | null; deliverable: string | null; owner_person_id: string | null;
   owner_name: string | null; lead_division_id: string | null; planned_start: string | null; due_date: string | null; status: string; is_major: boolean; priority: string | null; project_id: string | null;
   decision_gate: string | null; risk: string | null; evidence: string | null; planning_label: string | null; dependencies: string | null };
-const COLS = "id, company_code, workstream_code, workstream_name, title, description, deliverable, owner_person_id, owner_name, lead_division_id, planned_start, due_date, status, is_major, priority, project_id, decision_gate, risk, evidence, planning_label, dependencies";
+const COLS = "id, company_code, streams, workstream_code, workstream_name, title, description, deliverable, owner_person_id, owner_name, lead_division_id, planned_start, due_date, status, is_major, priority, project_id, decision_gate, risk, evidence, planning_label, dependencies";
 type Mini = { id: string; title: string; due_date: string | null; status: string; is_major: boolean };
 
 export default function MilestonePage({ params }: { params: Promise<{ id: string }> }) {
@@ -67,7 +69,7 @@ export default function MilestonePage({ params }: { params: Promise<{ id: string
   return (
     <div data-testid="os-milestone-detail">
       <PageTitle title={`${t.is_major ? "◆ " : ""}${t.title}`} crumbs={[{ href: "/os/timeline", label: "Timeline" }]}
-        description={`${t.id} · ${companyName(t.company_code)}${t.workstream_name ? ` · ${t.workstream_code ?? ""} ${t.workstream_name}` : ""}`}
+        description={`${t.id} · ${streamsLabel(t.streams)}${t.workstream_name ? ` · ${t.workstream_code ?? ""} ${t.workstream_name}` : ""}`}
         actions={<Link href={`/os/timeline?focus=${t.id}`} className={btn}>Update status</Link>} />
       <ErrorLine message={err} />
       {t.planning_label && <p className="mb-4 rounded-lg bg-[#FFF7E6] px-3 py-2 text-xs text-[#865400]">{t.planning_label}</p>}
@@ -107,7 +109,7 @@ export default function MilestonePage({ params }: { params: Promise<{ id: string
                 { key: "d", label: "Due", className: "w-28", render: (x) => { const r = isOpenTask(x.status) ? relativeDue(x.due_date) : null; return <span className={cn("text-xs", r?.overdue && "font-medium text-[#A12D2F]")}>{r?.label ?? fmtDate(x.due_date)}</span>; } },
               ]} />
           </Section>
-          <Section title="Events"><LinkedEvents type="timeline" id={t.id} company={t.company_code} defaults={{ project_id: t.project_id }} /></Section>
+          <Section title="Events"><LinkedEvents type="timeline" id={t.id} streams={t.streams} defaults={{ project_id: t.project_id }} /></Section>
           {!!campaigns.data?.length && (
             <Section title="Campaigns">
               <ul className={cn(panel, "divide-y divide-[#F0F2F5]")}>{campaigns.data.map((c) => <li key={c.id} className="flex items-center gap-2 px-3 py-2 text-sm"><Link href={`/os/campaigns/${c.id}`} className="flex-1 truncate hover:underline">{c.name}</Link><span className={cn("text-xs", muted)}>{fmtDate(c.start_date)}</span><StatusBadge value={c.status} /></li>)}</ul>
@@ -119,6 +121,7 @@ export default function MilestonePage({ params }: { params: Promise<{ id: string
         <aside className="space-y-4">
           <section className={cn(panel, "p-4")}>
             <KeyValue items={[
+              { label: "Streams", value: <StreamsEditor table="os_timeline_items" id={t.id} value={t.streams} onSaved={m.reload} /> },
               { label: "Owner", value: t.owner_person_id ? personLabel(people, t.owner_person_id) : t.owner_name ?? "—" },
               { label: "Lead division", value: t.lead_division_id ? dir?.divisionById.get(t.lead_division_id)?.name ?? t.lead_division_id : "—" },
               { label: "Project", value: t.project_id ? <Link className="underline" href={`/os/projects/${t.project_id}`}>{t.project_id}</Link> : "—" },

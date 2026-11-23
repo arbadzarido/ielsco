@@ -131,12 +131,12 @@ test("a project with the same name is reused, not created again", () => {
   assert.equal(p.insert, null); assert.equal(p.skip.existing, "PRJ-0032");
   assert.match(intentPreview("create_project", [p]), /Use existing project PRJ-0032/);
   const [n] = resolveIntent("create_project", draftsOf("create_project", { name: "TOEIC with ITC", company: "IELSco" }), base());
-  assert.deepEqual(n.issues, []); assert.equal(n.insert.company_code, "IEL"); assert.equal(n.insert.owner_person_id, "PPL-0001");
+  assert.deepEqual(n.issues, []); assert.deepEqual(n.insert.streams, ["IEL"]); assert.equal(n.insert.company_code, undefined); assert.equal(n.insert.owner_person_id, "PPL-0001");
 });
 
 // ── A project and its tasks in one instruction ──────────────────────────────────────────────────────────────────
 test("tasks may name a project created earlier in the same reply; they wait for it, and only tasks may", () => {
-  const dir = { ...base(), pendingProjects: [{ name: "Investment & Loan", company_code: "HQ", division_id: null }] };
+  const dir = { ...base(), pendingProjects: [{ name: "Investment & Loan", streams: ["HQ"], division_id: null }] };
   const [t] = resolveIntent("create_task", draftsOf("create_task", { title: "Follow up Mr. Alex", project: "Investment & Loan", assignees: ["Arba"] }), dir);
   assert.deepEqual(t.issues, []);
   assert.equal(t.insert, null);

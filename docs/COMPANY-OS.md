@@ -11,7 +11,7 @@ links out to Drive.
 | --- | --- |
 | Shell | Sidebar (collapsible, remembered) on desktop; top bar and drawer on phones. Workspace switcher with the real IELSco mark (`/icon-192.png`) and the Elco robot mark (`/images/contents/mascot/elco.svg`; the repo has no Elco wordmark). HQ shows both. |
 | Home `/os` | Role dashboard: my work for everyone, my divisions for managers, all three workspaces plus decisions, partner follow-ups, access findings, folder routes and AI spend for founders. Live counts only. |
-| Workspaces `/os/w/hq\|ielsco\|elco` | Overview (stats, quick actions, 30-day deadlines across tasks, projects and the timeline, company KPIs, announcements, recent documents, recent activity), divisions, projects, documents, team; HQ adds decisions and meetings, Elco adds product items. |
+| Workspaces `/os/w/hq\|ielsco\|elco\|gif` | HQ (central management) and the three business streams, IELSco, Elco AI and GIF. Open to all staff. Overview, projects, tasks, calendar, timeline, documents, partnerships, metrics, decisions, meetings and team per stream; Elco adds product items, GIF adds programmes, HQ adds the per-stream summary and the stream review queue. See `docs/COMPANY-OS-STREAMS.md`. |
 | Projects, Tasks | Projects with team, tasks, decisions, documents, comments and activity. Tasks with owner, assignees, reviewer, priority, status, due date, one level of subtasks, comments, linked documents, activity and overdue flags. Views: My tasks, Team, List, Board (drag and drop), Upcoming. No Gantt, time tracking or sprints. |
 | Documents `/os/documents` | Register with search and filters (company, division, type, status, sensitivity, category, access findings). New document from a Master Template (Drive copy, "copy, never edit"), by upload, or by registering an existing Drive link. Number `CO-TYPE-YEAR-NNN` and the approved folder route are applied by the server; the file is named `{number} — {title}`. Access check reads Drive sharing and reports drift; it never changes Drive. Approval needs the division manager or a founder. |
 | KPIs `/os/kpis` | The 68 KPI Dictionary rows with their KPI IDs. Targets only where the sheet had one (6); "No approved target" otherwise. Values logged by the KPI owner or the division manager; trend chart from three periods. The 16 Finance KPIs never store values (Restricted Finance Control). |
@@ -43,12 +43,13 @@ All rules are enforced in Postgres (RLS + security-definer helpers in
 
 | Sensitivity  | Who can see it |
 | ------------ | -------------- |
-| Internal     | Everyone active in that company (HQ Internal: all active staff) |
-| Confidential | The owning division **in that company**, founders, and people with a live grant |
+| Internal     | All active staff (since `20261213000000_company_os_business_streams.sql`; before, everyone active in that company) |
+| Confidential | The owning division, founders, and people with a live grant |
 | Restricted   | Founders, and people with an explicit grant on that record. A division grant never opens Restricted. |
 
 - Roles: founder, manager, member, guest. Status onboarding/active can sign in; every other status sees nothing.
-- Edits need the division **and** the company: an Elco Growth member cannot edit or read Confidential IELSco Growth records.
+- Edits need the division. Business streams (`streams`) never grant or limit access; company membership now only records
+  the employing entity (HR, reviews, the People Lead grant). See `docs/COMPANY-OS-STREAMS.md`.
 - Founders manage people, divisions, folder routes and see the audit log.
 - A manager can grant access to their own division only, with an end date at most 90 days away. Grants can't be edited,
   only revoked. Who granted it and when are set by the database, not the request.
@@ -56,7 +57,7 @@ All rules are enforced in Postgres (RLS + security-definer helpers in
 - Document numbers can be reserved only for a company you work in (HQ for all staff).
 - `user_id` is not writable through the API. A login is linked by `os_claim_account()` on the person's first Google
   sign-in (verified email = the approved `google_account`), or by a founder with `os_link_account`; either way access
-  still needs the Google identity, approval, a company and a live session.
+  still needs the Google identity, approval and a live session.
 - Every change to people, memberships, grants, divisions and folder routes is written to `os_audit_log` by trigger.
   The log is append-only.
 - Folder routes start as `proposed`. The approver and approval time are recorded by the database. Nothing files documents until a founder approves a route. The OS never creates,
@@ -73,7 +74,7 @@ every query, so they apply to the pages, the API and anything that calls Supabas
 2. That email is on the **approved registry**: an `os_people` row a founder created with `google_account` = that email.
    No domain rule: an `@ielsco.com` address gets nothing unless it is on the list.
 3. The row's status is `onboarding` or `active` (not `invited`, `suspended`, `revoked`, `inactive`, `offboarded`).
-4. They belong to at least one company (HQ, IELSco, Elco).
+4. ~~They belong to at least one company~~: no longer required since the business-streams migration.
 5. The session is alive: it still exists in Supabase Auth (signing out kills copied tokens too), it is not revoked, it
    started after the person's last "end all sessions", and it is at most **12 hours** old.
 6. If the account has an authenticator app enrolled, the session passed it (`aal2`).
@@ -164,6 +165,7 @@ node tests/db/company-os.pglite.mjs supabase/migrations          # access rules
 node tests/db/company-os-work.pglite.mjs supabase/migrations     # work, KPI, OKR, timeline, people, reviews, AI: 124 checks
 node tests/db/company-os-document-templates.pglite.mjs supabase/migrations   # template registry, named readers, draft guard: 55 checks
 node tests/db/company-os-programmes.pglite.mjs supabase/migrations   # programme workspaces + GIF seed: 70 checks
+node tests/db/company-os-streams.pglite.mjs supabase/migrations      # business streams, backfill, review queue, rollback: 87 checks
 # Browser end-to-end against a real Postgres, desktop and 360 px phones (130 checks): see tests/e2e/company-os/README.md
 ```
 

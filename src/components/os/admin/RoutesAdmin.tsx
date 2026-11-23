@@ -164,7 +164,7 @@ export function RoutesAdmin({ supabase }: { supabase: SupabaseClient }) {
             <Field label="Drive folder link or ID" hint="An existing folder. Open it in Drive and copy the address.">{(id) => <input id={id} className={input} value={draft.folder} onChange={(e) => setDraft({ ...draft, folder: e.target.value })} />}</Field>
             <Field label="Folder name">{(id) => <input id={id} className={input} value={draft.folder_name} onChange={(e) => setDraft({ ...draft, folder_name: e.target.value })} />}</Field>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Company">{(id) => <Select id={id} value={draft.company_code} onChange={(v) => setDraft({ ...draft, company_code: v })} options={COMPANIES.map((c) => ({ value: c, label: COMPANY_LABEL[c] }))} />}</Field>
+              <Field label="Legal entity">{(id) => <Select id={id} value={draft.company_code} onChange={(v) => setDraft({ ...draft, company_code: v })} options={COMPANIES.map((c) => ({ value: c, label: COMPANY_LABEL[c] }))} />}</Field>
               <Field label="Sensitivity">{(id) => <Select id={id} value={draft.sensitivity} onChange={(v) => setDraft({ ...draft, sensitivity: v })} options={SENSITIVITIES} />}</Field>
               <Field label="Division">{(id) => <Select id={id} value={draft.division_id} onChange={(v) => setDraft({ ...draft, division_id: v })} placeholder="Any division" options={divisions.map((d) => ({ value: d.id, label: d.name }))} />}</Field>
               <Field label="Document type">{(id) => <Select id={id} value={draft.doc_type} onChange={(v) => setDraft({ ...draft, doc_type: v })} placeholder="Any type" options={DOC_TYPES.map((t) => ({ value: t.code, label: t.label }))} />}</Field>

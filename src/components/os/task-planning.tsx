@@ -27,15 +27,13 @@ export function TaskPlanning({ id, onChanged }: { id: string; onChanged?: () => 
     const pick = (rows: unknown[] | null) => (rows ?? []).map((r) => (r as { os_tasks: Mini | null }).os_tasks).filter(Boolean) as Mini[];
     return { data: { before: pick(a.data), after: pick(b.data) }, error: a.error ?? b.error };
   }, [id]);
-  const company = plan.data?.company_code;
   const options = useQuery<{ tasks: Mini[]; milestones: { id: string; title: string; due_date: string | null; is_major: boolean }[] }>(async (s) => {
-    if (!company) return { data: { tasks: [], milestones: [] }, error: null };
     const [t, m] = await Promise.all([
-      s.from("os_tasks").select("id, title, status, due_date").eq("company_code", company).neq("id", id).not("status", "in", "(Cancelled)").order("due_date", { nullsFirst: false }).limit(300),
+      s.from("os_tasks").select("id, title, status, due_date").neq("id", id).not("status", "in", "(Cancelled)").order("due_date", { nullsFirst: false }).limit(300),
       s.from("os_timeline_items").select("id, title, due_date, is_major").not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(300),
     ]);
     return { data: { tasks: (t.data ?? []) as Mini[], milestones: (m.data ?? []) as never }, error: null };
-  }, [company, id]);
+  }, [id]);
   const [f, setF] = useState({ start: "", day: "", from: "09:00", to: "11:00" });
   const [pick, setPick] = useState("");
   const [err, setErr] = useState<string | null>(null);

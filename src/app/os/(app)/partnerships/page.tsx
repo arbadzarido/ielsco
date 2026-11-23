@@ -6,33 +6,34 @@ import { Plus, Search } from "lucide-react";
 import { useDirectory, useQuery } from "@/components/os/data";
 import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
-import { useDefaultCompany } from "@/components/os/pickers";
 import { LinkedEvents } from "@/components/os/linked-events";
 import { RecordSheet } from "@/components/os/records";
 import { Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, Tabs, btnPrimary, input, muted, panel } from "@/components/os/ui";
-import { EVIDENCE_STATUSES, OPP_STAGES, SENSITIVITIES, WORKSPACES, companyName, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
+import { EVIDENCE_STATUSES, OPP_STAGES, SENSITIVITIES, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamBadges, StreamFilter } from "@/components/os/streams";
+import { STREAMS_FIELD } from "@/components/os/records";
+import { inStream, streamFromParams, type StreamCode } from "@/lib/os/streams";
 
-type Opp = { id: string; company_code: string; division_id: string | null; opportunity_type: string | null; organisation: string; contact: string | null; source: string | null;
+type Opp = { id: string; company_code: string | null; streams: string[]; division_id: string | null; opportunity_type: string | null; organisation: string; contact: string | null; source: string | null;
   stage: string; evidence_status: string | null; owner_person_id: string | null; estimated_value: number | null; value_basis: string | null; probability: number | null;
   next_action: string | null; follow_up_date: string | null; related_project_id: string | null; outcome: string | null; closed_on: string | null; notes: string | null; sensitivity: string };
-const COLS = "id, company_code, division_id, opportunity_type, organisation, contact, source, stage, evidence_status, owner_person_id, estimated_value, value_basis, probability, next_action, follow_up_date, related_project_id, outcome, closed_on, notes, sensitivity";
+const COLS = "id, company_code, streams, division_id, opportunity_type, organisation, contact, source, stage, evidence_status, owner_person_id, estimated_value, value_basis, probability, next_action, follow_up_date, related_project_id, outcome, closed_on, notes, sensitivity";
 const OPEN = (s: string) => !["6 Won", "7 Lost"].includes(s);
 
 export default function PartnershipsPage() {
   const params = useSearchParams();
   const view = params.get("view") === "pipeline" ? "pipeline" : "list";
   const dir = useDirectory();
-  const defCompany = useDefaultCompany();
   const opps = useQuery<Opp[]>((s) => s.from("os_partnerships").select(COLS).order("follow_up_date", { nullsFirst: false }), []);
   const [q, setQ] = useState("");
-  const [company, setCompany] = useState("");
+  const [stream, setStream] = useState<StreamCode | "">(streamFromParams((k) => params.get(k)) ?? "");
   const [stage, setStage] = useState("");
   const [showClosed, setShowClosed] = useState(false);
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(params.get("open"));
   const all = opps.data ?? [];
-  const rows = all.filter((o) => (showClosed || OPEN(o.stage)) && (!company || o.company_code === company) && (!stage || o.stage === stage)
+  const rows = all.filter((o) => (showClosed || OPEN(o.stage)) && (!stream || inStream(o.streams, stream)) && (!stage || o.stage === stage)
     && (!q || `${o.id} ${o.organisation} ${o.contact ?? ""} ${o.opportunity_type ?? ""}`.toLowerCase().includes(q.toLowerCase())));
   const editing = all.find((o) => o.id === openId) ?? null;
   const people = dir?.peopleById ?? new Map();
@@ -43,6 +44,7 @@ export default function PartnershipsPage() {
     { key: "stage", label: "Stage", kind: "select" as const, options: OPP_STAGES, required: true },
     { key: "evidence_status", label: "Evidence", kind: "select" as const, options: EVIDENCE_STATUSES, hint: "How firm it is. Only 5 is confirmed in writing." },
     { key: "owner_person_id", label: "Owner", kind: "person" as const }, { key: "division_id", label: "Division", kind: "division" as const },
+    { ...STREAMS_FIELD, hint: "Which streams this partner works with: a GIF sponsor, an Elco AI integration, several. Leave empty to follow the project." },
     { key: "estimated_value", label: "Estimated value (IDR)", hint: "Only with a basis below." }, { key: "value_basis", label: "Value basis" },
     { key: "next_action", label: "Next action" }, { key: "follow_up_date", label: "Follow up on", kind: "date" as const },
     { key: "outcome", label: "Outcome" }, { key: "closed_on", label: "Closed on", kind: "date" as const },
@@ -60,7 +62,7 @@ export default function PartnershipsPage() {
           <Search size={15} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8593A3]" aria-hidden="true" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search organisations" className={cn(input, "pl-8")} />
         </label>
-        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-36" />
+        <StreamFilter value={stream} onChange={setStream} />
         {view === "list" && <Select ariaLabel="Stage" value={stage} onChange={setStage} options={OPP_STAGES} placeholder="Any stage" className="md:w-52" />}
         <label className="col-span-2 flex min-h-10 items-center gap-2 text-sm text-[#3A4B60]"><input type="checkbox" className="h-4 w-4" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} />Show won and lost</label>
       </div>
@@ -74,7 +76,7 @@ export default function PartnershipsPage() {
             { key: "e", label: "Evidence", className: "w-40", hideOnMobile: true, render: (o) => <span className="truncate text-xs text-[#66768A]">{o.evidence_status ?? "—"}</span> },
             { key: "w", label: "Owner", className: "w-28", render: (o) => personLabel(people, o.owner_person_id) },
             { key: "n", label: "Follow up", className: "w-28", render: (o) => { const r = OPEN(o.stage) ? relativeDue(o.follow_up_date) : null; return <span className={cn("text-xs", r?.overdue && "font-medium text-[#A12D2F]")}>{r?.overdue ? r.label : fmtDate(o.follow_up_date)}</span>; } },
-            { key: "c", label: "Company", className: "w-24", hideOnMobile: true, render: (o) => <span className="text-xs text-[#66768A]">{companyName(o.company_code)}</span> },
+            { key: "c", label: "Streams", className: "w-28", hideOnMobile: true, render: (o) => <StreamBadges streams={o.streams} /> },
           ]} />
       ) : (
         <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0" data-testid="os-opp-pipeline">
@@ -100,8 +102,8 @@ export default function PartnershipsPage() {
         </div>
       )}
       <RecordSheet open={creating || !!editing} title={editing ? `${editing.id} ${editing.organisation}` : "New opportunity"} table="os_partnerships" record={editing}
-        defaults={{ company_code: defCompany, stage: "1 Identified", sensitivity: "Confidential", division_id: "DIV-06" }} fields={fields}
-        extra={editing ? <div className="space-y-4"><div><h3 className="mb-2 text-sm font-semibold">Meetings and events</h3><LinkedEvents type="partnership" id={editing.id} company={editing.company_code} defaults={{ category: "Partnership" }} /></div><div><h3 className="mb-2 text-sm font-semibold">Documents</h3><LinkedDocuments type="partnership" id={editing.id} /></div><EntityFeed type="partnership" id={editing.id} /></div> : undefined}
+        defaults={{ streams: stream ? [stream] : [], stage: "1 Identified", sensitivity: "Confidential", division_id: "DIV-06" }} fields={fields}
+        extra={editing ? <div className="space-y-4"><div><h3 className="mb-2 text-sm font-semibold">Meetings and events</h3><LinkedEvents type="partnership" id={editing.id} streams={editing.streams} defaults={{ category: "Partnership" }} /></div><div><h3 className="mb-2 text-sm font-semibold">Documents</h3><LinkedDocuments type="partnership" id={editing.id} /></div><EntityFeed type="partnership" id={editing.id} /></div> : undefined}
         onClose={() => { setCreating(false); setOpenId(null); }} onSaved={() => { setCreating(false); setOpenId(null); opps.reload(); }} />
     </div>
   );

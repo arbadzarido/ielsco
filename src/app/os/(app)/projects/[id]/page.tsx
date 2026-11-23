@@ -14,6 +14,7 @@ import { PROJECT_COLUMNS, ProjectSheet, TASK_COLUMNS, TaskSheet, type ProjectRow
 import { Avatar, Progress, Empty, ErrorLine, KeyValue, Loading, PageTitle, RowList, Section, StatusBadge, btn, btnGhost, btnPrimary, panel } from "@/components/os/ui";
 import { companyName, fmtDate, isOpenTask, personLabel, relativeDue } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -103,13 +104,14 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               <ul className={cn(panel, "divide-y divide-[#F0F2F5] text-sm")}>{campaigns.data.map((c) => <li key={c.id} className="flex items-center gap-2 px-3 py-2"><Link href={`/os/campaigns/${c.id}`} className="min-w-0 flex-1 truncate hover:underline">{c.name}</Link><span className="text-xs text-[#66768A]">{fmtDate(c.start_date)}</span><StatusBadge value={c.status} /></li>)}</ul>
             </Section>
           )}
-          <Section title="Events and calendar"><LinkedEvents type="project" id={p.id} company={p.company_code} /></Section>
+          <Section title="Events and calendar"><LinkedEvents type="project" id={p.id} streams={p.streams} /></Section>
           <Section title="Documents"><LinkedDocuments type="project" id={p.id} /></Section>
           <EntityFeed type="project" id={p.id} />
         </div>
         <aside className="space-y-4">
           <section className={cn(panel, "p-4")}>
             <KeyValue items={[
+              { label: "Streams", value: <StreamsEditor table="os_projects" id={p.id} value={p.streams} onSaved={project.reload} /> },
               { label: "Owner", value: <span className="flex items-center gap-1.5"><Avatar name={personLabel(people, p.owner_person_id)} size={20} />{personLabel(people, p.owner_person_id)}</span> },
               { label: "Priority", value: <StatusBadge value={p.priority} /> },
               { label: "Type", value: p.project_type ?? "—" },
