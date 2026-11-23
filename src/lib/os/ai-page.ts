@@ -14,7 +14,8 @@ export interface PageInput { path: string; query?: Record<string, string>; filte
 export interface PageContext {
   kind: PageKind;
   id: string | null;           // the record the page is about, when there is one
-  company: string | null;      // HQ / IEL / ELC when the page is scoped to one company
+  company: string | null;      // HQ / IEL / ELC: a legal-entity filter (finance, legal, documents), or an older ?company= link
+  stream: string | null;       // HQ / IEL / ELC / GIF when the page is one stream's workspace or filtered to one stream
   division: string | null;     // DIV-0x on a division page or filter
   filters: Record<string, string>;
   selection: string[];         // record IDs the person selected on the page
@@ -22,6 +23,8 @@ export interface PageContext {
 }
 
 const SLUG_COMPANY: Record<string, string> = { hq: "HQ", ielsco: "IEL", elco: "ELC" };
+const SLUG_STREAM: Record<string, string> = { hq: "HQ", ielsco: "IEL", elco: "ELC", gif: "GIF" };
+const STREAM = /^(HQ|IEL|ELC|GIF)$/;
 const COMPANY = /^(HQ|IEL|ELC)$/;
 const SAFE_VALUE = /^[A-Za-z0-9 _.:,@+\-]{1,80}$/;
 const SAFE_KEY = /^[a-z_]{1,24}$/;
@@ -62,9 +65,10 @@ export function parsePage(input: PageInput | null | undefined): PageContext | nu
   const filters = { ...Object.fromEntries(Object.entries(query).filter(([k]) => !["agent", "new", "google"].includes(k))), ...clean(input.filters) };
   const selection = (input.selection ?? []).filter((s) => typeof s === "string" && ID.test(s)).slice(0, 50);
   const parts = path.split("/").filter(Boolean).slice(1); // after "os"
-  let kind: PageKind = "other", id: string | null = null, company: string | null = null, division: string | null = null;
+  let kind: PageKind = "other", id: string | null = null, company: string | null = null, stream: string | null = null, division: string | null = null;
   if (!parts.length) kind = "home";
-  else if (parts[0] === "w" && parts[1]) { kind = "workspace"; company = SLUG_COMPANY[parts[1].toLowerCase()] ?? null; }
+  else if (parts[0] === "w" && parts[1]) { kind = "workspace"; stream = SLUG_STREAM[parts[1].toLowerCase()] ?? null; company = SLUG_COMPANY[parts[1].toLowerCase()] ?? null; }
+  else if (parts[0] === "gif") { kind = "workspace"; stream = "GIF"; }
   else if (parts[0] === "d" && parts[1]) { kind = "division"; const n = parts[1].toUpperCase(); division = /^\d{1,2}$/.test(n) ? `DIV-${n.padStart(2, "0")}` : /^DIV-\d{2}$/.test(n) ? n : null; }
   else if (parts[1] && SINGLE[parts[0]]) {
     const raw = decodeURIComponent(parts[1]);
@@ -72,15 +76,18 @@ export function parsePage(input: PageInput | null | undefined): PageContext | nu
     else kind = LIST[parts[0]] ?? "other";
   } else kind = LIST[parts[0]] ?? "other";
   // A list or calendar can be scoped to one company by its own filter (?company=IEL, or the calendar's ?c=IEL).
-  const fc = (filters.company ?? filters.c ?? "").toUpperCase();
+  const fc = (filters.legal_entity ?? filters.company ?? filters.c ?? "").toUpperCase();
   if (!company && COMPANY.test(fc)) company = fc;
+  // The stream filter (?stream=GIF, or a slug); an older ?company=IEL link meant the business, so it names the stream too.
+  const fs = (filters.stream ?? "").toLowerCase();
+  if (!stream) stream = SLUG_STREAM[fs] ?? (STREAM.test(fs.toUpperCase()) ? fs.toUpperCase() : null) ?? (!filters.legal_entity && COMPANY.test(fc) ? fc : null);
   const fd = (filters.division ?? "").toUpperCase();
   if (!division && /^DIV-\d{2}$/.test(fd)) division = fd;
   // A calendar event or a list's open record is the page's subject too.
   if (!id && filters.event && ID.test(filters.event.toUpperCase())) id = filters.event.toUpperCase();
   if (!id && filters.p && ID.test(filters.p.toUpperCase()) && kind === "calendar") id = filters.p.toUpperCase();
-  const label = `${LABEL[kind]}${id ? ` ${id.length > 20 ? id.slice(0, 8) + "…" : id}` : ""}${company ? ` · ${company}` : ""}${filters.view ? ` (${filters.view})` : ""}`;
-  return { kind, id, company, division, filters, selection, label };
+  const label = `${LABEL[kind]}${id ? ` ${id.length > 20 ? id.slice(0, 8) + "…" : id}` : ""}${stream ?? company ? ` · ${stream ?? company}` : ""}${filters.view ? ` (${filters.view})` : ""}`;
+  return { kind, id, company, stream, division, filters, selection, label };
 }
 
 /** A few things worth asking on this page, shown as one-tap prompts in the panel. */

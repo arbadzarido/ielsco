@@ -9,8 +9,10 @@ import { useOsMe } from "@/components/os/OsProvider";
 import { friendlyError, useDirectory, useQuery } from "@/components/os/data";
 import { TASK_COLUMNS, TaskSheet, type TaskRow } from "@/components/os/work-forms";
 import { Avatar, Badge, Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, Tabs, btnPrimary, input, panel, ring } from "@/components/os/ui";
-import { BOARD_COLUMNS, PRIORITIES, TASK_STATUSES, WORKSPACES, companyName, isOpenTask, personLabel, relativeDue, todayJakarta, addDays } from "@/lib/os/meta";
+import { BOARD_COLUMNS, PRIORITIES, TASK_STATUSES, isOpenTask, personLabel, relativeDue, todayJakarta, addDays } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamBadges, StreamFilter } from "@/components/os/streams";
+import { inStream, streamFromParams, type StreamCode } from "@/lib/os/streams";
 
 // Tasks: My tasks, Team tasks, a list of everything visible, a Kanban board and upcoming deadlines. All views read the
 // same RLS-filtered rows; the view only changes how they are filtered and arranged.
@@ -32,11 +34,11 @@ export default function TasksPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
-  const [company, setCompany] = useState(params.get("company") ?? "");
+  const [stream, setStream] = useState<StreamCode | "">(streamFromParams((k) => params.get(k)) ?? "");
   const [showDone, setShowDone] = useState(false);
   const [creating, setCreating] = useState(params.get("new") === "1");
   const [err, setErr] = useState<string | null>(null);
-  usePublishAssistantContext({ filters: { view, search: q, status, priority, company, show_done: showDone ? "yes" : "" } });
+  usePublishAssistantContext({ filters: { view, search: q, status, priority, stream, show_done: showDone ? "yes" : "" } });
 
   const tasks = useQuery<TaskRow[]>((s) => s.from("os_tasks").select(TASK_COLUMNS).is("parent_task_id", null).order("due_date", { ascending: true, nullsFirst: false }).limit(1000), []);
   const assigns = useQuery<{ task_id: string; person_id: string }[]>((s) => s.from("os_task_assignees").select("task_id, person_id"), []);
@@ -59,7 +61,7 @@ export default function TasksPage() {
     if (view !== "board" && !showDone && !isOpenTask(t.status) && view !== "upcoming") return false;
     if (status && t.status !== status) return false;
     if (priority && t.priority !== priority) return false;
-    if (company && t.company_code !== company) return false;
+    if (stream && !inStream(t.streams, stream)) return false;
     if (q && !`${t.id} ${t.title} ${t.description ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
@@ -98,7 +100,7 @@ export default function TasksPage() {
         </label>
         {view !== "board" && <Select ariaLabel="Status" value={status} onChange={setStatus} options={TASK_STATUSES} placeholder="Any status" className="md:w-40" />}
         <Select ariaLabel="Priority" value={priority} onChange={setPriority} options={PRIORITIES} placeholder="Any priority" className="md:w-40" />
-        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-40" />
+        <StreamFilter value={stream} onChange={setStream} />
         {view !== "board" && view !== "upcoming" && (
           <label className="col-span-2 flex min-h-10 items-center gap-2 text-sm text-[#3A4B60]">
             <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} className="h-4 w-4" /> Show done and cancelled
@@ -146,12 +148,13 @@ export default function TasksPage() {
             { key: "priority", label: "Priority", className: "w-28", render: (t) => t.priority === "P3 Normal" || t.priority === "P4 Low" ? <span className="text-xs text-[#66768A]">{t.priority.slice(3)}</span> : <StatusBadge value={t.priority} /> },
             { key: "owner", label: "Owner", className: "w-36", render: ownerCell },
             { key: "due", label: "Due", className: "w-32", render: dueCell },
-            { key: "where", label: "Project", className: "w-40", hideOnMobile: true, render: (t) => <span className="truncate text-xs text-[#66768A]">{t.project_id ? projectName.get(t.project_id) ?? t.project_id : companyName(t.company_code)}</span> },
+            { key: "where", label: "Project", className: "w-40", hideOnMobile: true, render: (t) => <span className="truncate text-xs text-[#66768A]">{t.project_id ? projectName.get(t.project_id) ?? t.project_id : "—"}</span> },
+            { key: "streams", label: "Streams", className: "w-28", hideOnMobile: true, render: (t) => <StreamBadges streams={t.streams} /> },
           ]} />
       )}
       {view === "team" && !me.divisions.length && <p className="mt-3 text-sm text-[#66768A]">You aren&apos;t in a division yet, so there is no team list. <Badge>Ask a founder to add you to one</Badge></p>}
 
-      <TaskSheet open={creating} defaults={company ? { company_code: company } : undefined} onClose={() => setCreating(false)} onSaved={(id) => { setCreating(false); router.push(`/os/tasks/${id}`); }} />
+      <TaskSheet open={creating} defaults={stream ? { streams: [stream] } : undefined} onClose={() => setCreating(false)} onSaved={(id) => { setCreating(false); router.push(`/os/tasks/${id}`); }} />
     </div>
   );
 }

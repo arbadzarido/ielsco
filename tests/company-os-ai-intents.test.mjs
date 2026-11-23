@@ -30,7 +30,9 @@ test("a unique first name resolves to that person's real ID", () => {
   assert.deepEqual(t.issues, []);
   assert.equal(t.insert.owner_person_id, "PPL-0003");
   assert.deepEqual(t.insert.assignees, ["PPL-0003"]);
-  assert.equal(t.insert.company_code, "IEL"); // the person's only company
+  // No legal entity or business unit is asked for or written: streams describe the work, and none were named.
+  assert.equal(t.insert.company_code, undefined);
+  assert.deepEqual(t.insert.streams, []);
   assert.ok(t.fields.some((f) => f.label === "Deadline" && f.value === "Fri 2026-11-13"));
 });
 
@@ -45,12 +47,13 @@ test("an ambiguous name lists every match and blocks creation", () => {
   assert.equal(again.insert.owner_person_id, "PPL-0005");
 });
 
-test("unknown people are never invented, and guests or other companies' people can't be assigned", () => {
+test("unknown people are never invented, guests can't be assigned, and anyone active can work on any stream", () => {
   const r = resolvePeople(["Zelda", "Gita Guest", "Budi"], dir, "IEL", "assignees");
-  assert.deepEqual(r.ids, []);
-  assert.deepEqual(r.issues.map((i) => i.kind), ["not_found", "invalid", "invalid"]);
-  assert.match(r.issues[2].message, /doesn't work in IELSco/);
-  assert.ok(r.issues[0].choices.every((c) => c.value !== "PPL-0006" && c.value !== "PPL-0007"));
+  // Budi is employed by Elco AI: he can still be assigned IELSco or GIF work.
+  assert.deepEqual(r.ids, ["PPL-0006"]);
+  assert.deepEqual(r.issues.map((i) => i.kind), ["not_found", "invalid"]);
+  assert.ok(r.issues[0].choices.every((c) => c.value !== "PPL-0007"));
+  assert.ok(r.issues[0].choices.some((c) => c.value === "PPL-0006"));
 });
 
 test("project names resolve, inherit the company and division, and ambiguity asks", () => {
@@ -64,17 +67,19 @@ test("project names resolve, inherit the company and division, and ambiguity ask
   assert.equal(n.issues[0].kind, "not_found");
 });
 
-test("a division by name; an unclear deadline or company becomes a question", () => {
+test("a division by name; an unclear deadline is a question; streams are never a forced question", () => {
   const [t] = resolveIntent("create_task", draftsOf("create_task", { title: "Reels", division: "Creative division", unclear: ["due_date"] }), dir);
   assert.equal(t.draft.division, "DIV-04");
   assert.equal(t.issues.length, 1);
   assert.equal(t.issues[0].field, "due_date");
   const founder = { ...dir, me: "PPL-0002", myCompanies: ["HQ", "IEL", "ELC"] };
   const [c] = resolveIntent("create_task", draftsOf("create_task", { title: "Something" }), founder);
-  assert.equal(c.issues[0].field, "company");
-  assert.equal(c.issues[0].choices.length, 3);
+  assert.deepEqual(c.issues, []); // left unassigned (HQ lists it), never guessed
+  assert.ok(c.fields.some((f) => f.label === "Streams" && /Not assigned/.test(f.value)));
+  // Someone employed only by IELSco can still create Elco AI work.
   const [x] = resolveIntent("create_task", draftsOf("create_task", { title: "Something", company: "Elco" }), dir);
-  assert.equal(x.issues[0].kind, "invalid"); // this person doesn't work in Elco
+  assert.deepEqual(x.issues, []);
+  assert.deepEqual(x.insert.streams, ["ELC"]);
 });
 
 test("a batch of tasks is listed in full and each is resolved", () => {
@@ -167,7 +172,7 @@ test("example 2: creating a campaign resolves its owner and checks the dates", (
   const c = one("create_campaign", { name: "Ramadan Promo", start_date: "2027-02-01", end_date: "2027-03-15", owner: "Farrel" });
   assert.deepEqual(c.issues, []);
   assert.equal(c.insert.owner_person_id, "PPL-0003");
-  assert.equal(c.insert.company_code, "IEL");
+  assert.equal(c.insert.company_code, undefined);
   const bad = one("create_campaign", { name: "Backwards", start_date: "2027-03-01", end_date: "2027-02-01" });
   assert.equal(bad.insert, null);
 });
@@ -235,4 +240,42 @@ test("event groups: C-Level and a division; an unknown group is a question, neve
   assert.deepEqual(e.issues, []);
   assert.deepEqual(e.insert.attendees.map((a) => (typeof a === "string" ? a : a.person_id)).sort(), ["PPL-0002", "PPL-0005", "PPL-0009"]);
   assert.deepEqual(e.draft.attendees, []); // stored draft keeps groups, not their members
+});
+
+// ── Business streams ──────────────────────────────────────────────────────────────────────────────────────────────
+test("streams: named, several, inherited from the project, or the page's; unknown names are asked about", async () => {
+  const { resolveStreams } = await import("../src/lib/os/ai-intents.ts");
+  assert.deepEqual(resolveStreams(["GIF", "IELSco and Elco AI"]).codes, ["IEL", "ELC", "GIF"]);
+  assert.deepEqual(resolveStreams(["Global Impact Fellowship"]).codes, ["GIF"]);
+  assert.equal(resolveStreams(["Mars"]).issues[0].kind, "not_found");
+  assert.equal(resolveStreams(["Mars"]).issues[0].choices.length, 4);
+
+  const sdir = { ...dir, projects: [...dir.projects, { id: "PRJ-0033", name: "GIF Summer 2027", streams: ["GIF"], division_id: "DIV-03", status: "Active" }] };
+  // A task on a GIF project is GIF work, whoever does it: an Elco AI employee in another division is fine.
+  const [t] = resolveIntent("create_task", draftsOf("create_task", { title: "Sponsor deck", project: "GIF Summer", assignees: ["Budi"] }), sdir);
+  assert.deepEqual(t.issues, []);
+  assert.deepEqual(t.insert.streams, ["GIF"]);
+  assert.equal(t.insert.owner_person_id, "PPL-0006");
+  assert.ok(t.fields.some((f) => f.label === "Streams" && /GIF \(from the link\)/.test(f.value)));
+  assert.equal(t.draft.streams, undefined); // inherited, not written back
+  // Several streams at once.
+  const [m] = resolveIntent("create_task", draftsOf("create_task", { title: "Joint webinar", streams: ["IELSco", "GIF"] }), dir);
+  assert.deepEqual(m.insert.streams, ["IEL", "GIF"]);
+  assert.deepEqual(m.draft.streams, ["IEL", "GIF"]);
+  // On the GIF workspace, new work defaults to GIF.
+  const [pg] = resolveIntent("create_task", draftsOf("create_task", { title: "Book venue" }), { ...dir, pageStream: "GIF" });
+  assert.deepEqual(pg.insert.streams, ["GIF"]);
+  // Projects, events and milestones carry streams too.
+  const [pr] = resolveIntent("create_project", draftsOf("create_project", { name: "GIF Winter 2027", streams: ["GIF"] }), dir);
+  assert.deepEqual(pr.insert.streams, ["GIF"]);
+  const [ev] = resolveIntent("create_event", draftsOf("create_event", { title: "Sponsor call", date: "2026-11-10", start_time: "10:00", project: "GIF Summer" }), sdir);
+  assert.deepEqual(ev.issues, []);
+  assert.deepEqual(ev.insert.streams, ["GIF"]);
+  assert.equal(ev.insert.company_code, undefined);
+});
+
+test("invitations reach everyone active, whatever company employs them", async () => {
+  const { candidatesFor } = await import("../src/lib/os/ai-intents.ts");
+  const ids = candidatesFor(dir).map((c) => c.person_id).sort();
+  assert.deepEqual(ids, ["PPL-0002", "PPL-0003", "PPL-0004", "PPL-0005", "PPL-0006"]); // not the guest
 });

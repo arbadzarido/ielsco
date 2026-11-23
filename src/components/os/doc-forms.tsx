@@ -8,26 +8,29 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useDirectory, useMyScope } from "./data";
 import { CompanySelect, useDefaultCompany } from "./pickers";
+import { StreamPicker } from "./streams";
+import { normalizeStreams, type StreamCode } from "@/lib/os/streams";
 import { ErrorLine, Field, Select, Sheet, btn, btnPrimary, input, linkCls, muted } from "./ui";
 import { DOC_TYPES, SENSITIVITIES } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
 
 export type DocRow = {
-  id: string; reference_number: string | null; title: string; company_code: string; division_id: string | null; doc_type: string;
+  id: string; reference_number: string | null; title: string; company_code: string; streams: string[]; division_id: string | null; doc_type: string;
   category: string | null; status: string; sensitivity: string; owner_person_id: string | null; drive_url: string | null; updated_at: string;
   drift_findings: { code: string; severity: string; message: string }[]; drive_checked_at: string | null;
 };
-export const DOC_COLUMNS = "id, reference_number, title, company_code, division_id, doc_type, category, status, sensitivity, owner_person_id, drive_url, updated_at, drift_findings, drive_checked_at";
+export const DOC_COLUMNS = "id, reference_number, title, company_code, streams, division_id, doc_type, category, status, sensitivity, owner_person_id, drive_url, updated_at, drift_findings, drive_checked_at";
 
 type Template = { id: string; name: string; mimeType: string };
 type RouteCheck = { ok: boolean; route: { folder_name: string } | null; problems: string[]; can_create: boolean };
-export type NewDocDefaults = { company_code?: string; division_id?: string; link_type?: string; link_id?: string };
+export type NewDocDefaults = { company_code?: string; streams?: string[]; division_id?: string; link_type?: string; link_id?: string };
 
 export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open: boolean; onClose: () => void; onCreated: (id: string) => void; defaults?: NewDocDefaults }) {
   const defCompany = useDefaultCompany();
   const [mode, setMode] = useState<"template" | "upload" | "register">("template");
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState(defaults?.company_code ?? defCompany);
+  const [streams, setStreams] = useState<StreamCode[]>(normalizeStreams(defaults?.streams));
   const [division, setDivision] = useState(defaults?.division_id ?? "");
   const [docType, setDocType] = useState("");
   const [sensitivity, setSensitivity] = useState("Internal");
@@ -73,7 +76,7 @@ export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open:
   async function submit() {
     setErr(null); setBusy(true);
     const f = new FormData();
-    Object.entries({ mode, title, company_code: company, division_id: division, doc_type: docType, sensitivity, category, template_file_id: template, drive_url: driveUrl, link_type: defaults?.link_type ?? "", link_id: defaults?.link_id ?? "" })
+    Object.entries({ mode, title, company_code: company, streams: streams.join(","), division_id: division, doc_type: docType, sensitivity, category, template_file_id: template, drive_url: driveUrl, link_type: defaults?.link_type ?? "", link_id: defaults?.link_id ?? "" })
       .forEach(([k, v]) => f.set(k, v));
     if (mode === "upload" && file) f.set("file", file);
     try {
@@ -102,7 +105,7 @@ export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open:
           {tplError && <p className={cn("mt-1 text-xs", muted)}>{tplError} You can still register a file that already exists in Drive.</p>}
         </fieldset>
         {mode === "template" && (
-          <Field label="Master template" hint="Templates are copied, never edited. The copy goes into the approved folder for this company and sensitivity.">
+          <Field label="Master template" hint="Templates are copied, never edited. The copy goes into the approved folder for this legal entity and sensitivity.">
             {(id) => <Select id={id} value={template} onChange={pickTemplate} placeholder={templates ? "Choose a template…" : "Loading…"} options={(templates ?? []).map((t) => ({ value: t.id, label: t.name }))} />}
           </Field>
         )}
@@ -118,11 +121,12 @@ export function NewDocumentSheet({ open, onClose, onCreated, defaults }: { open:
         )}
         <Field label="Title">{(id) => <input id={id} className={input} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={300} data-testid="os-doc-title" />}</Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Company">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
+          <Field label="Legal entity" hint="Whose letterhead, numbering and Drive folders it uses.">{(id) => <CompanySelect id={id} value={company} onChange={setCompany} />}</Field>
           <Field label="Division">{(id) => <Select id={id} value={division} onChange={setDivision} placeholder="No division (company-wide)" options={divisions.map((d) => ({ value: d.id, label: d.name }))} />}</Field>
           <Field label="Type">{(id) => <Select id={id} value={docType} onChange={setDocType} placeholder="Choose…" options={DOC_TYPES.map((t) => ({ value: t.code, label: `${t.code} · ${t.label}` }))} />}</Field>
           <Field label="Sensitivity">{(id) => <Select id={id} value={sensitivity} onChange={setSensitivity} options={SENSITIVITIES} />}</Field>
         </div>
+        <Field label="Business streams" hint="What it is about. Leave empty to follow the linked project.">{(id) => <StreamPicker id={id} value={streams} onChange={setStreams} />}</Field>
         <Field label="Category" hint="Optional, for example Governance, Programs or Finance.">{(id) => <input id={id} className={input} value={category} onChange={(e) => setCategory(e.target.value)} />}</Field>
         {mode !== "register" && check && (
           <div className={cn("rounded-lg border px-3 py-2 text-sm", check.ok ? "border-[#CDE8D6] bg-[#F1F9F4]" : "border-[#F1C9CA] bg-[#FDF2F2]")} data-testid="os-doc-route" role="status">

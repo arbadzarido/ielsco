@@ -8,9 +8,10 @@ import { useDirectory, useMyScope, useQuery } from "@/components/os/data";
 import { Announcements } from "@/components/os/records";
 import { TASK_COLUMNS, type TaskRow } from "@/components/os/work-forms";
 import { Empty, Section, Stat, StatusBadge, linkCls, muted, panel } from "@/components/os/ui";
-import { WORKSPACES, addDays, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
+import { addDays, fmtDate, personLabel, relativeDue, todayJakarta } from "@/lib/os/meta";
 import { ROLE_LABEL } from "@/lib/os/types";
 import { cn } from "@/lib/utils";
+import { STREAMS, inStream, streamHref } from "@/lib/os/streams";
 
 // Home is a role dashboard: your own work for everyone, your divisions for managers, all companies for founders.
 // Every number is a live count of records the person can see; nothing is charted for decoration.
@@ -20,7 +21,7 @@ const EXISTING_ADMIN = [
   { href: `${SITE}/dashboard/admin/opportunities`, label: "Opportunities" },
   { href: `${SITE}/dashboard/admin/operations`, label: "Operations" },
 ];
-type Slim = { id: string; company_code: string; division_id: string | null; status: string; due_date: string | null };
+type Slim = { id: string; streams: string[]; division_id: string | null; status: string; due_date: string | null };
 
 export default function OsHomePage() {
   const { me } = useOsMe();
@@ -34,8 +35,8 @@ export default function OsHomePage() {
   const toReview = useQuery<TaskRow[]>((s) => s.from("os_tasks").select(TASK_COLUMNS).eq("reviewer_person_id", me.person.id).eq("status", "In Review"), [me.person.id]);
   const reviews = useQuery<{ id: string; person_id: string; reviewer_person_id: string | null; status: string; os_review_cycles: { name: string; self_due: string | null; manager_due: string | null } | null }[]>((s) => s.from("os_reviews").select("id, person_id, reviewer_person_id, status, os_review_cycles(name, self_due, manager_due)").not("status", "in", "(Acknowledged)") as never, []);
   const milestones = useQuery<{ id: string; title: string; due_date: string; workstream_code: string | null }[]>((s) => s.from("os_timeline_items").select("id, title, due_date, workstream_code").eq("is_major", true).gte("due_date", today).lte("due_date", addDays(today, 60)).not("status", "in", "(Done,Cancelled)").order("due_date").limit(6), [today]);
-  const allTasks = useQuery<Slim[]>((s) => scope.isManager || me.isAdmin ? s.from("os_tasks").select("id, company_code, division_id, status, due_date").not("status", "in", "(Done,Cancelled)").limit(2000) : Promise.resolve({ data: [], error: null }), [scope.isManager, me.isAdmin]);
-  const projects = useQuery<Slim[]>((s) => scope.isManager || me.isAdmin ? s.from("os_projects").select("id, company_code, division_id, status, due_date").not("status", "in", "(Completed,Cancelled)") : Promise.resolve({ data: [], error: null }), [scope.isManager, me.isAdmin]);
+  const allTasks = useQuery<Slim[]>((s) => scope.isManager || me.isAdmin ? s.from("os_tasks").select("id, streams, division_id, status, due_date").not("status", "in", "(Done,Cancelled)").limit(2000) : Promise.resolve({ data: [], error: null }), [scope.isManager, me.isAdmin]);
+  const projects = useQuery<Slim[]>((s) => scope.isManager || me.isAdmin ? s.from("os_projects").select("id, streams, division_id, status, due_date").not("status", "in", "(Completed,Cancelled)") : Promise.resolve({ data: [], error: null }), [scope.isManager, me.isAdmin]);
   const founder = useQuery<{ drift: number; routes: number; followups: number; decisions: number; budget: { budget_usd: number; spent_usd: number } | null }>(async (s) => {
     if (!me.isAdmin) return { data: null, error: null };
     const [d, r, f, dc, b] = await Promise.all([
@@ -120,17 +121,17 @@ export default function OsHomePage() {
           )}
 
           {me.isAdmin && (
-            <Section title="Across the companies">
+            <Section title="HQ and the streams" action={<Link href={streamHref("HQ", "streams")} className={linkCls}>Details</Link>}>
               <div className={cn(panel, "overflow-x-auto")}>
                 <table className="w-full min-w-[440px] text-sm" data-testid="os-home-founder">
-                  <thead className="border-b border-[#E6E9EE] bg-[#FAFBFC] text-left text-xs text-[#66768A]"><tr><th className="px-3 py-2 font-medium">Workspace</th><th className="px-3 py-2 text-right font-medium">Active projects</th><th className="px-3 py-2 text-right font-medium">Open tasks</th><th className="px-3 py-2 text-right font-medium">Overdue</th><th className="px-3 py-2 text-right font-medium">Blocked</th></tr></thead>
+                  <thead className="border-b border-[#E6E9EE] bg-[#FAFBFC] text-left text-xs text-[#66768A]"><tr><th className="px-3 py-2 font-medium">Stream</th><th className="px-3 py-2 text-right font-medium">Active projects</th><th className="px-3 py-2 text-right font-medium">Open tasks</th><th className="px-3 py-2 text-right font-medium">Overdue</th><th className="px-3 py-2 text-right font-medium">Blocked</th></tr></thead>
                   <tbody>
-                    {WORKSPACES.map((w) => {
-                      const t = (allTasks.data ?? []).filter((x) => x.company_code === w.code);
+                    {STREAMS.map((w) => {
+                      const t = (allTasks.data ?? []).filter((x) => inStream(x.streams, w.code));
                       return (
                         <tr key={w.code} className="border-b border-[#F0F2F5] last:border-0">
-                          <td className="px-3 py-2"><Link href={`/os/w/${w.slug}`} className="flex items-center gap-2 font-medium hover:underline"><CompanyLogo code={w.code} size={18} />{w.name}</Link></td>
-                          <td className="px-3 py-2 text-right tabular-nums">{(projects.data ?? []).filter((x) => x.company_code === w.code).length}</td>
+                          <td className="px-3 py-2"><Link href={streamHref(w.code)} className="flex items-center gap-2 font-medium hover:underline"><CompanyLogo code={w.code} size={18} />{w.name}</Link></td>
+                          <td className="px-3 py-2 text-right tabular-nums">{(projects.data ?? []).filter((x) => inStream(x.streams, w.code)).length}</td>
                           <td className="px-3 py-2 text-right tabular-nums">{t.length}</td>
                           <td className={cn("px-3 py-2 text-right tabular-nums", t.some(overdue) && "font-semibold text-[#A12D2F]")}>{t.filter(overdue).length}</td>
                           <td className="px-3 py-2 text-right tabular-nums">{t.filter((x) => x.status === "Blocked").length}</td>
@@ -153,7 +154,7 @@ export default function OsHomePage() {
           )}
         </div>
         <aside className="space-y-6">
-          <Announcements company="HQ" canPost={me.isAdmin || scope.isManager} />
+          <Announcements stream="HQ" canPost={me.isAdmin || scope.isManager} />
           <Section title="Major milestones (60 days)" action={<Link href="/os/timeline" className={linkCls}>Timeline</Link>}>
             {milestones.data?.length ? (
               <ul className="space-y-1.5 text-sm">{milestones.data.map((m) => <li key={m.id} className="flex gap-2"><span className={cn("w-16 shrink-0 text-xs", muted)}>{fmtDate(m.due_date)}</span><Link href={`/os/timeline?focus=${m.id}`} className="min-w-0 flex-1 hover:underline">{m.title}</Link></li>)}</ul>

@@ -9,12 +9,13 @@ import { CalendarDays, Plus, Search } from "lucide-react";
 import { useDirectory, useQuery } from "@/components/os/data";
 import { EntityFeed } from "@/components/os/feed";
 import { LinkedDocuments } from "@/components/os/linked-docs";
-import { useDefaultCompany } from "@/components/os/pickers";
 import { RecordSheet } from "@/components/os/records";
 import { Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, btn, btnPrimary, input, ring } from "@/components/os/ui";
-import { CAMPAIGN_PLAN_STATUSES, CAMPAIGN_STATUSES, WORKSPACES, companyName, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
+import { CAMPAIGN_PLAN_STATUSES, CAMPAIGN_STATUSES, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
 import { CAMPAIGN_COLS, CONTENT_COLS, campaignFields, contentFields, type Campaign, type ContentItem } from "@/components/os/campaign-fields";
 import { cn } from "@/lib/utils";
+import { StreamBadges, StreamFilter } from "@/components/os/streams";
+import { inStream, streamFromParams, type StreamCode } from "@/lib/os/streams";
 
 export default function CampaignsPage() { return <Suspense fallback={null}><Campaigns /></Suspense>; }
 
@@ -38,11 +39,11 @@ function Campaigns() {
 
 function ContentList({ openId: initialOpen }: { openId: string | null }) {
   const dir = useDirectory();
-  const defCompany = useDefaultCompany();
+  const params = useSearchParams();
   const items = useQuery<ContentItem[]>((s) => s.from("os_campaign_items").select(CONTENT_COLS).order("planned_publish_date", { nullsFirst: false }), []);
   const camps = useQuery<{ id: string; name: string }[]>((s) => s.from("os_campaigns").select("id, name").order("start_date", { nullsFirst: false }).limit(300), []);
   const [q, setQ] = useState("");
-  const [company, setCompany] = useState("");
+  const [stream, setStream] = useState<StreamCode | "">(streamFromParams((k) => params.get(k)) ?? "");
   const [status, setStatus] = useState("");
   const [campaign, setCampaign] = useState("");
   const [creating, setCreating] = useState(false);
@@ -51,7 +52,7 @@ function ContentList({ openId: initialOpen }: { openId: string | null }) {
   const campName = new Map((camps.data ?? []).map((c) => [c.id, c.name]));
   const label = (i: ContentItem) => (i.campaign_id ? campName.get(i.campaign_id) ?? i.campaign_id : i.campaign);
   const campaigns = Array.from(new Set(all.map(label).filter(Boolean) as string[])).sort();
-  const rows = all.filter((i) => (!company || i.company_code === company) && (!status ? i.status !== "Cancelled" : i.status === status) && (!campaign || label(i) === campaign)
+  const rows = all.filter((i) => (!stream || inStream(i.streams, stream)) && (!status ? i.status !== "Cancelled" : i.status === status) && (!campaign || label(i) === campaign)
     && (!q || `${i.id} ${i.title} ${label(i) ?? ""} ${i.channel ?? ""} ${i.pillar ?? ""}`.toLowerCase().includes(q.toLowerCase())));
   const editing = all.find((i) => i.id === openId) ?? null;
   const people = dir?.peopleById ?? new Map();
@@ -63,7 +64,7 @@ function ContentList({ openId: initialOpen }: { openId: string | null }) {
           <Search size={15} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8593A3]" aria-hidden="true" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search content" className={cn(input, "pl-8")} />
         </label>
-        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-36" />
+        <StreamFilter value={stream} onChange={setStream} />
         <Select ariaLabel="Status" value={status} onChange={setStatus} options={CAMPAIGN_STATUSES} placeholder="Not cancelled" className="md:w-40" />
         {!!campaigns.length && <Select ariaLabel="Campaign" value={campaign} onChange={setCampaign} options={campaigns} placeholder="All campaigns" className="md:w-48" />}
         <button type="button" className={cn(btnPrimary, "col-span-2 md:ml-auto")} onClick={() => setCreating(true)} data-testid="os-new-campaign"><Plus size={16} aria-hidden="true" />Content item</button>
@@ -79,11 +80,11 @@ function ContentList({ openId: initialOpen }: { openId: string | null }) {
             { key: "s", label: "Status", className: "w-32", render: (i) => <StatusBadge value={i.status} /> },
             { key: "o", label: "Creator / reviewer", className: "w-36", render: (i) => <span className="text-xs">{personLabel(people, i.creator_person_id ?? i.owner_person_id)}{i.reviewer_person_id ? ` → ${personLabel(people, i.reviewer_person_id)}` : ""}</span> },
             { key: "d", label: "Publish", className: "w-28", render: (i) => { const r = !["Published", "Cancelled"].includes(i.status) ? relativeDue(i.planned_publish_date) : null; return <span className={cn("text-xs", r?.overdue && "font-medium text-[#A12D2F]")}>{fmtDate(i.actual_publish_date ?? i.planned_publish_date)}</span>; } },
-            { key: "w", label: "Company", className: "w-24", hideOnMobile: true, render: (i) => <span className="text-xs text-[#66768A]">{companyName(i.company_code)}</span> },
+            { key: "w", label: "Streams", className: "w-28", hideOnMobile: true, render: (i) => <StreamBadges streams={i.streams} /> },
           ]} />
       )}
       <RecordSheet open={creating || !!editing} title={editing ? `${editing.id} ${editing.title}` : "New content item"} table="os_campaign_items" record={editing}
-        defaults={{ company_code: defCompany, status: "Planned", division_id: "DIV-03" }} fields={contentFields(camps.data ?? [])}
+        defaults={{ streams: stream ? [stream] : [], status: "Planned", division_id: "DIV-03" }} fields={contentFields(camps.data ?? [])}
         extra={editing ? <div className="space-y-4"><div><h3 className="mb-2 text-sm font-semibold">Documents</h3><LinkedDocuments type="campaign" id={editing.id} /></div><EntityFeed type="campaign" id={editing.id} /></div> : undefined}
         onClose={() => { setCreating(false); setOpenId(null); }} onSaved={() => { setCreating(false); setOpenId(null); items.reload(); }} />
     </>
@@ -92,18 +93,20 @@ function ContentList({ openId: initialOpen }: { openId: string | null }) {
 
 function CampaignList() {
   const dir = useDirectory();
-  const defCompany = useDefaultCompany();
+  const params = useSearchParams();
+  const [stream, setStream] = useState<StreamCode | "">(streamFromParams((k) => params.get(k)) ?? "");
   const list = useQuery<Campaign[]>((s) => s.from("os_campaigns").select(CAMPAIGN_COLS).order("start_date", { ascending: false, nullsFirst: false }).limit(300), []);
   const counts = useQuery<{ campaign_id: string; status: string }[]>((s) => s.from("os_campaign_items").select("campaign_id, status").not("campaign_id", "is", null).limit(5000), []);
   const [creating, setCreating] = useState(false);
   const [status, setStatus] = useState("");
   const per = new Map<string, { total: number; published: number }>();
   for (const c of counts.data ?? []) { if (c.status === "Cancelled") continue; const x = per.get(c.campaign_id) ?? { total: 0, published: 0 }; x.total++; if (c.status === "Published") x.published++; per.set(c.campaign_id, x); }
-  const rows = (list.data ?? []).filter((c) => (!status ? c.status !== "Cancelled" : c.status === status));
+  const rows = (list.data ?? []).filter((c) => (!status ? c.status !== "Cancelled" : c.status === status) && (!stream || inStream(c.streams, stream)));
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-2">
         <Select ariaLabel="Status" value={status} onChange={setStatus} options={CAMPAIGN_PLAN_STATUSES} placeholder="Not cancelled" className="w-44" />
+        <StreamFilter value={stream} onChange={setStream} />
         <button type="button" className={cn(btnPrimary, "ml-auto")} onClick={() => setCreating(true)} data-testid="os-new-campaign-plan"><Plus size={16} aria-hidden="true" />Campaign</button>
       </div>
       <ErrorLine message={list.error} />
@@ -116,10 +119,10 @@ function CampaignList() {
             { key: "d", label: "Dates", className: "w-40", render: (c) => <span className="text-xs">{fmtDate(c.start_date)}{c.end_date ? ` – ${fmtDate(c.end_date)}` : ""}</span> },
             { key: "p", label: "Content", className: "w-28", render: (c) => { const x = per.get(c.id); return <span className="text-xs">{x ? `${x.published}/${x.total} published` : "None yet"}</span>; } },
             { key: "o", label: "Owner", className: "w-28", hideOnMobile: true, render: (c) => personLabel(dir?.peopleById ?? new Map(), c.owner_person_id) },
-            { key: "w", label: "Company", className: "w-24", hideOnMobile: true, render: (c) => <span className="text-xs text-[#66768A]">{companyName(c.company_code)}</span> },
+            { key: "w", label: "Streams", className: "w-28", hideOnMobile: true, render: (c) => <StreamBadges streams={c.streams} /> },
           ]} />
       )}
-      <RecordSheet open={creating} title="New campaign" table="os_campaigns" record={null} defaults={{ company_code: defCompany, status: "Planned", division_id: "DIV-03" }} fields={campaignFields}
+      <RecordSheet open={creating} title="New campaign" table="os_campaigns" record={null} defaults={{ streams: stream ? [stream] : [], status: "Planned", division_id: "DIV-03" }} fields={campaignFields}
         onClose={() => setCreating(false)} onSaved={() => { setCreating(false); list.reload(); }} />
     </>
   );

@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
-import { WORKSPACES, workspaceByCode } from "@/lib/os/meta";
+import { STREAMS, streamFromPath } from "@/lib/os/streams";
+import { StreamLogo } from "./streams";
 import { OsProvider, useOs } from "./OsProvider";
 import { Avatar, Empty, Loading, btn, btnPrimary, ring } from "./ui";
 import { ChoiceProvider } from "./dialogs";
@@ -57,21 +58,9 @@ const NAV: { group?: string; items: NavItem[] }[] = [
   ] },
 ];
 
+/** Logo for HQ or a business stream (IELSco, Elco AI, GIF). Kept under its old name for existing callers. */
 export function CompanyLogo({ code, size = 20 }: { code: CompanyCode | string; size?: number }) {
-  const w = workspaceByCode(code);
-  if (!w) return null;
-  if (code === "HQ") {
-    // HQ is the founders' office shared by both companies: both real marks, side by side.
-    return (
-      <span className="relative inline-flex shrink-0" style={{ width: size, height: size }} aria-label="HQ (IELSco and Elco AI)" role="img">
-        <Image src="/icon-192.png" alt="" width={size} height={size} className="absolute left-0 top-0 rounded-[4px]" style={{ width: size * 0.72, height: size * 0.72 }} />
-        <span className="absolute bottom-0 right-0 rounded-full bg-white p-px" style={{ width: size * 0.62, height: size * 0.62 }}>
-          <Image src="/images/contents/mascot/elco.svg" alt="" width={size} height={size} className="h-full w-full object-contain" />
-        </span>
-      </span>
-    );
-  }
-  return <Image src={w.logo} alt={w.logoAlt} width={size} height={size} className={cn("shrink-0 object-contain", code === "IEL" && "rounded-[4px]")} style={{ width: size, height: size }} />;
+  return <StreamLogo code={code} size={size} />;
 }
 
 function Gate({ children }: { children: ReactNode }) {
@@ -96,8 +85,10 @@ function WorkspaceSwitcher({ collapsed, onNavigate }: { collapsed: boolean; onNa
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const me = state.status === "ready" ? state.me : null;
-  const allowed = WORKSPACES.filter((w) => w.code === "HQ" || me?.companies.includes(w.code) || me?.isAdmin);
-  const current = WORKSPACES.find((w) => pathname.startsWith(`/os/w/${w.slug}`)) ?? null;
+  // Every staff member works across every stream, so everyone sees all four.
+  const allowed = me ? STREAMS : [];
+  const code = streamFromPath(pathname);
+  const current = STREAMS.find((w) => w.code === code) ?? null;
 
   useEffect(() => {
     if (!open) return;
@@ -115,7 +106,7 @@ function WorkspaceSwitcher({ collapsed, onNavigate }: { collapsed: boolean; onNa
         {!collapsed && <>
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold text-[#1F2D3D]">{current ? current.name : "All workspaces"}</span>
-            <span className="block truncate text-xs text-[#66768A]">{current ? current.legal : "Choose HQ, IELSco or Elco"}</span>
+            <span className="block truncate text-xs text-[#66768A]">{current ? current.description : "HQ, IELSco, Elco AI or GIF"}</span>
           </span>
           <ChevronDown size={16} className="text-[#66768A]" aria-hidden="true" />
         </>}
@@ -129,7 +120,7 @@ function WorkspaceSwitcher({ collapsed, onNavigate }: { collapsed: boolean; onNa
               <CompanyLogo code={w.code} size={24} />
               <span className="min-w-0">
                 <span className="block font-medium text-[#1F2D3D]">{w.name}</span>
-                <span className="block truncate text-xs text-[#66768A]">{w.legal}</span>
+                <span className="block truncate text-xs text-[#66768A]">{w.description}</span>
               </span>
             </button>
           ))}
@@ -197,9 +188,9 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
         ))}
         {me && !collapsed && (
           <div className="mt-4">
-            <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#8593A3]">Workspaces</p>
+            <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#8593A3]">HQ and streams</p>
             <ul className="space-y-0.5">
-              {WORKSPACES.filter((w) => w.code === "HQ" || me.companies.includes(w.code) || me.isAdmin).map((w) => (
+              {STREAMS.map((w) => (
                 <li key={w.code}>
                   <Link href={`/os/w/${w.slug}`} onClick={onNavigate} aria-current={pathname.startsWith(`/os/w/${w.slug}`) ? "page" : undefined}
                     className={cn("flex min-h-10 items-center gap-2.5 rounded-lg px-2 text-sm md:min-h-8", ring,

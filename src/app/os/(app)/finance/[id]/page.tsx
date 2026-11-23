@@ -11,6 +11,7 @@ import { Badge, Empty, ErrorLine, Field, KeyValue, Loading, PageTitle, Section, 
 import { companyName, fmtDate, fmtDateTime, personLabel, todayJakarta } from "@/lib/os/meta";
 import { ACTION_LABEL, EVENT_LABEL, KIND_LABEL, PAYMENT_METHODS, TRX_COLUMNS, finActions, formatIDR, parseIDR, trxStage, type FinAction, type TrxRow } from "@/lib/os/finance";
 import { cn } from "@/lib/utils";
+import { StreamsEditor } from "@/components/os/streams";
 
 type Event = { id: number; at: string; actor_person_id: string | null; action: string; from_status: string | null; to_status: string | null; note: string | null };
 type Approval = { id: string; approver_person_id: string; decision: string; note: string | null; decided_at: string };
@@ -61,6 +62,8 @@ export default function TransactionPage({ params }: { params: Promise<{ id: stri
         </div>
         <aside className="space-y-6">
           <KeyValue items={[
+            { label: "Legal entity", value: companyName(t.company_code) },
+            { label: "Streams", value: <StreamsEditor rpc="transaction" id={t.id} value={t.streams} onSaved={trx.reload} /> },
             { label: "Asked by", value: personLabel(people, t.requested_by) },
             ...(t.payee_person_id ? [{ label: "Paid back to", value: personLabel(people, t.payee_person_id) }] : []),
             { label: t.kind === "income" ? "From" : "Paid to", value: t.counterparty ?? "—" },

@@ -55,7 +55,7 @@ export function AssistantChat({ agent, conversationId, onConversation, variant, 
     setMsgs((m) => [...m, { id: `u${Date.now()}`, role: "user", content: message }]);
     try {
       const r = await fetch("/os/api/ai/chat", { method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ agent, conversation_id: conversationId ?? undefined, company_code: conversationId ? undefined : company || null, message, deep: Boolean(deep), auto, page: page ?? undefined }) });
+        body: JSON.stringify({ agent, conversation_id: conversationId ?? undefined, stream: company || null, message, deep: Boolean(deep), auto, page: page ?? undefined }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(j.error ?? "Elco Assistant didn't answer."); if (j.conversation_id && !conversationId) { local.current = j.conversation_id; onConversation(j.conversation_id); } }
       else {

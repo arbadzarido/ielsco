@@ -7,7 +7,7 @@ export type TrxStatus = "requested" | "approved" | "verified" | "paid" | "receiv
 export type Tone = "neutral" | "blue" | "green" | "amber" | "red" | "violet" | "teal";
 
 export interface TrxRow {
-  id: string; kind: TrxKind; direction: "in" | "out"; company_code: string; division_id: string | null; project_id: string | null;
+  id: string; kind: TrxKind; direction: "in" | "out"; company_code: string; streams?: string[]; division_id: string | null; project_id: string | null;
   category_code: string | null; budget_id: string | null; request_id: string | null; description: string; counterparty: string | null;
   amount: number; txn_date: string; due_date: string | null; status: TrxStatus; requested_by: string; payee_person_id: string | null;
   approved_by: string | null; approved_at: string | null; verified_by: string | null; verified_at: string | null; settled_by: string | null;
@@ -16,14 +16,14 @@ export interface TrxRow {
 }
 /** Every column people outside Finance may read. Account and bank references are not here: they have no grant and
  * Finance reads them with os_fin_payment_details. */
-export const TRX_COLUMNS = "id, kind, direction, company_code, division_id, project_id, category_code, budget_id, request_id, description, counterparty, amount, txn_date, due_date, status, requested_by, payee_person_id, approved_by, approved_at, verified_by, verified_at, settled_by, settled_on, settled_at, payment_method, reconciled_by, reconciled_at, closed_reason, created_at, updated_at";
+export const TRX_COLUMNS = "id, kind, direction, company_code, streams, division_id, project_id, category_code, budget_id, request_id, description, counterparty, amount, txn_date, due_date, status, requested_by, payee_person_id, approved_by, approved_at, verified_by, verified_at, settled_by, settled_on, settled_at, payment_method, reconciled_by, reconciled_at, closed_reason, created_at, updated_at";
 
 export interface BudgetRow {
-  id: string; company_code: string; division_id: string | null; project_id: string | null; category_code: string | null; name: string;
+  id: string; company_code: string; streams?: string[]; division_id: string | null; project_id: string | null; category_code: string | null; name: string;
   period_start: string; period_end: string; amount: number; status: "proposed" | "approved" | "closed" | "rejected"; request_id: string | null;
   notes: string | null; created_by: string | null; approved_by: string | null; approved_at: string | null; created_at: string;
 }
-export const BUDGET_COLUMNS = "id, company_code, division_id, project_id, category_code, name, period_start, period_end, amount, status, request_id, notes, created_by, approved_by, approved_at, created_at";
+export const BUDGET_COLUMNS = "id, company_code, streams, division_id, project_id, category_code, name, period_start, period_end, amount, status, request_id, notes, created_by, approved_by, approved_at, created_at";
 
 export interface BudgetSummary { budget_id: string; name: string; company_code: string; division_id: string | null; project_id: string | null; category_code: string | null;
   period_start: string; period_end: string; status: string; budget: number; requested: number; committed: number; actual: number; remaining: number }

@@ -7,7 +7,9 @@ import { Plus, Search } from "lucide-react";
 import { useDirectory, useQuery } from "@/components/os/data";
 import { PROJECT_COLUMNS, ProjectSheet, type ProjectRow } from "@/components/os/work-forms";
 import { Empty, Loading, Progress, PageTitle, RowList, Select, StatusBadge, ErrorLine, btnPrimary, input } from "@/components/os/ui";
-import { PROJECT_STATUSES, WORKSPACES, companyName, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
+import { PROJECT_STATUSES, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
+import { StreamBadges, StreamFilter } from "@/components/os/streams";
+import { inStream, streamFromParams, type StreamCode } from "@/lib/os/streams";
 import { cn } from "@/lib/utils";
 
 export default function ProjectsPage() {
@@ -16,11 +18,11 @@ export default function ProjectsPage() {
   const dir = useDirectory();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
-  const [company, setCompany] = useState(params.get("company") ?? "");
+  const [stream, setStream] = useState<StreamCode | "">(streamFromParams((k) => params.get(k)) ?? "");
   const [division, setDivision] = useState(params.get("division") ?? "");
   const [showClosed, setShowClosed] = useState(false);
   const [creating, setCreating] = useState(params.get("new") === "1");
-  usePublishAssistantContext({ filters: { search: q, status, company, division, show_closed: showClosed ? "yes" : "" } });
+  usePublishAssistantContext({ filters: { search: q, status, stream, division, show_closed: showClosed ? "yes" : "" } });
   const projects = useQuery<ProjectRow[]>((s) => s.from("os_projects").select(PROJECT_COLUMNS).order("due_date", { nullsFirst: false }), []);
   const tasks = useQuery<{ project_id: string; status: string }[]>((s) => s.from("os_tasks").select("project_id, status").not("project_id", "is", null), []);
   const counts = useMemo(() => {
@@ -34,12 +36,12 @@ export default function ProjectsPage() {
     return m;
   }, [tasks.data]);
   const rows = (projects.data ?? []).filter((p) =>
-    (showClosed || !["Completed", "Cancelled"].includes(p.status)) && (!status || p.status === status) && (!company || p.company_code === company)
+    (showClosed || !["Completed", "Cancelled"].includes(p.status)) && (!status || p.status === status) && (!stream || inStream(p.streams, stream))
     && (!division || p.division_id === division) && (!q || `${p.id} ${p.name} ${p.description ?? ""}`.toLowerCase().includes(q.toLowerCase())));
 
   return (
     <div>
-      <PageTitle title="Projects" description="Projects and initiatives across HQ, IELSco and Elco AI that you can see."
+      <PageTitle title="Projects" description="Projects and initiatives across HQ, IELSco, Elco AI and GIF that you can see. A project can belong to several streams."
         actions={<button type="button" className={btnPrimary} onClick={() => setCreating(true)} data-testid="os-new-project"><Plus size={16} aria-hidden="true" />New project</button>} />
       <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
         <label className="relative col-span-2 md:w-64">
@@ -48,7 +50,7 @@ export default function ProjectsPage() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects" className={cn(input, "pl-8")} />
         </label>
         <Select ariaLabel="Status" value={status} onChange={setStatus} options={PROJECT_STATUSES} placeholder="Any status" className="md:w-40" />
-        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-40" />
+        <StreamFilter value={stream} onChange={setStream} />
         <Select ariaLabel="Division" value={division} onChange={setDivision} options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} placeholder="All divisions" className="col-span-2 md:w-48" />
         <label className="col-span-2 flex min-h-10 items-center gap-2 text-sm text-[#3A4B60]"><input type="checkbox" className="h-4 w-4" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} />Show completed and cancelled</label>
       </div>
@@ -61,12 +63,13 @@ export default function ProjectsPage() {
             { key: "name", label: "Project", primary: true, className: "w-[34%]", render: (p) => <span className="truncate">{p.name}</span> },
             { key: "status", label: "Status", className: "w-28", render: (p) => <StatusBadge value={p.status} /> },
             { key: "owner", label: "Owner", className: "w-32", render: (p) => <span className="truncate">{personLabel(dir?.peopleById ?? new Map(), p.owner_person_id)}</span> },
-            { key: "where", label: "Company", className: "w-36", render: (p) => <span className="truncate text-xs text-[#66768A]">{companyName(p.company_code)}{p.division_id ? ` · ${dir?.divisionById.get(p.division_id)?.name ?? ""}` : ""}</span> },
+            { key: "streams", label: "Streams", className: "w-28", hideOnMobile: true, render: (p) => <StreamBadges streams={p.streams} /> },
+            { key: "where", label: "Division", className: "w-36", hideOnMobile: true, render: (p) => <span className="truncate text-xs text-[#66768A]">{p.division_id ? dir?.divisionById.get(p.division_id)?.name ?? "" : "Company-wide"}</span> },
             { key: "progress", label: "Progress", className: "w-32", render: (p) => <Progress {...(counts.get(p.id) ?? { done: 0, total: 0 })} /> },
             { key: "due", label: "Deadline", className: "w-32", render: (p) => { const r = !["Completed", "Cancelled"].includes(p.status) ? relativeDue(p.due_date) : null; return <span className={cn("text-xs", r?.overdue && "font-medium text-[#A12D2F]")}>{p.due_date ? (r?.overdue ? r.label : fmtDate(p.due_date)) : "—"}</span>; } },
           ]} />
       )}
-      <ProjectSheet open={creating} defaults={{ company_code: company || undefined, division_id: division || undefined }} onClose={() => setCreating(false)} onSaved={(id) => router.push(`/os/projects/${id}`)} />
+      <ProjectSheet open={creating} defaults={{ streams: stream ? [stream] : undefined, division_id: division || undefined }} onClose={() => setCreating(false)} onSaved={(id) => router.push(`/os/projects/${id}`)} />
     </div>
   );
 }

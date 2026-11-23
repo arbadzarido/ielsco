@@ -5,47 +5,51 @@
 import { useEffect, useState } from "react";
 import { friendlyError, useQuery } from "./data";
 import { useOsMe } from "./OsProvider";
-import { CompanySelect, DivisionSelect, PersonSelect, useDefaultCompany } from "./pickers";
+import { DivisionSelect, PersonSelect } from "./pickers";
+import { StreamPicker } from "./streams";
 import { useSubdivisions } from "./subdivisions";
 import { ErrorLine, Field, Select, Sheet, btn, btnPrimary, input } from "./ui";
 import { PRIORITIES, PROJECT_STATUSES, PROJECT_TYPES, SENSITIVITIES, TASK_STATUSES } from "@/lib/os/meta";
+import { normalizeStreams, type StreamCode } from "@/lib/os/streams";
 
 export interface ProjectRow {
-  id: string; company_code: string; division_id: string | null; name: string; project_type: string | null; description: string | null;
+  id: string; company_code: string | null; streams: string[]; division_id: string | null; name: string; project_type: string | null; description: string | null;
   definition_of_done: string | null; success_metric: string | null; owner_person_id: string | null; status: string; priority: string;
   start_date: string | null; due_date: string | null; sensitivity: string; next_action: string | null; created_at: string; updated_at: string;
 }
-export const PROJECT_COLUMNS = "id, company_code, division_id, name, project_type, description, definition_of_done, success_metric, owner_person_id, status, priority, start_date, due_date, sensitivity, next_action, created_at, updated_at";
+export const PROJECT_COLUMNS = "id, company_code, streams, division_id, name, project_type, description, definition_of_done, success_metric, owner_person_id, status, priority, start_date, due_date, sensitivity, next_action, created_at, updated_at";
 
 export interface TaskRow {
-  id: string; project_id: string | null; parent_task_id: string | null; company_code: string; division_id: string | null; title: string;
+  id: string; project_id: string | null; parent_task_id: string | null; company_code: string | null; streams: string[]; division_id: string | null; title: string;
   description: string | null; definition_of_done: string | null; owner_person_id: string | null; reviewer_person_id: string | null;
   status: string; priority: string; due_date: string | null; blocker: string | null; sensitivity: string; completed_at: string | null;
   created_at: string; updated_at: string; sort_order: number;
 }
-export const TASK_COLUMNS = "id, project_id, parent_task_id, company_code, division_id, title, description, definition_of_done, owner_person_id, reviewer_person_id, status, priority, due_date, blocker, sensitivity, completed_at, created_at, updated_at, sort_order";
+export const TASK_COLUMNS = "id, project_id, parent_task_id, company_code, streams, division_id, title, description, definition_of_done, owner_person_id, reviewer_person_id, status, priority, due_date, blocker, sensitivity, completed_at, created_at, updated_at, sort_order";
 
 const blank = (v: string) => (v.trim() === "" ? null : v.trim());
 
 export function ProjectSheet({ open, onClose, onSaved, project, defaults }: {
-  open: boolean; onClose: () => void; onSaved: (id: string) => void; project?: ProjectRow | null; defaults?: { company_code?: string; division_id?: string };
+  open: boolean; onClose: () => void; onSaved: (id: string) => void; project?: ProjectRow | null; defaults?: { streams?: StreamCode[]; division_id?: string };
 }) {
   const { supabase, me } = useOsMe();
-  const defCompany = useDefaultCompany();
   const [f, setF] = useState<Record<string, string>>({});
+  const [streams, setStreams] = useState<StreamCode[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const defStreams = (defaults?.streams ?? []).join(",");
   useEffect(() => {
     if (!open) return;
     setErr(null);
+    setStreams(normalizeStreams(project ? project.streams : defStreams.split(",")));
     setF({
-      company_code: project?.company_code ?? defaults?.company_code ?? defCompany, division_id: project?.division_id ?? defaults?.division_id ?? me.divisions[0]?.division_id ?? "",
+      division_id: project?.division_id ?? defaults?.division_id ?? me.divisions[0]?.division_id ?? "",
       name: project?.name ?? "", project_type: project?.project_type ?? "", description: project?.description ?? "",
       definition_of_done: project?.definition_of_done ?? "", success_metric: project?.success_metric ?? "",
       owner_person_id: project?.owner_person_id ?? me.person.id, status: project?.status ?? "Proposed", priority: project?.priority ?? "P3 Normal",
       start_date: project?.start_date ?? "", due_date: project?.due_date ?? "", sensitivity: project?.sensitivity ?? "Internal", next_action: project?.next_action ?? "",
     });
-  }, [open, project, defaults?.company_code, defaults?.division_id, defCompany, me]);
+  }, [open, project, defStreams, defaults?.division_id, me]);
   const set = (k: string) => (v: string) => setF((x) => ({ ...x, [k]: v }));
 
   async function save() {
@@ -56,10 +60,11 @@ export function ProjectSheet({ open, onClose, onSaved, project, defaults }: {
       division_id: blank(f.division_id), name: f.name.trim(), project_type: blank(f.project_type), description: blank(f.description),
       definition_of_done: blank(f.definition_of_done), success_metric: blank(f.success_metric), owner_person_id: blank(f.owner_person_id),
       status: f.status, priority: f.priority, start_date: blank(f.start_date), due_date: blank(f.due_date), sensitivity: f.sensitivity, next_action: blank(f.next_action),
+      streams,
     };
     const res = project
       ? await supabase.from("os_projects").update(row).eq("id", project.id).select("id").maybeSingle()
-      : await supabase.from("os_projects").insert({ ...row, company_code: f.company_code }).select("id").single();
+      : await supabase.from("os_projects").insert(row).select("id").single();
     setBusy(false);
     if (res.error || !res.data) return setErr(res.error ? friendlyError(res.error.message) : "You don't have permission to change this project.");
     onSaved(res.data.id);
@@ -70,7 +75,7 @@ export function ProjectSheet({ open, onClose, onSaved, project, defaults }: {
       footer={<><button type="button" className={btn} onClick={onClose}>Cancel</button><button type="button" className={btnPrimary} onClick={save} disabled={busy} data-testid="os-project-save">{busy ? "Saving…" : "Save project"}</button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" className="sm:col-span-2">{(id) => <input id={id} className={input} value={f.name ?? ""} onChange={(e) => set("name")(e.target.value)} maxLength={200} data-testid="os-project-name" />}</Field>
-        {!project && <Field label="Company">{(id) => <CompanySelect id={id} value={f.company_code ?? ""} onChange={set("company_code")} />}</Field>}
+        <Field label="Business streams" className="sm:col-span-2" hint="What this project is about: HQ, IELSco, Elco AI, GIF, or several. Anyone can be assigned, whatever their division.">{(id) => <StreamPicker id={id} value={streams} onChange={setStreams} />}</Field>
         <Field label="Division">{(id) => <DivisionSelect id={id} value={f.division_id ?? ""} onChange={set("division_id")} />}</Field>
         <Field label="Owner">{(id) => <PersonSelect id={id} value={f.owner_person_id ?? ""} onChange={set("owner_person_id")} />}</Field>
         <Field label="Type">{(id) => <Select id={id} value={f.project_type ?? ""} onChange={set("project_type")} options={PROJECT_TYPES} placeholder="—" />}</Field>
@@ -91,12 +96,13 @@ export function ProjectSheet({ open, onClose, onSaved, project, defaults }: {
 
 export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
   open: boolean; onClose: () => void; onSaved: (id: string) => void; task?: TaskRow | null;
-  defaults?: { project_id?: string; parent_task_id?: string; company_code?: string; division_id?: string; owner_person_id?: string };
+  defaults?: { project_id?: string; parent_task_id?: string; streams?: StreamCode[]; division_id?: string; owner_person_id?: string };
 }) {
   const { supabase, me } = useOsMe();
-  const defCompany = useDefaultCompany();
-  const projects = useQuery<{ id: string; name: string; company_code: string }[]>(
-    (s) => s.from("os_projects").select("id, name, company_code").not("status", "in", "(Completed,Cancelled)").order("name"), [open]);
+  const projects = useQuery<{ id: string; name: string; streams: string[] }[]>(
+    (s) => s.from("os_projects").select("id, name, streams").not("status", "in", "(Completed,Cancelled)").order("name"), [open]);
+  const [streams, setStreams] = useState<StreamCode[]>([]);
+  const defStreams = (defaults?.streams ?? []).join(",");
   const [f, setF] = useState<Record<string, string>>({});
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -115,16 +121,23 @@ export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
   useEffect(() => {
     if (!open) return;
     setErr(null);
+    setStreams(normalizeStreams(task ? task.streams : defStreams.split(",")));
     setF({
-      subdivision_id: "", title: task?.title ?? "", project_id: task?.project_id ?? defaults?.project_id ?? "", company_code: task?.company_code ?? defaults?.company_code ?? defCompany,
+      subdivision_id: "", title: task?.title ?? "", project_id: task?.project_id ?? defaults?.project_id ?? "",
       division_id: task?.division_id ?? defaults?.division_id ?? "", owner_person_id: task?.owner_person_id ?? defaults?.owner_person_id ?? me.person.id,
       reviewer_person_id: task?.reviewer_person_id ?? "", status: task?.status ?? "Backlog", priority: task?.priority ?? "P3 Normal",
       due_date: task?.due_date ?? "", description: task?.description ?? "", definition_of_done: task?.definition_of_done ?? "",
       blocker: task?.blocker ?? "", sensitivity: task?.sensitivity ?? "Internal",
     });
-  }, [open, task, defaults?.project_id, defaults?.company_code, defaults?.division_id, defaults?.owner_person_id, defCompany, me]);
+  }, [open, task, defaults?.project_id, defStreams, defaults?.division_id, defaults?.owner_person_id, me]);
   const set = (k: string) => (v: string) => setF((x) => ({ ...x, [k]: v }));
   const isSub = Boolean(task?.parent_task_id ?? defaults?.parent_task_id);
+  // A new task in a project starts with the project's streams; the person can still change them.
+  const pickProject = (id: string) => {
+    setF((x) => ({ ...x, project_id: id }));
+    const p = (projects.data ?? []).find((x) => x.id === id);
+    if (!task && p && !streams.length) setStreams(normalizeStreams(p.streams));
+  };
 
   async function save() {
     if (!f.title?.trim()) return setErr("Give the task a title.");
@@ -132,14 +145,14 @@ export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
     const row: Record<string, unknown> = {
       title: f.title.trim(), owner_person_id: blank(f.owner_person_id), reviewer_person_id: blank(f.reviewer_person_id), status: f.status,
       priority: f.priority, due_date: blank(f.due_date), description: blank(f.description), definition_of_done: blank(f.definition_of_done),
-      blocker: blank(f.blocker), sensitivity: f.sensitivity, division_id: blank(f.division_id),
+      blocker: blank(f.blocker), sensitivity: f.sensitivity, division_id: blank(f.division_id), streams,
     };
     if (!isSub) row.project_id = blank(f.project_id);
     // Sent only when the division has subdivisions, so nothing changes for divisions without them.
     if (activeSubs.length) row.subdivision_id = activeSubs.some((s) => String(s.id) === f.subdivision_id) ? Number(f.subdivision_id) : null;
     const res = task
       ? await supabase.from("os_tasks").update(row).eq("id", task.id).select("id").maybeSingle()
-      : await supabase.from("os_tasks").insert({ ...row, company_code: f.company_code, parent_task_id: defaults?.parent_task_id ?? null }).select("id").single();
+      : await supabase.from("os_tasks").insert({ ...row, parent_task_id: defaults?.parent_task_id ?? null }).select("id").single();
     setBusy(false);
     if (res.error || !res.data) return setErr(res.error ? friendlyError(res.error.message) : "You don't have permission to change this task.");
     onSaved(res.data.id);
@@ -150,9 +163,9 @@ export function TaskSheet({ open, onClose, onSaved, task, defaults }: {
       footer={<><button type="button" className={btn} onClick={onClose}>Cancel</button><button type="button" className={btnPrimary} onClick={save} disabled={busy} data-testid="os-task-save">{busy ? "Saving…" : "Save task"}</button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Title" className="sm:col-span-2">{(id) => <input id={id} className={input} value={f.title ?? ""} onChange={(e) => set("title")(e.target.value)} maxLength={300} data-testid="os-task-title" />}</Field>
-        {!isSub && <Field label="Project" className="sm:col-span-2" hint="A task in a project takes the project's company and access.">{(id) =>
-          <Select id={id} value={f.project_id ?? ""} onChange={set("project_id")} placeholder="No project" options={(projects.data ?? []).map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} />}</Field>}
-        {!isSub && !f.project_id && !task && <Field label="Company">{(id) => <CompanySelect id={id} value={f.company_code ?? ""} onChange={set("company_code")} />}</Field>}
+        {!isSub && <Field label="Project" className="sm:col-span-2" hint="A task in a project takes the project's access, and its streams unless you pick others.">{(id) =>
+          <Select id={id} value={f.project_id ?? ""} onChange={pickProject} placeholder="No project" options={(projects.data ?? []).map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} />}</Field>}
+        <Field label="Business streams" className="sm:col-span-2" hint="What the task is about. The owner can be from any division.">{(id) => <StreamPicker id={id} value={streams} onChange={setStreams} />}</Field>
         {!isSub && !f.project_id && <Field label="Division">{(id) => <DivisionSelect id={id} value={f.division_id ?? ""} onChange={set("division_id")} />}</Field>}
         {activeSubs.length > 0 && <Field label="Subdivision">{(id) => <Select id={id} value={f.subdivision_id ?? ""} onChange={set("subdivision_id")} placeholder="None" options={activeSubs.map((s) => ({ value: String(s.id), label: s.name }))} />}</Field>}
         <Field label="Owner">{(id) => <PersonSelect id={id} value={f.owner_person_id ?? ""} onChange={set("owner_person_id")} />}</Field>

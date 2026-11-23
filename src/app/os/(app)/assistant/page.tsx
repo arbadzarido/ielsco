@@ -7,8 +7,8 @@ import { AssistantChat } from "@/components/os/assistant/AssistantChat";
 import { useAssistantPageInput } from "@/components/os/assistant/ElcoAssistant";
 import { useQuery } from "@/components/os/data";
 import { PageTitle, Select, Tabs, btn, muted, panel, ring } from "@/components/os/ui";
-import { WORKSPACES } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { STREAMS } from "@/lib/os/streams";
 
 // The full-page Elco Assistant, for longer conversations and planning. The same assistant opens from every page in a
 // side panel (ElcoAssistant); conversations started there continue here. Elco Assistant is the Company OS assistant,
@@ -51,7 +51,7 @@ export default function AssistantPage() {
         <section className={cn(panel, "order-1 flex min-h-[60vh] flex-col lg:order-2")} aria-label={`${info.label} conversation`}>
           {!conv && (
             <div className="flex flex-wrap items-center gap-2 border-b border-[#E6E9EE] px-3 py-2">
-              <Select ariaLabel="Company context" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All my companies" className="w-44" />
+              <Select ariaLabel="Stream context" value={company} onChange={setCompany} options={STREAMS.map((w) => ({ value: w.code, label: w.name }))} placeholder="All streams" className="w-44" />
               <span className={cn("text-xs", muted)}>{info.hint}</span>
             </div>
           )}

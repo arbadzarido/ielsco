@@ -5,6 +5,7 @@ import { osServiceClient } from "@/lib/os/server";
 import { copyTemplate, driveConfigured, driveError, driveIdFromUrl, uploadFile } from "@/lib/os/drive";
 import { matchRoute, missingRouteText, type FolderRoute } from "@/lib/os/routes";
 import { companyName } from "@/lib/os/meta";
+import { normalizeStreams } from "@/lib/os/streams";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,9 +35,12 @@ export async function POST(req: Request) {
   const division = s("division_id") || null;
   const docType = s("doc_type");
   const sensitivity = s("sensitivity") || "Internal";
+  // Business streams the document is about (HQ, IEL, ELC, GIF). Separate from company_code, which is the legal entity
+  // whose letterhead, numbering and Drive folders the document uses. Empty: it follows a linked project.
+  const streams = normalizeStreams(s("streams").split(","));
   if (!["template", "upload", "register"].includes(mode)) return jsonError("Choose how to add the document.");
   if (!title || title.length > 300) return jsonError("Give the document a title (up to 300 characters).");
-  if (!["HQ", "IEL", "ELC"].includes(company)) return jsonError("Choose a company.");
+  if (!["HQ", "IEL", "ELC"].includes(company)) return jsonError("Choose the legal entity the document is issued under.");
   if (!TYPES.includes(docType)) return jsonError("Choose a document type.");
   if (!SENS.includes(sensitivity)) return jsonError("Choose a sensitivity.");
   const linkType = s("link_type"), linkId = s("link_id");
@@ -73,7 +77,7 @@ export async function POST(req: Request) {
 
   // 1. The register row, as the caller (RLS).
   const { data: doc, error } = await supabase.from("os_documents").insert({
-    title, company_code: company, division_id: division, doc_type: docType, sensitivity, category: s("category") || null,
+    title, company_code: company, streams, division_id: division, doc_type: docType, sensitivity, category: s("category") || null,
     owner_person_id: auth.personId, status: "Draft", drive_url: driveUrl,
   }).select("id").single();
   if (error || !doc) return jsonError(/row-level|permission/i.test(error?.message ?? "") ? "You can't add documents for that company, division or sensitivity." : "The document couldn't be saved.", 403);

@@ -157,7 +157,7 @@ export const LOGIN_REASON_LABEL: Record<string, string> = {
   revoked: "Access revoked",
   inactive: "Account inactive",
   offboarded: "Account offboarded",
-  no_company: "No company membership",
+  no_company: "No company membership", // no longer returned: sign-in needs an approved account only
   linked_to_other_account: "Registry entry linked to another login",
   session_check_failed: "Session check failed",
   check_failed: "Access check failed",

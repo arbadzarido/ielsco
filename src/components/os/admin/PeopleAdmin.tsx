@@ -110,7 +110,7 @@ export function PeopleAdmin({ supabase }: { supabase: SupabaseClient }) {
           <select id="p-role" name="org_role" className={inputClass} defaultValue="member">{ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></div>
         <div><label className={labelClass} htmlFor="p-div">Division</label>
           <select id="p-div" name="division" className={inputClass} defaultValue=""><option value="">None yet</option>{data.divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-        <fieldset><legend className={labelClass}>Companies</legend>
+        <fieldset><legend className={labelClass} title="The legal entities that employ them. It does not limit which streams they can work on.">Employing entities</legend>
           {COMPANIES.map((c) => <label key={c} className="mr-4 inline-flex items-center gap-2"><input type="checkbox" name={`company-${c}`} />{COMPANY_LABEL[c]}</label>)}</fieldset>
         <div className="flex flex-wrap items-center gap-4 md:col-span-3">
           <button type="submit" className={btnPrimary}>Invite</button>
@@ -181,7 +181,7 @@ export function PeopleAdmin({ supabase }: { supabase: SupabaseClient }) {
                   </div>
                   <div className="space-y-4">
                     <fieldset>
-                      <legend className={labelClass}>Companies</legend>
+                      <legend className={labelClass} title="The legal entities that employ them. It does not limit which streams they can work on.">Employing entities</legend>
                       {COMPANIES.map((c) => {
                         const has = comps.includes(c);
                         return (

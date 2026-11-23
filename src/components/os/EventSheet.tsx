@@ -17,7 +17,8 @@ import { friendlyError, useDirectory } from "./data";
 import { useChoice } from "./dialogs";
 import { EntityFeed } from "./feed";
 import { LinkedDocuments } from "./linked-docs";
-import { CompanySelect, DivisionSelect, useDefaultCompany } from "./pickers";
+import { DivisionSelect } from "./pickers";
+import { StreamPicker } from "./streams";
 import { Badge, ErrorLine, Field, Select, Sheet, btn, btnDanger, btnGhost, btnPrimary, input, muted } from "./ui";
 import { SENSITIVITIES } from "@/lib/os/meta";
 import { CATEGORIES, DEFAULT_TZ, addDays, itemDays, zonedInstant, zonedParts } from "@/lib/os/calendar";
@@ -25,21 +26,22 @@ import { PRESETS, WEEKDAYS, describeRule, presetOf, presetRule, ruleProblem, shi
 import { ROLE_GROUPS, groupLabel, resolveInvitations, type Candidate, type GroupSpec, type Resolution, type RoleGroup } from "@/lib/os/groups";
 import { busyBlocks, conflictLines, findConflicts, linkWarnings, rescheduleReasons, type BusyRow, type Conflict } from "@/lib/os/conflicts";
 import { rekeyExceptions } from "@/lib/os/event-moves";
+import { normalizeStreams, type StreamCode } from "@/lib/os/streams";
 import { cn } from "@/lib/utils";
 
 export interface EventRow {
-  id: string; company_code: string; division_id: string | null; project_id: string | null; task_id: string | null; timeline_item_id: string | null;
+  id: string; company_code: string | null; streams: string[]; division_id: string | null; project_id: string | null; task_id: string | null; timeline_item_id: string | null;
   campaign_id: string | null; partnership_id: string | null; candidate_id?: string | null; recurrence: Recurrence | null; series_id: string | null; google_invites: boolean;
   title: string; description: string | null; category: string; starts_at: string; ends_at: string; all_day: boolean; timezone: string;
   location: string | null; meeting_url: string | null; sensitivity: string; status: string; created_by: string | null;
   google_synced_by: string | null; google_event_id: string | null; sync_state: string; sync_error: string | null;
 }
-export const EVENT_COLUMNS = "id, company_code, division_id, project_id, task_id, timeline_item_id, campaign_id, partnership_id, candidate_id, recurrence, series_id, google_invites, title, description, category, starts_at, ends_at, all_day, timezone, location, meeting_url, sensitivity, status, created_by, google_synced_by, google_event_id, sync_state, sync_error";
+export const EVENT_COLUMNS = "id, company_code, streams, division_id, project_id, task_id, timeline_item_id, campaign_id, partnership_id, candidate_id, recurrence, series_id, google_invites, title, description, category, starts_at, ends_at, all_day, timezone, location, meeting_url, sensitivity, status, created_by, google_synced_by, google_event_id, sync_state, sync_error";
 
 /** One occurrence of a recurring event, as the calendar shows it. */
 export interface OccurrenceRef { occurrence_start: string; starts_at: string; ends_at: string; index: number; exception: { title?: string | null; description?: string | null; location?: string | null; meeting_url?: string | null } | null }
 
-export type EventDefaults = Partial<Pick<EventRow, "company_code" | "division_id" | "project_id" | "task_id" | "timeline_item_id" | "campaign_id" | "partnership_id" | "candidate_id" | "category" | "title" | "sensitivity">> & { date?: string; startTime?: string; endTime?: string };
+export type EventDefaults = Partial<Pick<EventRow, "division_id" | "project_id" | "task_id" | "timeline_item_id" | "campaign_id" | "partnership_id" | "candidate_id" | "category" | "title" | "sensitivity">> & { streams?: string[]; date?: string; startTime?: string; endTime?: string };
 export type GoogleStatus = { configured: boolean; connected: boolean; email: string | null; timezone: string | null } | null;
 
 const SYNC_LABEL: Record<string, string> = { synced: "In your Google Calendar", pending: "Changed here, not yet sent to Google", conflict: "Changed in Google too", error: "Last sync failed", deleted_remote: "Deleted in Google Calendar" };
@@ -75,7 +77,6 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
   const { supabase, me } = useOsMe();
   const dir = useDirectory();
   const ask = useChoice();
-  const defCompany = useDefaultCompany();
   const [dupOf, setDupOf] = useState<EventRow | null>(null);
   const ev = dupOf ? null : event;                   // the event being edited (null when creating or duplicating)
   const src = dupOf ?? event;                        // where the form's values come from
@@ -88,7 +89,7 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
       const s = occ?.starts_at ?? src.starts_at, e = occ?.ends_at ?? src.ends_at;
       const d = itemDays(s, e, src.all_day, src.timezone);
       const r = src.recurrence;
-      return { title: dupOf ? `Copy of ${src.title}`.slice(0, 200) : occ?.exception?.title ?? src.title, category: src.category, company: src.company_code, division: src.division_id ?? "",
+      return { title: dupOf ? `Copy of ${src.title}`.slice(0, 200) : occ?.exception?.title ?? src.title, category: src.category, streams: normalizeStreams(src.streams), division: src.division_id ?? "",
         project: src.project_id ?? "", milestone: src.timeline_item_id ?? "", campaign: src.campaign_id ?? "", partnership: src.partnership_id ?? "", candidate: src.candidate_id ?? "",
         allDay: src.all_day, startDate: d.first, startTime: zonedParts(s, src.timezone).time, endDate: src.all_day ? d.last : zonedParts(e, src.timezone).date,
         endTime: zonedParts(e, src.timezone).time, location: occ?.exception?.location ?? src.location ?? "", url: occ?.exception?.meeting_url ?? src.meeting_url ?? "",
@@ -97,17 +98,17 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
         until: r?.until ?? "", count: String(r?.count ?? 10) };
     }
     const date = defaults?.date ?? zonedParts(new Date(), tz).date;
-    return { title: defaults?.title ?? "", category: defaults?.category ?? "Meeting", company: defaults?.company_code ?? defCompany, division: defaults?.division_id ?? "", project: defaults?.project_id ?? "",
+    return { title: defaults?.title ?? "", category: defaults?.category ?? "Meeting", streams: normalizeStreams(defaults?.streams), division: defaults?.division_id ?? "", project: defaults?.project_id ?? "",
       milestone: defaults?.timeline_item_id ?? "", campaign: defaults?.campaign_id ?? "", partnership: defaults?.partnership_id ?? "", candidate: defaults?.candidate_id ?? "",
       allDay: false, startDate: date, startTime: defaults?.startTime ?? "10:00", endDate: date, endTime: defaults?.endTime ?? "11:00", location: "", url: "", description: "", sensitivity: defaults?.sensitivity ?? "Internal",
       status: "Scheduled", googleInvites: false, preset: "none" as PresetKey, rule: null as Recurrence | null, endMode: "never" as "never" | "until" | "count", until: "", count: "10" };
-  }, [src, occ, dupOf, defaults, defCompany, tz]);
+  }, [src, occ, dupOf, defaults, tz]);
   const [f, setF] = useState(init);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [taskLinks, setTaskLinks] = useState<string[]>([]);
   const [addToGoogle, setAddToGoogle] = useState(false);
   const [removeFromGoogle, setRemoveFromGoogle] = useState(true);
-  const [opts, setOpts] = useState<{ projects: { id: string; name: string }[]; tasks: { id: string; title: string; due_date: string | null }[]; milestones: { id: string; title: string; due_date: string | null; is_major: boolean; status: string }[]; campaigns: { id: string; name: string }[]; partnerships: { id: string; organisation: string }[] }>({ projects: [], tasks: [], milestones: [], campaigns: [], partnerships: [] });
+  const [opts, setOpts] = useState<{ projects: { id: string; name: string; streams: string[] }[]; tasks: { id: string; title: string; due_date: string | null }[]; milestones: { id: string; title: string; due_date: string | null; is_major: boolean; status: string }[]; campaigns: { id: string; name: string }[]; partnerships: { id: string; organisation: string }[] }>({ projects: [], tasks: [], milestones: [], campaigns: [], partnerships: [] });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -128,17 +129,17 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
   useEffect(() => {
     if (!open) return;
     Promise.all([
-      supabase.from("os_projects").select("id, name").eq("company_code", f.company).not("status", "in", "(Completed,Cancelled)").order("name").limit(200),
-      supabase.from("os_tasks").select("id, title, due_date").eq("company_code", f.company).not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(300),
+      supabase.from("os_projects").select("id, name, streams").not("status", "in", "(Completed,Cancelled)").order("name").limit(200),
+      supabase.from("os_tasks").select("id, title, due_date").not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(300),
       supabase.from("os_timeline_items").select("id, title, due_date, is_major, status").not("status", "in", "(Done,Cancelled)").order("due_date", { nullsFirst: false }).limit(300),
-      supabase.from("os_campaigns").select("id, name").eq("company_code", f.company).not("status", "in", "(Completed,Cancelled)").order("start_date", { nullsFirst: false }).limit(100),
-      supabase.from("os_partnerships").select("id, organisation").eq("company_code", f.company).limit(200),
-      supabase.rpc("os_invite_candidates", { p_company: f.company }),
+      supabase.from("os_campaigns").select("id, name").not("status", "in", "(Completed,Cancelled)").order("start_date", { nullsFirst: false }).limit(100),
+      supabase.from("os_partnerships").select("id, organisation").order("organisation").limit(300),
+      supabase.rpc("os_invite_candidates", { p_company: null }),
     ]).then(([p, t, m, c, pa, cand]) => {
       setOpts({ projects: (p.data ?? []) as never, tasks: (t.data ?? []) as never, milestones: (m.data ?? []) as never, campaigns: (c.data ?? []) as never, partnerships: (pa.data ?? []) as never });
       setCandidates((cand.data ?? []) as Candidate[]);
     });
-  }, [open, f.company, supabase]);
+  }, [open, supabase]);
 
   const syncedByOther = Boolean(ev?.google_event_id && ev.google_synced_by && ev.google_synced_by !== me.person.id);
   const inMyGoogle = Boolean(ev?.google_event_id && ev.google_synced_by === me.person.id);
@@ -182,7 +183,7 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
 
   const row = () => ({
     title: f.title.trim(), category: f.category, division_id: f.division || null, project_id: f.project || null, timeline_item_id: f.milestone || null,
-    campaign_id: f.campaign || null, partnership_id: f.partnership || null,
+    campaign_id: f.campaign || null, partnership_id: f.partnership || null, streams: f.streams,
     // Recruitment interviews: linked to the candidate; the database keeps them Restricted.
     ...(f.candidate ? { candidate_id: f.candidate } : {}), all_day: f.allDay, timezone: tz, location: f.location.trim() || null,
     meeting_url: f.url.trim() || null, description: f.description.trim() || null, sensitivity: f.sensitivity, status: f.status, google_invites: f.googleInvites,
@@ -227,7 +228,7 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
     let id: string | null = ev?.id ?? null;
     let pushIds: string[] = [];
     if (!ev) {
-      const res = await supabase.from("os_events").insert({ ...row(), ...when, recurrence: rule, company_code: f.company }).select("id").single();
+      const res = await supabase.from("os_events").insert({ ...row(), ...when, recurrence: rule }).select("id").single();
       if (res.error || !res.data) { setBusy(false); return setErr(res.error ? friendlyError(res.error.message) : "You can't create this event."); }
       id = res.data.id as string;
       const w = await writeAttendeesAndLinks(id);
@@ -378,10 +379,10 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
           <Field label="Title">{(id) => <input id={id} className={input} value={f.title} onChange={(e) => set("title", e.target.value)} maxLength={200} data-testid="os-event-title" />}</Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Category">{(id) => <Select id={id} value={f.category} onChange={(v) => set("category", v)} options={CATEGORIES} />}</Field>
-            <Field label="Company">{(id) => ev ? <input id={id} className={input} value={f.company} disabled /> : <CompanySelect id={id} value={f.company} onChange={(v) => setF((x) => ({ ...x, company: v, project: "", campaign: "", partnership: "" }))} />}</Field>
             <Field label="Division">{(id) => <DivisionSelect id={id} value={f.division} onChange={(v) => set("division", v)} />}</Field>
             <Field label="Status">{(id) => <Select id={id} value={f.status} onChange={(v) => set("status", v)} options={STATUSES} />}</Field>
           </div>
+          <Field label="Business streams" hint="Leave empty to follow the linked project. Anyone can attend, whatever their stream.">{(id) => <StreamPicker id={id} value={f.streams} onChange={(v: StreamCode[]) => set("streams", v)} />}</Field>
           <label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4" checked={f.allDay} onChange={(e) => set("allDay", e.target.checked)} />All day</label>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Starts">{(id) => <div className="flex gap-2"><input id={id} type="date" className={input} value={f.startDate} onChange={(e) => { const v = e.target.value; setF((x) => ({ ...x, startDate: v, endDate: x.endDate < v ? v : x.endDate })); }} data-testid="os-event-start-date" />{!f.allDay && <input type="time" aria-label="Start time" className={cn(input, "w-32")} value={f.startTime} onChange={(e) => set("startTime", e.target.value)} data-testid="os-event-start-time" />}</div>}</Field>
@@ -403,13 +404,13 @@ export function EventSheet({ open, onClose, onSaved, event, occurrence, defaults
             <Field label="Meeting link">{(id) => <input id={id} className={input} value={f.url} onChange={(e) => set("url", e.target.value)} placeholder="https://meet.google.com/…" inputMode="url" maxLength={500} />}</Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Project">{(id) => <Select id={id} value={f.project} onChange={(v) => set("project", v)} placeholder="None" options={opts.projects.map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} />}</Field>
+            <Field label="Project">{(id) => <Select id={id} value={f.project} onChange={(v) => setF((x) => ({ ...x, project: v, streams: x.streams.length ? x.streams : normalizeStreams(opts.projects.find((p) => p.id === v)?.streams) }))} placeholder="None" options={opts.projects.map((p) => ({ value: p.id, label: `${p.id} · ${p.name}` }))} />}</Field>
             <Field label="Timeline milestone">{(id) => <Select id={id} value={f.milestone} onChange={(v) => set("milestone", v)} placeholder="None" options={opts.milestones.map((t) => ({ value: t.id, label: `${t.id} · ${t.title}` }))} />}</Field>
             <Field label="Campaign">{(id) => <Select id={id} value={f.campaign} onChange={(v) => set("campaign", v)} placeholder="None" options={opts.campaigns.map((c) => ({ value: c.id, label: `${c.id} · ${c.name}` }))} />}</Field>
             <Field label="Partnership">{(id) => <Select id={id} value={f.partnership} onChange={(v) => set("partnership", v)} placeholder="None" options={opts.partnerships.map((c) => ({ value: c.id, label: `${c.id} · ${c.organisation}` }))} />}</Field>
           </div>
           {!ev && <TaskPicker taskLinks={taskLinks} setTaskLinks={setTaskLinks} tasks={opts.tasks} />}
-          <Invitations attendees={attendees} setAttendees={setAttendees} candidates={candidates} company={f.company} divName={divName} names={names} />
+          <Invitations attendees={attendees} setAttendees={setAttendees} candidates={candidates} divName={divName} names={names} />
           {google?.connected && (
             <label className="flex min-h-10 items-start gap-2 text-sm" data-testid="os-event-google-invites"><input type="checkbox" className="mt-0.5 h-4 w-4" checked={f.googleInvites} onChange={(e) => set("googleInvites", e.target.checked)} />
               <span>Send Google Calendar invitations to the attendees<span className={cn("block text-xs", muted)}>Only when the event is in your Google Calendar. Google emails each attendee at their work Google account and shows their answers here.</span></span></label>
@@ -496,19 +497,17 @@ function LinksTab({ eventId, taskLinks, setTaskLinks, tasks }: { eventId: string
 }
 
 /** Attendees: individuals, or groups resolved now (with a preview) into individuals that remember their group. */
-function Invitations({ attendees, setAttendees, candidates, company, divName, names }: {
-  attendees: Attendee[]; setAttendees: (a: Attendee[]) => void; candidates: Candidate[]; company: string; divName: (id: string) => string; names: Map<string, string>;
+function Invitations({ attendees, setAttendees, candidates, divName, names }: {
+  attendees: Attendee[]; setAttendees: (a: Attendee[]) => void; candidates: Candidate[]; divName: (id: string) => string; names: Map<string, string>;
 }) {
   const { supabase } = useOsMe();
   const [role, setRole] = useState<RoleGroup | "">("");
   const [division, setDivision] = useState("");
-  const [scope, setScope] = useState(company === "HQ" ? "" : company);
   const [preview, setPreview] = useState<Resolution | null>(null);
   const [divisions, setDivisions] = useState<{ id: string; name: string }[]>([]);
   const [showPeople, setShowPeople] = useState(false);
-  useEffect(() => { setScope(company === "HQ" ? "" : company); setPreview(null); }, [company]);
   useEffect(() => { supabase.from("os_divisions").select("id, name").order("id").then(({ data }) => setDivisions((data ?? []) as { id: string; name: string }[])); }, [supabase]);
-  const spec: GroupSpec = { ...(role ? { role } : {}), ...(division ? { division } : {}), ...(scope ? { company: scope } : {}) };
+  const spec: GroupSpec = { ...(role ? { role } : {}), ...(division ? { division } : {}) };
   const run = () => setPreview(resolveInvitations(candidates, [spec], [], attendees.map((a) => a.person_id), divName));
   const addAll = () => { if (!preview) return; setAttendees([...attendees, ...preview.invitees.map((i) => ({ person_id: i.person_id, via_group: i.via }))]); setPreview(null); };
   const ids = new Set(attendees.map((a) => a.person_id));
@@ -526,10 +525,9 @@ function Invitations({ attendees, setAttendees, candidates, company, divName, na
         ))}
         {!attendees.length && <li className={cn("text-xs", muted)}>Nobody invited yet.</li>}
       </ul>
-      <div className="grid gap-2 sm:grid-cols-4" data-testid="os-event-groups">
+      <div className="grid gap-2 sm:grid-cols-3" data-testid="os-event-groups">
         <Select ariaLabel="Group" value={role} onChange={(v) => { setRole(v as RoleGroup | ""); setPreview(null); }} placeholder="Any role" options={ROLE_GROUPS.map((g) => ({ value: g.key, label: g.label }))} />
         <Select ariaLabel="Group division" value={division} onChange={(v) => { setDivision(v); setPreview(null); }} placeholder="Any division" options={divisions.map((d) => ({ value: d.id, label: d.name }))} />
-        <Select ariaLabel="Group company" value={scope} onChange={(v) => { setScope(v); setPreview(null); }} placeholder={company === "HQ" ? "Both companies" : "Any company"} options={(company === "HQ" ? ["IEL", "ELC"] : [company]).map((c) => ({ value: c, label: c === "IEL" ? "IELSco" : c === "ELC" ? "Elco AI" : c }))} />
         <button type="button" className={btn} onClick={run} disabled={!role && !division} data-testid="os-event-group-preview"><Users size={14} aria-hidden="true" />Preview</button>
       </div>
       {preview && (
@@ -537,7 +535,7 @@ function Invitations({ attendees, setAttendees, candidates, company, divName, na
           <p className="font-medium">{groupLabel(spec, divName)}: {preview.invitees.length} to add{preview.alreadyInvited.length ? `, ${preview.alreadyInvited.length} already invited` : ""}</p>
           {preview.empty.length > 0 && <p className={cn("text-xs", muted)}>Nobody active matches this group.</p>}
           <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto text-xs">
-            {preview.invitees.map((i) => <li key={i.person_id}>{i.name} <span className={muted}>· {i.companies.map((c) => (c === "IEL" ? "IELSco" : c === "ELC" ? "Elco AI" : c)).join(" & ")}{i.divisions.length ? ` · ${i.divisions.map(divName).join(", ")}` : ""}</span></li>)}
+            {preview.invitees.map((i) => <li key={i.person_id}>{i.name} <span className={muted}>{i.divisions.length ? `· ${i.divisions.map(divName).join(", ")}` : ""}</span></li>)}
           </ul>
           {preview.duplicates.length > 0 && <p className={cn("mt-1 text-xs", muted)}>Merged duplicates: {preview.duplicates.map((d) => d.name).join(", ")}</p>}
           <div className="mt-2 flex gap-2">
@@ -559,7 +557,7 @@ function Invitations({ attendees, setAttendees, candidates, company, divName, na
           {!candidates.length && <p className={cn("text-xs", muted)}>No one to invite yet.</p>}
         </div>
       )}
-      <p className={cn("mt-1 text-xs", muted)}>Only active staff of this company can be invited. Inviting someone shows them the event and notifies them in Company OS.</p>
+      <p className={cn("mt-1 text-xs", muted)}>Anyone active on the team can be invited, whatever their stream or division. Inviting someone shows them the event and notifies them in Company OS.</p>
     </fieldset>
   );
 }

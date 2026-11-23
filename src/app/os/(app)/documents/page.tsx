@@ -10,13 +10,16 @@ import { GenerateDocumentSheet } from "@/components/os/doc-generate";
 import { Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, btnGhost, btnPrimary, input } from "@/components/os/ui";
 import { DOC_STATUSES, DOC_TYPES, SENSITIVITIES, WORKSPACES, companyName, fmtDate, personLabel } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { StreamBadges, StreamFilter } from "@/components/os/streams";
+import { inStream, streamFromParams, type StreamCode } from "@/lib/os/streams";
 
 export default function DocumentsPage() {
   const router = useRouter();
   const params = useSearchParams();
   const dir = useDirectory();
   const [q, setQ] = useState("");
-  const [company, setCompany] = useState(params.get("company") ?? "");
+  const [company, setCompany] = useState(params.get("entity") ?? "");
+  const [stream, setStream] = useState<StreamCode | "">(streamFromParams((k) => params.get(k)) ?? "");
   const [division, setDivision] = useState(params.get("division") ?? "");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
@@ -25,11 +28,11 @@ export default function DocumentsPage() {
   const [drift, setDrift] = useState(false);
   const [creating, setCreating] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(params.get("new") === "1");
-  usePublishAssistantContext({ filters: { search: q, company, division, doc_type: type, status, sensitivity: sens, category } });
+  usePublishAssistantContext({ filters: { search: q, stream, legal_entity: company, division, doc_type: type, status, sensitivity: sens, category } });
   const docs = useQuery<DocRow[]>((s) => s.from("os_documents").select(DOC_COLUMNS).order("updated_at", { ascending: false }).limit(1000), []);
   const all = docs.data ?? [];
   const categories = Array.from(new Set(all.map((d) => d.category).filter(Boolean) as string[])).sort();
-  const rows = all.filter((d) => (!company || d.company_code === company) && (!division || d.division_id === division) && (!type || d.doc_type === type)
+  const rows = all.filter((d) => (!stream || inStream(d.streams, stream)) && (!company || d.company_code === company) && (!division || d.division_id === division) && (!type || d.doc_type === type)
     && (!status ? d.status !== "Archived" : d.status === status) && (!sens || d.sensitivity === sens) && (!category || d.category === category)
     && (!drift || d.drift_findings?.length) && (!q || `${d.id} ${d.reference_number ?? ""} ${d.title} ${d.category ?? ""}`.toLowerCase().includes(q.toLowerCase())));
   const driftCount = all.filter((d) => d.drift_findings?.length).length;
@@ -44,7 +47,8 @@ export default function DocumentsPage() {
           <Search size={15} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8593A3]" aria-hidden="true" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title or number" className={cn(input, "pl-8")} data-testid="os-doc-search" />
         </label>
-        <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-36" />
+        <StreamFilter value={stream} onChange={setStream} />
+        <Select ariaLabel="Legal entity" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="Any legal entity" className="md:w-40" />
         <Select ariaLabel="Division" value={division} onChange={setDivision} options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} placeholder="All divisions" className="md:w-44" />
         <Select ariaLabel="Type" value={type} onChange={setType} options={DOC_TYPES.map((t) => ({ value: t.code, label: t.label }))} placeholder="Any type" className="md:w-36" />
         <Select ariaLabel="Status" value={status} onChange={setStatus} options={DOC_STATUSES} placeholder="Not archived" className="md:w-36" />
@@ -66,14 +70,15 @@ export default function DocumentsPage() {
               </span>) },
             { key: "n", label: "Number", className: "w-36", render: (d) => <span className="truncate text-xs text-[#66768A]">{d.reference_number ?? d.id}</span> },
             { key: "s", label: "Status", className: "w-28", render: (d) => <StatusBadge value={d.status} /> },
-            { key: "w", label: "Company", className: "w-36", render: (d) => <span className="truncate text-xs text-[#66768A]">{companyName(d.company_code)}{d.division_id ? ` · ${dir?.divisionById.get(d.division_id)?.name ?? ""}` : ""}</span> },
+            { key: "st", label: "Streams", className: "w-28", hideOnMobile: true, render: (d) => <StreamBadges streams={d.streams} /> },
+            { key: "w", label: "Entity", className: "w-36", render: (d) => <span className="truncate text-xs text-[#66768A]">{companyName(d.company_code)}{d.division_id ? ` · ${dir?.divisionById.get(d.division_id)?.name ?? ""}` : ""}</span> },
             { key: "o", label: "Owner", className: "w-28", hideOnMobile: true, render: (d) => <span className="truncate">{personLabel(dir?.peopleById ?? new Map(), d.owner_person_id)}</span> },
             { key: "u", label: "Updated", className: "w-24", hideOnMobile: true, render: (d) => <span className="text-xs text-[#66768A]">{fmtDate(d.updated_at.slice(0, 10))}</span> },
             { key: "x", label: "", className: "w-12", hideOnMobile: true, render: (d) => d.drive_url ? <a href={d.drive_url} target="_blank" rel="noopener noreferrer" className={btnGhost} aria-label={`Open ${d.title} in Google Drive`} onClick={(e) => e.stopPropagation()}><ExternalLink size={14} aria-hidden="true" /></a> : null },
           ]} />
       )}
       <GenerateDocumentSheet open={catalogOpen} onClose={() => setCatalogOpen(false)} onCreated={(id) => router.push(`/os/documents/${id}`)} onAddFile={() => { setCatalogOpen(false); setCreating(true); }} />
-      <NewDocumentSheet open={creating} defaults={{ company_code: company || undefined, division_id: division || undefined }} onClose={() => setCreating(false)} onCreated={(id) => router.push(`/os/documents/${id}`)} />
+      <NewDocumentSheet open={creating} defaults={{ company_code: company || undefined, streams: stream ? [stream] : undefined, division_id: division || undefined }} onClose={() => setCreating(false)} onCreated={(id) => router.push(`/os/documents/${id}`)} />
     </div>
   );
 }

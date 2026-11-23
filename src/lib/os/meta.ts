@@ -32,7 +32,9 @@ export const TIMELINE_STATUSES = ["Not started", "In progress", "Done", "Blocked
 export const REVIEW_STATUSES = ["Not started", "Self-assessment", "Manager review", "Completed", "Acknowledged"] as const;
 export const MEMBERSHIP_TYPES = ["Founder", "Manager", "Employee", "Contractor", "Volunteer", "Intern", "Partner", "AI Assistant"] as const;
 
-// Workspaces. The URL slug is lower case; the code is what the database stores.
+// Legal entities (company_code): whose books, letterhead, numbering, Drive folders and employment a record belongs to.
+// Not the business streams: what a record is about is its streams (src/lib/os/streams.ts: HQ, IELSco, Elco AI, GIF),
+// and neither one limits who can work on it. The slugs double as the stream workspace URLs for HQ, IELSco and Elco AI.
 export const WORKSPACES: { code: CompanyCode; slug: string; name: string; legal: string | null; logo: string; logoAlt: string }[] = [
   { code: "HQ", slug: "hq", name: "HQ", legal: "Shared founders office", logo: "/icon-192.png", logoAlt: "IELSco and Elco AI" },
   { code: "IEL", slug: "ielsco", name: "IELSco", legal: "PT English Space Berkah Indonesia", logo: "/icon-192.png", logoAlt: "IELSco" },

@@ -7,17 +7,18 @@ import Link from "next/link";
 import { useState } from "react";
 import { friendlyError, useQuery } from "./data";
 import { useOsMe } from "./OsProvider";
-import { CompanySelect, useDefaultCompany } from "./pickers";
 import { Empty, ErrorLine, Field, Loading, RowList, Section, Select, Sheet, StatusBadge, btn, btnGhost, btnPrimary, input, muted } from "./ui";
-import { companyName, todayJakarta } from "@/lib/os/meta";
+import { todayJakarta } from "@/lib/os/meta";
+import { streamsLabel, type StreamCode } from "@/lib/os/streams";
+import { StreamBadges, StreamPicker } from "./streams";
 import { currentPeriod, metricValue, parseMetricValue } from "@/lib/os/metrics";
 import type { MyWorkspace } from "@/lib/os/workspaces";
 import { cn } from "@/lib/utils";
 
-type Kpi = { id: string; company_code: string; name: string; unit: string | null; reporting_period: string | null; target_value: number | null; target_status: string | null;
+type Kpi = { id: string; company_code: string | null; streams: string[]; name: string; unit: string | null; reporting_period: string | null; target_value: number | null; target_status: string | null;
   owner_person_id: string | null; values_restricted: boolean };
 type Val = { kpi_id: string; period_label: string; period_end: string; value: number };
-const KPI_COLUMNS = "id, company_code, name, unit, reporting_period, target_value, target_status, owner_person_id, values_restricted";
+const KPI_COLUMNS = "id, company_code, streams, name, unit, reporting_period, target_value, target_status, owner_person_id, values_restricted";
 const PERIODS = ["Weekly", "Monthly", "Quarterly", "Annual"];
 
 export function WorkspaceMetrics({ ws }: { ws: MyWorkspace }) {
@@ -49,7 +50,7 @@ export function WorkspaceMetrics({ ws }: { ws: MyWorkspace }) {
           body={canManage ? "Add a metric, or assign one from the KPI Dictionary. Values appear once someone logs them." : "The division's manager or a founder adds them."} /> : <Loading />}
         columns={[
           { key: "n", label: "Metric", primary: true, className: "w-[36%]", render: (k) => <span className="truncate">{k.name}</span> },
-          { key: "c", label: "Company", className: "w-24", hideOnMobile: true, render: (k) => <span className="text-xs text-[#66768A]">{companyName(k.company_code)}</span> },
+          { key: "c", label: "Streams", className: "w-28", hideOnMobile: true, render: (k) => <StreamBadges streams={k.streams} /> },
           { key: "p", label: "Period", className: "w-24", hideOnMobile: true, render: (k) => <span className="text-xs">{k.reporting_period ?? "—"}</span> },
           { key: "v", label: "Latest", className: "w-36", render: (k) => { const l = latest.get(k.id); return k.values_restricted ? <span className={cn("text-xs", muted)}>Restricted</span>
             : l ? <span className="text-xs tabular-nums">{metricValue(l.value, k.unit)} <span className={muted}>({l.period_label})</span></span> : <span className={cn("text-xs", muted)}>Not logged</span>; } },
@@ -99,14 +100,13 @@ function LogValue({ kpi, onClose, onSaved }: { kpi: Kpi; onClose: () => void; on
 
 function AddMetric({ ws, onClose, onSaved }: { ws: MyWorkspace; onClose: () => void; onSaved: () => void }) {
   const { supabase } = useOsMe();
-  const defCompany = useDefaultCompany();
-  const [f, setF] = useState({ name: "", company: defCompany, unit: "", period: "Monthly", definition: "", source: "" });
+  const [f, setF] = useState({ name: "", streams: [] as StreamCode[], unit: "", period: "Monthly", definition: "", source: "" });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   async function save() {
     if (!f.name.trim()) return setErr("Give the metric a name.");
     setBusy(true); setErr(null);
-    const { error } = await supabase.from("os_kpis").insert({ company_code: f.company, division_id: ws.division_id, level: "Function", function: ws.name, name: f.name.trim(),
+    const { error } = await supabase.from("os_kpis").insert({ streams: f.streams, division_id: ws.division_id, level: "Function", function: ws.name, name: f.name.trim(),
       unit: f.unit.trim() || null, reporting_period: f.period, definition: f.definition.trim() || null, data_source: f.source.trim() || null, target_status: "No approved target" });
     setBusy(false);
     if (error) return setErr(friendlyError(error.message));
@@ -118,7 +118,7 @@ function AddMetric({ ws, onClose, onSaved }: { ws: MyWorkspace; onClose: () => v
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2"><ErrorLine message={err} /></div>
         <Field label="Name" className="sm:col-span-2">{(id) => <input id={id} className={input} maxLength={200} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} data-testid="os-metric-name" />}</Field>
-        <Field label="Company">{(id) => <CompanySelect id={id} value={f.company} onChange={(v) => setF({ ...f, company: v })} />}</Field>
+        <Field label="Business streams" className="sm:col-span-2" hint="Which streams this measures. Leave empty for a division-wide metric.">{(id) => <StreamPicker id={id} value={f.streams} onChange={(v) => setF({ ...f, streams: v })} />}</Field>
         <Field label="Reported">{(id) => <Select id={id} value={f.period} onChange={(v) => setF({ ...f, period: v })} options={PERIODS} />}</Field>
         <Field label="Unit (optional)" hint="For example count, %, IDR.">{(id) => <input id={id} className={input} maxLength={40} value={f.unit} onChange={(e) => setF({ ...f, unit: e.target.value })} />}</Field>
         <Field label="Where the number comes from (optional)">{(id) => <input id={id} className={input} maxLength={300} value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })} />}</Field>
@@ -132,7 +132,7 @@ function AddMetric({ ws, onClose, onSaved }: { ws: MyWorkspace; onClose: () => v
 // Founders only: give this division one of the KPIs from the dictionary that no division has yet.
 function AssignKpi({ ws, onClose, onSaved }: { ws: MyWorkspace; onClose: () => void; onSaved: () => void }) {
   const { supabase } = useOsMe();
-  const free = useQuery<{ id: string; name: string; company_code: string; function: string | null }[]>((s) => s.from("os_kpis").select("id, name, company_code, function").is("division_id", null).eq("values_restricted", false).order("id"), []);
+  const free = useQuery<{ id: string; name: string; streams: string[]; function: string | null }[]>((s) => s.from("os_kpis").select("id, name, streams, function").is("division_id", null).eq("values_restricted", false).order("id"), []);
   const [id, setId] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -149,7 +149,7 @@ function AssignKpi({ ws, onClose, onSaved }: { ws: MyWorkspace; onClose: () => v
       <div className="space-y-4">
         <ErrorLine message={err ?? free.error} />
         <Field label="KPI" hint="Only KPIs with no division are listed. Finance KPIs stay in Finance.">{(fid) => <Select id={fid} value={id} onChange={setId} placeholder="Choose a KPI"
-          options={(free.data ?? []).map((k) => ({ value: k.id, label: `${k.id} · ${k.name} (${companyName(k.company_code)}${k.function ? `, ${k.function}` : ""})` }))} />}</Field>
+          options={(free.data ?? []).map((k) => ({ value: k.id, label: `${k.id} · ${k.name} (${streamsLabel(k.streams)}${k.function ? `, ${k.function}` : ""})` }))} />}</Field>
         <p className={cn("text-xs", muted)}>The division&apos;s members can then log its values, and its manager can edit its target. It keeps its ID, definition and history.</p>
       </div>
     </Sheet>

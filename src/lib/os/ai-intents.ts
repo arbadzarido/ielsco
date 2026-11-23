@@ -10,10 +10,17 @@
 // The person sees the resolved preview and confirms, cancels or edits it. On confirm the server resolves the edited
 // draft again (never trusting the browser) and runs it with the person's own session, so RLS decides. Pure: no
 // network, no database; the directory of visible records is passed in.
+//
+// Business streams (HQ, IELSco, Elco AI, GIF) say what a record is ABOUT. They never decide who can be assigned or
+// invited: everyone active works across every stream, and a person's division or employer is not their stream.
+// Streams come from what the person said, else the linked project or campaign, else the page they are on; with none,
+// the record is left unassigned (HQ lists it) rather than guessed. The legal entity (company_code) is not asked for
+// operational records at all.
 import { z } from "zod";
 import { CATEGORIES, DEFAULT_TZ, addDays, weekday, zonedInstant, zonedParts } from "./calendar.ts";
 import { WEEKDAYS, describeRule, expandSeries, presetRule, ruleProblem, type ExceptionLike, type Occurrence, type Recurrence } from "./recurrence.ts";
 import { groupLabel, resolveInvitations, type Candidate, type GroupSpec, type RoleGroup } from "./groups.ts";
+import { STREAMS, normalizeStreams, streamsLabel, type StreamCode } from "./streams.ts";
 
 export const INTENT_TYPES = ["create_task", "create_tasks", "assign_task", "update_tasks", "create_project", "create_event", "create_timeline_item", "create_campaign", "create_content_items", "move_event", "invite_to_event"] as const;
 export type IntentType = (typeof INTENT_TYPES)[number];
@@ -24,16 +31,17 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const PRIORITIES = ["P1 Critical", "P2 High", "P3 Normal", "P4 Low"] as const;
 const unclear = z.array(z.string().max(40)).max(10).optional();
+const streamsRef = z.array(ref).max(4).optional();
 const REPEATS = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "yearly"] as const;
 
 export const TaskDraft = z.object({
-  title: z.string().trim().min(1).max(300), company: ref.optional(), division: ref.optional(), project: ref.optional(),
+  title: z.string().trim().min(1).max(300), streams: streamsRef, company: ref.optional(), division: ref.optional(), project: ref.optional(),
   milestone: ref.optional(), assignees: z.array(ref).max(10).optional(), due_date: date.optional(),
   priority: z.enum(PRIORITIES).optional(), description: z.string().max(4000).optional(), event: ref.optional(), unclear,
 }).strip();
 export const EventDraft = z.object({
   title: z.string().trim().min(1).max(200), category: z.enum(CATEGORIES).optional(), date, end_date: date.optional(),
-  start_time: time.optional(), end_time: time.optional(), all_day: z.boolean().optional(), company: ref.optional(),
+  start_time: time.optional(), end_time: time.optional(), all_day: z.boolean().optional(), streams: streamsRef, company: ref.optional(),
   division: ref.optional(), project: ref.optional(), attendees: z.array(ref).max(30).optional(),
   invite_division: z.boolean().optional(), location: z.string().max(300).optional(),
   meeting_url: z.string().url().startsWith("https://").max(500).optional(), description: z.string().max(5000).optional(),
@@ -41,22 +49,22 @@ export const EventDraft = z.object({
   invite_groups: z.array(ref).max(6).optional(), milestone: ref.optional(), campaign: ref.optional(), partnership: ref.optional(), tasks: z.array(ref).max(10).optional(), unclear,
 }).strip();
 export const MilestoneDraft = z.object({
-  title: z.string().trim().min(1).max(300), due_date: date, company: ref.optional(), workstream: ref.optional(),
+  title: z.string().trim().min(1).max(300), due_date: date, streams: streamsRef, company: ref.optional(), workstream: ref.optional(),
   lead_division: ref.optional(), owner: ref.optional(), project: ref.optional(), is_major: z.boolean().optional(),
   deliverable: z.string().max(1000).optional(), unclear,
 }).strip();
 export const AssignDraft = z.object({ task: ref, assignees: z.array(ref).min(1).max(10), replace: z.boolean().optional(), unclear }).strip();
 export const CampaignDraft = z.object({
-  name: z.string().trim().min(1).max(200), company: ref.optional(), division: ref.optional(), start_date: date.optional(), end_date: date.optional(),
+  name: z.string().trim().min(1).max(200), streams: streamsRef, company: ref.optional(), division: ref.optional(), start_date: date.optional(), end_date: date.optional(),
   objective: z.string().max(2000).optional(), owner: ref.optional(), project: ref.optional(), milestone: ref.optional(), unclear,
 }).strip();
 export const ContentDraft = z.object({
-  title: z.string().trim().min(1).max(200), campaign: ref.optional(), company: ref.optional(), channel: z.string().max(80).optional(), format: z.string().max(80).optional(),
+  title: z.string().trim().min(1).max(200), campaign: ref.optional(), streams: streamsRef, company: ref.optional(), channel: z.string().max(80).optional(), format: z.string().max(80).optional(),
   pillar: z.string().max(80).optional(), dates: z.array(date).max(31).optional(), from: date.optional(), to: date.optional(), pattern: z.enum(["daily", "weekdays", "weekly"]).optional(),
   time: time.optional(), creator: ref.optional(), reviewer: ref.optional(), unclear,
 }).strip();
 export const ProjectDraft = z.object({
-  name: z.string().trim().min(1).max(200), company: ref.optional(), company_code: ref.optional(), division: ref.optional(), owner: ref.optional(),
+  name: z.string().trim().min(1).max(200), streams: streamsRef, company: ref.optional(), company_code: ref.optional(), division: ref.optional(), owner: ref.optional(),
   due_date: date.optional(), description: z.string().max(4000).optional(), unclear,
 }).strip();
 const TASK_STATUSES = ["Backlog", "Ready", "In Progress", "In Review", "Blocked", "Done", "Cancelled"] as const;
@@ -120,20 +128,24 @@ export const kindOf = (type: IntentType): ResolvedItem["kind"] => (({ create_eve
 // ── The directory: what the person can see, read with their own session ────────────────────────────────────────────
 
 export interface DirPerson { id: string; full_name: string; short_name: string | null; org_role: string; status: string; companies: string[]; divisions: string[]; managed?: string[] }
-export interface DirEvent { id: string; title: string; company_code: string; category: string; starts_at: string; ends_at: string; all_day: boolean; timezone: string; recurrence: Recurrence | null; exceptions: ExceptionLike[]; status: string; google_event_id?: string | null }
+export interface DirEvent { id: string; title: string; company_code: string | null; streams?: string[]; category: string; starts_at: string; ends_at: string; all_day: boolean; timezone: string; recurrence: Recurrence | null; exceptions: ExceptionLike[]; status: string; google_event_id?: string | null }
 export interface Directory {
-  me: string; today: string; myCompanies: string[];
+  me: string; today: string;
+  /** The legal entities that employ the person. Not used to limit anything any more; kept for context. */
+  myCompanies: string[];
+  /** The stream workspace the person is on, if any: the default stream for new records. */
+  pageStream?: string | null;
   people: DirPerson[];
   divisions: { id: string; code: string; name: string }[];
-  projects: { id: string; name: string; company_code: string; division_id: string | null; status: string }[];
-  workstreams: { code: string; name: string; company_code: string }[];
-  milestones: { id: string; title: string; company_code: string }[];
-  tasks: { id: string; title: string; company_code: string; project_id: string | null; status: string; due_date?: string | null; priority?: string | null }[];
+  projects: { id: string; name: string; company_code?: string | null; streams?: string[]; division_id: string | null; status: string }[];
+  workstreams: { code: string; name: string; company_code?: string | null }[];
+  milestones: { id: string; title: string; company_code?: string | null; streams?: string[] }[];
+  tasks: { id: string; title: string; company_code?: string | null; streams?: string[]; project_id: string | null; status: string; due_date?: string | null; priority?: string | null }[];
   events?: DirEvent[];
-  campaigns?: { id: string; name: string; company_code: string; project_id: string | null; timeline_item_id: string | null; status: string }[];
-  partnerships?: { id: string; organisation: string; company_code: string }[];
+  campaigns?: { id: string; name: string; company_code?: string | null; streams?: string[]; project_id: string | null; timeline_item_id: string | null; status: string }[];
+  partnerships?: { id: string; organisation: string; company_code?: string | null; streams?: string[] }[];
   /** Projects proposed earlier in the same turn: tasks may name them before they exist (they run after the project). */
-  pendingProjects?: { name: string; company_code: string; division_id: string | null }[];
+  pendingProjects?: { name: string; streams?: string[]; division_id: string | null }[];
 }
 
 export interface Choice { value: string; label: string }
@@ -179,6 +191,43 @@ export function resolveCompany(q: string | undefined, dir: Directory): { code?: 
   return { code };
 }
 
+const STREAM_NAMES: Record<string, StreamCode> = {
+  hq: "HQ", "hq office": "HQ", headquarters: "HQ", founders: "HQ", "central management": "HQ", management: "HQ",
+  iel: "IEL", ielsco: "IEL", "ielsco indonesia": "IEL", "english space": "IEL",
+  elc: "ELC", elco: "ELC", "elco ai": "ELC", elcoai: "ELC",
+  gif: "GIF", "global impact fellowship": "GIF", "gif summer": "GIF", "gif winter": "GIF", fellowship: "GIF",
+};
+const STREAM_CHOICES: Choice[] = STREAMS.map((x) => ({ value: x.code, label: x.name }));
+
+/** Business streams by code or name ("GIF", "IELSco and Elco"). Unknown names are asked about, never guessed. */
+export function resolveStreams(qs: (string | undefined)[] | undefined, field = "streams"): { codes: StreamCode[]; issues: Issue[] } {
+  const codes: StreamCode[] = [], issues: Issue[] = [];
+  for (const raw of qs ?? []) {
+    if (!raw) continue;
+    for (const part of raw.split(/\s*(?:,|\+|&|\band\b|\bdan\b)\s*/i).filter(Boolean)) {
+      const code = normalizeStreams([part])[0] ?? STREAM_NAMES[norm(part).replace(/\b(stream|workspace|business)\b/g, "").trim()];
+      if (code) { if (!codes.includes(code)) codes.push(code); }
+      else issues.push({ field, query: part, kind: "not_found", message: `“${part}” isn't a business stream. Streams are HQ, IELSco, Elco AI and GIF.`, choices: STREAM_CHOICES });
+    }
+  }
+  return { codes: normalizeStreams(codes), issues };
+}
+
+/** What a new record is about: what the person said, else what it is linked to, else the page's stream, else none. */
+function streamsFor(d: { streams?: string[]; company?: string }, dir: Directory, inherited?: readonly string[] | null): { codes: StreamCode[]; from: "said" | "linked" | "page" | "none"; issues: Issue[] } {
+  // "company" in older drafts named a business (IELSco, Elco AI); read it as a stream.
+  const said = resolveStreams([...(d.streams ?? []), ...(d.company ? [d.company] : [])]);
+  if (said.codes.length || said.issues.length) return { codes: said.codes, from: "said", issues: said.issues };
+  const inh = normalizeStreams(inherited ?? []);
+  if (inh.length) return { codes: inh, from: "linked", issues: [] };
+  const page = normalizeStreams(dir.pageStream ? [dir.pageStream] : []);
+  if (page.length) return { codes: page, from: "page", issues: [] };
+  return { codes: [], from: "none", issues: [] };
+}
+const streamsField = (s: { codes: StreamCode[]; from: string }) => ({ label: "Streams", value: s.codes.length ? `${streamsLabel(s.codes)}${s.from === "linked" ? " (from the link)" : s.from === "page" ? " (this workspace)" : ""}` : "Not assigned (listed under HQ)" });
+/** The draft as stored: streams the person named are replaced by their codes; inherited ones are not written back. */
+const keptStreams = (d: { streams?: string[] }, s: { codes: StreamCode[]; from: string; issues: Issue[] }) => (s.issues.length ? d.streams : s.from === "said" ? s.codes : d.streams);
+
 export function resolveDivision(q: string | undefined, dir: Directory, field = "division"): { id?: string; issue?: Issue } {
   if (!q) return {};
   const m = dir.divisions.filter((d) => d.id.toLowerCase() === q.trim().toLowerCase() || d.code.toLowerCase() === q.trim().toLowerCase());
@@ -189,29 +238,30 @@ export function resolveDivision(q: string | undefined, dir: Directory, field = "
 }
 
 export const PENDING = "new:";
-export function resolveProject(q: string | undefined, dir: Directory, company?: string, allowPending = false): { project?: Directory["projects"][number]; issue?: Issue } {
+export function resolveProject(q: string | undefined, dir: Directory, _unused?: string, allowPending = false): { project?: Directory["projects"][number]; issue?: Issue } {
   if (!q) return {};
   if (idLike(q, "PRJ")) {
     const p = dir.projects.find((x) => x.id === q.trim().toUpperCase());
     return p ? { project: p } : { issue: { field: "project", kind: "not_found", message: `You can't see a project ${q.trim().toUpperCase()}.` } };
   }
-  const pool = dir.projects.filter((p) => !company || p.company_code === company);
+  const pool = dir.projects;
   let hits = byName(pool, q.replace(/\b(project|proyek|program)\b/gi, ""), (p) => [p.name]);
   const open = hits.filter((p) => !["Completed", "Cancelled"].includes(p.status));
   if (open.length) hits = open;
   if (hits.length === 1) return { project: hits[0] };
   if (!hits.length && allowPending) {
     // A project proposed earlier in this turn: the task waits for it and is resolved again once it exists.
-    const pend = (dir.pendingProjects ?? []).filter((p) => (!company || p.company_code === company) && norm(p.name) === norm(q.replace(/\b(project|proyek|program)\b/gi, "")));
-    if (pend.length === 1) return { project: { id: `${PENDING}${pend[0].name}`, name: pend[0].name, company_code: pend[0].company_code, division_id: pend[0].division_id, status: "Proposed" } };
+    const pend = (dir.pendingProjects ?? []).filter((p) => norm(p.name) === norm(q.replace(/\b(project|proyek|program)\b/gi, "")));
+    if (pend.length === 1) return { project: { id: `${PENDING}${pend[0].name}`, name: pend[0].name, streams: pend[0].streams ?? [], division_id: pend[0].division_id, status: "Proposed" } };
   }
   return { issue: { field: "project", kind: hits.length ? "ambiguous" : "not_found",
-    message: hits.length ? `“${q}” matches ${hits.length} projects. Choose one.` : `No project you can see is called “${q}”${company ? ` in ${COMPANY_DISPLAY[company]}` : ""}. Choose one, or remove the project.`,
+    message: hits.length ? `“${q}” matches ${hits.length} projects. Choose one.` : `No project you can see is called “${q}”. Choose one, or remove the project.`,
     choices: (hits.length ? hits : pool.filter((p) => !["Completed", "Cancelled"].includes(p.status)).slice(0, 12)).map((p) => ({ value: p.id, label: `${p.name} (${p.id})` })) } };
 }
 
-/** People by name or ID. Only active, non-guest people who work in the company can be assigned or invited. */
-export function resolvePeople(qs: string[] | undefined, dir: Directory, company: string | undefined, field: string): { ids: string[]; issues: Issue[] } {
+/** People by name or ID. Any active, non-guest member can be assigned or invited, whatever their division, employer or
+ * stream: everyone works across HQ, IELSco, Elco AI and GIF. (The third argument is ignored; kept for callers.) */
+export function resolvePeople(qs: string[] | undefined, dir: Directory, _any: string | undefined, field: string): { ids: string[]; issues: Issue[] } {
   const ids: string[] = [], issues: Issue[] = [];
   const eligible = (p: DirPerson) => p.org_role !== "guest" && ["active", "onboarding"].includes(p.status);
   for (const q of qs ?? []) {
@@ -224,12 +274,11 @@ export function resolvePeople(qs: string[] | undefined, dir: Directory, company:
       const active = all.filter(eligible);
       hits = active.length ? active : all;
     }
-    const label = (p: DirPerson) => `${p.full_name} (${p.id}${p.companies.length ? `, ${p.companies.map((c) => COMPANY_DISPLAY[c] ?? c).join(" & ")}` : ""})`;
-    if (hits.length === 0) { issues.push({ field, query: q, kind: "not_found", message: `There's nobody called “${q}” among the people you can see. Choose someone, or remove them.`, choices: dir.people.filter((p) => eligible(p) && (!company || p.companies.includes(company))).slice(0, 15).map((p) => ({ value: p.id, label: label(p) })) }); continue; }
+    const label = (p: DirPerson) => `${p.full_name} (${p.id}${p.divisions.length ? `, ${p.divisions.map((x) => divName(dir, x)).join(" & ")}` : ""})`;
+    if (hits.length === 0) { issues.push({ field, query: q, kind: "not_found", message: `There's nobody called “${q}” among the people you can see. Choose someone, or remove them.`, choices: dir.people.filter(eligible).slice(0, 15).map((p) => ({ value: p.id, label: label(p) })) }); continue; }
     if (hits.length > 1) { issues.push({ field, query: q, kind: "ambiguous", message: `“${q}” could be ${hits.length} people. Choose one.`, choices: hits.map((p) => ({ value: p.id, label: label(p) })) }); continue; }
     const p = hits[0];
     if (!eligible(p)) { issues.push({ field, query: q, kind: "invalid", message: `${p.full_name} isn't an active member, so they can't be ${field === "attendees" ? "invited" : "assigned"}.` }); continue; }
-    if (company && !p.companies.includes(company)) { issues.push({ field, query: q, kind: "invalid", message: `${p.full_name} doesn't work in ${COMPANY_DISPLAY[company] ?? company}. Choose someone who does, or remove them.`, choices: dir.people.filter((x) => eligible(x) && x.companies.includes(company)).slice(0, 15).map((x) => ({ value: x.id, label: label(x) })) }); continue; }
     if (!ids.includes(p.id)) ids.push(p.id);
   }
   return { ids, issues };
@@ -241,25 +290,15 @@ const dayLabel = (d: string) => `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "S
 function unclearIssues(u: string[] | undefined, known: Record<string, string>): Issue[] {
   return (u ?? []).filter((f) => known[f]).map((f) => ({ field: f, kind: "missing" as const, message: `The instruction didn't make the ${known[f]} clear. Fill it in.` }));
 }
-function companyFor(q: string | undefined, dir: Directory, fromProject?: string): { code?: string; issue?: Issue } {
-  if (fromProject) {
-    const c = resolveCompany(q, dir);
-    if (c.code && c.code !== fromProject) return { issue: { field: "company", kind: "invalid", message: `The project is in ${COMPANY_DISPLAY[fromProject]}, not ${COMPANY_DISPLAY[c.code]}.` } };
-    return { code: fromProject };
-  }
-  if (q) return resolveCompany(q, dir);
-  if (dir.myCompanies.length === 1) return { code: dir.myCompanies[0] };
-  return { issue: { field: "company", kind: "missing", message: "Which company is this for?", choices: dir.myCompanies.map((c) => ({ value: c, label: COMPANY_DISPLAY[c] ?? c })) } };
-}
-
 // ── Resolution per record kind ───────────────────────────────────────────────────────────────────────────────────
 
 export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
   const issues: Issue[] = [], warnings: string[] = [];
   const pr = resolveProject(d.project, dir, undefined, true);
   if (pr.issue) issues.push(pr.issue);
-  const co = companyFor(d.company, dir, pr.project?.company_code);
-  if (co.issue) issues.push(co.issue);
+  const ms0 = d.milestone ? (idLike(d.milestone, "TL") ? dir.milestones.filter((m) => m.id === d.milestone!.trim().toUpperCase()) : byName(dir.milestones, d.milestone, (m) => [m.title])) : [];
+  const st = streamsFor(d, dir, pr.project?.streams ?? (ms0.length === 1 ? ms0[0].streams : undefined));
+  issues.push(...st.issues);
   const dv = resolveDivision(d.division, dir);
   if (dv.issue) issues.push(dv.issue);
   const division = dv.id ?? pr.project?.division_id ?? undefined;
@@ -269,22 +308,22 @@ export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
     if (hits.length === 1) milestone = hits[0];
     else issues.push({ field: "milestone", kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${d.milestone}” matches several milestones.` : `No milestone you can see is called “${d.milestone}”.`, choices: hits.slice(0, 12).map((m) => ({ value: m.id, label: `${m.title} (${m.id})` })) });
   }
-  const ppl = resolvePeople(d.assignees, dir, co.code, "assignees");
-  issues.push(...ppl.issues, ...unclearIssues(d.unclear, { due_date: "deadline", project: "project", division: "division", company: "company", assignees: "assignee" }));
+  const ppl = resolvePeople(d.assignees, dir, undefined, "assignees");
+  issues.push(...ppl.issues, ...unclearIssues(d.unclear, { due_date: "deadline", project: "project", division: "division", streams: "streams", assignees: "assignee" }));
   const ev = d.event ? resolveEventRef(d.event, dir) : null;
   if (ev?.issue) issues.push(ev.issue);
   if (d.due_date && d.due_date < dir.today) warnings.push(`The deadline ${d.due_date} is in the past.`);
-  // An open task with the same title in the same project (or, without a project, the same company) already exists:
-  // nothing is created and the existing one is reported, so repeating an instruction never makes duplicates.
+  // An open task with the same title in the same project (or, without a project, another task with no project) already
+  // exists: nothing is created and the existing one is reported, so repeating an instruction never makes duplicates.
   const dup = dir.tasks.find((t) => norm(t.title) === norm(d.title) && !["Done", "Cancelled"].includes(t.status)
-    && (pr.project ? t.project_id === pr.project.id : t.company_code === co.code && !t.project_id));
+    && (pr.project ? t.project_id === pr.project.id : !t.project_id));
   const pending = pr.project?.id.startsWith(PENDING) ? pr.project.name : undefined;
-  const draft: TaskDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, milestone: milestone?.id ?? d.milestone, assignees: ppl.issues.length ? d.assignees : ppl.ids, event: ev?.event?.id ?? d.event, unclear: issues.length ? d.unclear : undefined };
+  const draft: TaskDraftT = { ...d, project: pr.project?.id ?? d.project, streams: keptStreams(d, st), company: undefined, division: dv.id ?? d.division, milestone: milestone?.id ?? d.milestone, assignees: ppl.issues.length ? d.assignees : ppl.ids, event: ev?.event?.id ?? d.event, unclear: issues.length ? d.unclear : undefined };
   if (ev?.event && d.due_date && d.due_date > zonedParts(ev.event.starts_at, ev.event.timezone).date && !ev.event.recurrence) warnings.push(`The deadline is after “${ev.event.title}”.`);
   const fields = [
     { label: "Title", value: d.title },
     ...(ev?.event ? [{ label: "For event", value: `${ev.event.title} (${ev.event.id}, ${dayLabel(zonedParts(ev.event.starts_at, ev.event.timezone).date)})` }] : []),
-    { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
+    streamsField(st),
     ...(division ? [{ label: "Division", value: divName(dir, division) }] : []),
     ...(pr.project ? [{ label: "Project", value: pending ? `${pr.project.name} (new, created first)` : `${pr.project.name} (${pr.project.id})` }] : []),
     ...(milestone ? [{ label: "Milestone", value: `${milestone.title} (${milestone.id})` }] : []),
@@ -295,7 +334,7 @@ export function resolveTask(d: TaskDraftT, dir: Directory): ResolvedItem {
   if (pending) draft.project = pending;
   if (dup) return { kind: "task", draft, fields, issues: [], warnings: [], insert: null, skip: { existing: dup.id, reason: `Already exists as ${dup.id}; not created again.` } };
   const insert = issues.length || pending ? null : {
-    title: d.title, company_code: co.code, division_id: division ?? null, project_id: pr.project?.id ?? null, timeline_item_id: milestone?.id ?? null,
+    title: d.title, streams: st.codes, division_id: division ?? null, project_id: pr.project?.id ?? null, timeline_item_id: milestone?.id ?? null,
     owner_person_id: ppl.ids[0] ?? null, assignees: ppl.ids, due_date: d.due_date ?? null, priority: d.priority ?? "P3 Normal", description: d.description ?? null,
     event_id: ev?.event?.id ?? null,
   };
@@ -306,19 +345,17 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
   const issues: Issue[] = [], warnings: string[] = [];
   const pr = resolveProject(d.project, dir, undefined);
   if (pr.issue) issues.push(pr.issue);
-  const co = companyFor(d.company, dir, pr.project?.company_code);
-  if (co.issue) issues.push(co.issue);
   const dv = resolveDivision(d.division, dir);
   if (dv.issue) issues.push(dv.issue);
   const division = dv.id ?? pr.project?.division_id ?? undefined;
-  const ppl = resolvePeople(d.attendees, dir, co.code, "attendees");
+  const ppl = resolvePeople(d.attendees, dir, undefined, "attendees");
   issues.push(...ppl.issues);
   let attendees = ppl.ids;
-  if (d.invite_division && division && co.code) {
-    attendees = Array.from(new Set([...attendees, ...dir.people.filter((p) => p.divisions.includes(division) && p.companies.includes(co.code!) && p.org_role !== "guest" && ["active", "onboarding"].includes(p.status)).map((p) => p.id)]));
+  if (d.invite_division && division) {
+    attendees = Array.from(new Set([...attendees, ...dir.people.filter((p) => p.divisions.includes(division) && p.org_role !== "guest" && ["active", "onboarding"].includes(p.status)).map((p) => p.id)]));
   } else if (d.invite_division && !division) issues.push({ field: "division", kind: "missing", message: "Which division should be invited?", choices: dir.divisions.map((x) => ({ value: x.id, label: x.name })) });
   // Groups ("all IELSco managers", "C-Level", "Growth") are worked out now into named people; each remembers its group.
-  const inv = co.code && d.invite_groups?.length ? groupInvitees(d.invite_groups, dir, co.code, attendees) : null;
+  const inv = d.invite_groups?.length ? groupInvitees(d.invite_groups, dir, attendees) : null;
   if (inv) issues.push(...inv.issues);
   const viaGroup = new Map((inv?.invitees ?? []).map((i) => [i.person_id, i.via]));
   const individual = attendees;
@@ -330,13 +367,15 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
   if (rule?.until && rule.until < d.date) issues.push({ field: "repeat_until", kind: "invalid", message: "The repeat ends before the first occurrence." });
   // Links (explicit, by name or ID; nothing linked is changed)
   const ms = d.milestone ? pickRef("milestone", d.milestone, dir.milestones, "TL", (m) => [m.title], (m) => `${m.title} (${m.id})`, "milestone") : null;
-  const cp = d.campaign ? pickRef("campaign", d.campaign, (dir.campaigns ?? []).filter((c) => !co.code || c.company_code === co.code || co.code === "HQ"), "CMP", (c) => [c.name], (c) => `${c.name} (${c.id})`, "campaign") : null;
-  const pa = d.partnership ? pickRef("partnership", d.partnership, (dir.partnerships ?? []).filter((x) => !co.code || x.company_code === co.code), "OPP", (x) => [x.organisation], (x) => `${x.organisation} (${x.id})`, "partnership") : null;
+  const cp = d.campaign ? pickRef("campaign", d.campaign, dir.campaigns ?? [], "CMP", (c) => [c.name], (c) => `${c.name} (${c.id})`, "campaign") : null;
+  const pa = d.partnership ? pickRef("partnership", d.partnership, dir.partnerships ?? [], "OPP", (x) => [x.organisation], (x) => `${x.organisation} (${x.id})`, "partnership") : null;
   const tk = (d.tasks ?? []).map((q) => pickRef("tasks", q, dir.tasks.filter((t) => !["Done", "Cancelled"].includes(t.status)), "TSK", (t) => [t.title], (t) => `${t.title} (${t.id})`, "open task"));
   for (const r of [ms, cp, pa, ...tk]) if (r?.issue) issues.push(r.issue);
+  const st = streamsFor(d, dir, pr.project?.streams ?? cp?.hit?.streams ?? pa?.hit?.streams ?? ms?.hit?.streams);
+  issues.push(...st.issues);
   const allDay = Boolean(d.all_day);
   if (!allDay && !d.start_time) issues.push({ field: "start_time", kind: "missing", message: "What time does it start? Or make it an all-day event." });
-  issues.push(...unclearIssues(d.unclear, { date: "date", start_time: "start time", end_time: "end time", division: "division", company: "company", project: "project" }));
+  issues.push(...unclearIssues(d.unclear, { date: "date", start_time: "start time", end_time: "end time", division: "division", streams: "streams", project: "project" }));
   const lastDay = d.end_date && d.end_date >= d.date ? d.end_date : d.date;
   let starts_at = "", ends_at = "";
   if (allDay) { starts_at = zonedInstant(d.date, "00:00", tz); ends_at = zonedInstant(addDays(lastDay, 1), "00:00", tz); }
@@ -347,14 +386,14 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
   }
   if (d.date < dir.today) warnings.push(`${d.date} is in the past.`);
   // The stored draft keeps the group names and only the individually named people, so resolving again doesn't double-add.
-  const draft: EventDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, attendees: ppl.issues.length ? d.attendees : individual,
+  const draft: EventDraftT = { ...d, project: pr.project?.id ?? d.project, streams: keptStreams(d, st), company: undefined, division: dv.id ?? d.division, attendees: ppl.issues.length ? d.attendees : individual,
     invite_division: undefined, invite_groups: d.invite_groups, milestone: ms?.hit?.id ?? d.milestone, campaign: cp?.hit?.id ?? d.campaign, partnership: pa?.hit?.id ?? d.partnership,
     tasks: d.tasks ? tk.map((r, n) => r.hit?.id ?? d.tasks![n]) : undefined, unclear: issues.length ? d.unclear : undefined };
   const when = allDay ? (lastDay === d.date ? `${dayLabel(d.date)}, all day` : `${dayLabel(d.date)} to ${dayLabel(lastDay)}, all day`)
     : d.start_time ? `${dayLabel(d.date)}, ${d.start_time}–${d.end_time ?? `${String((Number(d.start_time.slice(0, 2)) + 1) % 24).padStart(2, "0")}${d.start_time.slice(2)}`} (${tz === DEFAULT_TZ ? "WIB" : tz})` : `${dayLabel(d.date)}, time ?`;
   const fields = [
     { label: "Title", value: d.title }, { label: "When", value: when }, { label: "Category", value: d.category ?? "Meeting" },
-    { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
+    streamsField(st),
     ...(division ? [{ label: "Division", value: divName(dir, division) }] : []),
     ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
     ...(rule ? [{ label: "Repeats", value: describeRule(rule) }] : []),
@@ -367,7 +406,7 @@ export function resolveEvent(d: EventDraftT, dir: Directory, tz = DEFAULT_TZ): R
     ...(d.location ? [{ label: "Location", value: d.location }] : []), ...(d.meeting_url ? [{ label: "Meeting link", value: d.meeting_url }] : []),
   ];
   const insert = issues.length ? null : {
-    title: d.title, category: d.category ?? "Meeting", company_code: co.code, division_id: division ?? null, project_id: pr.project?.id ?? null,
+    title: d.title, category: d.category ?? "Meeting", streams: st.codes, division_id: division ?? null, project_id: pr.project?.id ?? null,
     starts_at, ends_at, all_day: allDay, timezone: tz, location: d.location ?? null, meeting_url: d.meeting_url ?? null, description: d.description ?? null,
     attendees: attendees.map((id) => (viaGroup.get(id) ? { person_id: id, via_group: viaGroup.get(id) } : id)),
     recurrence: rule, timeline_item_id: ms?.hit?.id ?? null, campaign_id: cp?.hit?.id ?? null, partnership_id: pa?.hit?.id ?? null, task_ids: tk.map((r) => r.hit!.id),
@@ -380,8 +419,6 @@ export function resolveMilestone(d: MilestoneDraftT, dir: Directory): ResolvedIt
   const issues: Issue[] = [], warnings: string[] = [];
   const pr = resolveProject(d.project, dir, undefined);
   if (pr.issue) issues.push(pr.issue);
-  const co = companyFor(d.company, dir, pr.project?.company_code);
-  if (co.issue) issues.push(co.issue);
   const dv = resolveDivision(d.lead_division, dir, "lead_division");
   if (dv.issue) issues.push(dv.issue);
   const lead = dv.id ?? pr.project?.division_id ?? undefined;
@@ -393,19 +430,21 @@ export function resolveMilestone(d: MilestoneDraftT, dir: Directory): ResolvedIt
     if (hits.length === 1) ws = hits[0];
     else issues.push({ field: "workstream", kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${d.workstream}” matches several workstreams.` : `There's no workstream called “${d.workstream}”.`, choices: (hits.length ? hits : pool).map((w) => ({ value: w.code, label: `${w.code} ${w.name}` })) });
   } else issues.push({ field: "workstream", kind: "missing", message: "Which timeline workstream does this milestone belong to?", choices: wsChoices });
-  const owner = resolvePeople(d.owner ? [d.owner] : [], dir, co.code, "owner");
-  issues.push(...owner.issues, ...unclearIssues(d.unclear, { due_date: "date", workstream: "workstream", company: "company", lead_division: "lead division", owner: "owner" }));
+  const st = streamsFor(d, dir, pr.project?.streams);
+  issues.push(...st.issues);
+  const owner = resolvePeople(d.owner ? [d.owner] : [], dir, undefined, "owner");
+  issues.push(...owner.issues, ...unclearIssues(d.unclear, { due_date: "date", workstream: "workstream", streams: "streams", lead_division: "lead division", owner: "owner" }));
   if (d.due_date < dir.today) warnings.push(`${d.due_date} is in the past.`);
-  const draft: MilestoneDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, lead_division: dv.id ?? d.lead_division, workstream: ws?.code ?? d.workstream, owner: owner.ids[0] ?? d.owner, unclear: issues.length ? d.unclear : undefined };
+  const draft: MilestoneDraftT = { ...d, project: pr.project?.id ?? d.project, streams: keptStreams(d, st), company: undefined, lead_division: dv.id ?? d.lead_division, workstream: ws?.code ?? d.workstream, owner: owner.ids[0] ?? d.owner, unclear: issues.length ? d.unclear : undefined };
   const fields = [
     { label: "Milestone", value: d.title }, { label: "Date", value: dayLabel(d.due_date) },
-    { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" }, { label: "Workstream", value: ws ? `${ws.code} ${ws.name}` : "?" },
+    streamsField(st), { label: "Workstream", value: ws ? `${ws.code} ${ws.name}` : "?" },
     ...(lead ? [{ label: "Lead division", value: divName(dir, lead) }] : []),
     ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
     { label: "Owner", value: owner.ids[0] ? nameOf(dir, owner.ids[0]) : "Nobody yet" }, ...(d.is_major ? [{ label: "Major milestone", value: "Yes" }] : []),
   ];
   const insert = issues.length || !ws ? null : {
-    title: d.title, due_date: d.due_date, company_code: co.code, workstream_code: ws.code, workstream_name: ws.name, lead_division_id: lead ?? null,
+    title: d.title, due_date: d.due_date, streams: st.codes, workstream_code: ws.code, workstream_name: ws.name, lead_division_id: lead ?? null,
     lead_division: lead ? divName(dir, lead) : null, owner_person_id: owner.ids[0] ?? null, owner_name: owner.ids[0] ? nameOf(dir, owner.ids[0]) : null,
     is_major: Boolean(d.is_major), deliverable: d.deliverable ?? null, linked_refs: pr.project?.id ?? null, status: "Not started",
   };
@@ -417,7 +456,7 @@ export function resolveAssign(d: AssignDraftT, dir: Directory): ResolvedItem {
   const hits = idLike(d.task, "TSK") ? dir.tasks.filter((t) => t.id === d.task.trim().toUpperCase()) : byName(dir.tasks.filter((t) => !["Done", "Cancelled"].includes(t.status)), d.task, (t) => [t.title]);
   const task = hits.length === 1 ? hits[0] : undefined;
   if (!task) issues.push({ field: "task", kind: hits.length ? "ambiguous" : "not_found", message: hits.length ? `“${d.task}” matches ${hits.length} tasks. Choose one.` : `No task you can see matches “${d.task}”.`, choices: hits.slice(0, 12).map((t) => ({ value: t.id, label: `${t.title} (${t.id})` })) });
-  const ppl = resolvePeople(d.assignees, dir, task?.company_code, "assignees");
+  const ppl = resolvePeople(d.assignees, dir, undefined, "assignees");
   issues.push(...ppl.issues);
   const draft: AssignDraftT = { ...d, task: task?.id ?? d.task, assignees: ppl.issues.length ? d.assignees : ppl.ids, unclear: undefined };
   const fields = [{ label: "Task", value: task ? `${task.title} (${task.id})` : "?" }, { label: d.replace ? "Assignees become" : "Add assignee", value: ppl.ids.map((i) => `${nameOf(dir, i)} (${i})`).join(", ") || "?" }];
@@ -426,23 +465,23 @@ export function resolveAssign(d: AssignDraftT, dir: Directory): ResolvedItem {
 
 export function resolveProjectDraft(d: ProjectDraftT, dir: Directory): ResolvedItem {
   const issues: Issue[] = [], warnings: string[] = [];
-  const co = companyFor(d.company ?? d.company_code, dir);
-  if (co.issue) issues.push(co.issue);
+  const st = streamsFor({ streams: d.streams, company: d.company ?? d.company_code }, dir);
+  issues.push(...st.issues);
   const dv = resolveDivision(d.division, dir);
   if (dv.issue) issues.push(dv.issue);
-  const owner = d.owner ? resolvePeople([d.owner], dir, co.code, "owner") : { ids: [dir.me], issues: [] };
-  issues.push(...owner.issues, ...unclearIssues(d.unclear, { company: "company", division: "division", due_date: "deadline" }));
-  const draft: ProjectDraftT = { ...d, company: co.code ?? d.company, company_code: undefined, division: dv.id ?? d.division, owner: owner.issues.length ? d.owner : owner.ids[0], unclear: issues.length ? d.unclear : undefined };
+  const owner = d.owner ? resolvePeople([d.owner], dir, undefined, "owner") : { ids: [dir.me], issues: [] };
+  issues.push(...owner.issues, ...unclearIssues(d.unclear, { streams: "streams", division: "division", due_date: "deadline" }));
+  const draft: ProjectDraftT = { ...d, streams: keptStreams(d, st), company: undefined, company_code: undefined, division: dv.id ?? d.division, owner: owner.issues.length ? d.owner : owner.ids[0], unclear: issues.length ? d.unclear : undefined };
   const fields = [
-    { label: "Project", value: d.name }, { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
+    { label: "Project", value: d.name }, streamsField(st),
     ...(dv.id ? [{ label: "Division", value: divName(dir, dv.id) }] : []),
     { label: "Owner", value: owner.ids[0] ? `${nameOf(dir, owner.ids[0])} (${owner.ids[0]})` : "?" },
     ...(d.due_date ? [{ label: "Due", value: dayLabel(d.due_date) }] : []),
   ];
-  // Reuse beats duplication: a live project with the same name in the same company is reported, not created again.
-  const same = dir.projects.find((p) => norm(p.name) === norm(d.name) && (!co.code || p.company_code === co.code) && !["Completed", "Cancelled"].includes(p.status));
+  // Reuse beats duplication: a live project with the same name is reported, not created again.
+  const same = dir.projects.find((p) => norm(p.name) === norm(d.name) && !["Completed", "Cancelled"].includes(p.status));
   if (same) return { kind: "project", draft, fields, issues: [], warnings, insert: null, skip: { existing: same.id, reason: `${same.name} already exists as ${same.id}; it is used instead.` } };
-  const insert = issues.length ? null : { name: d.name, company_code: co.code, division_id: dv.id ?? null, owner_person_id: owner.ids[0] ?? null, due_date: d.due_date ?? null, description: d.description ?? null, status: "Active" };
+  const insert = issues.length ? null : { name: d.name, streams: st.codes, division_id: dv.id ?? null, owner_person_id: owner.ids[0] ?? null, due_date: d.due_date ?? null, description: d.description ?? null, status: "Active" };
   return { kind: "project", draft, fields, issues, warnings, insert };
 }
 
@@ -456,9 +495,8 @@ export function resolveUpdate(d: UpdateDraftT, dir: Directory): ResolvedItem {
   const pr = d.project ? resolveProject(d.project, dir, undefined, true) : {};
   if (pr.issue) issues.push(pr.issue);
   if (pr.project?.id.startsWith(PENDING)) warnings.push(`${pr.project.name} is created first.`);
-  const company = pr.project?.company_code ?? task?.company_code;
-  const add = resolvePeople(d.add_assignees, dir, company, "add_assignees");
-  const rep = resolvePeople(d.assignees, dir, company, "assignees");
+  const add = resolvePeople(d.add_assignees, dir, undefined, "add_assignees");
+  const rep = resolvePeople(d.assignees, dir, undefined, "assignees");
   issues.push(...add.issues, ...rep.issues);
   const set: Record<string, unknown> = {};
   if (d.title) set.title = d.title;
@@ -508,7 +546,8 @@ export function repeatRule(d: Pick<EventDraftT, "repeat" | "repeat_days" | "repe
   return r;
 }
 
-/** "all IELSco managers", "C-Level", "Growth", "associates in Elco AI" → a group spec. Roles come from the registry. */
+/** "all IELSco managers", "C-Level", "Growth", "associates in Elco AI" → a group spec. Roles come from the registry.
+ * A company name in a group means the people that entity employs (an HR-style group), never a stream. */
 export function parseGroup(text: string, dir: Directory): { spec?: GroupSpec; issue?: Issue } {
   const n = ` ${norm(text)} `;
   let role: RoleGroup | undefined;
@@ -523,17 +562,17 @@ export function parseGroup(text: string, dir: Directory): { spec?: GroupSpec; is
   return { spec: { role: role ?? (division ? undefined : "all"), ...(division ? { division } : {}), ...(company ? { company } : {}) } };
 }
 
-/** Active, non-guest staff who can be invited to an event in a company (the same rule as os_invite_candidates). */
-export function candidatesFor(dir: Directory, company: string): Candidate[] {
-  return dir.people.filter((p) => p.status === "active" && p.org_role !== "guest" && (p.org_role === "founder" || company === "HQ" || p.companies.includes(company)))
+/** Active, non-guest staff: anyone can be invited to any event (the same rule as os_invite_candidates). */
+export function candidatesFor(dir: Directory): Candidate[] {
+  return dir.people.filter((p) => p.status === "active" && p.org_role !== "guest")
     .map((p) => ({ person_id: p.id, full_name: p.full_name, short_name: p.short_name, org_role: p.org_role, companies: p.companies, divisions: p.divisions, managed_divisions: p.managed ?? [] }));
 }
 
-function groupInvitees(texts: string[], dir: Directory, company: string, existing: string[]) {
+function groupInvitees(texts: string[], dir: Directory, existing: string[]) {
   const issues: Issue[] = [], specs: GroupSpec[] = [], textOf = new Map<string, string>();
   const dn = (id: string) => divName(dir, id);
   for (const t of texts) { const g = parseGroup(t, dir); if (g.issue) issues.push(g.issue); else { specs.push(g.spec!); textOf.set(groupLabel(g.spec!, dn), t); } }
-  const res = resolveInvitations(candidatesFor(dir, company), specs, [], existing, dn);
+  const res = resolveInvitations(candidatesFor(dir), specs, [], existing, dn);
   for (const e of res.empty) issues.push({ field: "invite_groups", query: textOf.get(e) ?? e, kind: "invalid", message: `Nobody active matches “${e}”, so nobody would be invited from it. Leave it out, or choose another group.`,
     choices: ["C-Level", "Managers", "Associates", "All staff"].map((g) => ({ value: g, label: g })) });
   const by = new Map<string, string[]>();
@@ -561,27 +600,27 @@ export function resolveCampaign(d: CampaignDraftT, dir: Directory): ResolvedItem
   const issues: Issue[] = [], warnings: string[] = [];
   const pr = resolveProject(d.project, dir, undefined);
   if (pr.issue) issues.push(pr.issue);
-  const co = companyFor(d.company, dir, pr.project?.company_code);
-  if (co.issue) issues.push(co.issue);
   const dv = resolveDivision(d.division, dir);
   if (dv.issue) issues.push(dv.issue);
-  const owner = resolvePeople(d.owner ? [d.owner] : [], dir, co.code, "owner");
+  const owner = resolvePeople(d.owner ? [d.owner] : [], dir, undefined, "owner");
   issues.push(...owner.issues);
   const ms = d.milestone ? pickRef("milestone", d.milestone, dir.milestones, "TL", (m) => [m.title], (m) => `${m.title} (${m.id})`, "milestone") : null;
   if (ms?.issue) issues.push(ms.issue);
+  const st = streamsFor(d, dir, pr.project?.streams ?? ms?.hit?.streams);
+  issues.push(...st.issues);
   if (d.start_date && d.end_date && d.end_date < d.start_date) issues.push({ field: "end_date", kind: "invalid", message: "The campaign ends before it starts." });
-  issues.push(...unclearIssues(d.unclear, { start_date: "start date", end_date: "end date", company: "company", owner: "owner" }));
-  const dup = (dir.campaigns ?? []).find((c) => norm(c.name) === norm(d.name) && c.company_code === co.code && !["Completed", "Cancelled"].includes(c.status));
+  issues.push(...unclearIssues(d.unclear, { start_date: "start date", end_date: "end date", streams: "streams", owner: "owner" }));
+  const dup = (dir.campaigns ?? []).find((c) => norm(c.name) === norm(d.name) && !["Completed", "Cancelled"].includes(c.status));
   if (dup) warnings.push(`A campaign with this name already exists: ${dup.id}.`);
-  const draft: CampaignDraftT = { ...d, project: pr.project?.id ?? d.project, company: co.code ?? d.company, division: dv.id ?? d.division, owner: owner.ids[0] ?? d.owner, milestone: ms?.hit?.id ?? d.milestone, unclear: issues.length ? d.unclear : undefined };
+  const draft: CampaignDraftT = { ...d, project: pr.project?.id ?? d.project, streams: keptStreams(d, st), company: undefined, division: dv.id ?? d.division, owner: owner.ids[0] ?? d.owner, milestone: ms?.hit?.id ?? d.milestone, unclear: issues.length ? d.unclear : undefined };
   const fields = [
-    { label: "Campaign", value: d.name }, { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" },
+    { label: "Campaign", value: d.name }, streamsField(st),
     { label: "Dates", value: d.start_date ? `${dayLabel(d.start_date)}${d.end_date ? ` to ${dayLabel(d.end_date)}` : ""}` : "Not set" },
     ...(pr.project ? [{ label: "Project", value: `${pr.project.name} (${pr.project.id})` }] : []),
     ...(ms?.hit ? [{ label: "Timeline milestone", value: `${ms.hit.title} (${ms.hit.id})` }] : []),
     { label: "Owner", value: owner.ids[0] ? nameOf(dir, owner.ids[0]) : "Nobody yet" }, ...(d.objective ? [{ label: "Objective", value: d.objective }] : []),
   ];
-  const insert = issues.length ? null : { name: d.name, company_code: co.code, division_id: dv.id ?? pr.project?.division_id ?? "DIV-03", start_date: d.start_date ?? null, end_date: d.end_date ?? null,
+  const insert = issues.length ? null : { name: d.name, streams: st.codes, division_id: dv.id ?? pr.project?.division_id ?? "DIV-03", start_date: d.start_date ?? null, end_date: d.end_date ?? null,
     objective: d.objective ?? null, owner_person_id: owner.ids[0] ?? null, project_id: pr.project?.id ?? null, timeline_item_id: ms?.hit?.id ?? null, status: "Planned" };
   return { kind: "campaign", draft, fields, issues, warnings, insert };
 }
@@ -603,27 +642,27 @@ export function resolveContent(d: ContentDraftT, dir: Directory, tz = DEFAULT_TZ
   const issues: Issue[] = [], warnings: string[] = [];
   const cp = d.campaign ? pickRef("campaign", d.campaign, dir.campaigns ?? [], "CMP", (c) => [c.name], (c) => `${c.name} (${c.id})`, "campaign") : null;
   if (cp?.issue) issues.push(cp.issue);
-  const co = cp?.hit ? { code: cp.hit.company_code } : companyFor(d.company, dir);
-  if (co.issue) issues.push(co.issue);
-  const creator = resolvePeople(d.creator ? [d.creator] : [], dir, co.code, "creator");
-  const reviewer = resolvePeople(d.reviewer ? [d.reviewer] : [], dir, co.code, "reviewer");
+  const st = streamsFor(d, dir, cp?.hit?.streams);
+  issues.push(...st.issues);
+  const creator = resolvePeople(d.creator ? [d.creator] : [], dir, undefined, "creator");
+  const reviewer = resolvePeople(d.reviewer ? [d.reviewer] : [], dir, undefined, "reviewer");
   issues.push(...creator.issues, ...reviewer.issues);
   const dates = contentDates(d);
   if (!dates.length) issues.push({ field: "dates", kind: "missing", message: "On which days should the content go out?" });
   if (dates.length > 31) issues.push({ field: "dates", kind: "invalid", message: `That's ${dates.length} slots. Plan at most 31 at a time.` });
   if (dates[0] && dates[0] < dir.today) warnings.push(`${dates[0]} is in the past.`);
   issues.push(...unclearIssues(d.unclear, { dates: "dates", channel: "channel", campaign: "campaign", time: "time" }));
-  const draft: ContentDraftT = { ...d, campaign: cp?.hit?.id ?? d.campaign, company: co.code ?? d.company, creator: creator.ids[0] ?? d.creator, reviewer: reviewer.ids[0] ?? d.reviewer, unclear: issues.length ? d.unclear : undefined };
+  const draft: ContentDraftT = { ...d, campaign: cp?.hit?.id ?? d.campaign, streams: keptStreams(d, st), company: undefined, creator: creator.ids[0] ?? d.creator, reviewer: reviewer.ids[0] ?? d.reviewer, unclear: issues.length ? d.unclear : undefined };
   const short = (x: string) => `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][weekday(x)]} ${Number(x.slice(8))}/${Number(x.slice(5, 7))}`;
   const fields = [
     { label: "Content", value: d.title }, ...(cp?.hit ? [{ label: "Campaign", value: `${cp.hit.name} (${cp.hit.id})` }] : []),
-    { label: "Company", value: co.code ? COMPANY_DISPLAY[co.code] : "?" }, ...(d.channel ? [{ label: "Channel", value: d.channel }] : []),
+    streamsField(st), ...(d.channel ? [{ label: "Channel", value: d.channel }] : []),
     { label: "Slots", value: `${dates.length} content slot${dates.length === 1 ? "" : "s"}` },
     { label: "Dates", value: dates.slice(0, 12).map(short).join(", ") + (dates.length > 12 ? ` and ${dates.length - 12} more` : "") + (d.time ? ` at ${d.time}` : "") },
     { label: "Creator", value: creator.ids[0] ? nameOf(dir, creator.ids[0]) : "Nobody yet" }, { label: "Reviewer", value: reviewer.ids[0] ? nameOf(dir, reviewer.ids[0]) : "Nobody yet" },
   ];
   const insert = issues.length ? null : { items: dates.map((x) => ({
-    company_code: co.code, campaign_id: cp?.hit?.id ?? null, title: dates.length > 1 ? `${d.title} (${short(x)})` : d.title, channel: d.channel ?? null, format: d.format ?? null, pillar: d.pillar ?? null,
+    streams: st.codes, campaign_id: cp?.hit?.id ?? null, title: dates.length > 1 ? `${d.title} (${short(x)})` : d.title, channel: d.channel ?? null, format: d.format ?? null, pillar: d.pillar ?? null,
     publish_at: d.time ? zonedInstant(x, d.time, tz) : null, planned_publish_date: x, creator_person_id: creator.ids[0] ?? null, owner_person_id: creator.ids[0] ?? null, reviewer_person_id: reviewer.ids[0] ?? null,
   })) };
   return { kind: "content", draft, fields, issues, warnings, insert };
@@ -674,10 +713,9 @@ export function resolveInvite(d: InviteDraftT, dir: Directory): ResolvedItem {
   if (ref.issue) issues.push(ref.issue);
   const e = ref.event;
   if (!d.people?.length && !d.groups?.length) issues.push({ field: "people", kind: "missing", message: "Who should be invited?" });
-  const company = e?.company_code;
-  const ppl = resolvePeople(d.people, dir, company && company !== "HQ" ? company : undefined, "attendees");
+  const ppl = resolvePeople(d.people, dir, undefined, "attendees");
   issues.push(...ppl.issues);
-  const inv = e && d.groups?.length ? groupInvitees(d.groups, dir, e.company_code, ppl.ids) : null;
+  const inv = e && d.groups?.length ? groupInvitees(d.groups, dir, ppl.ids) : null;
   if (inv) issues.push(...inv.issues.map((i) => (i.field === "invite_groups" ? { ...i, field: "groups" } : i)));
   const all = [...ppl.ids.map((id) => ({ person_id: id, via_group: null as string | null })), ...(inv?.invitees ?? []).filter((i) => !ppl.ids.includes(i.person_id)).map((i) => ({ person_id: i.person_id, via_group: i.via }))];
   if (all.length >= 15) warnings.push(`${all.length} people will be invited and notified.`);
@@ -698,7 +736,7 @@ export function resolveIntent(type: IntentType, drafts: AnyDraft[], dir: Directo
   // The same task twice in one instruction is created once.
   const seen = new Map<string, number>();
   return items.map((it, n) => {
-    const ins = it.insert, key = `${norm(String((it.draft as TaskDraftT).title))}|${(it.draft as TaskDraftT).project ?? ""}|${(it.draft as TaskDraftT).company ?? ""}`;
+    const ins = it.insert, key = `${norm(String((it.draft as TaskDraftT).title))}|${(it.draft as TaskDraftT).project ?? ""}`;
     if (it.skip || it.issues.length) return it;
     if (seen.has(key)) return { ...it, insert: null, waitsFor: undefined, skip: { existing: `#${(seen.get(key) ?? 0) + 1}`, reason: `Same as item ${(seen.get(key) ?? 0) + 1} in this list; created once.` } };
     seen.set(key, n);
@@ -743,8 +781,9 @@ export function dateContext(today: string): string {
 // ── Function declarations (Gemini function calling) ──────────────────────────────────────────────────────────────
 
 const S = (type: string, description?: string, extra: object = {}) => ({ type, ...(description ? { description } : {}), ...extra });
+const STREAMS_PARAM = S("ARRAY", "Business streams it is about, only if the person said it or it is obvious from the work: HQ (central management), IELSco (English education, events, community), Elco AI (AI products, tech), GIF (Global Impact Fellowship). Several allowed. Leave out to follow the linked project. Never infer it from who is assigned or their division.", { items: S("STRING") });
 const taskProps = {
-  title: S("STRING", "Short task title"), company: S("STRING", "HQ, IELSco or Elco AI, if the person said or it is obvious"),
+  title: S("STRING", "Short task title"), streams: STREAMS_PARAM,
   division: S("STRING", "Division name as the person said it, e.g. Creative"), project: S("STRING", "Project name or PRJ-ID as the person said it"),
   milestone: S("STRING", "Timeline milestone this task delivers, by name or TL-ID"),
   assignees: S("ARRAY", "People to assign, by the name the person used (never invent IDs)", { items: S("STRING") }),
@@ -755,7 +794,7 @@ const taskProps = {
 export const FUNCTION_DECLARATIONS = [
   { name: "create_task", description: "Create one new task.", parameters: S("OBJECT", undefined, { properties: taskProps, required: ["title"] }) },
   { name: "create_project", description: "Create a project when the person asks for one or the work needs a project that does not exist yet (check DATA.projects first; an existing project with that name is reused, never duplicated). Tasks in the same reply may name it as their project.", parameters: S("OBJECT", undefined, { properties: {
-    name: S("STRING"), company: S("STRING", "HQ, IELSco or Elco AI"), division: S("STRING"), owner: S("STRING", "Person by name; default the person asking"), due_date: S("STRING", "YYYY-MM-DD"), description: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["name"] }) },
+    name: S("STRING"), streams: STREAMS_PARAM, division: S("STRING"), owner: S("STRING", "Person by name; default the person asking"), due_date: S("STRING", "YYYY-MM-DD"), description: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["name"] }) },
   { name: "update_tasks", description: "Change EXISTING tasks: deadline, priority, status, title, project or assignees. One call can change many tasks the same way, e.g. 'move all those deadlines to Friday' or 'assign those to Arba'. Use TSK-IDs from DATA (conversation_records, page, matches) whenever you can.", parameters: S("OBJECT", undefined, { properties: {
     tasks: S("ARRAY", "TSK-IDs (preferred) or exact task titles", { items: S("STRING") }), due_date: S("STRING", "New deadline YYYY-MM-DD"), clear_due_date: S("BOOLEAN"),
     priority: S("STRING", undefined, { enum: [...PRIORITIES], format: "enum" }), status: S("STRING", "Only when the person asked to change the status", { enum: ["Backlog", "Ready", "In Progress", "In Review", "Blocked", "Done", "Cancelled"], format: "enum" }),
@@ -766,7 +805,7 @@ export const FUNCTION_DECLARATIONS = [
   { name: "assign_task", description: "Propose assigning people to an EXISTING task.", parameters: S("OBJECT", undefined, { properties: { task: S("STRING", "TSK-ID or the task title"), assignees: S("ARRAY", undefined, { items: S("STRING") }), replace: S("BOOLEAN", "true to replace current assignees") }, required: ["task", "assignees"] }) },
   { name: "create_event", description: "Propose a calendar event (meeting, activity, deadline, campaign date…).", parameters: S("OBJECT", undefined, { properties: {
     title: S("STRING"), category: S("STRING", undefined, { enum: [...CATEGORIES], format: "enum" }), date: S("STRING", "YYYY-MM-DD"), end_date: S("STRING", "Last day, YYYY-MM-DD, for multi-day events"),
-    start_time: S("STRING", "HH:MM, 24-hour, Asia/Jakarta"), end_time: S("STRING", "HH:MM"), all_day: S("BOOLEAN"), company: S("STRING"), division: S("STRING"), project: S("STRING"),
+    start_time: S("STRING", "HH:MM, 24-hour, Asia/Jakarta"), end_time: S("STRING", "HH:MM"), all_day: S("BOOLEAN"), streams: STREAMS_PARAM, division: S("STRING"), project: S("STRING"),
     attendees: S("ARRAY", "People by name", { items: S("STRING") }), invite_division: S("BOOLEAN", "Invite everyone in the division, e.g. 'a Growth meeting'"),
     invite_groups: S("ARRAY", "Groups as the person said them: 'C-Level', 'managers', 'all IELSco managers', 'associates in Elco AI', 'all staff', a division name", { items: S("STRING") }),
     repeat: S("STRING", "How it repeats; 'weekly' for 'every Monday'", { enum: ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "yearly"], format: "enum" }),
@@ -776,13 +815,13 @@ export const FUNCTION_DECLARATIONS = [
     tasks: S("ARRAY", "Existing tasks to link, by title or TSK-ID", { items: S("STRING") }),
     location: S("STRING"), meeting_url: S("STRING", "https link"), description: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["title", "date"] }) },
   { name: "create_timeline_item", description: "Propose a milestone on the company timeline (e.g. 'Mojo launch by Nov 12').", parameters: S("OBJECT", undefined, { properties: {
-    title: S("STRING"), due_date: S("STRING", "YYYY-MM-DD"), company: S("STRING"), workstream: S("STRING", "Workstream code (WS1…) or name"), lead_division: S("STRING"),
+    title: S("STRING"), due_date: S("STRING", "YYYY-MM-DD"), streams: STREAMS_PARAM, workstream: S("STRING", "Workstream code (WS1…) or name"), lead_division: S("STRING"),
     owner: S("STRING", "Person by name"), project: S("STRING"), is_major: S("BOOLEAN"), deliverable: S("STRING"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["title", "due_date"] }) },
   { name: "create_campaign", description: "Propose a marketing campaign (the plan: name, dates, objective). Its launch is a separate create_event with category Campaign and campaign set.", parameters: S("OBJECT", undefined, { properties: {
-    name: S("STRING"), company: S("STRING"), division: S("STRING"), start_date: S("STRING", "YYYY-MM-DD"), end_date: S("STRING", "YYYY-MM-DD"), objective: S("STRING"), owner: S("STRING", "Person by name"),
+    name: S("STRING"), streams: STREAMS_PARAM, division: S("STRING"), start_date: S("STRING", "YYYY-MM-DD"), end_date: S("STRING", "YYYY-MM-DD"), objective: S("STRING"), owner: S("STRING", "Person by name"),
     project: S("STRING"), milestone: S("STRING", "Timeline milestone by name or TL-ID"), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["name"] }) },
   { name: "create_content_items", description: "Propose content slots (posts, videos, emails) on publish dates, e.g. 'an Instagram post every weekday next week'. Content items are not tasks.", parameters: S("OBJECT", undefined, { properties: {
-    title: S("STRING", "What the content is, e.g. 'Daily English tip'"), campaign: S("STRING"), company: S("STRING"), channel: S("STRING"), format: S("STRING"), pillar: S("STRING"),
+    title: S("STRING", "What the content is, e.g. 'Daily English tip'"), campaign: S("STRING"), streams: STREAMS_PARAM, channel: S("STRING"), format: S("STRING"), pillar: S("STRING"),
     dates: S("ARRAY", "Exact publish dates, YYYY-MM-DD", { items: S("STRING") }), from: S("STRING", "First date, YYYY-MM-DD"), to: S("STRING", "Last date, YYYY-MM-DD"),
     pattern: S("STRING", "With from/to", { enum: ["daily", "weekdays", "weekly"], format: "enum" }), time: S("STRING", "HH:MM publish time"), creator: S("STRING", "Person by name"), reviewer: S("STRING", "Person by name"),
     unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["title"] }) },
@@ -792,7 +831,7 @@ export const FUNCTION_DECLARATIONS = [
     scope: S("STRING", "For repeating events, only if the person said which", { enum: ["this", "following", "all"], format: "enum" }), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["event", "to_date"] }) },
   { name: "invite_to_event", description: "Propose inviting people or groups to an EXISTING event, e.g. 'invite all IELSco managers to the monthly company review'.", parameters: S("OBJECT", undefined, { properties: {
     event: S("STRING", "Event title or EV-ID"), people: S("ARRAY", "People by name", { items: S("STRING") }),
-    groups: S("ARRAY", "Groups as said: 'C-Level', 'managers', 'all IELSco managers', 'associates', 'all staff', a division", { items: S("STRING") }), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["event"] }) },
+    groups: S("ARRAY", "Groups as said: 'C-Level', 'managers', 'all IELSco managers' (people IELSco employs), 'associates', 'all staff', a division", { items: S("STRING") }), unclear: S("ARRAY", undefined, { items: S("STRING") }) }, required: ["event"] }) },
 ] as const;
 
 /** What the confirmation card shows: everything except the insert payload. */

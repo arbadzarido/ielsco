@@ -1,7 +1,7 @@
 "use client";
 
 // Pickers used by the Company OS forms. Options come from the directory the person can read (RLS), so nobody can pick
-// a person, company or division they cannot see.
+// a person or division they cannot see.
 import { useDirectory } from "./data";
 import { useOsMe } from "./OsProvider";
 import { Select } from "./ui";
@@ -24,18 +24,17 @@ export function DivisionSelect({ id, value, onChange, placeholder = "No division
     options={(dir?.divisions ?? []).map((d) => ({ value: d.id, label: d.name }))} />;
 }
 
-/** Companies the person works in (founders with verified sign-in: all three). */
+/** Legal entities (HQ, PT English Space Berkah Indonesia, PT Elco Edukasi Berkah Indonesia) for records that belong to a
+ * set of books, a letterhead or a numbering series: finance, legal and documents. Not for operational work, which uses
+ * business streams (StreamPicker). Everyone can pick any entity; the database checks the record itself. */
 export function CompanySelect({ id, value, onChange, ariaLabel, includeHq = true }: {
   id?: string; value: string; onChange: (v: string) => void; ariaLabel?: string; includeHq?: boolean;
 }) {
-  const { me } = useOsMe();
-  const options = WORKSPACES.filter((w) => (includeHq && w.code === "HQ") || me.isAdmin || me.companies.includes(w.code))
-    .filter((w) => includeHq || w.code !== "HQ")
-    .map((w) => ({ value: w.code, label: w.name }));
+  const options = WORKSPACES.filter((w) => includeHq || w.code !== "HQ").map((w) => ({ value: w.code, label: w.legal ? `${w.name} (${w.legal})` : w.name }));
   return <Select id={id} ariaLabel={ariaLabel} value={value} onChange={onChange} options={options} />;
 }
 
-/** The default company for a new record: the first one the person works in. */
+/** The default legal entity for a new finance, legal or document record: the entity that employs the person, else HQ. */
 export function useDefaultCompany(): string {
   const { me } = useOsMe();
   return me.companies.find((c) => c !== "HQ") ?? me.companies[0] ?? "HQ";

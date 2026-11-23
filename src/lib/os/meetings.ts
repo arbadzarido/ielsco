@@ -2,12 +2,12 @@
 // extension). os_meeting_act decides what anyone may do; this mirrors it so a button never leads to a refusal.
 export type MeetingStatus = "Scheduled" | "Held" | "Minutes draft" | "In review" | "Approved";
 export interface MeetingRow {
-  id: string; company_code: string; division_id: string | null; meeting_type: string; title: string; held_on: string;
+  id: string; company_code: string | null; streams: string[]; division_id: string | null; meeting_type: string; title: string; held_on: string;
   facilitator_person_id: string | null; attendees: string[]; notes: string | null; sensitivity: string; status: MeetingStatus;
   agenda: string | null; objectives: string | null; decisions: string | null; event_id: string | null; project_id: string | null;
   reviewer_person_id: string | null; minutes_approved_by: string | null; minutes_approved_at: string | null; created_by: string | null;
 }
-export const MEETING_COLUMNS = "id, company_code, division_id, meeting_type, title, held_on, facilitator_person_id, attendees, notes, sensitivity, status, agenda, objectives, decisions, event_id, project_id, reviewer_person_id, minutes_approved_by, minutes_approved_at, created_by";
+export const MEETING_COLUMNS = "id, company_code, streams, division_id, meeting_type, title, held_on, facilitator_person_id, attendees, notes, sensitivity, status, agenda, objectives, decisions, event_id, project_id, reviewer_person_id, minutes_approved_by, minutes_approved_at, created_by";
 export const MEETING_TYPES = ["Weekly Review", "Division Stand-up", "Founders Review", "Quarterly Planning", "Partner Meeting", "Other"];
 export const MEETING_TONE: Record<MeetingStatus, "neutral" | "blue" | "amber" | "violet" | "green"> = {
   Scheduled: "blue", Held: "neutral", "Minutes draft": "amber", "In review": "violet", Approved: "green",
