@@ -11,7 +11,7 @@ const SITE = (process.env.GIF_SITE_URL || "https://gif.ielsco.com").replace(/\/+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "Global Impact Fellowship Summer 2027 | IELSco", template: "%s | GIF Summer 2027" },
-  description: "An 8-day international youth programme from Singapore through Malaysia to Thailand, 27 July – 3 August 2027. Apply Fully Funded, join the Project Mentoring Program, or register Self-Funded.",
+  description: "An 8-day international youth programme from Singapore through Malaysia to Thailand, 27 July – 3 August 2027. Develop a social-impact project through a three-stage competition, with a USD 5,000 total prize pool. Self-Funded registration is open: 20 Super Early Bird places.",
   openGraph: { type: "website", siteName: "Global Impact Fellowship · IELSco", images: [{ url: "/photos/nus-sign.jpg", width: 720, height: 1280, alt: "GIF 2026 delegates at NUS" }] },
   icons: { icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/icon-192.png", type: "image/png", sizes: "192x192" }], apple: "/apple-icon.png" },
   robots: process.env.GIF_NOINDEX === "true" ? { index: false, follow: false } : undefined,
