@@ -18,13 +18,13 @@ export default async function SelfFunded() {
   return (
     <>
       <PageHero eyebrow="Self-Funded · GIF Summer 2027" title="Secure your place on the route to Bangkok."
-        lead={`No essay, no pitch deck, no video. Register from your IELSco Dashboard, pay a deposit you choose, and your seat is confirmed once it is verified. The first ${s.slots.self_funded_early} confirmed delegates secure the Super Early Bird fee.`}>
+        lead={`No essay, deck or video. Pay a deposit you choose; the first ${s.slots.self_funded_early} verified delegates get the Super Early Bird fee.`}>
         <div className="btn-row"><a className="btn btn-sky" href={apply} data-track="pathway_select" data-pathway="self_funded">Register now</a></div>
       </PageHero>
       <section className="section">
         <div className="wrap">
           <div className="head side"><div><Eyebrow>Allocations</Eyebrow><h2>Two allocations, one programme.</h2></div>
-            <div><p className="lead">Super Early Bird and Regular delegates take part in exactly the same eight days, competition and Grand Finale. Only the fee differs.</p><CurrencyToggle /></div></div>
+            <div><p className="lead">Same eight days, same competition. Only the fee differs.</p><CurrencyToggle /></div></div>
           <Allocations s={s} />
         </div>
       </section>
@@ -48,10 +48,10 @@ export default async function SelfFunded() {
               ? `Indonesian participants pay the IDR price online through Midtrans. International delegates keep their USD price and choose: request an invoice and pay by bank transfer, or pay by Visa or Mastercard through Midtrans, which charges in IDR at a fixed rate of USD 1 = IDR ${s.payments.usd_idr_card_rate.toLocaleString("en-US")}.`
               : "Indonesian participants pay the IDR price online through Midtrans. International delegates pay in USD by invoice and bank transfer, verified by IELSco finance."}</p></div>
           <div className="item"><Eyebrow>Seats</Eyebrow><h3>{selfFundedCap(s)} Self-Funded places.</h3>
-            <p className="muted" style={{ marginTop: 12 }}>{s.slots.self_funded_early} Super Early Bird and {s.slots.self_funded_regular} Regular places, confirmed in the order deposits are verified. Registration closes when they are taken; you will see this before paying.</p></div>
+            <p className="muted" style={{ marginTop: 12 }}>Confirmed in the order deposits are verified. Registration closes when they are taken.</p></div>
           <div className="item"><Eyebrow>What you take part in</Eyebrow><h3>The full programme and competition.</h3>
-            <p className="muted" style={{ marginTop: 12 }}>Eight days from Singapore through Malaysia to Thailand, all three competition stages, and the {COMPETITION.finale.name} in Bangkok, where the Top {COMPETITION.finalists} pitch and exhibit. <Link href="/competition">How the competition works</Link>.</p></div>
-          <div className="item"><Eyebrow>Teams and refunds</Eyebrow><h3>Register with up to two friends.</h3><p className="muted" style={{ marginTop: 12 }}>Each team member is a delegate with their own profile and payments. Refunds depend on when and why you withdraw: read the <Link href="/refund-policy">Refund &amp; Cancellation Policy</Link> before paying.</p></div>
+            <p className="muted" style={{ marginTop: 12 }}>All three stages and the Grand Finale in Bangkok for the Top {COMPETITION.finalists}. <Link href="/competition">How it works</Link>.</p></div>
+          <div className="item"><Eyebrow>Teams and refunds</Eyebrow><h3>Register with up to two friends.</h3><p className="muted" style={{ marginTop: 12 }}>Each member has their own profile and payments. Read the <Link href="/refund-policy">Refund &amp; Cancellation Policy</Link> before paying.</p></div>
         </div>
       </section>
       <FinalCta title="Ready when you are." body="Registration takes about ten minutes on your IELSco Dashboard. You can save it and come back." />
