@@ -1,9 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { DOCS } from "@/lib/legal";
+import { currentSettingsSafe } from "@/lib/cohort";
+import { promoted } from "@/lib/settings";
 
 // Mirrors the IELSco site footer (white, hairline, logo column + link columns, legal bar), with the GIF logo beside IELSco.
-export default function SiteFooter() {
+export default async function SiteFooter() {
+  // Fully Funded and Mentoring links follow settings.campaign.public_pathways (hidden during the Self-Funded campaign).
+  const s = await currentSettingsSafe();
+  const ff = promoted(s, "fully_funded"), mt = promoted(s, "mentoring");
   return (
     <footer className="site-footer">
       <div className="wrap">
@@ -23,9 +28,11 @@ export default function SiteFooter() {
               <ul>
                 <li><Link href="/about">About GIF</Link></li>
                 <li><Link href="/program">Program</Link></li>
-                <li><Link href="/opportunities">Opportunities</Link></li>
-                <li><Link href="/selection-process">Selection Process</Link></li>
-                <li><Link href="/mentoring">Mentorship</Link></li>
+                <li><Link href="/competition">Competition</Link></li>
+                <li><Link href="/self-funded">Self-Funded</Link></li>
+                {(ff || mt) && <li><Link href="/opportunities">Opportunities</Link></li>}
+                {ff && <li><Link href="/selection-process">Selection Process</Link></li>}
+                {mt && <li><Link href="/mentoring">Mentorship</Link></li>}
                 <li><Link href="/previous-gif">Previous GIF</Link></li>
               </ul>
             </div>

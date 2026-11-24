@@ -23,7 +23,7 @@ Gradients: `--gif-grad-night` (160°, Nightfall → deep Nightfall), `--gif-glow
 
 All destination and campus photographs are genuine photographs from Wikimedia Commons, downloaded on 21 Nov 2026 as 1920px
 renditions and converted to WebP (`apps/gif/public/places`). Changes: resized and converted, Wat Arun cropped to the temple, and
-a colour overlay applied on the site. Adapted CC BY-SA photographs remain under CC BY-SA. Attribution is shown on the photo,
+(since 25 Nov 2026) shown in black and white with a dark overlay on the site (CSS filter; the files keep their colour). Adapted CC BY-SA photographs remain under CC BY-SA. Attribution is shown on the photo,
 on `/photo-credits`, and below.
 
 | File | Subject | Author | Licence | Source |

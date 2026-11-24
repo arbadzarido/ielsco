@@ -11,7 +11,7 @@ const commons = (file: string) => `https://commons.wikimedia.org/wiki/File:${fil
 const BY_SA_4 = { license: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/" };
 const BY_4 = { license: "CC BY 4.0", licenseUrl: "https://creativecommons.org/licenses/by/4.0/" };
 const BY_2 = { license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/" };
-const RESIZED = "Resized and converted to WebP; colour overlay applied on the site.";
+const RESIZED = "Resized and converted to WebP; shown in black and white with a dark overlay on the site.";
 
 export const PLACES = {
   marinaBay: { key: "marinaBay", src: "/places/singapore-marina-bay-dusk.webp", w: 1920, h: 723,
@@ -28,7 +28,7 @@ export const PLACES = {
     credit: { author: "James Kerwin", ...BY_2, source: commons("The_Twins_SE_Asia_2019_(49171985716).jpg"), title: "The Twins SE Asia 2019", changes: RESIZED } },
   watArun: { key: "watArun", src: "/places/bangkok-wat-arun-night.webp", w: 1075, h: 821,
     alt: "Wat Arun, the Temple of Dawn, lit up at night on the bank of the Chao Phraya River in Bangkok",
-    credit: { author: "Jonashtand", ...BY_SA_4, source: commons("202307_Wat_Arun_at_night.jpg"), title: "202307 Wat Arun at night", changes: "Cropped to the temple, resized and converted to WebP; colour overlay applied on the site." } },
+    credit: { author: "Jonashtand", ...BY_SA_4, source: commons("202307_Wat_Arun_at_night.jpg"), title: "202307 Wat Arun at night", changes: "Cropped to the temple, resized and converted to WebP; shown in black and white with a dark overlay on the site." } },
   nus: { key: "nus", src: "/places/campus-nus-university-town.webp", w: 1920, h: 1440,
     alt: "University Town at the National University of Singapore's Kent Ridge campus, seen across the trees",
     credit: { author: "Joshua Rommel Hayag Vargas", ...BY_SA_4, source: commons("University_Town_Skyline_from_Northwest_Kent_Ridge_Campus,_National_University_of_Singapore,_February_2020.jpg"), title: "University Town Skyline from Northwest Kent Ridge Campus, National University of Singapore, February 2020", changes: RESIZED } },

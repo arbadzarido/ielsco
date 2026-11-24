@@ -8,7 +8,7 @@ export default function Sponsorship() {
   return (
     <>
       <PageHero eyebrow="Sponsorship Support" title="We help you ask. The sponsor decides."
-        lead="Many delegates fund their place with support from their school, university, a company or local government. IELSco prepares the documentation you need to approach them." />
+        lead="Schools, universities, companies and local governments often support delegates. We prepare the documents you need." />
       <section className="section">
         <div className="wrap grid split" style={{ alignItems: "start" }}>
           <div>

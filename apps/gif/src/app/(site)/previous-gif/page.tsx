@@ -11,7 +11,7 @@ export default async function Previous() {
   return (
     <>
       <PageHero eyebrow="Previous GIF" title="GIF 2026, Singapore."
-        lead="Batch 2 of the Global Impact Fellowship ran in Singapore from 17 to 20 November 2026: four days and three nights of project incubation on the NUS campus, campus tours and cultural exploration." />
+        lead="Batch 2, 17–20 November 2026: project incubation on the NUS campus, campus tours and the city." />
       <section className="section">
         <div className="wrap">
           <dl className="kpis">
@@ -24,7 +24,7 @@ export default async function Previous() {
       </section>
       <section className="section tight">
         <div className="wrap grid split-r" style={{ alignItems: "center" }}>
-          <div><Eyebrow n="01">Incubation</Eyebrow><h2>Projects first.</h2><p className="lead" style={{ marginTop: 18 }}>Delegates spent their days developing their projects in teams, with sessions on leadership, organisation and partnerships, and closed with an awarding where delegates received certificates of achievement.</p></div>
+          <div><Eyebrow n="01">Incubation</Eyebrow><h2>Projects first.</h2><p className="lead" style={{ marginTop: 18 }}>Team project work, sessions on leadership and partnerships, and an awarding to close.</p></div>
           <Figure p={PHOTOS.classroom} sizes="(min-width: 1000px) 35vw, 100vw" style={{ maxWidth: 420, marginLeft: "auto" }} />
         </div>
       </section>

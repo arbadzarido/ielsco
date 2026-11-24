@@ -154,10 +154,9 @@ export function Universities({ s }: { s: Settings }) {
           );
         })}
       </div>
-      <p className="small muted" style={{ marginTop: 24, maxWidth: "70ch" }}>
-        University engagement is planned and is marked &ldquo;Confirmed&rdquo; here only once agreed in writing. These institutions are not
-        organisers, partners or endorsers of GIF unless stated as confirmed. Campus photos are independent photographs used for reference
-        (<Link href="/photo-credits">photo credits</Link>); no university logo or official mark is used.
+      <p className="tiny muted" style={{ marginTop: 16, maxWidth: "80ch" }}>
+        Not organisers, partners or endorsers of GIF unless marked &ldquo;Confirmed&rdquo;. Independent reference photos, no official marks
+        (<Link href="/photo-credits">credits</Link>).
       </p>
     </>
   );
@@ -283,14 +282,14 @@ export function PrizePool({ dark = false }: { dark?: boolean }) {
       <div className="prize-head">
         <span className="prize-kicker">Total prize pool</span>
         <p className="prize-amount">USD {COMPETITION.prizePoolUsd.toLocaleString("en-US")}</p>
-        <p className="prize-sub">{COMPETITION.finalists} finalists · {COMPETITION.awards.length} award levels · one international Grand Finale</p>
+        <p className="prize-sub">{COMPETITION.finalists} finalists · {COMPETITION.awards.length} award levels · 1 Grand Finale</p>
       </div>
       <ol className="prize-levels">
         {COMPETITION.awards.map((w) => (
           <li key={w.level}><strong>{w.level}</strong><span>{w.recipients} {w.recipients === 1 ? "recipient" : "recipients"}</span></li>
         ))}
       </ol>
-      <p className="prize-fine">Shared across ten award recipients from the Top {COMPETITION.finalists}; the levels do not receive equal amounts. The amount for each level is announced before the programme. Taking part does not guarantee a place in the Top {COMPETITION.finalists} or any prize.</p>
+      <p className="prize-fine">Shared by ten recipients from the Top {COMPETITION.finalists}; levels do not receive equal amounts, and each level&rsquo;s amount is announced before the programme. Taking part does not guarantee a place in the Top {COMPETITION.finalists} or any prize.</p>
     </div>
   );
 }
