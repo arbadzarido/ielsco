@@ -12,7 +12,7 @@
  *
  * Visual system (21 Nov 2026 redesign): IELSco dashboard tokens (components/dashboard/ui.ts: navy #2F4157, hairline
  * #E3E7ED, glossy cards, pill buttons, Poppins headings / Plus Jakarta body) with the GIF identity used as accents only:
- * Nightfall #304156 for the programme band, Amber #B8862E (ink #8C6420 on white, soft #E0B865 on Nightfall) for the
+ * GIF colours (24 Nov 2026): deep #102129 for the programme band, sky #5BC2E7 (ink #176A8C on white, soft #8FD6F0 on deep) for the
  * current step, the next deadline and action states. One 12-column grid; every value comes from the workspace API.
  */
 
@@ -30,7 +30,8 @@ import { SkeletonList, SkeletonRegion } from "@/components/feedback/Skeleton";
 type Pathway = "fully_funded" | "mentoring" | "self_funded";
 type Workspace = {
   cohort: { id: string; name: string; startsOn: string; endsOn: string; destinations: string[] };
-  pathways: { pathway: Pathway; label: string; open: boolean; opensAt: string; reason: string | null }[];
+  // promoted (since 24 Nov 2026): featured in the public campaign; absent from older GIF deployments (treated as true).
+  pathways: { pathway: Pathway; label: string; open: boolean; opensAt: string; reason: string | null; promoted?: boolean }[];
   account: { linked: boolean; staffRole: string | null } | null;
   application: null | { code: string; pathway: Pathway; pathwayLabel: string; status: string; statusLabel: string; mode: "individual" | "team"; teamName: string | null; isOwner: boolean; submittedAt: string | null; outcome: string | null };
   steps: { key: string; label: string; detail: string; state: "done" | "current" | "upcoming" }[];
@@ -45,11 +46,13 @@ type Workspace = {
 };
 
 // GIF identity (accents only).
-const NIGHTFALL = "#304156", AMBER = "#B8862E", AMBER_INK = "#8C6420", AMBER_SOFT = "#E0B865";
+// GIF brand colours (24 Nov 2026: sky #5BC2E7 + signature gradient #3E9396 → #102129; names kept for the call sites).
+const GIF_GRADIENT = "linear-gradient(rgba(16,33,41,0.3), rgba(16,33,41,0.3)), linear-gradient(135deg, #3E9396 0%, #102129 100%)"; // signature gradient under a light veil so small white text stays readable
+const NIGHTFALL = "#102129", AMBER = "#5BC2E7", AMBER_INK = "#176A8C", AMBER_SOFT = "#8FD6F0";
 const PATHWAY_NOTE: Record<Pathway, string> = {
   fully_funded: "Competitive three-phase selection for Fully Funded or Partial Funded places.",
   mentoring: "15 weekly mentoring sessions; mentees go straight to Phase 3 of the selection.",
-  self_funded: "Direct registration with a deposit; no essay, deck or video.",
+  self_funded: "Direct registration with a deposit you choose; no essay, deck or video. The first 20 verified deposits get the Super Early Bird fee.",
 };
 
 // Opens a GIF page with the IELSco session (no second login).
@@ -68,7 +71,7 @@ const TONE_OF: Record<string, Tone> = {
   selected_fully_funded: "positive", selected_partial_funded: "positive", confirmed_participant: "positive", not_selected: "closed", withdrawn: "closed",
 };
 const TONE_STYLE: Record<Tone, { dot: string; chip: string }> = {
-  action: { dot: AMBER, chip: "bg-[#FBF3E4] text-[#8C6420] ring-1 ring-inset ring-[#B8862E]/25" },
+  action: { dot: AMBER, chip: "bg-[#EAF6FB] text-[#176A8C] ring-1 ring-inset ring-[#5BC2E7]/25" },
   review: { dot: "#577E90", chip: "bg-[#EAF1F4] text-[#3E6475] ring-1 ring-inset ring-[#577E90]/25" },
   positive: { dot: "#2E6B4F", chip: "bg-[#E8F3EE] text-[#2E6B4F] ring-1 ring-inset ring-[#2E6B4F]/20" },
   closed: { dot: "#8A97A8", chip: "bg-[#F1F4F8] text-[#4A5B70] ring-1 ring-inset ring-[#8A97A8]/25" },
@@ -108,7 +111,7 @@ function EntryCard({ href, icon: Icon, title, summary, children, testId }: { hre
   return (
     <a href={href} data-testid={testId} className={`${cardGloss} group flex h-full flex-col p-5 transition-[border-color,box-shadow] hover:border-[#CBD3DD] hover:shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_14px_34px_rgba(47,65,87,0.10)] md:p-6 ${focusRing}`}>
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FBF3E4]" style={{ color: AMBER_INK }}><Icon className="h-5 w-5" strokeWidth={1.9} aria-hidden="true" /></span>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF6FB]" style={{ color: AMBER_INK }}><Icon className="h-5 w-5" strokeWidth={1.9} aria-hidden="true" /></span>
         <div className="min-w-0 flex-1">
           <h2 className="font-heading text-[17px] font-semibold leading-tight text-[#1A2534]">{title}</h2>
           <p className="mt-1 text-[14px] text-[#4A5B70]">{summary}</p>
@@ -158,7 +161,7 @@ function GifWorkspace() {
         )}
 
         {error && !ws && (
-          <div role="alert" className="rounded-2xl border border-[#EBD9B4] bg-[#FDF8EE] p-5 text-[15px] leading-relaxed text-[#5B4512]">
+          <div role="alert" className="rounded-2xl border border-[#EBD9B4] bg-[#EAF6FB] p-5 text-[15px] leading-relaxed text-[#5B4512]">
             {error === "confirm_email" ? "Confirm your IELSco email address first (check your inbox), then come back here."
               : error === "not_configured" ? <>Your GIF workspace is being connected. Meanwhile you can apply and track your application on <a className="font-semibold underline" href="https://gif.ielsco.com">gif.ielsco.com</a>.</>
               : <>We couldn&rsquo;t load your GIF journey right now. Please refresh in a minute, or open <a className="font-semibold underline" href="https://gif.ielsco.com/portal">gif.ielsco.com</a>.</>}
@@ -242,10 +245,10 @@ function Hero({ ws }: { ws: Workspace | null }) {
     ? `${fmt(start, { day: "numeric", month: "short" })} – ${fmt(end, { day: "numeric", month: "short", year: "numeric" })} · ${Math.floor((Date.parse(end) - Date.parse(start)) / 86_400_000) + 1} days`
     : "27 Jul – 3 Aug 2027";
   return (
-    <section className="relative overflow-hidden rounded-[24px] text-white shadow-[0_18px_40px_rgba(48,65,86,0.22)]" style={{ background: NIGHTFALL }}>
-      {/* Layered light: a soft amber glow behind the status card and a faint top sheen. */}
+    <section className="relative overflow-hidden rounded-[24px] text-white shadow-[0_18px_40px_rgba(16,33,41,0.22)]" style={{ background: GIF_GRADIENT }}>
+      {/* Layered light: a soft sky glow behind the status card and a faint top sheen. */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true"
-        style={{ background: `radial-gradient(520px 260px at 88% 110%, rgba(184,134,46,0.30), transparent 70%), linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%)` }} />
+        style={{ background: `radial-gradient(520px 260px at 88% 110%, rgba(91,194,231,0.30), transparent 70%), linear-gradient(180deg, rgba(255,255,255,0.06), transparent 40%)` }} />
       <div className="relative grid gap-6 p-6 md:p-8 lg:grid-cols-[1fr_300px] lg:items-center lg:gap-10">
         <div className="min-w-0">
           <div className="flex items-center gap-4">
@@ -262,7 +265,7 @@ function Hero({ ws }: { ws: Workspace | null }) {
             <ol className="flex items-center" aria-label="Programme route">
               {destinations.map((d, i) => (
                 <li key={d} className="flex items-center">
-                  {i > 0 && <span className="mx-2.5 h-px w-6 sm:w-10" style={{ background: "rgba(224,184,101,0.55)" }} aria-hidden="true" />}
+                  {i > 0 && <span className="mx-2.5 h-px w-6 sm:w-10" style={{ background: "rgba(143,214,240,0.55)" }} aria-hidden="true" />}
                   <span className="flex items-center gap-2 text-[14px] font-medium text-white/90">
                     <span className="h-2 w-2 rounded-full" style={{ background: AMBER_SOFT }} aria-hidden="true" />{d}
                   </span>
@@ -295,7 +298,7 @@ function Hero({ ws }: { ws: Workspace | null }) {
             <>
               <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#6B7A8F]">Registration</p>
               <ul className="mt-2 space-y-1.5">
-                {(ws?.pathways ?? []).map((p) => (
+                {(ws?.pathways ?? []).filter((p) => p.promoted !== false).map((p) => (
                   <li key={p.pathway} className="flex items-center justify-between gap-3 text-[14px]">
                     <span className="truncate">{p.label.replace(" application", "")}</span>
                     <span className={`shrink-0 text-[12px] font-semibold ${p.open ? "text-[#2E6B4F]" : ""}`} style={p.open ? undefined : { color: AMBER_INK }}>
@@ -336,7 +339,7 @@ function NextStep({ ws, chosen }: { ws: Workspace; chosen: Pathway | null }) {
       <span className="absolute inset-y-0 left-0 w-1" style={{ background: urgent ? AMBER : "#577E90" }} aria-hidden="true" />
       <div className="grid gap-5 p-5 pl-6 md:grid-cols-[1fr_auto] md:items-center md:gap-8 md:p-6 md:pl-8">
         <div className="flex min-w-0 items-start gap-4">
-          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FBF3E4] sm:flex" style={{ color: AMBER_INK }}>
+          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF6FB] sm:flex" style={{ color: AMBER_INK }}>
             {pay ? <CreditCard className="h-5 w-5" aria-hidden="true" /> : <ArrowRight className="h-5 w-5" aria-hidden="true" />}
           </span>
           <div className="min-w-0">
@@ -391,14 +394,14 @@ function Progress({ ws, className }: { ws: Workspace; className?: string }) {
               {!last && <span className={`absolute left-[15px] top-8 bottom-0 w-px ${s.state === "done" ? "bg-[#2F4157]" : "bg-[#E3E7ED]"}`} aria-hidden="true" />}
               <span className="relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold"
                 style={s.state === "done" ? { background: NIGHTFALL, color: "#fff" }
-                  : s.state === "current" ? { background: "#FBF3E4", color: AMBER_INK, boxShadow: `0 0 0 2px ${AMBER}` }
+                  : s.state === "current" ? { background: "#EAF6FB", color: AMBER_INK, boxShadow: `0 0 0 2px ${AMBER}` }
                   : { background: "#fff", color: "#8A97A8", boxShadow: "inset 0 0 0 1.5px #D5DCE4" }}>
                 {s.state === "done" ? <Check className="h-4 w-4" strokeWidth={2.5} aria-label="Done" /> : i + 1}
               </span>
-              <div className={`min-w-0 flex-1 ${s.state === "current" ? "rounded-xl bg-[#FDF8EE] px-3 py-2 -mt-1" : "pt-1"}`}>
+              <div className={`min-w-0 flex-1 ${s.state === "current" ? "rounded-xl bg-[#EAF6FB] px-3 py-2 -mt-1" : "pt-1"}`}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <p className={`text-[15px] leading-tight ${s.state === "upcoming" ? "font-medium text-[#6B7A8F]" : "font-semibold text-[#1A2534]"}`}>{s.label}</p>
-                  {s.state === "current" && <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white" style={{ background: AMBER }}>Now</span>}
+                  {s.state === "current" && <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white" style={{ background: "#2B7477" }}>Now</span>}
                 </div>
                 <p className="mt-0.5 text-[13px] leading-relaxed text-[#6B7A8F]">{s.detail}</p>
               </div>
@@ -422,7 +425,7 @@ function Deadlines({ ws, className }: { ws: Workspace; className?: string }) {
             const first = i === 0;
             return (
               <li key={d.label} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                <span className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl leading-none ${first ? "text-white" : "bg-[#F1F4F8] text-[#2F4157]"}`} style={first ? { background: AMBER } : undefined}>
+                <span className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl leading-none ${first ? "text-white" : "bg-[#F1F4F8] text-[#2F4157]"}`} style={first ? { background: "#2B7477" } : undefined}>
                   <span className="text-[17px] font-bold">{fmt(d.at, { day: "numeric" })}</span>
                   <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide">{fmt(d.at, { month: "short" })}</span>
                 </span>
@@ -430,7 +433,7 @@ function Deadlines({ ws, className }: { ws: Workspace; className?: string }) {
                   <p className={`truncate text-[14px] ${first ? "font-semibold text-[#1A2534]" : "font-medium text-[#1A2534]"}`}>{d.label}</p>
                   <p className="text-[12px] text-[#6B7A8F]">{fmt(d.at, { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · {inDays(daysUntil(d.at))}</p>
                 </div>
-                {first && <span className="rounded-full bg-[#FBF3E4] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: AMBER_INK }}>Next</span>}
+                {first && <span className="rounded-full bg-[#EAF6FB] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: AMBER_INK }}>Next</span>}
               </li>
             );
           })}
@@ -503,19 +506,22 @@ function DocumentsCard({ ws }: { ws: Workspace }) {
 
 // ── No application yet: choose a pathway ────────────────────────────────────────────────────────────────────────────
 function Pathways({ ws, chosen, className }: { ws: Workspace; chosen: Pathway | null; className?: string }) {
-  const list = chosen ? [...ws.pathways].sort((a, b) => Number(b.pathway === chosen) - Number(a.pathway === chosen)) : ws.pathways;
+  // The public campaign (24 Nov 2026) lists only promoted pathways; one the person asked for (?pathway=) is always shown.
+  const shown = ws.pathways.filter((p) => p.promoted !== false || p.pathway === chosen);
+  const list = chosen ? [...shown].sort((a, b) => Number(b.pathway === chosen) - Number(a.pathway === chosen)) : shown;
+  const ffShown = shown.some((p) => p.pathway === "fully_funded");
   return (
-    <Panel title="Choose your pathway" icon={Sparkles} meta="Partial Funded places are awarded through the Fully Funded selection." className={className}
-      action={<a href="https://gif.ielsco.com/opportunities" className="text-[13px] font-semibold text-[#2F4157] hover:underline">Compare</a>}>
+    <Panel title={shown.length > 1 ? "Choose your pathway" : "Register for GIF Summer 2027"} icon={Sparkles} meta={ffShown ? "Partial Funded places are awarded through the Fully Funded selection." : "20 Super Early Bird places, then 50 Regular places."} className={className}
+      action={<a href={shown.length > 1 ? "https://gif.ielsco.com/opportunities" : "https://gif.ielsco.com/self-funded"} className="text-[13px] font-semibold text-[#2F4157] hover:underline">{shown.length > 1 ? "Compare" : "Details"}</a>}>
       <ul className="grid gap-3">
         {list.map((p) => {
           const future = !p.open && daysUntil(p.opensAt) > 0;
           return (
-            <li key={p.pathway} className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center ${p.pathway === chosen ? "border-[#B8862E] bg-[#FDF8EE] ring-1 ring-[#B8862E]/30" : p.open ? "border-[#E3E7ED] bg-white" : "border-dashed border-[#D5DCE4] bg-[#FAFBFC]"}`} aria-current={p.pathway === chosen ? "true" : undefined}>
+            <li key={p.pathway} className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center ${p.pathway === chosen ? "border-[#5BC2E7] bg-[#EAF6FB] ring-1 ring-[#5BC2E7]/30" : p.open ? "border-[#E3E7ED] bg-white" : "border-dashed border-[#D5DCE4] bg-[#FAFBFC]"}`} aria-current={p.pathway === chosen ? "true" : undefined}>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-heading text-[15px] font-semibold text-[#1A2534]">{p.label}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${p.open ? "bg-[#E8F3EE] text-[#2E6B4F]" : "bg-[#FBF3E4]"}`} style={p.open ? undefined : { color: AMBER_INK }}>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${p.open ? "bg-[#E8F3EE] text-[#2E6B4F]" : "bg-[#EAF6FB]"}`} style={p.open ? undefined : { color: AMBER_INK }}>
                     {p.open ? "Open now" : future ? `Opens ${fmt(p.opensAt, { day: "numeric", month: "short" })}` : "Closed"}
                   </span>
                 </div>

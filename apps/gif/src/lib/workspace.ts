@@ -3,7 +3,7 @@ import { one } from "./db";
 import { findAccountForIelscoUser, type Account, type IelscoUser, type StaffRole } from "./auth";
 import { contextForAccount, requiredActions, nextDeadlines } from "./portal";
 import { currentCohort } from "./cohort";
-import { pathwayOpen, pathwayOpensAt, type Pathway } from "./settings";
+import { pathwayOpen, pathwayOpensAt, promoted, type Pathway } from "./settings";
 import { progressSteps, STATUS_LABEL, PATHWAY_LABEL, type Step } from "./status";
 import { publishedAnnouncements } from "./cms";
 import { tasksComplete, tasksFor } from "./tasks";
@@ -18,7 +18,9 @@ const PAID_STATUSES = ["phase_1_completed", "phase_2_in_progress", "phase_2_subm
 
 export type Workspace = {
   cohort: { id: string; name: string; startsOn: string; endsOn: string; destinations: string[] };
-  pathways: { pathway: Pathway; label: string; open: boolean; opensAt: string; reason: string | null }[];
+  // promoted: featured in the public campaign (settings.campaign); the IELSco Dashboard lists only promoted pathways
+  // unless the person asked for another one (?pathway=). Added 24 Nov 2026; older readers ignore it.
+  pathways: { pathway: Pathway; label: string; open: boolean; opensAt: string; reason: string | null; promoted: boolean }[];
   account: { linked: boolean; staffRole: StaffRole | null } | null;
   application: null | {
     code: string; pathway: Pathway; pathwayLabel: string; status: string; statusLabel: string; mode: "individual" | "team";
@@ -40,7 +42,7 @@ export async function workspaceFor(user: IelscoUser, now = new Date()): Promise<
   const s = cohort.settings;
   const base: Workspace = {
     cohort: { id: cohort.id, name: cohort.name, startsOn: s.dates.programme_start, endsOn: s.dates.programme_end, destinations: ["Singapore", "Malaysia", "Thailand"] },
-    pathways: PATHWAYS.map((p) => { const o = pathwayOpen(s, p, now); return { pathway: p, label: PATHWAY_LABEL[p], open: o.open, opensAt: pathwayOpensAt(s, p), reason: o.open ? null : o.reason ?? null }; }),
+    pathways: PATHWAYS.map((p) => { const o = pathwayOpen(s, p, now); return { pathway: p, label: PATHWAY_LABEL[p], open: o.open, opensAt: pathwayOpensAt(s, p), reason: o.open ? null : o.reason ?? null, promoted: promoted(s, p) }; }),
     account: null, application: null, steps: [], actions: [{ label: "Start your application", href: "/apply" }],
     deadlines: [], obligations: [], payments: [], documents: [], submissions: [], elco: [], announcements: [],
   };

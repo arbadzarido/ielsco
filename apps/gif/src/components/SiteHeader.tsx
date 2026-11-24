@@ -25,7 +25,7 @@ export default function SiteHeader({ signedIn }: { signedIn: boolean }) {
           </nav>
           <div className="header-cta">
             <Link className="signin" href={signedIn ? "/portal" : "/login"}>{signedIn ? "Portal" : "Log in"}</Link>
-            <Link className="btn btn-primary btn-sm" href="/apply" data-track="apply_click">Apply Now</Link>
+            <Link className="btn btn-primary btn-sm" href="/apply?pathway=self_funded" data-track="apply_click">Apply Now</Link>
             <button type="button" className="menu-btn" aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? "Close menu" : "Open menu"} onClick={() => setOpen((v) => !v)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}

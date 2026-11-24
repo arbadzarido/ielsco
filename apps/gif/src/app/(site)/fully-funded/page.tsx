@@ -7,7 +7,7 @@ import { tasksFor } from "@/lib/tasks";
 import { Price } from "@/components/Client";
 import { DeadlineStrip, Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
 
-export const metadata: Metadata = { title: "Fully Funded application", description: "Compete for 10 Fully Funded and 10 Partial Funded places at GIF Summer 2027 in a three-phase selection." };
+export const metadata: Metadata = { title: "Fully Funded application", description: "Compete for 10 Fully Funded and 10 Partial Funded places at GIF Summer 2027 in a three-phase selection.", robots: { index: false, follow: true } /* not promoted in the Self-Funded campaign (24 Nov 2026); the page still works */ };
 export const revalidate = 300;
 
 export default async function FullyFunded() {

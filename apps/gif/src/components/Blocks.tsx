@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { NextDeadline, Price } from "@/components/Client";
-import { PHOTOS, type Photo, type Mentor, type Testimonial, type Faq } from "@/lib/content";
+import { COMPETITION, PHOTOS, type Photo, type Mentor, type Testimonial, type Faq } from "@/lib/content";
 import type { Pathway, Settings } from "@/lib/settings";
-import { DEFAULT_SETTINGS, mentoringPrice, pathwayOpen, pathwayOpensAt } from "@/lib/settings";
+import { DEFAULT_SETTINGS, mentoringPrice, pathwayOpen, pathwayOpensAt, promoted } from "@/lib/settings";
+import { applyHref, selfFundedAvailability } from "@/lib/availability";
 import { minInstallment } from "@/lib/pricing";
 import { fmtDate } from "@/lib/format";
 import { CAMPUS_PHOTOS, PLACES } from "@/lib/places";
@@ -37,15 +38,15 @@ export function Figure({ p, sizes = "(min-width: 900px) 33vw, 100vw", priority =
 }
 
 export function deadlines(s: Settings) {
-  return [
-    // Only Fully Funded waits for 25 Nov 2026; Self-Funded and Mentoring registration has been open since 20 Nov 2026.
+  // Fully Funded milestones only while that pathway is promoted (24 Nov 2026 Self-Funded campaign).
+  const ff = promoted(s, "fully_funded") ? [
     { to: pathwayOpensAt(s, "fully_funded"), label: "Fully Funded applications open in" },
     { to: s.dates.phase1_close, label: "Phase 1 (Fully Funded) closes in" },
     { to: s.dates.phase2_close, label: "Phase 2 closes in" },
     { to: s.dates.phase3_submit_close, label: "Phase 3 video submissions close in" },
     { to: s.dates.results, label: "Results are announced in" },
-    { to: s.dates.programme_start, label: "GIF Summer 2027 starts in" },
-  ];
+  ] : [];
+  return [...ff, { to: s.dates.programme_start, label: "GIF Summer 2027 starts in" }, { to: `${COMPETITION.finale.date}T09:00:00+07:00`, label: "The Grand Finale in Bangkok is in" }];
 }
 
 export function DeadlineStrip({ s }: { s: Settings }) {
@@ -64,6 +65,11 @@ export const opensLabel = (s: Settings, p: Pathway) => fmtDate(pathwayOpensAt(s,
 
 // One line for CTAs: which pathways are open right now.
 export function openingLine(s: Settings = DEFAULT_SETTINGS): string {
+  if (!promoted(s, "fully_funded") && !promoted(s, "mentoring")) {
+    return pathwayOpen(s, "self_funded").open
+      ? `Self-Funded registration is open: ${s.slots.self_funded_early} Super Early Bird places, then ${s.slots.self_funded_regular} Regular places.`
+      : "Self-Funded registration is not open right now.";
+  }
   if (pathwayOpen(s, "fully_funded").open) return "Registration is open for every pathway.";
   const early = (["self_funded", "mentoring"] as Pathway[]).filter((p) => pathwayOpen(s, p).open);
   if (early.length === 2) return `Self-Funded and Project Mentoring registration is open now. Fully Funded applications open on ${opensLabel(s, "fully_funded")}.`;
@@ -223,7 +229,7 @@ export function PhotoBand() {
   );
 }
 
-export function FinalCta({ title = "Your project deserves a bigger room.", body = `${openingLine()} Choose the pathway that fits you and start today; you can save a draft and finish later.` }: { title?: string; body?: string }) {
+export function FinalCta({ title = "Your project deserves a bigger room.", body = `${openingLine()} Register from your IELSco Dashboard; you can save a draft and finish later.` }: { title?: string; body?: string }) {
   return (
     <section className="section dark cta-night">
       <div className="bg" aria-hidden="true"><Image src={PLACES.cbdDusk.src} alt="" fill sizes="100vw" quality={65} /></div>
@@ -233,13 +239,84 @@ export function FinalCta({ title = "Your project deserves a bigger room.", body 
           <div>
             <p className="lead">{body}</p>
             <div className="btn-row" style={{ marginTop: 24 }}>
-              <Link className="btn btn-light" href="/apply" data-track="apply_click">Apply Now</Link>
-              <Link className="btn btn-secondary" href="/opportunities" data-track="explore_click">Explore Opportunities</Link>
+              <a className="btn btn-light" href={applyHref("self_funded")} data-track="apply_click" data-pathway="self_funded">Apply Now</a>
+              <Link className="btn btn-secondary" href="/self-funded" data-track="explore_click">Self-Funded details</Link>
             </div>
           </div>
         </div>
       </div>
       <p className="photo-credit">Photo: Singapore at dusk · {PLACES.cbdDusk.credit.author}, {PLACES.cbdDusk.credit.license}</p>
     </section>
+  );
+}
+
+// ── Self-Funded campaign (24 Nov 2026) ─────────────────────────────────────────────────────────────────────────────
+
+const moneyPair = (m: { IDR: number; USD: number }) => <Price idr={m.IDR} usd={m.USD} />;
+
+// The two Self-Funded allocations with live availability. Places are never shown as taken unless counted.
+export async function Allocations({ s, tone = "light" }: { s: Settings; tone?: "light" | "dark" }) {
+  const a = await selfFundedAvailability();
+  const earlyGone = a ? a.earlyLeft === 0 : false;
+  return (
+    <div className={`allocations ${tone}`} data-testid="allocations">
+      <article className={`alloc alloc-early${earlyGone ? " is-full" : ""}`}>
+        <div className="alloc-top"><span className="alloc-tag">Super Early Bird</span>
+          <span className="alloc-left" data-testid="early-left">{a ? (earlyGone ? "Allocation full" : `${a.earlyLeft} of ${a.earlyTotal} places left`) : `${s.slots.self_funded_early} places`}</span></div>
+        <p className="alloc-price">{moneyPair(s.prices.self_funded_early_total)}</p>
+        <p className="alloc-note">For the first {s.slots.self_funded_early} delegates whose deposit is verified. Your fee is reduced automatically when your place is confirmed.</p>
+        {a && <div className="alloc-bar" aria-hidden="true"><span style={{ width: `${Math.round(((a.earlyTotal - a.earlyLeft) / Math.max(1, a.earlyTotal)) * 100)}%` }} /></div>}
+      </article>
+      <article className="alloc alloc-regular">
+        <div className="alloc-top"><span className="alloc-tag">Regular Self-Funded</span>
+          <span className="alloc-left" data-testid="regular-left">{a ? `${a.regularLeft} of ${a.regularTotal} places left` : `${s.slots.self_funded_regular} places`}</span></div>
+        <p className="alloc-price">{moneyPair(s.prices.self_funded_total)}</p>
+        <p className="alloc-note">The next {s.slots.self_funded_regular} places, once the Super Early Bird places are taken.</p>
+      </article>
+    </div>
+  );
+}
+
+export function PrizePool({ dark = false }: { dark?: boolean }) {
+  return (
+    <div className={`prize${dark ? " on-dark" : ""}`} data-testid="prize-pool">
+      <div className="prize-head">
+        <span className="prize-kicker">Total prize pool</span>
+        <p className="prize-amount">USD {COMPETITION.prizePoolUsd.toLocaleString("en-US")}</p>
+        <p className="prize-sub">{COMPETITION.finalists} finalists · {COMPETITION.awards.length} award levels · one international Grand Finale</p>
+      </div>
+      <ol className="prize-levels">
+        {COMPETITION.awards.map((w) => (
+          <li key={w.level}><strong>{w.level}</strong><span>{w.recipients} {w.recipients === 1 ? "recipient" : "recipients"}</span></li>
+        ))}
+      </ol>
+      <p className="prize-fine">Shared across ten award recipients from the Top {COMPETITION.finalists}; the levels do not receive equal amounts. The amount for each level is announced before the programme. Taking part does not guarantee a place in the Top {COMPETITION.finalists} or any prize.</p>
+    </div>
+  );
+}
+
+export function CompetitionJourney() {
+  return (
+    <ol className="journey" data-testid="journey">
+      {COMPETITION.stages.map((st) => (
+        <li key={st.n} className={st.n === 3 ? "finale" : undefined}>
+          <div className="journey-meta"><span className="journey-stage">Stage {st.n} · {st.country}</span><span className="journey-weight">{st.weight}%</span></div>
+          <h3>{st.title}</h3>
+          <p>{st.body}</p>
+          {st.n === 2 && <p className="journey-cut">Top {COMPETITION.finalists} selected for Thailand</p>}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+export function GrandFinale() {
+  return (
+    <div className="grid g2 finale-parts">
+      <div className="item"><span className="kicker">A · Final stage pitching</span><h3>On the main stage</h3>
+        <p className="muted">The Top {COMPETITION.finalists} present their projects live to public audiences, international delegates, invited guests, judges and people from the startup and social-impact ecosystem.</p></div>
+      <div className="item"><span className="kicker">B · Innovation Booth Expo</span><h3>At their own booth</h3>
+        <p className="muted">Each finalist project has a booth where visitors explore the project, meet the team, try prototypes or demonstrations, ask questions, give feedback and take part in Public Choice voting.</p></div>
+    </div>
   );
 }

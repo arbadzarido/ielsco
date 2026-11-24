@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { GIF_APPLY_URL, GIF_PATHWAYS, GIF_PROGRAMME, GIF_REGISTER_URL, GIF_SITE_URL, gifApplyHref, pathwayOpen, pathwayStatus } from "../src/lib/gif-summer-2027.ts";
+import { GIF_APPLY_URL, GIF_FULLY_FUNDED_PROMOTED, GIF_PATHWAYS, GIF_PUBLIC_PATHWAYS, GIF_PROGRAMME, GIF_REGISTER_URL, GIF_SITE_URL, gifApplyHref, pathwayOpen, pathwayStatus } from "../src/lib/gif-summer-2027.ts";
 import { GIF_POPUP, gifPopupAllowedOn, shouldShowGifPopup, snoozeUntil } from "../src/lib/gif/recruit-popup.ts";
 
 const at = (iso) => Date.parse(iso);
@@ -74,4 +74,11 @@ test("sign-in keeps the GIF pathway preselection (/dashboard/gif?pathway=…)", 
   const proxy = readFileSync(new URL("../src/proxy.ts", import.meta.url), "utf8");
   assert.match(proxy, /signInUrl\.searchParams\.set\('next', gifNext\)/);
   assert.match(proxy, /\(fully_funded\|mentoring\|self_funded\)/);
+});
+
+test("Self-Funded campaign (24 Nov 2026): only Self-Funded is promoted on ielsco.com; the other pathways still exist", () => {
+  assert.deepEqual(GIF_PUBLIC_PATHWAYS.map((p) => p.key), ["self_funded"]);
+  assert.equal(GIF_FULLY_FUNDED_PROMOTED, false);
+  assert.equal(GIF_PATHWAYS.length, 3, "Fully Funded and Mentoring are hidden, not removed");
+  assert.match(GIF_PROGRAMME.description, /USD 5,000 total prize pool/);
 });

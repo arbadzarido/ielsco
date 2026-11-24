@@ -141,19 +141,27 @@ export async function run({ base, mt, env, db: dbc }) {
       }
       await page.goto("/");
       const text = await page.locator("body").innerText();
-      check("home shows Apply Now + Explore Opportunities", text.includes("Apply Now") && text.includes("Explore Opportunities"));
+      check("home shows Apply Now + See the competition", text.includes("Apply Now") && text.includes("See the competition"));
+      check("home leads with the Self-Funded campaign: 20 Super Early Bird + 50 Regular places, live counts", text.includes("Super Early Bird") && /20 of 20 places left/.test(text) && /50 of 50 places left/.test(text));
+      check("home shows the USD 5,000 TOTAL prize pool, Top 10 and four award levels", text.includes("USD 5,000") && /total prize pool/i.test(text) && text.includes("Grand Award") && text.includes("Bronze Award") && text.includes("Top 10"));
+      check("home: the Grand Finale in Bangkok on 2 August 2027 (Day 7)", text.includes("2 August 2027") && text.includes("Bangkok") && /Day 7/i.test(text));
+      check("home: no Fully Funded or Mentoring promotion", !/Fully Funded|Project Mentoring|Join mentoring/.test(text));
+      check("nav: no Selection, Mentorship or Opportunities links", (await page.locator("header nav a", { hasText: /Selection|Mentorship|Opportunities/ }).count()) === 0);
+      check("/opportunities sends visitors to Self-Funded during the campaign", (await (await newPage()).goto("/opportunities")).url().endsWith("/self-funded"));
+      check("hidden pathway pages still work but are noindex", (await (async () => { const pg = await newPage(); await pg.goto("/fully-funded"); return pg.locator("meta[name=robots]").getAttribute("content"); })())?.includes("noindex"));
       check("home marks universities as planned", text.includes("Planned engagement") && !/Confirmed partner/i.test(text));
-      check("home shows mentor placeholders, no invented names", (text.match(/Mentor profile coming soon/g) ?? []).length === 5);
+      check("home: mentor section hidden with the Mentoring pathway, no invented names", !text.includes("Mentor profile coming soon") && !/Mentor:/.test(text));
       check("home has no fabricated testimonials", text.includes("Delegate stories from GIF 2026 will appear here"));
       const css = await page.evaluate(() => [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules].map((r) => r.cssText); } catch { return []; } }).join(" "));
       check("no yellow in CSS palette", !css.toLowerCase().includes("f9e15b") && !css.includes("rgb(249, 225, 91)"));
+      check("new GIF palette: sky #5BC2E7 and the #3E9396 → #102129 gradient; no amber, nightfall or maroon", /91, 194, 231|5bc2e7/i.test(css) && /62, 147, 150|3e9396/i.test(css) && /16, 33, 41|102129/i.test(css) && !/b8862e|184, 134, 46|e0b865|224, 184, 101|914d4d|145, 77, 77/i.test(css));
       await page.getByRole("radio", { name: "Indonesian participants (IDR)" }).first().check();
-      check("currency toggle shows IDR prices", (await page.locator("body").innerText()).includes("IDR 14,999,000"));
+      check("currency toggle shows IDR prices: IDR 13,000,000 Super Early Bird, IDR 17,000,000 Regular", ((t) => t.includes("IDR 13,000,000") && t.includes("IDR 17,000,000"))(await page.locator("body").innerText()));
       await page.getByRole("radio", { name: "International participants (USD)" }).first().check();
       const usdText = await page.locator("body").innerText();
-      check("international prices shown: USD 899 / USD 79", usdText.includes("USD 899") && usdText.includes("USD 79"));
-      check("no old prices anywhere on home", !["USD 900", "USD 800", "USD 1,000", "IDR 15,000,000", "IDR 99,000"].some((x) => usdText.includes(x) || text.includes(x)));
-      check("home states Fully Funded coverage, flights excluded", text.includes("accommodation") && /not international flights|flights not included/i.test(text));
+      check("international prices shown: USD 799 Super Early Bird / USD 999 Regular", usdText.includes("USD 799") && usdText.includes("USD 999"));
+      check("no old prices anywhere on home", !["USD 899", "IDR 14,999,000", "IDR 13,999,000", "USD 900", "USD 800", "USD 1,000", "IDR 15,000,000", "IDR 99,000"].some((x) => usdText.includes(x) || text.includes(x)));
+      check("home never promises prize money to every delegate", /does not guarantee a place in the Top 10 or any prize/i.test(text));
       // Sponsorship form
       await page.goto("/sponsorship");
       // Wait for hydration: typing into the server-rendered form before React attaches gets the fields reset (flaky).
@@ -301,19 +309,19 @@ export async function run({ base, mt, env, db: dbc }) {
       const app = await appOf(B.email);
       check("team self-funded submitted with 2 participants", app.mode === "team" && (await one("select count(*)::int as n from gif.participants where application_id = $1", [app.id])).n === 2);
       const fb = await fee(B.email), fm = await fee(M.email);
-      check("leader: one programme fee IDR 14,999,000 (no fixed deposit split)", fb && fb.amt === 14999000 && fb.currency === "IDR" && !(await obligation(B.email, "deposit")));
+      check("leader: one programme fee IDR 17,000,000 (Regular; no fixed deposit split)", fb && fb.amt === 17000000 && fb.currency === "IDR" && !(await obligation(B.email, "deposit")));
       check("first payment due within 7 days, the rest by 30 June 2027", Math.abs(new Date(fb.first_due_at).getTime() - Date.now() - 7 * 86400000) < 3600000 && new Date(fb.due_at).toISOString() === "2027-06-30T16:59:59.000Z");
-      check("member: programme fee USD 899 (official USD price)", fm && fm.amt === 899 && fm.currency === "USD");
+      check("member: programme fee USD 999 (official USD price)", fm && fm.amt === 999 && fm.currency === "USD");
       check("registration email: deposit from IDR 2,500,000, you choose the amount", !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'application_submitted' and text_body like '%at least IDR 2,500,000%' and text_body like '%You choose how much%'", [B.email])));
       check("team invite email to member", !!(await one("select 1 from gif.email_outbox where to_email = $1 and template = 'team_invite'", [M.email])));
       await page.goto("/portal/payments");
       const bp = page.getByTestId("fee-panel").filter({ hasText: B.name }).first();
       const bt = await bp.innerText();
-      check("fee panel: 'Choose your deposit amount', minimum IDR 2,500,000, fee / verified / remaining", bt.includes("Choose your deposit amount") && bt.includes("IDR 2,500,000") && bt.includes("IDR 14,999,000") && bt.includes("Remaining balance"));
+      check("fee panel: 'Choose your deposit amount', minimum IDR 2,500,000, fee / verified / remaining", bt.includes("Choose your deposit amount") && bt.includes("IDR 2,500,000") && bt.includes("IDR 17,000,000") && bt.includes("Remaining balance"));
       await bp.getByTestId("fee-amount").fill("2000000");
       check("below the minimum: explained, Pay disabled", (await bp.innerText()).includes("The minimum is IDR 2,500,000") && (await bp.getByTestId("pay").isDisabled()));
       await bp.getByTestId("fee-amount").fill("3000000");
-      check("balance after the proposed payment shown", (await bp.getByTestId("fee-after").innerText()) === "IDR 11,999,000");
+      check("balance after the proposed payment shown", (await bp.getByTestId("fee-after").innerText()) === "IDR 14,000,000");
       // Failure path: the payer's chosen amount is what is charged.
       const o1 = await payFee(page, B.name, 3000000, "deny");
       const p1 = await one("select * from gif.payments where order_id = $1", [o1]);
@@ -335,15 +343,15 @@ export async function run({ base, mt, env, db: dbc }) {
       await waitDb(async () => (await fee(B.email)).paid > 0);
       const fb2 = await fee(B.email);
       check("first installment verified → seat confirmed", (await one("select seat_status from gif.participants where email = $1", [B.email])).seat_status === "confirmed");
-      check("early bird: first Self-Funded seat → fee IDR 13,999,000", fb2.amt === 13999000 && !!(await one("select early_bird_at from gif.participants where email = $1", [B.email])).early_bird_at);
+      check("Super Early Bird: first Self-Funded seat → fee IDR 13,000,000", fb2.amt === 13000000 && !!(await one("select early_bird_at from gif.participants where email = $1", [B.email])).early_bird_at);
       check("IDR 3,000,000 credited once (repeated notification ignored)", fb2.paid === 3000000 && fb2.status === "open");
       const pm = await one("select text_body from gif.email_outbox where template = 'payment_received' and to_email = $1 order by created_at desc limit 1", [B.email]);
-      check("payment email shows the remaining balance", !!pm && pm.text_body.includes("Remaining balance: IDR 10,999,000"));
+      check("payment email shows the remaining balance", !!pm && pm.text_body.includes("Remaining balance: IDR 10,000,000"));
       check("app not confirmed until every member's first payment is verified", (await appOf(B.email)).status !== "confirmed_participant");
       await page.goto("/portal/payments");
       const bp2 = page.getByTestId("fee-panel").filter({ hasText: B.name }).first();
       const bt2 = await bp2.innerText();
-      check("after the deposit: 'Pay towards your balance', early-bird price, verified IDR 3,000,000", bt2.includes("Pay towards your balance") && bt2.includes("IDR 13,999,000") && bt2.includes("IDR 3,000,000") && (await bp2.getByTestId("early-bird").count()) === 1);
+      check("after the deposit: 'Pay towards your balance', Super Early Bird price, verified IDR 3,000,000", bt2.includes("Pay towards your balance") && bt2.includes("IDR 13,000,000") && bt2.includes("IDR 3,000,000") && (await bp2.getByTestId("early-bird").count()) === 1);
       await page.context().close();
 
       // Member signs in: sees team, accepts terms, sees only own USD fee, requests an invoice for a chosen amount
@@ -359,7 +367,7 @@ export async function run({ base, mt, env, db: dbc }) {
       await mp.getByText(/Your acceptance has been recorded|You accepted the current version/).first().waitFor();
       await mp.goto("/portal/payments");
       const mtext = await mp.locator("body").innerText();
-      check("member sees only own USD fee", mtext.includes("USD 899") && !mtext.includes("IDR 14,999,000"));
+      check("member sees only own USD fee", mtext.includes("USD 999") && !mtext.includes("IDR 17,000,000"));
       const mpanel = mp.getByTestId("fee-panel").first();
       check("USD fee: minimum IDR 2,500,000 = USD 135.14 at USD 1 = IDR 18,500", (await mpanel.innerText()).includes("USD 135.14") && (await mpanel.innerText()).includes("USD 1 = IDR 18,500"));
       await mpanel.getByTestId("fee-amount").fill("3000000");
@@ -420,7 +428,7 @@ export async function run({ base, mt, env, db: dbc }) {
       check("onboarding emails sent to both", (await one("select count(*)::int as n from gif.email_outbox where template = 'onboarding' and application_id = $1", [app.id])).n === 2);
       await fp.goto(`/admin/applicants/${app.id}`);
       const summary = await fp.getByTestId("fee-summary").innerText();
-      check("admin: fee, verified payments and outstanding per delegate", summary.includes("USD 799") && summary.includes("USD 162.16") && summary.includes("USD 636.84") && summary.includes("IDR 10,999,000") && summary.includes("Early bird"));
+      check("admin: fee, verified payments and outstanding per delegate", summary.includes("USD 799") && summary.includes("USD 162.16") && summary.includes("USD 636.84") && summary.includes("IDR 10,000,000") && summary.includes("Early bird"));
       await fp.context().close();
 
       // Leader: a second installment, then the full remaining balance.
@@ -428,10 +436,10 @@ export async function run({ base, mt, env, db: dbc }) {
       await login(lp, B.email);
       await payFee(lp, B.name, 4000000, "settlement");
       await waitDb(async () => (await fee(B.email)).paid === 7000000);
-      check("second installment IDR 4,000,000 → IDR 7,000,000 verified, IDR 6,999,000 left", (await fee(B.email)).paid === 7000000 && (await fee(B.email)).status === "open");
+      check("second installment IDR 4,000,000 → IDR 7,000,000 verified, IDR 6,000,000 left", (await fee(B.email)).paid === 7000000 && (await fee(B.email)).status === "open");
       const ofull = await payFee(lp, B.name, 0, "settlement", true);
       await waitDb(async () => (await fee(B.email)).status === "paid");
-      check("full balance: charged exactly IDR 6,999,000 and the fee is paid", Number((await one("select amount from gif.payments where order_id = $1", [ofull])).amount) === 6999000 && (await fee(B.email)).paid === 13999000);
+      check("full balance: charged exactly IDR 6,000,000 and the fee is paid", Number((await one("select amount from gif.payments where order_id = $1", [ofull])).amount) === 6000000 && (await fee(B.email)).paid === 13000000);
       check("three verified installments on the fee", (await one("select count(*)::int as n from gif.payments p join gif.participants x on x.id = p.participant_id where x.email = $1 and p.status = 'paid'", [B.email])).n === 3);
       await lp.context().close();
     }
@@ -909,7 +917,7 @@ export async function run({ base, mt, env, db: dbc }) {
       check("parental consent document published", r.status() === 200 && (await page.locator("body").innerText()).includes("Persetujuan Orang Tua/Wali"));
       await page.goto("/payment-terms");
       const pt = await page.locator("body").innerText();
-      check("payment terms quote USD 899 / IDR 14,999,000 and 30 Juni 2027", pt.includes("USD 899") && pt.includes("IDR 14,999,000") && pt.includes("30 Juni 2027"));
+      check("payment terms quote Super Early Bird USD 799 / IDR 13,000,000, Regular USD 999 / IDR 17,000,000 and 30 Juni 2027", ["USD 799", "IDR 13.000.000", "USD 999", "IDR 17.000.000"].every((x) => pt.includes(x) || pt.includes(x.replace(/\./g, ","))) && pt.includes("30 Juni 2027") && !pt.includes("tidak tersedia"));
       await page.context().close();
     }
 

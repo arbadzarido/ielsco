@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_SETTINGS, resolveSettings } from "../../src/lib/settings.ts";
+import { DEFAULT_SETTINGS, promoted, resolveSettings, selfFundedCap } from "../../src/lib/settings.ts";
 import { checkInstallmentAmount, checkInstallmentIdr, earlyBirdDiscount, installmentBounds, isInstallmentKind, minInstallment } from "../../src/lib/pricing.ts";
 
 const s = DEFAULT_SETTINGS;
@@ -12,12 +12,19 @@ test("minimum deposit IDR 2,500,000 = USD 135.14 at USD 1 = IDR 18,500 (rounded 
   assert.ok(135.14 * 18500 >= 2500000, "the USD minimum is never worth less than IDR 2,500,000");
 });
 
-test("prices: advertised USD 899 / IDR 14,999,000; early bird USD 799 / IDR 13,999,000 for the first 10", () => {
-  assert.deepEqual(s.prices.self_funded_total, { IDR: 14999000, USD: 899 });
-  assert.deepEqual(s.prices.self_funded_early_total, { IDR: 13999000, USD: 799 });
-  assert.equal(s.slots.self_funded_early, 10);
-  assert.equal(earlyBirdDiscount(s, "USD"), 100);
-  assert.equal(earlyBirdDiscount(s, "IDR"), 1000000);
+test("prices (24 Nov 2026): Regular USD 999 / IDR 17,000,000 for 50 places; Super Early Bird USD 799 / IDR 13,000,000 for the first 20", () => {
+  assert.deepEqual(s.prices.self_funded_total, { IDR: 17000000, USD: 999 });
+  assert.deepEqual(s.prices.self_funded_early_total, { IDR: 13000000, USD: 799 });
+  assert.equal(s.slots.self_funded_early, 20);
+  assert.equal(s.slots.self_funded_regular, 50);
+  assert.equal(selfFundedCap(s), 70);
+  assert.equal(selfFundedCap(resolveSettings({ slots: { capacity: 60 } })), 60, "never above the cohort capacity");
+  assert.equal(earlyBirdDiscount(s, "USD"), 200);
+  assert.equal(earlyBirdDiscount(s, "IDR"), 4000000);
+  assert.equal(promoted(s, "self_funded"), true);
+  assert.equal(promoted(s, "fully_funded"), false);
+  assert.equal(promoted(s, "mentoring"), false);
+  assert.equal(promoted(resolveSettings({ campaign: { public_pathways: ["self_funded", "mentoring"] } }), "mentoring"), true);
 });
 
 test("installment kinds: the Self-Funded fee / Partial Funded contribution and legacy deposit + balance only", () => {
@@ -84,4 +91,21 @@ test("the minimum follows the settings (rate and IDR minimum), never a hardcoded
   const t = resolveSettings({ payments: { usd_idr_card_rate: 20000, min_installment_idr: 3000000 } });
   assert.equal(minInstallment(t, "USD"), 150);
   assert.equal(installmentBounds(t, "USD", 899)!.minIdr, 3000000);
+});
+
+test("competition facts (24 Nov 2026): USD 5,000 total pool, Top 10, four award levels, ten recipients, weights 25/35/40", async () => {
+  const { COMPETITION, defaultFaq, visibleFaq } = await import("../../src/lib/content.ts");
+  assert.equal(COMPETITION.prizePoolUsd, 5000);
+  assert.equal(COMPETITION.finalists, 10);
+  assert.deepEqual(COMPETITION.awards.map((a) => [a.level, a.recipients]), [["Grand Award", 1], ["Gold Award", 2], ["Silver Award", 3], ["Bronze Award", 4]]);
+  assert.equal(COMPETITION.awards.reduce((n, a) => n + a.recipients, 0), 10);
+  assert.deepEqual(COMPETITION.stages.map((st) => [st.country, st.weight]), [["Singapore", 25], ["Malaysia", 35], ["Thailand", 40]]);
+  assert.equal(COMPETITION.stages.reduce((n, st) => n + st.weight, 0), 100);
+  assert.equal(COMPETITION.finale.date, "2027-08-02");
+  const faq = JSON.stringify(defaultFaq(s));
+  assert.ok(faq.includes("total prize pool") && faq.includes("not a single USD 5,000 prize"), "the pool is never described as one prize");
+  assert.ok(!/USD 5,000 (grand )?prize(?! pool)/i.test(faq.replace("not a single USD 5,000 prize", "")), "never a single USD 5,000 prize");
+  const pub = visibleFaq(defaultFaq(s), s);
+  assert.ok(!pub.some((f) => f.group === "Fully Funded" || f.group === "Mentoring"), "hidden pathways are not in the public FAQ");
+  assert.ok(pub.some((f) => f.group === "Self-Funded") && pub.some((f) => f.group === "Competition"));
 });

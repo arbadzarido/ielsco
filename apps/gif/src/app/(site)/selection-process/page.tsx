@@ -5,7 +5,7 @@ import { SELECTION_CRITERIA } from "@/lib/content";
 import { fmtRange } from "@/lib/format";
 import { DeadlineStrip, Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
 
-export const metadata: Metadata = { title: "Selection Process", description: "How GIF Summer 2027 selects 10 Fully Funded and 10 Partial Funded delegates: phases, criteria and results." };
+export const metadata: Metadata = { title: "Selection Process", description: "How GIF Summer 2027 selects 10 Fully Funded and 10 Partial Funded delegates: phases, criteria and results.", robots: { index: false, follow: true } /* not promoted in the Self-Funded campaign (24 Nov 2026); the page still works */ };
 export const revalidate = 300;
 
 export default async function Selection() {
@@ -31,7 +31,7 @@ export default async function Selection() {
         <div className="wrap">
           <div className="head side"><div><Eyebrow n="02">Criteria</Eyebrow><h2>How evaluators score.</h2></div><p className="lead">Each Phase 3 entry is scored on seven criteria from 1 to 10 by assigned evaluators, who also write feedback. Places go to the highest-ranked applications.</p></div>
           <div className="table-wrap"><table className="t"><thead><tr><th>#</th><th>Criterion</th><th>What evaluators look for</th></tr></thead>
-            <tbody>{SELECTION_CRITERIA.map(([t, d], i) => <tr key={t}><td style={{ color: "var(--gif-amber-ink)", fontWeight: 700 }}>{i + 1}</td><td><strong>{t}</strong></td><td>{d}</td></tr>)}</tbody></table></div>
+            <tbody>{SELECTION_CRITERIA.map(([t, d], i) => <tr key={t}><td style={{ color: "var(--gif-sky-ink)", fontWeight: 700 }}>{i + 1}</td><td><strong>{t}</strong></td><td>{d}</td></tr>)}</tbody></table></div>
         </div>
       </section>
       <section className="section">

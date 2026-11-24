@@ -23,7 +23,7 @@ import { ELCO_PLANS } from "@/data/membership";
 import { Photo } from "@/components/site/Photo";
 import { LandingOpportunities } from "@/components/opportunities/LandingOpportunities";
 import { track } from "@/lib/analytics";
-import { GIF_PATHWAYS, GIF_PROGRAMME, GIF_SITE_URL, pathwayStatus } from "@/lib/gif-summer-2027";
+import { GIF_PUBLIC_PATHWAYS, GIF_PROGRAMME, GIF_SITE_URL, pathwayStatus } from "@/lib/gif-summer-2027";
 
 // Public landing page. Positioning: IELSco is an English community connecting people, English learning and global
 // opportunities across Southeast Asia; Elco AI is its integrated learning technology. The Elco robot is the shared
@@ -263,7 +263,7 @@ function Opportunities() {
               <h3 className={cn(h3, "mt-5")}>GIF Summer 2027: Singapore, Malaysia and Thailand</h3>
               <p className={cn(body, "mt-2")}>{GIF_PROGRAMME.dates}. {GIF_PROGRAMME.description}</p>
               <div className="mt-auto flex flex-wrap gap-2 pt-6">
-                {now && GIF_PATHWAYS.map((p) => <span key={p.key} className={cn(pill, pathwayStatus(p, now.getTime()) === "Open now" && "border-[#2D7A58]/30 text-[#2D7A58]")}>{p.name}: {pathwayStatus(p, now.getTime()).toLowerCase()}</span>)}
+                {now && GIF_PUBLIC_PATHWAYS.map((p) => <span key={p.key} className={cn(pill, pathwayStatus(p, now.getTime()) === "Open now" && "border-[#2D7A58]/30 text-[#2D7A58]")}>{p.name}: {pathwayStatus(p, now.getTime()).toLowerCase()}</span>)}
                 <span className="mt-4 flex w-full items-center gap-1.5 text-[16px] font-semibold text-[#2F4157]">Explore the programme <ArrowRight size={16} aria-hidden="true" /></span>
               </div>
             </div>

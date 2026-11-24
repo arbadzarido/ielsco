@@ -5,7 +5,7 @@ import { audit } from "./audit";
 import { currentCohort } from "./cohort";
 import { sendEmail, deliverQueued } from "./email/send";
 import { applicationSubmittedEmail, guardianConsentEmail, teamInviteEmail } from "./email/templates";
-import { pathwayOpen, type Pathway } from "./settings";
+import { pathwayOpen, selfFundedCap, type Pathway } from "./settings";
 import { currencyFor, plannedObligations, partialFundedObligations, formatMoney, minInstallment } from "./pricing";
 import { applicationSchema, firstErrors, isMinor, normalizePhone, type ApplicationInput } from "./validation";
 import { LEGAL_VERSION, requiredConsents, type ConsentCategory } from "./legal";
@@ -117,6 +117,9 @@ export async function submitApplication(account: { id: string; email: string }, 
   if (a.pathway === "self_funded") {
     const seats = await one<{ n: number }>("select count(*)::int as n from gif.participants where cohort_id = $1 and seat_status = 'confirmed'", [cohort.id]);
     if ((seats?.n ?? 0) + people.length > s.slots.capacity) return { ok: false, errors: { pathway: "There are not enough Self-Funded seats left for your team. Contact us about the waiting list." } };
+    const sf = await one<{ n: number }>(`select count(*)::int as n from gif.participants p join gif.applications ap on ap.id = p.application_id
+      where p.cohort_id = $1 and p.seat_status = 'confirmed' and ap.pathway = 'self_funded'`, [cohort.id]);
+    if ((sf?.n ?? 0) + people.length > selfFundedCap(s)) return { ok: false, errors: { pathway: "There are not enough Self-Funded places left for your team. Contact us about the waiting list." } };
   }
   const taken = await q<{ email: string }>(
     `select p.email from gif.participants p join gif.applications ap on ap.id = p.application_id

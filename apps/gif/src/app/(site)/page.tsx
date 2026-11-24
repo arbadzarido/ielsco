@@ -2,48 +2,54 @@ import Image from "next/image";
 import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
 import { getContent } from "@/lib/cms";
-import { PHOTOS, KEY_DATES, ELCO_PRO_FEATURES } from "@/lib/content";
-import { mentoringPrice } from "@/lib/settings";
+import { COMPETITION, PHOTOS, keyDates, visibleFaq } from "@/lib/content";
 import { minInstallment } from "@/lib/pricing";
+import { promoted } from "@/lib/settings";
 import { fmtRange } from "@/lib/format";
+import { applyHref } from "@/lib/availability";
 import { CurrencyToggle, Price } from "@/components/Client";
-import { DeadlineStrip, Eyebrow, FaqList, FinalCta, openingLine, Figure, MentorPlaceholders, Pathways, PhotoBand, Testimonials, Universities } from "@/components/Blocks";
+import { Allocations, CompetitionJourney, DeadlineStrip, Eyebrow, FaqList, FinalCta, GrandFinale, openingLine, MentorPlaceholders, PhotoBand, PrizePool, Testimonials, Universities } from "@/components/Blocks";
 import { DESTINATIONS, PLACES } from "@/lib/places";
 
 export const revalidate = 300;
 
+// Home: the Self-Funded recruitment campaign (24 Nov 2026). Fully Funded and Mentoring are not promoted here while
+// settings.campaign.public_pathways leaves them out; their pages and registrations keep working.
 export default async function Home() {
   const s = await currentSettingsSafe();
   const [faq, mentors, testimonials] = await Promise.all([getContent("faq"), getContent("mentors"), getContent("testimonials")]);
-  const m = mentoringPrice(s);
+  const apply = applyHref("self_funded");
   const ld = { "@context": "https://schema.org", "@type": "EducationEvent", name: "Global Impact Fellowship Summer 2027", startDate: "2027-07-27", endDate: "2027-08-03",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode", eventStatus: "https://schema.org/EventScheduled",
     location: [{ "@type": "Place", name: "Singapore", address: { "@type": "PostalAddress", addressCountry: "SG" } }, { "@type": "Place", name: "Malaysia", address: { "@type": "PostalAddress", addressCountry: "MY" } }, { "@type": "Place", name: "Thailand", address: { "@type": "PostalAddress", addressCountry: "TH" } }],
     organizer: { "@type": "Organization", name: "IELSco", legalName: "PT English Space Berkah Indonesia", url: "https://www.ielsco.com" },
     maximumAttendeeCapacity: s.slots.capacity, image: "https://gif.ielsco.com/photos/nus-sign.jpg" };
+  const stageOf: Record<string, (typeof COMPETITION.stages)[number]> = Object.fromEntries(COMPETITION.stages.map((st) => [st.country, st]));
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      {/* 1 · Hero */}
+      {/* Hero */}
       <section className="gif-hero" aria-labelledby="hero-heading">
         <div className="bg" aria-hidden="true">
           <Image src={PLACES.marinaBay.src} alt="" fill priority sizes="100vw" quality={70} />
         </div>
         <div className="wrap inner">
           <Image className="mark" src="/brand/gif-logo.png" alt="Global Impact Fellowship" width={238} height={87} priority />
-          <p className="eyebrow">Summer 2027 · 27 July – 3 August</p>
-          <h1 id="hero-heading">Eight days, three countries, one project that <span className="accent">matters</span>.</h1>
-          <p className="lead">GIF Summer 2027 takes high school, undergraduate and college students from Singapore through Malaysia to Thailand to build social impact projects with peers from across the region.</p>
+          <p className="status">Self-Funded applications are open</p>
+          <p className="eyebrow">Summer 2027 · 27 July – 3 August · Singapore → Malaysia → Thailand</p>
+          <h1 id="hero-heading">Build a project. Take it across three countries. <span className="accent">Pitch it in Bangkok.</span></h1>
+          <p className="lead">An eight-day international fellowship where you develop a social-impact project through a three-stage competition, and where ten finalists present and exhibit their work at a public conference and innovation expo, competing for a share of a USD {COMPETITION.prizePoolUsd.toLocaleString("en-US")} prize pool.</p>
           <div className="btn-row">
-            <Link className="btn btn-light" href="/apply" data-track="apply_click">Apply Now <span aria-hidden="true">→</span></Link>
-            <Link className="btn btn-secondary" href="/opportunities" data-track="explore_click">Explore Opportunities</Link>
+            <a className="btn btn-sky" href={apply} data-track="apply_click" data-pathway="self_funded">Apply Now <span aria-hidden="true">→</span></a>
+            <Link className="btn btn-secondary" href="/competition" data-track="explore_click">See the competition</Link>
           </div>
           <ol className="route" aria-label="The route">
             {DESTINATIONS.map((d) => <li key={d.country}><span className="stop">{d.stop}</span><span aria-hidden="true">{d.flag}</span>{d.country}</li>)}
           </ol>
           <ul className="facts" aria-label="Programme facts">
+            <li className="hot">{s.slots.self_funded_early} Super Early Bird places</li>
+            <li>USD {COMPETITION.prizePoolUsd.toLocaleString("en-US")} total prize pool</li>
             <li>8 days, 7 nights</li>
-            <li>Up to {s.slots.capacity} delegates</li>
             <li>Individuals or teams of 2–3</li>
           </ul>
         </div>
@@ -51,14 +57,36 @@ export default async function Home() {
       </section>
       <DeadlineStrip s={s} />
 
-      {/* 2 · Overview */}
-      <section className="section">
+      {/* Self-Funded admission */}
+      <section className="section" id="admission">
         <div className="wrap">
           <div className="head side">
-            <div><Eyebrow n="01">Overview</Eyebrow><h2>A fellowship for students who want to change something.</h2></div>
+            <div><Eyebrow>Self-Funded admission</Eyebrow><h2>Twenty Super Early Bird places. Then fifty more.</h2></div>
             <div>
-              <p className="lead">The Global Impact Fellowship brings young people together around one question: what problem in your community will you take on, and how? You arrive with an idea; you leave with a sharper project, a pitch and a network across Southeast Asia.</p>
-              <p className="muted">Apply on your own or as a team of two or three. Every pathway leads to the same eight days on the road.</p>
+              <p className="lead">Register directly: no essay, pitch deck or video. Your place is confirmed when your first payment is verified, and the first {s.slots.self_funded_early} confirmed delegates secure the Super Early Bird fee.</p>
+              <CurrencyToggle />
+            </div>
+          </div>
+          <Allocations s={s} />
+          <div className="grid g3" style={{ marginTop: 20 }}>
+            <div className="item"><span className="kicker">Deposit, from</span><p className="big-number"><Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} /></p><p className="small muted">You choose the amount, up to the full fee.</p></div>
+            <div className="item"><span className="kicker">The rest</span><p className="big-number" style={{ fontSize: 22 }}>In installments</p><p className="small muted">Each payment from <Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} />, by the balance deadline.</p></div>
+            <div className="item"><span className="kicker">Where you apply</span><p className="big-number" style={{ fontSize: 22 }}>IELSco Dashboard</p><p className="small muted">One IELSco account for your application, payments and receipts.</p></div>
+          </div>
+          <div className="btn-row" style={{ marginTop: 24 }}>
+            <a className="btn btn-primary" href={apply} data-track="apply_click" data-pathway="self_funded">Apply Now</a>
+            <Link className="btn btn-quiet arrow" href="/self-funded">Fees, payments and seats </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Overview */}
+      <section className="section alt">
+        <div className="wrap">
+          <div className="head side">
+            <div><Eyebrow>Overview</Eyebrow><h2>A fellowship for students who want to change something.</h2></div>
+            <div>
+              <p className="lead">The Global Impact Fellowship brings young people together around one question: what problem in your community will you take on, and how? You arrive with an idea and develop it into a social-impact project, stage by stage, with peers from across the region.</p>
             </div>
           </div>
           <div className="grid g4">
@@ -69,11 +97,11 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 3 · Destinations */}
-      <section className="section alt">
+      {/* Destinations, each with its competition stage */}
+      <section className="section">
         <div className="wrap">
-          <div className="head side"><div><Eyebrow n="02">Destinations</Eyebrow><h2>One route, three countries.</h2></div>
-            <p className="lead">The programme moves from Singapore through Malaysia to Thailand, so the ideas you work on meet three different cities, systems and cultures in eight days.</p></div>
+          <div className="head side"><div><Eyebrow>Three countries, three stages</Eyebrow><h2>One route. One project that grows at every stop.</h2></div>
+            <p className="lead">Each country is a stage of the competition, so your project meets three cities, systems and audiences in eight days.</p></div>
           <ol className="destinations">
             {DESTINATIONS.map((d) => (
               <li className="dest" key={d.country}>
@@ -83,145 +111,87 @@ export default async function Home() {
                   <span className="stop">Stop {d.stop}</span>
                   <h3><span className="flag" aria-hidden="true">{d.flag}</span>{d.country}</h3>
                   <span className="where">{d.place}, {d.city}</span>
-                  <p>{d.line}</p>
+                  {stageOf[d.country] && <span className="stage">Stage {stageOf[d.country].n} · {stageOf[d.country].title}</span>}
                 </div>
               </li>
             ))}
           </ol>
-          <p className="small muted" style={{ marginTop: 24 }}>The day-by-day itinerary is published to delegates during participant preparation (from 8 June 2027).</p>
         </div>
       </section>
 
-      {/* 4 · University exposure */}
+      {/* Competition journey */}
+      <section className="section alt" id="competition">
+        <div className="wrap">
+          <div className="head side"><div><Eyebrow>The competition</Eyebrow><h2>Three weighted stages. Ten finalists.</h2></div>
+            <div><p className="lead">Your project is assessed at every stop. After Singapore and Malaysia, ten finalists advance to the Grand Finale in Bangkok.</p>
+              <Link className="btn btn-quiet arrow" href="/competition">How the competition works </Link></div></div>
+          <CompetitionJourney />
+        </div>
+      </section>
+
+      {/* Grand Finale + prize pool */}
+      <section className="section dark finale-band">
+        <div className="wrap">
+          <div className="head side" style={{ marginBottom: 32 }}>
+            <div><Eyebrow>Grand Finale · Day {COMPETITION.finale.day}</Eyebrow><h2>The Top 10 take the stage in Bangkok.</h2>
+              <ul className="finale-date" aria-label="Grand Finale"><li>2 August 2027</li><li>{COMPETITION.finale.city}, {COMPETITION.finale.country}</li><li>Planned open to the public</li></ul></div>
+            <p className="lead">The {COMPETITION.finale.name} is not only a pitching competition: it combines a public conference, a live pitching showcase on the main stage and an exhibition of the finalists&rsquo; projects.</p>
+          </div>
+          <GrandFinale />
+          <div style={{ marginTop: 24 }}><PrizePool dark /></div>
+          <p className="small muted" style={{ marginTop: 16 }}>Public attendance is subject to final venue capacity, event approvals and operational arrangements.</p>
+        </div>
+      </section>
+
+      {/* University exposure */}
       <section className="section">
         <div className="wrap">
-          <div className="head side"><div><Eyebrow n="03">University exposure</Eyebrow><h2>Campus visits we are planning.</h2></div>
+          <div className="head side"><div><Eyebrow>University exposure</Eyebrow><h2>Campus visits we are planning.</h2></div>
             <p className="lead">We are planning engagement with a leading university in each country. Status is shown honestly: planned until agreed in writing.</p></div>
           <Universities s={s} />
         </div>
       </section>
 
-      {/* 5 · Three pathways */}
-      <section className="section alt" id="pathways">
-        <div className="wrap">
-          <div className="head side"><div><Eyebrow n="04">Three pathways</Eyebrow><h2>Choose how you join.</h2></div>
-            <div><p className="lead">Compete for a funded place, get mentored and fast-tracked to the final phase, or register directly.</p><CurrencyToggle /></div></div>
-          <Pathways s={s} />
-        </div>
-      </section>
-
-      {/* 6 · Funded opportunities */}
-      <section className="section">
-        <div className="wrap grid split" style={{ alignItems: "start" }}>
-          <div><Eyebrow n="05">Funded opportunities</Eyebrow><h2>{s.slots.fully_funded} Fully Funded. {s.slots.partial_funded} Partial Funded.</h2>
-            <p className="lead" style={{ marginTop: 20 }}>A competitive, three-phase selection. Partial Funded is an outcome of this selection, not a separate pathway. Funding is never guaranteed.</p>
-            <Link className="btn btn-secondary arrow" href="/fully-funded" style={{ marginTop: 12 }}>How the Fully Funded application works </Link></div>
-          <div>
-            <ol className="timeline">
-              <li className="key"><div className="when">Phase 1 · {fmtRange("2026-11-25", "2027-05-10")}</div><div className="what">Online application, 3 months of Elco Pro for IDR {s.prices.elco_pro_idr.toLocaleString("en-US")}, and social media tasks</div><p className="small muted">A real product you keep, not an application fee: {ELCO_PRO_FEATURES.slice(0, 3).join("; ").toLowerCase()}.</p></li>
-              <li><div className="when">Phase 2 · {fmtRange("2027-05-11", "2027-05-24")}</div><div className="what">Project essay and pitch deck</div></li>
-              <li><div className="when">Phase 3 · {fmtRange("2027-05-25", "2027-05-31")}</div><div className="what">Video presentation (3–5 minutes): 3 days to submit, then 4 days of evaluation</div></li>
-              <li className="key"><div className="when">1 June 2027</div><div className="what">Results: Fully Funded, Partial Funded or Not Selected</div></li>
-            </ol>
-          </div>
-        </div>
-      </section>
-
-      {/* 7 · Mentoring */}
-      <section className="section dark">
-        <div className="wrap grid split-r" style={{ alignItems: "center" }}>
-          <div>
-            <Eyebrow n="06">Mentoring</Eyebrow>
-            <h2>Fifteen Tuesdays that take you straight to Phase 3.</h2>
-            <p className="lead" style={{ marginTop: 20 }}>From 2 February to 11 May 2027, five student startup founders from NUS, UTM and Chulalongkorn guide you from problem to pitch. Mentees skip Phases 1 and 2 and are evaluated in Phase 3 exactly like everyone else.</p>
-            <div className="grid g2" style={{ marginTop: 28 }}>
-              <div className="item"><span className="kicker">{m.tier === "early" ? "Early Bird" : "Regular"}</span><p className="big-number"><Price idr={m.price.IDR} usd={m.price.USD} /></p></div>
-              <div className="item"><span className="kicker">If selected</span><p>Cashback after verification: <Price idr={s.cashback.fully_funded.IDR} usd={s.cashback.fully_funded.USD} /> (Fully Funded) or <Price idr={s.cashback.partial_funded.IDR} usd={s.cashback.partial_funded.USD} /> (Partial Funded).</p></div>
-            </div>
-            <div className="btn-row" style={{ marginTop: 20 }}><Link className="btn btn-light" href="/apply?pathway=mentoring" data-track="pathway_select" data-pathway="mentoring">Join the mentoring</Link><Link className="btn btn-secondary" href="/mentoring">See all 15 sessions</Link></div>
-          </div>
-          <Figure p={PHOTOS.classroom} sizes="(min-width: 1000px) 40vw, 100vw" style={{ maxWidth: 440, marginLeft: "auto" }} />
-        </div>
-      </section>
-
-      {/* 8 · Self-Funded */}
-      <section className="section">
-        <div className="wrap">
-          <div className="head side"><div><Eyebrow n="07">Self-Funded</Eyebrow><h2>Register directly. No essay, no deck, no video.</h2></div>
-            <p className="lead">Secure a place by paying the deposit. Your seat is confirmed only when the deposit is verified; the balance is paid during participant preparation.</p></div>
-          <div className="grid g3">
-            <div className="item"><span className="kicker">Programme fee</span><p className="big-number"><Price idr={s.prices.self_funded_total.IDR} usd={s.prices.self_funded_total.USD} /></p></div>
-            <div className="item"><span className="kicker">Deposit from (confirms your seat)</span><p className="big-number"><Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} /></p><p className="small muted">You choose how much to pay upfront.</p></div>
-            <div className="item"><span className="kicker">Balance</span><p className="big-number" style={{ fontSize: 22 }}>In installments</p><p className="small muted">Each payment from <Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} />, until the balance deadline.</p></div>
-          </div>
-          <p className="small muted" style={{ marginTop: 20 }}>Indonesian participants pay the IDR price; international participants pay the USD price. <Link href="/self-funded">What the fee covers and how to pay</Link>.</p>
-        </div>
-      </section>
-
-      {/* 9 · Project funding */}
-      <section className="section alt">
-        <div className="wrap grid split" style={{ alignItems: "start" }}>
-          <div><Eyebrow n="08">Project funding</Eyebrow><h2>Ways to fund your place.</h2></div>
-          <div className="grid g2">
-            <div className="item"><h4>Win a funded place</h4><p className="muted">Ten Fully Funded and ten Partial Funded places are awarded through the selection. Fully Funded covers the programme fee, accommodation and in-programme transport (not international flights); Partial Funded means a reduced contribution. Final details come with your result on 1 June 2027.</p><Link href="/fully-funded">Fully Funded application</Link></div>
-            <div className="item"><h4>Approach a sponsor</h4><p className="muted">Schools, universities, companies and local governments sometimes support students. We prepare the documentation you need to ask. We do not guarantee sponsorship.</p><Link href="/sponsorship">Sponsorship support</Link></div>
-            <div className="item"><h4>Mentoring cashback</h4><p className="muted">Mentees who are selected receive a cashback after verification. It is conditional on selection.</p><Link href="/mentoring">Mentoring</Link></div>
-            <div className="item"><h4>Pay in two steps</h4><p className="muted">Self-Funded delegates pay a deposit to confirm their seat and the balance later.</p><Link href="/self-funded">Self-Funded</Link></div>
-          </div>
-        </div>
-      </section>
-
-      {/* 10 · Conference and awarding */}
-      <section className="section">
-        <div className="wrap grid split-r" style={{ alignItems: "center" }}>
-          <div>
-            <Eyebrow n="09">Conference and awarding</Eyebrow>
-            <h2>Present the work. Be recognised for it.</h2>
-            <p className="lead" style={{ marginTop: 20 }}>The programme includes a conference where delegates present their projects, and an awarding. At GIF 2026, four teams of twelve delegates presented and were awarded certificates of achievement.</p>
-          </div>
-          <Figure p={PHOTOS.awarding} sizes="(min-width: 1000px) 40vw, 100vw" style={{ maxWidth: 420, marginLeft: "auto" }} />
-        </div>
-      </section>
-
-      {/* 11 · Previous GIF */}
+      {/* Previous GIF */}
       <section className="section alt">
         <div className="wrap">
-          <div className="head side"><div><Eyebrow n="10">Previous GIF</Eyebrow><h2>GIF 2026, Singapore.</h2></div>
+          <div className="head side"><div><Eyebrow>Previous GIF</Eyebrow><h2>GIF 2026, Singapore.</h2></div>
             <div><p className="lead">Batch 2 ran from 17 to 20 November 2026: four days of project incubation on the NUS campus, campus tours and evenings exploring the city.</p><Link className="btn btn-secondary arrow" href="/previous-gif">See GIF 2026 </Link></div></div>
           <PhotoBand />
         </div>
       </section>
 
-      {/* 12 · Testimonials */}
+      {/* Testimonials */}
       <section className="section">
-        <div className="wrap"><div className="head"><Eyebrow n="11">Testimonials</Eyebrow><h2>In delegates&rsquo; own words.</h2></div><Testimonials items={testimonials} /></div>
+        <div className="wrap"><div className="head"><Eyebrow>Testimonials</Eyebrow><h2>In delegates&rsquo; own words.</h2></div><Testimonials items={testimonials} /></div>
       </section>
 
-      {/* 13 · Mentors */}
+      {promoted(s, "mentoring") && (
+        <section className="section alt">
+          <div className="wrap"><div className="head side"><div><Eyebrow>Mentors</Eyebrow><h2>Founders who are still students.</h2></div>
+            <p className="lead">Our mentors build startups while they study, so they know what it takes to turn a student idea into something real.</p></div>
+            <MentorPlaceholders mentors={mentors} /></div>
+        </section>
+      )}
+
+      {/* FAQ */}
       <section className="section alt">
-        <div className="wrap"><div className="head side"><div><Eyebrow n="12">Mentors</Eyebrow><h2>Founders who are still students.</h2></div>
-          <p className="lead">Our mentors build startups while they study, so they know what it takes to turn a student idea into something real.</p></div>
-          <MentorPlaceholders mentors={mentors} /></div>
-      </section>
-
-      {/* 14 · FAQ */}
-      <section className="section">
         <div className="wrap grid split" style={{ alignItems: "start" }}>
-          <div><Eyebrow n="13">FAQ</Eyebrow><h2>Questions, answered.</h2><p className="muted" style={{ marginTop: 16 }}>More in the <Link href="/faq">full FAQ</Link>, or write to <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>.</p></div>
-          <FaqList items={faq.slice(0, 7)} />
+          <div><Eyebrow>FAQ</Eyebrow><h2>Questions, answered.</h2><p className="muted" style={{ marginTop: 16 }}>More in the <Link href="/faq">full FAQ</Link>, or write to <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>.</p></div>
+          <FaqList items={visibleFaq(faq, s).slice(0, 7)} />
         </div>
       </section>
 
-      {/* Key dates, then 15 · Final CTA */}
-      <section className="section alt tight">
+      {/* Key dates */}
+      <section className="section tight">
         <div className="wrap">
-          <Eyebrow n="14">Master timeline</Eyebrow>
+          <Eyebrow>Key dates</Eyebrow>
           <div className="table-wrap"><table className="t"><tbody>
-            {KEY_DATES.map((d) => <tr key={d.label}><td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{fmtRange(d.date, "end" in d ? d.end : undefined)}</td><td>{d.label}</td></tr>)}
+            {keyDates(s).map((d) => <tr key={d.label}><td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{fmtRange(d.date, "end" in d ? d.end : undefined)}</td><td>{d.label}</td></tr>)}
           </tbody></table></div>
         </div>
       </section>
-      <FinalCta body={`${openingLine(s)} Choose the pathway that fits you and start today; you can save a draft and finish later.`} />
+      <FinalCta title="Your project deserves a bigger room." body={`${openingLine(s)} Register from your IELSco Dashboard; you can save a draft and finish later.`} />
     </>
   );
 }

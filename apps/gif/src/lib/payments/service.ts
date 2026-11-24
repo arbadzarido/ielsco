@@ -8,7 +8,7 @@ import { siteUrl } from "../request";
 import { sendEmail, deliverQueued } from "../email/send";
 import { onboardingEmail, participantUrl, paymentFailedEmail, paymentReceivedEmail } from "../email/templates";
 import { cardAmountIdr, checkInstallmentAmount, checkInstallmentIdr, collectionMethod, earlyBirdDiscount, formatMoney, installmentBounds, isInstallmentKind } from "../pricing";
-import type { Settings } from "../settings";
+import { selfFundedCap, type Settings } from "../settings";
 import { LEGAL_VERSION, PAYMENT_CONSENTS } from "../legal";
 import { recordServerEvent } from "../analytics";
 import { midtransGateway, paymentsState, type GatewayStatus } from "./gateway";
@@ -112,6 +112,11 @@ export async function startCheckout(accountId: string, obligationIdIn: string, o
   if (installment && ob.seat_status !== "confirmed") {
     const seats = await one<{ n: number }>("select count(*)::int as n from gif.participants where cohort_id = $1 and seat_status = 'confirmed'", [cohort.id]);
     if ((seats?.n ?? 0) >= s.slots.capacity) throw new PaymentError("All seats are taken. Contact us to join the waiting list.", "full");
+    if (ob.pathway === "self_funded") {
+      const sf = await one<{ n: number }>(`select count(*)::int as n from gif.participants p join gif.applications a on a.id = p.application_id
+        where p.cohort_id = $1 and p.seat_status = 'confirmed' and a.pathway = 'self_funded'`, [cohort.id]);
+      if ((sf?.n ?? 0) >= selfFundedCap(s)) throw new PaymentError("All Self-Funded places are taken. Contact us to join the waiting list.", "full");
+    }
   }
 
   // Reuse a live checkout for this obligation instead of creating a second payment, so a double click or a second tab
@@ -337,10 +342,13 @@ export async function assignEarlyBirds(db: pg.PoolClient, s: Settings, _particip
      where p.cohort_id = $1 and a.pathway = 'self_funded' and p.seat_status = 'confirmed' and p.early_bird_at is null and p.withdrawn_at is null
      order by p.seat_confirmed_at, p.created_at limit $2`, [cohort.id, slots - taken])).rows;
   for (const p of next) {
-    const discount = earlyBirdDiscount(s, p.currency);
     const fee = (await db.query<{ id: string; amount: number; paid_amount: number }>(
       `select id, amount::float8 as amount, paid_amount::float8 as paid_amount from gif.obligations
        where participant_id = $1 and kind in ('full', 'balance') and status in ('open', 'paid') order by case kind when 'full' then 0 else 1 end, created_at desc limit 1 for update`, [p.id])).rows[0];
+    // The fee becomes the Super Early Bird price (never more than what was recorded), so a fee recorded at an older regular
+    // price (USD 899 before 24 Nov 2026) is reduced to the same early price as a USD 999 one.
+    const early = s.prices.self_funded_early_total[p.currency];
+    const discount = fee ? Math.max(0, Math.round((fee.amount - Math.min(fee.amount, early)) * 100) / 100) : earlyBirdDiscount(s, p.currency);
     await db.query("update gif.participants set early_bird_at = now(), fee_discount = $2, fee_discount_currency = $3, updated_at = now() where id = $1", [p.id, discount, p.currency]);
     if (fee && discount > 0) {
       const amount = Math.max(0, Math.round((fee.amount - discount) * 100) / 100);

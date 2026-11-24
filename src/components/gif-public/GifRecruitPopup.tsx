@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ArrowRight, ArrowUpRight, X } from "lucide-react";
-import { GIF_PATHWAYS, GIF_PROGRAMME, GIF_SITE_URL, gifApplyHref, pathwayOpen, pathwayStatus } from "@/lib/gif-summer-2027";
+import { GIF_FULLY_FUNDED_PROMOTED, GIF_PUBLIC_PATHWAYS as GIF_PATHWAYS, GIF_PROGRAMME, GIF_SITE_URL, gifApplyHref, pathwayOpen, pathwayStatus } from "@/lib/gif-summer-2027";
 import { GIF_POPUP, GIF_POPUP_KEY, GIF_POPUP_SESSION_KEY, OTHER_POPUP_SESSION_KEYS, gifPopupAllowedOn, shouldShowGifPopup, snoozeUntil } from "@/lib/gif/recruit-popup";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 // Shown at most once per session, only after engagement (time on page or scrolling), never on top of another dialog,
 // never in a session where the Open Recruitment 2027 popup appeared, and not again for 7 days after closing (30 after
 // clicking through). Turn it off with GIF_POPUP.enabled.
-const AMBER = "#B8862E", AMBER_SOFT = "#E0B865", NIGHTFALL = "#304156";
-const focus = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B865] focus-visible:ring-offset-2";
+// GIF brand colours (24 Nov 2026: sky #5BC2E7 + signature gradient #3E9396 → #102129; names kept for the call sites).
+const AMBER = "#5BC2E7", AMBER_SOFT = "#8FD6F0", NIGHTFALL = "#102129";
+const focus = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8FD6F0] focus-visible:ring-offset-2";
 
 const safe = <T,>(f: () => T, fallback: T): T => { try { return f(); } catch { return fallback; } };
 
@@ -122,22 +123,22 @@ export function GifRecruitPopup() {
             <span>{GIF_PROGRAMME.route.join(" · ")}</span>
           </div>
 
-          <ul className="mt-4 grid gap-2 sm:mt-5 sm:grid-cols-3" aria-label="Three ways to join">
+          <ul className={cn("mt-4 grid gap-2 sm:mt-5", GIF_PATHWAYS.length > 1 && "sm:grid-cols-3")} aria-label="Ways to join">
             {GIF_PATHWAYS.map((p, i) => {
               const isOpen = pathwayOpen(p, now);
               return (
                 <li key={p.key} className="flex items-center justify-between gap-3 rounded-2xl border border-[#E6E9EE] bg-[#FAFBFC] px-3.5 py-2.5 sm:flex-col sm:items-stretch sm:justify-start sm:gap-0 sm:p-3.5">
                   <span className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold text-white" style={{ background: i === 0 ? AMBER : NIGHTFALL }} aria-hidden="true">{i + 1}</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-bold text-white" style={{ background: NIGHTFALL }} aria-hidden="true">{i + 1}</span>
                     <span className="text-[15px] font-bold text-[#1A2534]">{p.name}</span>
                   </span>
                   <span className="mt-1.5 hidden flex-1 text-[13px] leading-snug text-[#2F4157]/75 sm:block">{p.line}</span>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:mt-2 sm:self-start", isOpen ? "bg-[#E8F3EE] text-[#2E6B4F]" : "bg-[#FBF3E4] text-[#8C6420]")}>{pathwayStatus(p, now)}</span>
+                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:mt-2 sm:self-start", isOpen ? "bg-[#E8F3EE] text-[#2E6B4F]" : "bg-[#EAF6FB] text-[#176A8C]")}>{pathwayStatus(p, now)}</span>
                 </li>
               );
             })}
           </ul>
-          <p className="mt-2 text-[12px] text-[#2F4157]/60">Each pathway has its own requirements and process. Partial Funded places come from the Fully Funded selection.</p>
+          {GIF_FULLY_FUNDED_PROMOTED && <p className="mt-2 text-[12px] text-[#2F4157]/60">Each pathway has its own requirements and process. Partial Funded places come from the Fully Funded selection.</p>}
 
           <div className="mt-5 flex flex-col gap-2 sm:mt-6 sm:flex-row">
             <a href={GIF_SITE_URL} onClick={() => close("clicked", "explore")} data-testid="gif-popup-explore"
@@ -145,7 +146,7 @@ export function GifRecruitPopup() {
               Explore GIF Summer 2027 <ArrowUpRight size={18} aria-hidden="true" />
             </a>
             {anyOpen && (
-              <a href={gifApplyHref()} onClick={() => close("clicked", "apply")} data-testid="gif-popup-apply"
+              <a href={gifApplyHref(GIF_PATHWAYS.length === 1 ? GIF_PATHWAYS[0].key : undefined)} onClick={() => close("clicked", "apply")} data-testid="gif-popup-apply"
                 className={cn("inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-[#D5DBE3] px-6 text-[16px] font-semibold text-[#1A2534] hover:border-[#2F4157]", focus)}>
                 Apply now <ArrowRight size={18} aria-hidden="true" />
               </a>

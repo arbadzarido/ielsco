@@ -43,15 +43,21 @@ export interface Settings {
     mentoring_regular: Money;
     self_funded_total: Money;
     self_funded_deposit: Money; // legacy fixed deposit (registrations before 22 Nov 2026); new fees are paid in installments
-    // Early bird (founder decision 22 Nov 2026): the first `slots.self_funded_early` Self-Funded delegates whose first
-    // payment is verified pay this fee instead of self_funded_total. Not advertised on the public site.
+    // Super Early Bird (founder decisions 22 and 24 Nov 2026): the first `slots.self_funded_early` Self-Funded delegates
+    // whose first payment is verified pay this fee instead of self_funded_total. Advertised on the site since 24 Nov 2026.
     self_funded_early_total: Money;
     partial_funded_payable: Money | null; // the Partial Funded participant contribution
   };
   cashback: { fully_funded: Money; partial_funded: Money };
   // What each funded outcome covers, as published (founder decision 20 Nov 2026). Shown on the site and in result emails.
   awards: { fully_funded_covers: string[]; partial_funded_covers: string[]; not_included: string[] };
-  slots: { fully_funded: number; partial_funded: number; capacity: number; self_funded_early: number };
+  // self_funded_early: Super Early Bird places; self_funded_regular: the regular Self-Funded places after them (24 Nov 2026).
+  // Self-Funded seats are capped at self_funded_early + self_funded_regular (and the cohort capacity).
+  slots: { fully_funded: number; partial_funded: number; capacity: number; self_funded_early: number; self_funded_regular: number };
+  // Public campaign (founder decision 24 Nov 2026): which pathways the public site promotes. The others keep working
+  // (registration, portal, admin, records) but are not featured, linked from navigation or offered in the application form
+  // unless someone opens them directly. Temporary marketing visibility, not a cancellation.
+  campaign: { public_pathways: Pathway[] };
   payments: {
     // International (USD-priced) payers (founder decision 21 Nov 2026, docs/gif-platform/PAYMENTS.md "International"):
     // A) request an invoice (bank transfer, verified by Finance) — always available;
@@ -117,12 +123,14 @@ export const DEFAULT_SETTINGS: Settings = {
     elco_pro_months: 3,
     mentoring_early: { IDR: 1199000, USD: 79 },
     mentoring_regular: { IDR: 1499000, USD: 99 },
-    self_funded_total: { IDR: 14999000, USD: 899 },
+    // Regular Self-Funded fee (24 Nov 2026; was USD 899 / IDR 14,999,000 from 20 Nov). Registrations made before a price
+    // change keep the amount recorded on their fee.
+    self_funded_total: { IDR: 17000000, USD: 999 },
     // Deposit carried over from the original programme brief (USD 300 / IDR 5,000,000); not re-confirmed with the
     // 20 Nov price change, so it stays an admin setting (docs/gif-platform/DECISIONS.md).
     self_funded_deposit: { IDR: 5000000, USD: 300 },
     partial_funded_payable: { IDR: 10999000, USD: 699 },
-    self_funded_early_total: { IDR: 13999000, USD: 799 },
+    self_funded_early_total: { IDR: 13000000, USD: 799 }, // Super Early Bird (24 Nov 2026; was IDR 13,999,000)
   },
   cashback: { fully_funded: { IDR: 299000, USD: 19 }, partial_funded: { IDR: 749000, USD: 49 } },
   awards: {
@@ -130,7 +138,8 @@ export const DEFAULT_SETTINGS: Settings = {
     partial_funded_covers: ["A reduced participant contribution instead of the Self-Funded fee"],
     not_included: ["International flights to Singapore and from Thailand"],
   },
-  slots: { fully_funded: 10, partial_funded: 10, capacity: 100, self_funded_early: 10 },
+  slots: { fully_funded: 10, partial_funded: 10, capacity: 100, self_funded_early: 20, self_funded_regular: 50 },
+  campaign: { public_pathways: ["self_funded"] },
   payments: {
     // On since 21 Nov 2026 (founder go-ahead): international payers may pay USD items by card at the fixed rate.
     international_cards: true,
@@ -231,4 +240,16 @@ export function pathwayOpen(s: Settings, p: Pathway, now = new Date()): { open: 
     if (close && t > new Date(close).getTime()) return { open: false, reason: "Self-Funded registration has closed." };
   }
   return { open: true };
+}
+
+// Does the public site promote this pathway right now? (Registration may still be open: see pathwayOpen.)
+export function promoted(s: Settings, p: Pathway): boolean {
+  const list = Array.isArray(s.campaign?.public_pathways) ? s.campaign.public_pathways : ["fully_funded", "mentoring", "self_funded"];
+  return list.includes(p);
+}
+
+// Self-Funded seat cap: Super Early Bird + regular places, never above the cohort capacity.
+export function selfFundedCap(s: Settings): number {
+  const n = (s.slots.self_funded_early ?? 0) + (s.slots.self_funded_regular ?? 0);
+  return n > 0 ? Math.min(n, s.slots.capacity) : s.slots.capacity;
 }

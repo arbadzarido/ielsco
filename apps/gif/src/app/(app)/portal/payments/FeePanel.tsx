@@ -38,7 +38,7 @@ export function FeePanel(p: FeePanelProps) {
           <h3 id={`fee-${p.obligationId}`} style={{ margin: 0 }}>{heading}</h3>
           <p className="small muted" style={{ margin: "4px 0 0" }}>{p.label}{p.delegate ? ` · ${p.delegate}` : ""}</p>
         </div>
-        {p.earlyBird && <span className="badge ok" data-testid="early-bird">Early-bird price · {p.earlyBird.price}</span>}
+        {p.earlyBird && <span className="badge ok" data-testid="early-bird">Super Early Bird price · {p.earlyBird.price}</span>}
       </div>
       <p className="small" style={{ margin: "10px 0 14px" }}>
         {p.firstPayment
