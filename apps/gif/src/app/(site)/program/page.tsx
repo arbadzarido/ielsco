@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { currentSettingsSafe } from "@/lib/cohort";
 import { COMPETITION, PHOTOS, keyDates } from "@/lib/content";
 import { fmtRange } from "@/lib/format";
-import { DeadlineStrip, Eyebrow, Figure, FinalCta, PageHero, Universities } from "@/components/Blocks";
+import { DeadlineStrip, Elco, Eyebrow, Figure, FinalCta, PageHero, Universities } from "@/components/Blocks";
 
 export const metadata: Metadata = { title: "Program", description: "GIF Summer 2027: 8 days and 7 nights from Singapore through Malaysia to Thailand, 27 July – 3 August 2027." };
 export const revalidate = 300;
@@ -45,7 +45,7 @@ export default async function Program() {
       <section className="section alt">
         <div className="wrap">
           <div className="head side"><div><Eyebrow>Participant preparation</Eyebrow><h2>About seven weeks to get ready.</h2></div>
-            <p className="lead">From 8 June 2027, step by step in your portal.</p></div>
+            <div className="with-elco"><p className="lead">From 8 June 2027, step by step in your portal.</p><Elco pose="writing" /></div></div>
           <div className="grid g3">
             {[["Payment", "Settle your balance in the portal."], ["Visa", "We provide documents; embassies decide."],
               ["Travel", "Arrive in Singapore, leave from Thailand."], ["Insurance", "Travel and health cover is required."],

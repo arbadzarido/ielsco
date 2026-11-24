@@ -10,6 +10,17 @@ import { minInstallment } from "@/lib/pricing";
 import { fmtDate } from "@/lib/format";
 import { CAMPUS_PHOTOS, PLACES } from "@/lib/places";
 
+// Elco, the IELSco mascot, as a small companion (one per page, never in the hero). Decorative: aria-hidden.
+// Motion is CSS only (globals.css, "Elco companion"): a slow float, a rise-in on scroll, a hop on hover; off with reduced motion.
+export type ElcoPose = "thinking" | "trophy" | "explaining" | "presenting" | "writing" | "talking" | "reading" | "relaxed";
+export function Elco({ pose, className = "" }: { pose: ElcoPose; className?: string }) {
+  return (
+    <span className={`elco ${className}`.trim()} aria-hidden="true" data-pose={pose}>
+      <Image src={`/elco/${pose}.svg`} alt="" width={160} height={130} unoptimized />
+    </span>
+  );
+}
+
 // IELSco eyebrow: teal, uppercase, no editorial numbering (n is accepted for older call sites and ignored).
 export function Eyebrow({ children }: { n?: string; children: ReactNode }) {
   return <div className="eyebrow"><span>{children}</span></div>;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { COMPETITION } from "@/lib/content";
 import { applyHref } from "@/lib/availability";
-import { CompetitionJourney, Eyebrow, FinalCta, GrandFinale, PageHero, PrizePool } from "@/components/Blocks";
+import { CompetitionJourney, Elco, Eyebrow, FinalCta, GrandFinale, PageHero, PrizePool } from "@/components/Blocks";
 
 export const metadata: Metadata = {
   title: "Competition",
@@ -40,7 +40,7 @@ export default function Competition() {
       <section className="section">
         <div className="wrap">
           <div className="head side"><div><Eyebrow>Awards</Eyebrow><h2>USD {COMPETITION.prizePoolUsd.toLocaleString("en-US")} across ten award recipients.</h2></div>
-            <p className="lead">Four award levels, all from the Top {COMPETITION.finalists}.</p></div>
+            <div className="with-elco"><p className="lead">Four award levels, all from the Top {COMPETITION.finalists}.</p><Elco pose="trophy" /></div></div>
           <PrizePool />
           <div className="notice" style={{ marginTop: 24 }}>
             <p><strong>Announced before the programme:</strong> amounts per level, individual or team awards, the scorecard, the Public Choice vote and how prizes are paid.</p>

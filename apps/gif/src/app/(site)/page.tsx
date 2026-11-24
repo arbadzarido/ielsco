@@ -8,7 +8,7 @@ import { promoted } from "@/lib/settings";
 import { fmtRange } from "@/lib/format";
 import { applyHref } from "@/lib/availability";
 import { CurrencyToggle, Price } from "@/components/Client";
-import { Allocations, DeadlineStrip, Eyebrow, FaqList, FinalCta, MentorPlaceholders, openingLine, PrizePool, Testimonials, Universities } from "@/components/Blocks";
+import { Allocations, DeadlineStrip, Elco, Eyebrow, FaqList, FinalCta, MentorPlaceholders, openingLine, PrizePool, Testimonials, Universities } from "@/components/Blocks";
 import { DESTINATIONS, PLACES } from "@/lib/places";
 
 export const revalidate = 300;
@@ -49,11 +49,6 @@ export default async function Home() {
             <a className="btn btn-sky" href={apply} data-track="apply_click" data-pathway="self_funded">Apply Now <span aria-hidden="true">→</span></a>
             <Link className="btn btn-secondary" href="/competition" data-track="explore_click">See the competition</Link>
           </div>
-          <ul className="facts" aria-label="Programme facts">
-            <li className="hot">{s.slots.self_funded_early} Super Early Bird places</li>
-            <li>8 days, 7 nights</li>
-            <li>Individuals or teams of 2–3</li>
-          </ul>
         </div>
         <p className="credit">Photo: Marina Bay, Singapore · {PLACES.marinaBay.credit.author}, {PLACES.marinaBay.credit.license} · <Link href="/photo-credits">Credits</Link></p>
       </section>
@@ -192,7 +187,7 @@ export default async function Home() {
           <div>
             <div className="qa-head">
               <div><Eyebrow>FAQ</Eyebrow><h2>Questions, answered.</h2></div>
-              <Image className="elco-pose" src="/elco/thinking.svg" alt="" width={120} height={92} aria-hidden="true" />
+              <Elco pose="thinking" />
             </div>
             <FaqList items={visibleFaq(faq, s).slice(0, 6)} />
             <p className="small muted" style={{ marginTop: 16 }}>More in the <Link href="/faq">full FAQ</Link>, or write to <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>.</p>

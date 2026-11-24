@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Eyebrow, PageHero } from "@/components/Blocks";
+import { Elco, Eyebrow, PageHero } from "@/components/Blocks";
 import SponsorshipForm from "./SponsorshipForm";
 
 export const metadata: Metadata = { title: "Sponsorship Support", description: "Request documentation support to approach sponsors for GIF Summer 2027. Sponsorship is not guaranteed." };
@@ -22,6 +22,7 @@ export default function Sponsorship() {
             <div className="notice warn" style={{ marginTop: 24 }}>
               <p><strong>Documentation support only.</strong> IELSco does not guarantee sponsorship, does not contact sponsors on your behalf unless agreed in writing, and your payment deadlines stay the same while you wait for a sponsor&rsquo;s decision.</p>
             </div>
+            <Elco pose="relaxed" className="below" />
           </div>
           <div className="panel"><h2 style={{ fontSize: 30, marginBottom: 16 }}>Request support</h2><SponsorshipForm /></div>
         </div>
