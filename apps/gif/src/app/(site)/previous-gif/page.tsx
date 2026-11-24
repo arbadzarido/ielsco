@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PHOTOS } from "@/lib/content";
 import { getContent } from "@/lib/cms";
-import { Eyebrow, Figure, FinalCta, openingLine, PageHero, PhotoBand, Testimonials } from "@/components/Blocks";
+import { Elco, Eyebrow, Figure, FinalCta, openingLine, PageHero, PhotoBand, Testimonials } from "@/components/Blocks";
 
 export const metadata: Metadata = { title: "Previous GIF", description: "GIF 2026 Batch 2 in Singapore, 17–20 November 2026: four teams, twelve delegates." };
 export const revalidate = 300;
@@ -34,7 +34,7 @@ export default async function Previous() {
         </div>
       </section>
       <section className="section">
-        <div className="wrap"><div className="head"><Eyebrow n="03">Delegates</Eyebrow><h2>In their own words.</h2></div><Testimonials items={testimonials} /></div>
+        <div className="wrap"><div className="head head-elco"><div><Eyebrow n="03">Delegates</Eyebrow><h2>In their own words.</h2></div><Elco pose="talking" /></div><Testimonials items={testimonials} /></div>
       </section>
       <FinalCta title="Summer 2027 goes further." body={`Three countries instead of one, up to 100 delegates instead of twelve. ${openingLine()}`} />
     </>

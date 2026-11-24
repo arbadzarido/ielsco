@@ -7,7 +7,7 @@ import { COMPETITION } from "@/lib/content";
 import { applyHref } from "@/lib/availability";
 import { selfFundedCap } from "@/lib/settings";
 import { CurrencyToggle, Price } from "@/components/Client";
-import { Allocations, Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
+import { Allocations, Elco, Eyebrow, FinalCta, PageHero } from "@/components/Blocks";
 
 export const metadata: Metadata = { title: "Self-Funded", description: "Register directly for GIF Summer 2027: 20 Super Early Bird places, then 50 Regular Self-Funded places, with a flexible deposit to confirm your seat." };
 export const revalidate = 300;
@@ -30,7 +30,7 @@ export default async function SelfFunded() {
       </section>
       <section className="section alt">
         <div className="wrap">
-          <div className="head side"><div><Eyebrow>How you pay</Eyebrow><h2>A deposit you choose, the rest in installments.</h2></div></div>
+          <div className="head side"><div><Eyebrow>How you pay</Eyebrow><h2>A deposit you choose, the rest in installments.</h2></div><Elco pose="explaining" className="end" /></div>
           <div className="grid g3">
             <div className="item"><span className="kicker">1 · Deposit, from</span><p className="big-number"><Price idr={s.payments.min_installment_idr} usd={minInstallment(s, "USD")} /></p>
               <p className="small muted">You choose the amount, up to the full fee. {s.dates.deposit_due_days ? `Due within ${s.dates.deposit_due_days} days of registering; ` : ""}your seat is confirmed once it is verified.</p></div>

@@ -4,7 +4,7 @@ import { currentSettingsSafe } from "@/lib/cohort";
 import { COMPETITION } from "@/lib/content";
 import { promoted } from "@/lib/settings";
 import { PHOTOS } from "@/lib/content";
-import { Eyebrow, Figure, FinalCta, PageHero } from "@/components/Blocks";
+import { Elco, Eyebrow, Figure, FinalCta, PageHero } from "@/components/Blocks";
 
 export const metadata: Metadata = { title: "About GIF", description: "What the Global Impact Fellowship is, who runs it and who it is for." };
 export const revalidate = 300;
@@ -17,7 +17,7 @@ export default async function About() {
         lead="IELSco's international programme for students who want to take on a problem in their community." />
       <section className="section">
         <div className="wrap grid split" style={{ alignItems: "start" }}>
-          <div><Eyebrow n="01">Who runs it</Eyebrow><h2>IELSco</h2></div>
+          <div><Eyebrow n="01">Who runs it</Eyebrow><h2>IELSco</h2><Elco pose="presenting" className="below" /></div>
           <div>
             <p className="lead">GIF is organised by IELSco (PT English Space Berkah Indonesia), an English learning community connecting young people in Southeast Asia with English practice and global opportunities.</p>
             <p>IELSco also builds Elco, an AI English practice app. Contact: <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>, WhatsApp <a href="https://wa.me/6288297253491">+62 882-9725-3491</a>.</p>
