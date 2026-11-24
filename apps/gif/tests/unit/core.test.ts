@@ -16,10 +16,13 @@ test("published facts are the defaults", () => {
   assert.equal(s.prices.elco_pro_idr, 98000);
   assert.deepEqual(s.prices.mentoring_early, { IDR: 1199000, USD: 79 });
   assert.deepEqual(s.prices.mentoring_regular, { IDR: 1499000, USD: 99 });
-  assert.deepEqual(s.prices.self_funded_total, { IDR: 14999000, USD: 899 });
+  assert.deepEqual(s.prices.self_funded_total, { IDR: 17000000, USD: 999 }, "Regular Self-Funded (24 Nov 2026)");
+  assert.deepEqual(s.prices.self_funded_early_total, { IDR: 13000000, USD: 799 }, "Super Early Bird (24 Nov 2026)");
+  assert.deepEqual([s.slots.self_funded_early, s.slots.self_funded_regular], [20, 50]);
+  assert.deepEqual(s.campaign.public_pathways, ["self_funded"]);
   assert.deepEqual(s.prices.partial_funded_payable, { IDR: 10999000, USD: 699 });
   assert.deepEqual(s.prices.self_funded_deposit, { IDR: 5000000, USD: 300 });
-  assert.deepEqual(balanceOf(s), { IDR: 9999000, USD: 599 });
+  assert.deepEqual(balanceOf(s), { IDR: 12000000, USD: 699 });
   assert.equal(s.dates.mentoring_early_bird_until, "2026-12-31T23:59:59+07:00");
   assert.equal(s.dates.balance_due, "2027-06-30T23:59:59+07:00");
   assert.equal(s.dates.deposit_due_days, 7);
@@ -34,7 +37,7 @@ test("settings merge ignores unknown keys and keeps defaults", () => {
   const s = resolveSettings({ prices: { elco_pro_idr: 120000, bogus: 1 }, nonsense: true });
   assert.equal(s.prices.elco_pro_idr, 120000);
   assert.equal((s.prices as unknown as Record<string, unknown>).bogus, undefined);
-  assert.equal(s.prices.self_funded_total.USD, 899);
+  assert.equal(s.prices.self_funded_total.USD, 999);
 });
 
 test("phases follow the master timeline (WIB)", () => {
@@ -70,7 +73,7 @@ test("currency by citizenship, no conversion", () => {
   assert.equal(currencyFor("ID"), "IDR");
   assert.equal(currencyFor("MY"), "USD");
   const sf = plannedObligations(DEFAULT_SETTINGS, "self_funded", "SG");
-  assert.deepEqual(sf.map((o) => [o.kind, o.currency, o.amount]), [["full", "USD", 899]], "one programme fee, paid in installments");
+  assert.deepEqual(sf.map((o) => [o.kind, o.currency, o.amount]), [["full", "USD", 999]], "one programme fee, paid in installments");
   const ff = plannedObligations(DEFAULT_SETTINGS, "fully_funded", "VN");
   assert.deepEqual(ff.map((o) => [o.kind, o.currency, o.amount]), [["elco_pro", "IDR", 98000]]);
   const mt = plannedObligations(DEFAULT_SETTINGS, "mentoring", "ID");
@@ -219,10 +222,10 @@ test("under-18 rule uses the first programme day", () => {
 
 test("legal texts and FAQ quote exactly the configured prices and never the old ones", () => {
   const all = JSON.stringify(legalDocs(DEFAULT_SETTINGS)) + JSON.stringify(defaultFaq(DEFAULT_SETTINGS));
-  for (const want of ["USD 899", "IDR 14,999,000", "USD 699", "IDR 10,999,000", "USD 79", "IDR 1,199,000", "USD 99", "IDR 1,499,000", "IDR 98,000", "USD 19", "IDR 299,000", "USD 49", "IDR 749,000"]) {
+  for (const want of ["USD 999", "IDR 17,000,000", "USD 799", "IDR 13,000,000", "USD 699", "IDR 10,999,000", "USD 79", "IDR 1,199,000", "USD 99", "IDR 1,499,000", "IDR 98,000", "USD 19", "IDR 299,000", "USD 49", "IDR 749,000"]) {
     assert.ok(all.includes(want), want);
   }
-  for (const old of ["USD 900", "USD 800", "USD 1,000", "IDR 15,000,000", "IDR 99,000", "IDR 1,200,000", "IDR 1,500,000", "USD 80 ", "USD 100", "USD 20 ", "USD 50 ", "IDR 300,000", "IDR 750,000"]) {
+  for (const old of ["USD 899", "IDR 14,999,000", "IDR 13,999,000", "USD 900", "USD 800", "USD 1,000", "IDR 15,000,000", "IDR 99,000", "IDR 1,200,000", "IDR 1,500,000", "USD 80 ", "USD 100", "USD 20 ", "USD 50 ", "IDR 300,000", "IDR 750,000"]) {
     assert.ok(!all.includes(old), old);
   }
   const docs = legalDocs(DEFAULT_SETTINGS);

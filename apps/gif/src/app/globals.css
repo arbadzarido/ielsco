@@ -3,7 +3,7 @@
    navy #2F4157 · deep navy #1A2534 · coral #E56668 (hover #C94F51) · teal #577E90 · hairline #E6E9EE · soft #F1F4F8
    Headings: Poppins extrabold (IELSco --font-heading). Body: Plus Jakarta Sans. White surfaces; brand colour for type,
    buttons, links, active states and small accents. Pill buttons, 20px cards with hairline borders, no heavy shadows.
-   GIF-specific: the official GIF logo (public/brand/gif-logo.png, the same file IELSco uses) and navy programme bands. */
+   GIF-specific: the official GIF logo (public/brand/gif-logo.png, the same file IELSco uses) and the GIF brand layer below (sky + teal→deep gradient). */
 :root {
   --navy: #2F4157; --deep: #1A2534; --coral: #E56668; --coral-dark: #C94F51; --teal: #577E90;
   --hairline: #E6E9EE; --field: #D5DBE3; --soft: #F1F4F8; --soft-2: #EEF2F7; --white: #FFFFFF;
@@ -345,85 +345,106 @@ legend { font-weight: 700; margin-bottom: 10px; padding: 0; color: var(--deep); 
 .attempt { display: grid; gap: 8px; max-width: 360px; }
 .attempt p { margin: 0; }
 
-/* ══ GIF brand layer ═══════════════════════════════════════════════════════════════════════════════════════════════
-   IELSco provides the design language (type, spacing, cards, buttons, header/footer). GIF adds its own colour identity:
-   Amber #B8862E and Nightfall #304156, with restrained layered gradients and real photography of the three countries.
-   These tokens live only in apps/gif; the main IELSco site and Elco are untouched.
-   Contrast (WCAG 2.1): amber #B8862E is 3.2:1 on white and on Nightfall, so it is used for rules, icons, large figures and
-   accents only. Amber TEXT uses --gif-amber-ink on light (5.3:1) and --gif-amber-soft on Nightfall (5.6:1). No amber
-   buttons (16px label text would fail AA). White on Nightfall is 10.4:1; --gif-mist on Nightfall is 6.8:1. */
+/* ══ GIF brand layer (24 Nov 2026: Sky + Signature Gradient) ══════════════════════════════════════════════════════════
+   IELSco provides the design language (type, spacing, cards, buttons, header/footer). GIF adds its own colour identity,
+   which replaces the earlier amber/nightfall treatment (and the older maroon) everywhere on the GIF site:
+     Sky blue          #5BC2E7  primary accent: fills, bars, rules, CTA buttons (with deep text), text on dark only
+     Sky ink           #176A8C  sky-blue text and links on white (6.0:1)
+     Sky soft          #8FD6F0  sky text on the deep gradient (10.3:1)
+     Signature gradient #3E9396 → #102129 (teal → deep), at 135°; hero, programme bands, finale and prize surfaces
+     Deep              #102129  headings, primary buttons, dark surfaces (white on deep 16.5:1)
+     White             #FFFFFF  page surface
+   Contrast (WCAG 2.1): sky on white is 2.0:1, so sky is never text on white. White on teal #3E9396 is 3.6:1, so small text
+   sits on the deep half of the gradient or on an overlay; teal text on white uses --gif-teal-ink (5.4:1). Sky buttons
+   carry deep text (8.1:1). Coral stays IELSco's error colour only. Documented in docs/gif-platform/BRAND-COLOURS.md. */
 :root {
-  --gif-amber: #B8862E;
-  --gif-amber-ink: #8C6420;
-  --gif-amber-soft: #E0B865;
-  --gif-amber-wash: #FBF5E9;
-  --gif-amber-line: #EAD9B8;
-  --gif-nightfall: #304156;
-  --gif-nightfall-mid: #26354A;
-  --gif-nightfall-deep: #1F2B3A;
-  --gif-mist: #C8D2DD;
-  --gif-grad-night: linear-gradient(160deg, var(--gif-nightfall) 0%, var(--gif-nightfall-mid) 55%, var(--gif-nightfall-deep) 100%);
-  --gif-glow-amber: radial-gradient(60% 90% at 88% 0%, rgba(184, 134, 46, 0.26) 0%, rgba(184, 134, 46, 0) 62%);
-  --gif-glow-amber-low: radial-gradient(70% 60% at 10% 100%, rgba(184, 134, 46, 0.16) 0%, rgba(184, 134, 46, 0) 65%);
-  --gif-photo-veil: linear-gradient(180deg, rgba(31, 43, 58, 0.10) 0%, rgba(31, 43, 58, 0.45) 50%, rgba(24, 34, 47, 0.92) 100%);
-  /* Nightfall is GIF's primary (practically IELSco navy #2F4157). Coral stays IELSco's error/alert colour; GIF accents use
-     the amber classes below instead of redefining --coral. */
-  --navy: var(--gif-nightfall);
+  --gif-sky: #5BC2E7;
+  --gif-sky-ink: #176A8C;
+  --gif-sky-soft: #8FD6F0;
+  --gif-sky-wash: #EAF6FB;
+  --gif-sky-line: #C6E7F4;
+  --gif-teal: #3E9396;
+  --gif-teal-ink: #2B7477;
+  --gif-deep: #102129;
+  --gif-deep-2: #17323B;
+  --gif-mist: #D2E6EC;
+  --gif-grad: linear-gradient(135deg, #3E9396 0%, #102129 100%);
+  --gif-grad-soft: linear-gradient(135deg, rgba(62, 147, 150, 0.12) 0%, rgba(16, 33, 41, 0.04) 100%);
+  --gif-glow-sky: radial-gradient(60% 90% at 88% 0%, rgba(91, 194, 231, 0.22) 0%, rgba(91, 194, 231, 0) 62%);
+  --gif-photo-veil: linear-gradient(180deg, rgba(16, 33, 41, 0.08) 0%, rgba(16, 33, 41, 0.45) 50%, rgba(16, 33, 41, 0.92) 100%);
+  /* GIF primary = deep; headings deep; IELSco teal slots use the GIF teal ink. */
+  --navy: var(--gif-deep);
+  --deep: var(--gif-deep);
+  --ink: var(--gif-deep);
+  --teal: var(--gif-teal-ink);
+  --ink-2: rgba(16, 33, 41, 0.8);
+  --muted: rgba(16, 33, 41, 0.7);
 }
-.accent { color: var(--gif-amber-ink); }
-.dark .accent, .page-hero .accent, .gif-hero .accent { color: var(--gif-amber-soft); }
-::selection { background: var(--gif-amber-line); color: var(--deep); }
+a:hover { color: var(--gif-sky-ink); }
+:focus-visible { outline-color: var(--gif-sky-ink); }
+.accent { color: var(--gif-sky-ink); }
+.dark .accent, .page-hero .accent, .gif-hero .accent, .on-grad .accent { color: var(--gif-sky); }
+::selection { background: var(--gif-sky-line); color: var(--gif-deep); }
+.btn-primary { background: var(--gif-deep); }
+.btn-primary:hover { background: var(--gif-deep-2); }
+.btn-accent, .btn-sky { background: var(--gif-sky); color: var(--gif-deep); }
+.btn-accent:hover, .btn-sky:hover { background: #7FD0EE; color: var(--gif-deep); }
+.btn-quiet:hover { color: var(--gif-sky-ink); }
+.eyebrow .num { color: var(--gif-sky-ink); }
 
-/* Night bands: dark sections and the inner-page header carry depth (nightfall gradient + a soft amber glow). */
-.section.dark, .page-hero {
-  background-color: var(--gif-nightfall);
-  background-image: var(--gif-glow-amber), var(--gif-glow-amber-low), var(--gif-grad-night);
-}
-.page-hero { position: relative; border-bottom: 1px solid rgba(224, 184, 101, 0.28); }
-.dark .eyebrow, .page-hero .eyebrow { color: var(--gif-amber-soft); }
-.dark .kicker { color: var(--gif-amber-soft); }
+/* Gradient bands: dark sections and the inner-page header carry the signature gradient with a soft sky glow. */
+.section.dark, .page-hero { background-color: var(--gif-deep); background-image: var(--gif-glow-sky), var(--gif-grad); }
+.page-hero { position: relative; border-bottom: 3px solid var(--gif-sky); }
+.dark .eyebrow, .page-hero .eyebrow { color: var(--gif-sky-soft); }
+.dark .kicker { color: var(--gif-sky-soft); }
 .dark .lead, .page-hero .lead { color: var(--gif-mist); }
 .dark .muted { color: var(--gif-mist); }
-.eyebrow { color: var(--gif-amber-ink); }
-.kicker { color: var(--teal); }
-.dark .item { background: rgba(255, 255, 255, 0.05); border-color: rgba(200, 210, 221, 0.22); }
-.dark .timeline li.key::before { background: var(--gif-amber); border-color: var(--gif-amber); }
-.timeline li.key::before { background: var(--gif-amber); border-color: var(--gif-amber); }
-.timeline .when { color: var(--gif-amber-ink); }
-.dark .timeline .when { color: var(--gif-amber-soft); }
-.index-num { background: var(--gif-amber-wash); color: var(--gif-amber-ink); box-shadow: inset 0 0 0 1px var(--gif-amber-line); }
-.pathway.ff { border-top-color: var(--gif-amber); }
-.pathway.mt { border-top-color: var(--teal); }
-.pathway:not(.ff):not(.mt) { border-top-color: var(--gif-nightfall); }
-.badge.maroon { background: var(--gif-amber-wash); color: var(--gif-amber-ink); }
-.strip { background: var(--gif-amber-wash); border-bottom-color: var(--gif-amber-line); }
-.strip .countdown .units b { color: var(--gif-nightfall); }
-.steps-nav li[aria-current="step"] { background: var(--gif-nightfall); border-color: var(--gif-nightfall); }
-details.faq[open] { border-color: var(--gif-amber-line); }
-details.faq[open] summary::after { background: var(--gif-amber-wash); color: var(--gif-amber-ink); }
+.eyebrow { color: var(--gif-sky-ink); }
+.kicker { color: var(--gif-teal-ink); }
+.dark .item { background: rgba(255, 255, 255, 0.06); border-color: rgba(210, 230, 236, 0.22); }
+.timeline li::before { border-color: var(--gif-deep); }
+.timeline li.key::before, .dark .timeline li.key::before { background: var(--gif-sky); border-color: var(--gif-sky); }
+.timeline .when { color: var(--gif-sky-ink); }
+.dark .timeline .when { color: var(--gif-sky-soft); }
+.dark .timeline li::before { background: var(--gif-deep); }
+.index-num { background: var(--gif-sky-wash); color: var(--gif-sky-ink); box-shadow: inset 0 0 0 1px var(--gif-sky-line); }
+.pathway.ff { border-top-color: var(--gif-sky); }
+.pathway.mt { border-top-color: var(--gif-teal); }
+.pathway:not(.ff):not(.mt) { border-top-color: var(--gif-deep); }
+.badge { background: var(--gif-sky-wash); color: var(--gif-sky-ink); }
+.badge.maroon { background: var(--gif-sky-wash); color: var(--gif-sky-ink); }
+.strip { background: var(--gif-sky-wash); border-bottom-color: var(--gif-sky-line); }
+.strip .countdown .units b { color: var(--gif-deep); }
+.steps-nav li[aria-current="step"] { background: var(--gif-deep); border-color: var(--gif-deep); }
+details.faq[open] { border-color: var(--gif-sky-line); }
+details.faq[open] summary::after { background: var(--gif-sky-wash); color: var(--gif-sky-ink); }
+.option:has(input:checked) { border-color: var(--gif-deep); box-shadow: inset 0 0 0 1px var(--gif-deep); background: var(--gif-sky-wash); }
+table.t th { background: var(--gif-sky-wash); }
 
-/* ── Home hero: Marina Bay at dusk under a Nightfall gradient ─────────────────────────────────────────────────────── */
-.gif-hero { position: relative; isolation: isolate; overflow: hidden; color: #fff; background: var(--gif-nightfall-deep); }
+/* ── Home hero: Marina Bay under the signature gradient ──────────────────────────────────────────────────────────── */
+.gif-hero { position: relative; isolation: isolate; overflow: hidden; color: #fff; background: var(--gif-deep); }
 .gif-hero .bg { position: absolute; inset: 0; z-index: -2; }
 .gif-hero .bg img { object-fit: cover; object-position: 50% 55%; }
 .gif-hero::before { content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(180deg, rgba(31, 43, 58, 0.55) 0%, rgba(31, 43, 58, 0.62) 45%, rgba(24, 34, 47, 0.96) 100%),
-              radial-gradient(55% 70% at 50% 38%, rgba(48, 65, 86, 0.45) 0%, rgba(48, 65, 86, 0) 70%),
-              radial-gradient(45% 50% at 85% 100%, rgba(184, 134, 46, 0.22) 0%, rgba(184, 134, 46, 0) 70%); }
-.gif-hero .inner { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 72px 0 40px; }
-@media (min-width: 768px) { .gif-hero .inner { padding: 112px 0 56px; } }
-.gif-hero .mark { height: 64px; width: auto; filter: brightness(0) invert(1); margin-bottom: 18px; }
-.gif-hero .eyebrow { justify-content: center; color: var(--gif-amber-soft); }
-.gif-hero h1 { color: #fff; max-width: 980px; font-size: 36px; line-height: 1.06; }
+  background: linear-gradient(135deg, rgba(62, 147, 150, 0.78) 0%, rgba(16, 33, 41, 0.86) 58%, rgba(16, 33, 41, 0.97) 100%),
+              radial-gradient(50% 60% at 85% 0%, rgba(91, 194, 231, 0.28) 0%, rgba(91, 194, 231, 0) 70%); }
+.gif-hero .inner { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 64px 0 40px; }
+@media (min-width: 768px) { .gif-hero .inner { padding: 96px 0 56px; } }
+.gif-hero .mark { height: 60px; width: auto; filter: brightness(0) invert(1); margin-bottom: 18px; }
+.gif-hero .status { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px 6px 10px; background: rgba(91, 194, 231, 0.16); border: 1px solid rgba(91, 194, 231, 0.55); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; margin-bottom: 18px; }
+.gif-hero .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--gif-sky); box-shadow: 0 0 0 4px rgba(91, 194, 231, 0.25); }
+.gif-hero .eyebrow { justify-content: center; color: var(--gif-sky-soft); }
+.gif-hero h1 { color: #fff; max-width: 1000px; font-size: 36px; line-height: 1.06; }
 @media (min-width: 640px) { .gif-hero h1 { font-size: 50px; } }
-@media (min-width: 1024px) { .gif-hero h1 { font-size: 60px; } }
-.gif-hero .lead { margin: 20px auto 0; max-width: 660px; color: #E4E9EF; }
+@media (min-width: 1024px) { .gif-hero h1 { font-size: 62px; } }
+.gif-hero .lead { margin: 20px auto 0; max-width: 680px; color: #E6F1F4; }
 .gif-hero .btn-row { justify-content: center; margin-top: 30px; }
 .gif-hero .btn-secondary { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.5); }
 .gif-hero .btn-secondary:hover { border-color: #fff; color: #fff; }
 .gif-hero .facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
-.gif-hero .facts li { border: 1px solid rgba(224, 184, 101, 0.45); color: #fff; background: rgba(24, 34, 47, 0.35); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; }
-.gif-hero .credit, .photo-credit { font-size: 11px; color: rgba(228, 233, 239, 0.75); }
+.gif-hero .facts li { border: 1px solid rgba(143, 214, 240, 0.45); color: #fff; background: rgba(16, 33, 41, 0.35); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; }
+.gif-hero .facts li.hot { background: var(--gif-sky); color: var(--gif-deep); border-color: var(--gif-sky); }
+.gif-hero .credit, .photo-credit { font-size: 11px; color: rgba(230, 241, 244, 0.78); }
 .gif-hero .credit { position: absolute; right: 12px; bottom: 8px; }
 .gif-hero .credit a, .photo-credit a { color: inherit; }
 
@@ -431,25 +452,26 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 .route { display: grid; gap: 10px; margin: 36px auto 0; padding: 0; list-style: none; max-width: 760px; width: 100%; }
 @media (min-width: 640px) { .route { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; } }
 .route li { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; color: #fff; font-weight: 600; font-size: 15px; position: relative; }
-.route li .stop { font-size: 12px; color: var(--gif-amber-soft); letter-spacing: 0.12em; }
-@media (min-width: 640px) { .route li + li::before { content: ""; position: absolute; left: -18px; top: 50%; width: 36px; height: 1px; background: linear-gradient(90deg, rgba(224, 184, 101, 0), var(--gif-amber-soft), rgba(224, 184, 101, 0)); } }
+.route li .stop { font-size: 12px; color: var(--gif-sky-soft); letter-spacing: 0.12em; }
+@media (min-width: 640px) { .route li + li::before { content: ""; position: absolute; left: -18px; top: 50%; width: 36px; height: 1px; background: linear-gradient(90deg, rgba(91, 194, 231, 0), var(--gif-sky), rgba(91, 194, 231, 0)); } }
 
 /* ── Destination cards ────────────────────────────────────────────────────────────────────────────────────────────── */
 .destinations { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; counter-reset: stop; }
 @media (min-width: 900px) { .destinations { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
-.dest { position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); min-height: 380px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: var(--gif-nightfall-deep); }
+.dest { position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); min-height: 380px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: var(--gif-deep); }
 @media (min-width: 900px) { .dest { min-height: 460px; } }
 .dest .ph { position: absolute; inset: 0; z-index: -2; }
 .dest .ph img { object-fit: cover; transition: transform .6s ease; }
 .dest::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--gif-photo-veil); }
-.dest::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--gif-amber), rgba(184, 134, 46, 0)); }
+.dest::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--gif-sky), rgba(91, 194, 231, 0)); }
 @media (hover: hover) { .dest:hover .ph img { transform: scale(1.03); } }
 .dest .body { padding: 24px; }
-.dest .stop { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gif-amber-soft); }
+.dest .stop { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gif-sky-soft); }
 .dest h3 { color: #fff; font-size: 26px; margin: 8px 0 2px; display: flex; align-items: center; gap: 10px; }
 .dest .flag { font-size: 24px; line-height: 1; }
-.dest .where { font-size: 14px; font-weight: 600; color: #E4E9EF; }
+.dest .where { font-size: 14px; font-weight: 600; color: #E6F1F4; }
 .dest p { color: var(--gif-mist); font-size: 15px; margin: 10px 0 0; }
+.dest .stage { display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--gif-deep); background: var(--gif-sky); border-radius: 999px; padding: 3px 10px; }
 .dest .photo-credit { position: absolute; top: 10px; right: 12px; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
 
 /* ── Campus references ────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -458,39 +480,39 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 .campus { background: #fff; border: 1px solid var(--hairline); border-radius: var(--radius-card); overflow: hidden; display: flex; flex-direction: column; }
 .campus .ph { position: relative; aspect-ratio: 4 / 3; background: var(--soft); }
 .campus .ph img { object-fit: cover; }
-.campus .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(31, 43, 58, 0) 55%, rgba(31, 43, 58, 0.55) 100%); }
+.campus .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(16, 33, 41, 0) 55%, rgba(16, 33, 41, 0.55) 100%); }
 .campus .ph .photo-credit { position: absolute; left: 10px; bottom: 8px; z-index: 1; }
 .campus .body { padding: 20px 22px 22px; display: grid; gap: 6px; }
-.campus .country { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
+.campus .country { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gif-teal-ink); }
 .campus h3 { font-size: 19px; }
 
-/* ── Closing call to action: Singapore at dusk under Nightfall ────────────────────────────────────────────────────── */
-.cta-night { position: relative; isolation: isolate; overflow: hidden; color: var(--gif-mist); background: var(--gif-nightfall-deep); }
+/* ── Closing call to action: Singapore at dusk under the gradient ─────────────────────────────────────────────────── */
+.cta-night { position: relative; isolation: isolate; overflow: hidden; color: var(--gif-mist); background: var(--gif-deep); }
 .cta-night .bg { position: absolute; inset: 0; z-index: -2; }
 .cta-night .bg img { object-fit: cover; object-position: 50% 60%; }
 .cta-night::before { content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, rgba(31, 43, 58, 0.94) 0%, rgba(31, 43, 58, 0.72) 50%, rgba(31, 43, 58, 0.30) 100%), var(--gif-glow-amber); }
-@media (max-width: 899px) { .cta-night::before { background: linear-gradient(180deg, rgba(31, 43, 58, 0.55) 0%, rgba(31, 43, 58, 0.9) 100%); } }
+  background: linear-gradient(90deg, rgba(16, 33, 41, 0.95) 0%, rgba(16, 33, 41, 0.78) 50%, rgba(62, 147, 150, 0.45) 100%), var(--gif-glow-sky); }
+@media (max-width: 899px) { .cta-night::before { background: linear-gradient(180deg, rgba(16, 33, 41, 0.6) 0%, rgba(16, 33, 41, 0.92) 100%); } }
 .cta-night h2 { color: #fff; }
-.cta-night .lead { color: #E4E9EF; }
+.cta-night .lead { color: #E6F1F4; }
 .cta-night .photo-credit { position: absolute; right: 12px; bottom: 8px; }
 
 /* ── Footer and app chrome ────────────────────────────────────────────────────────────────────────────────────────── */
-.site-footer { border-top: 0; box-shadow: inset 0 3px 0 0 var(--gif-amber); }
-.app-header-line { height: 3px; background: linear-gradient(90deg, var(--gif-nightfall) 0%, var(--gif-nightfall) 60%, var(--gif-amber) 100%); }
-.app-side nav a[aria-current="page"] { background: var(--gif-nightfall); }
-.progress li.current .dot { border-color: var(--gif-amber); background: var(--gif-amber-wash); color: var(--gif-amber-ink); }
-.pill-tabs a[aria-current="page"] { background: var(--gif-nightfall); border-color: var(--gif-nightfall); }
+.site-footer { border-top: 0; box-shadow: inset 0 3px 0 0 var(--gif-sky); }
+.app-header-line { height: 3px; background: linear-gradient(90deg, var(--gif-teal) 0%, var(--gif-deep) 60%, var(--gif-sky) 100%); }
+.app-side nav a[aria-current="page"] { background: var(--gif-deep); }
+.progress li.current .dot { border-color: var(--gif-sky); background: var(--gif-sky-wash); color: var(--gif-sky-ink); }
+.pill-tabs a[aria-current="page"] { background: var(--gif-deep); border-color: var(--gif-deep); }
 
 /* Portal welcome banner (dashboard) */
 .welcome { position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); padding: 26px 24px; margin-bottom: 24px; color: var(--gif-mist);
-  background-color: var(--gif-nightfall); background-image: var(--gif-glow-amber), var(--gif-grad-night); }
+  background-color: var(--gif-deep); background-image: var(--gif-glow-sky), var(--gif-grad); }
 @media (min-width: 640px) { .welcome { padding: 30px 32px; } }
-.welcome .eyebrow { color: var(--gif-amber-soft); margin-bottom: 8px; }
+.welcome .eyebrow { color: var(--gif-sky-soft); margin-bottom: 8px; }
 .welcome h1 { color: #fff; margin: 0 0 6px; }
 .welcome p { margin: 0; }
 .welcome .route-mini { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 14px; font-size: 13px; font-weight: 600; color: #fff; }
-.welcome .route-mini span + span::before { content: "→"; color: var(--gif-amber-soft); margin-right: 14px; }
+.welcome .route-mini span + span::before { content: "→"; color: var(--gif-sky-soft); margin-right: 14px; }
 .welcome .route-mini span.when { color: var(--gif-mist); font-weight: 500; }
 .welcome .route-mini span.when::before { content: "·"; }
 
@@ -498,12 +520,13 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 .auth-split { display: grid; gap: 32px; align-items: stretch; }
 @media (min-width: 980px) { .auth-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; } }
 .auth-photo { display: none; }
-@media (min-width: 980px) { .auth-photo { display: flex; position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); min-height: 520px; flex-direction: column; justify-content: flex-end; padding: 28px; color: #fff; background: var(--gif-nightfall-deep); } }
+@media (min-width: 980px) { .auth-photo { display: flex; position: relative; isolation: isolate; overflow: hidden; border-radius: var(--radius-card); min-height: 520px; flex-direction: column; justify-content: flex-end; padding: 28px; color: #fff; background: var(--gif-deep); } }
 .auth-photo .ph { position: absolute; inset: 0; z-index: -2; }
 .auth-photo .ph img { object-fit: cover; }
-.auth-photo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--gif-photo-veil), var(--gif-glow-amber); }
+.auth-photo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--gif-photo-veil), var(--gif-glow-sky); }
 .auth-photo h2 { color: #fff; font-size: 26px; max-width: 18ch; }
 .auth-photo p { color: var(--gif-mist); margin: 8px 0 0; }
+.auth-photo .eyebrow { color: var(--gif-sky-soft); }
 .auth-photo .photo-credit { position: absolute; top: 10px; right: 12px; }
 
 /* Credits page */
@@ -516,23 +539,85 @@ details.faq[open] summary::after { background: var(--gif-amber-wash); color: var
 /* International payment choice (card in IDR at the fixed rate, or invoice) */
 .pay-options { display: grid; gap: 10px; }
 .pay-option { border: 1px solid var(--hairline); border-radius: 14px; padding: 14px 16px; background: #fff; }
-.pay-option-card { border-color: rgba(184, 134, 46, 0.45); background: linear-gradient(180deg, #FDF8EE, #fff 70%); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 6px 18px rgba(48,65,86,.06); }
+.pay-option-card { border-color: var(--gif-sky-line); background: linear-gradient(180deg, var(--gif-sky-wash), #fff 70%); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 6px 18px rgba(16,33,41,.06); }
 .pay-option-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; font-size: 15px; }
-.card-brands { font-size: 12px; font-weight: 600; color: #304156; letter-spacing: .02em; }
+.card-brands { font-size: 12px; font-weight: 600; color: var(--gif-deep); letter-spacing: .02em; }
 .pay-figures { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 8px; }
-.pay-figures dt { font-size: 12px; color: var(--muted, #6B7A8F); }
-.pay-figures dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; color: #1A2534; }
-.pay-figures .pay-figure-main { font-size: 18px; color: #304156; }
+.pay-figures dt { font-size: 12px; color: var(--muted); }
+.pay-figures dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; color: var(--gif-deep); }
+.pay-figures .pay-figure-main { font-size: 18px; color: var(--gif-deep); }
 
 /* Flexible deposit / installments panel (22 Nov 2026) */
 .fee-panels { display: grid; gap: 16px; margin: 8px 0 28px; }
-.fee-panel { border: 1px solid rgba(184, 134, 46, 0.4); border-radius: 20px; padding: 20px 22px; background: linear-gradient(180deg, #FDF8EE, #fff 55%); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 8px 24px rgba(48,65,86,.06); }
+.fee-panel { border: 1px solid var(--gif-sky-line); border-radius: 20px; padding: 20px 22px; background: linear-gradient(180deg, var(--gif-sky-wash), #fff 55%); box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 8px 24px rgba(16,33,41,.06); }
 .fee-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
 .fee-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; padding: 14px 16px; border-radius: 14px; background: #fff; border: 1px solid var(--hairline); }
-.fee-figures dt { font-size: 12px; color: #6B7A8F; }
-.fee-figures dd { margin: 2px 0 0; font-weight: 700; color: #1A2534; }
-.fee-figures .fee-strong { color: #304156; font-size: 18px; }
+.fee-figures dt { font-size: 12px; color: var(--muted); }
+.fee-figures dd { margin: 2px 0 0; font-weight: 700; color: var(--gif-deep); }
+.fee-figures .fee-strong { color: var(--gif-deep); font-size: 18px; }
 .fee-pay input { font-size: 18px; font-weight: 600; letter-spacing: .01em; max-width: 280px; }
-.chip-btn { border: 1px solid var(--hairline); background: #fff; color: #304156; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.chip-btn:hover { border-color: #304156; }
+.chip-btn { border: 1px solid var(--hairline); background: #fff; color: var(--gif-deep); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chip-btn:hover { border-color: var(--gif-deep); }
 @media (max-width: 640px) { .fee-figures { grid-template-columns: 1fr; } .fee-panel { padding: 16px; } }
+
+/* ── Self-Funded campaign (24 Nov 2026) ──────────────────────────────────────────────────────────────────────────── */
+/* Allocations: Super Early Bird (gradient card) and Regular (white card), with live places left. */
+.allocations { display: grid; gap: 16px; }
+@media (min-width: 760px) { .allocations { grid-template-columns: 1.15fr 1fr; gap: 20px; } }
+.alloc { border-radius: var(--radius-card); padding: 26px; display: grid; gap: 10px; align-content: start; border: 1px solid var(--hairline); background: #fff; }
+.alloc-early { color: var(--gif-mist); background-color: var(--gif-deep); background-image: var(--gif-glow-sky), var(--gif-grad); border-color: transparent; }
+.alloc-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.alloc-tag { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gif-teal-ink); }
+.alloc-early .alloc-tag { color: var(--gif-sky-soft); }
+.alloc-left { font-size: 13px; font-weight: 700; border-radius: 999px; padding: 4px 10px; background: var(--gif-sky-wash); color: var(--gif-sky-ink); }
+.alloc-early .alloc-left { background: var(--gif-sky); color: var(--gif-deep); }
+.alloc-early.is-full .alloc-left { background: rgba(255,255,255,.14); color: #fff; }
+.alloc-price { font-family: var(--heading); font-size: 34px; font-weight: 800; line-height: 1.1; color: var(--gif-deep); margin: 4px 0 0; letter-spacing: -0.01em; }
+.alloc-early .alloc-price { color: #fff; }
+.alloc-note { margin: 0; font-size: 15px; color: var(--muted); }
+.alloc-early .alloc-note { color: var(--gif-mist); }
+.alloc-bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,.16); overflow: hidden; margin-top: 6px; }
+.alloc-bar span { display: block; height: 100%; background: var(--gif-sky); border-radius: inherit; min-width: 0; }
+
+/* Prize pool */
+.prize { border-radius: var(--radius-card); padding: 28px; display: grid; gap: 22px; background: #fff; border: 1px solid var(--gif-sky-line); background-image: var(--gif-grad-soft); }
+.prize.on-dark { background: rgba(255,255,255,.06); border-color: rgba(143, 214, 240, 0.3); background-image: none; }
+.prize-kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gif-teal-ink); }
+.on-dark .prize-kicker { color: var(--gif-sky-soft); }
+.prize-amount { font-family: var(--heading); font-weight: 800; font-size: 52px; line-height: 1; letter-spacing: -0.02em; margin: 8px 0 6px; color: var(--gif-deep); }
+@media (min-width: 640px) { .prize-amount { font-size: 68px; } }
+.on-dark .prize-amount { color: #fff; }
+.prize-sub { margin: 0; font-weight: 600; color: var(--gif-deep); }
+.on-dark .prize-sub { color: #fff; }
+.prize-levels { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .prize-levels { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.prize-levels li { border-radius: 16px; padding: 14px 16px; background: #fff; border: 1px solid var(--hairline); display: grid; gap: 2px; }
+.prize-levels li:first-child { background: var(--gif-deep); border-color: var(--gif-deep); background-image: var(--gif-grad); }
+.prize-levels li:first-child strong, .prize-levels li:first-child span { color: #fff; }
+.prize-levels strong { font-family: var(--heading); font-size: 16px; color: var(--gif-deep); }
+.prize-levels span { font-size: 14px; color: var(--muted); }
+.on-dark .prize-levels li:not(:first-child) { background: rgba(255,255,255,.06); border-color: rgba(210,230,236,.22); }
+.on-dark .prize-levels li:not(:first-child) strong { color: #fff; }
+.on-dark .prize-levels li:not(:first-child) span { color: var(--gif-mist); }
+.prize-fine { margin: 0; font-size: 13px; color: var(--muted); max-width: 80ch; }
+.on-dark .prize-fine { color: var(--gif-mist); }
+
+/* Competition journey: three weighted stages, the cut to the Top 10, the finale */
+.journey { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+@media (min-width: 900px) { .journey { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+.journey li { position: relative; border-radius: var(--radius-card); padding: 24px; background: #fff; border: 1px solid var(--hairline); display: grid; gap: 8px; align-content: start; }
+.journey li.finale { background-color: var(--gif-deep); background-image: var(--gif-glow-sky), var(--gif-grad); border-color: transparent; color: var(--gif-mist); }
+.journey li.finale h3 { color: #fff; }
+.journey li p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.journey li.finale p { color: var(--gif-mist); }
+.journey-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.journey-stage { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gif-teal-ink); }
+.finale .journey-stage { color: var(--gif-sky-soft); }
+.journey-weight { font-family: var(--heading); font-weight: 800; font-size: 28px; color: var(--gif-sky-ink); line-height: 1; }
+.finale .journey-weight { color: var(--gif-sky); }
+.journey-cut { margin-top: 6px !important; font-size: 13px !important; font-weight: 700; color: var(--gif-deep) !important; background: var(--gif-sky-wash); border: 1px dashed var(--gif-sky-ink); border-radius: 999px; padding: 4px 12px; justify-self: start; }
+
+/* Grand Finale band */
+.finale-band .finale-date { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.finale-band .finale-date li { border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; background: rgba(91,194,231,.16); border: 1px solid rgba(143,214,240,.45); color: #fff; }
+.finale-parts .item h3 { margin-bottom: 6px; }

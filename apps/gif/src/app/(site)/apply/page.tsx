@@ -4,12 +4,12 @@ import { redirect } from "next/navigation";
 import { getAccount } from "@/lib/auth";
 import { applicationForAccount } from "@/lib/applications";
 import { currentCohort } from "@/lib/cohort";
-import { pathwayOpen, mentoringPrice, balanceOf, type Pathway } from "@/lib/settings";
+import { pathwayOpen, mentoringPrice, balanceOf, promoted, type Pathway } from "@/lib/settings";
 import { DOCS, requiredConsents } from "@/lib/legal";
 import ApplyWizard from "./ApplyWizard";
 import { bridgeConfigured, ielscoDashboardUrl, ielscoSignInUrl } from "@/lib/ielsco-bridge";
 
-export const metadata: Metadata = { title: "Apply", description: "Apply for GIF Summer 2027: Fully Funded, Project Mentoring Program or Self-Funded." };
+export const metadata: Metadata = { title: "Apply", description: "Apply for GIF Summer 2027 as a Self-Funded delegate: 20 Super Early Bird places, then 50 Regular places." };
 export const dynamic = "force-dynamic";
 
 export default async function Apply({ searchParams }: { searchParams: Promise<{ pathway?: string }> }) {
@@ -30,7 +30,7 @@ export default async function Apply({ searchParams }: { searchParams: Promise<{ 
             {sso
               ? <a className="btn btn-primary" href={ielscoSignInUrl(`/apply${pathway ? `?pathway=${pathway}` : ""}`)} data-track="application_start">Continue with your IELSco account</a>
               : <Link className="btn btn-primary" href={`/login?next=${encodeURIComponent(`/apply${pathway ? `?pathway=${pathway}` : ""}`)}`} data-track="application_start">Continue with email</Link>}
-            <Link className="btn btn-secondary" href="/opportunities">Compare pathways first</Link>
+            <Link className="btn btn-secondary" href="/self-funded">Self-Funded details first</Link>
           </div>
           <ol className="steps-nav" style={{ marginTop: 40 }}><li>Pathway</li><li>Your profile</li><li>Team</li><li>Project</li><li>Review and submit</li></ol>
         </div>
@@ -54,9 +54,10 @@ export default async function Apply({ searchParams }: { searchParams: Promise<{ 
           email={acct.email}
           initial={(existing?.app.draft as Record<string, unknown>) ?? {}}
           initialPathway={pathway}
+          visible={(["fully_funded", "mentoring", "self_funded"] as Pathway[]).filter((p) => promoted(s, p))}
           open={open}
           docs={docs}
-          prices={{ elcoPro: s.prices.elco_pro_idr, elcoMonths: s.prices.elco_pro_months, mentoring: m.price, mentoringTier: m.tier, total: s.prices.self_funded_total, deposit: s.prices.self_funded_deposit, balance: balanceOf(s) }}
+          prices={{ elcoPro: s.prices.elco_pro_idr, elcoMonths: s.prices.elco_pro_months, mentoring: m.price, mentoringTier: m.tier, total: s.prices.self_funded_total, deposit: s.prices.self_funded_deposit, balance: balanceOf(s), early: s.prices.self_funded_early_total, earlySlots: s.slots.self_funded_early, regularSlots: s.slots.self_funded_regular }}
         />
       </div>
     </section>

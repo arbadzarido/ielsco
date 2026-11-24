@@ -54,7 +54,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         <aside className="auth-photo" aria-label="GIF Summer 2027">
           <div className="ph" aria-hidden="true"><Image src={PLACES.petronas.src} alt="" fill sizes="50vw" /></div>
           <span className="photo-credit">{PLACES.petronas.credit.author} · {PLACES.petronas.credit.license}</span>
-          <div className="eyebrow" style={{ color: "var(--gif-amber-soft)" }}>Summer 2027 · Stop 02 · Kuala Lumpur</div>
+          <div className="eyebrow" style={{ color: "var(--gif-sky-soft)" }}>Summer 2027 · Stop 02 · Kuala Lumpur</div>
           <h2>Singapore, Malaysia and Thailand in eight days.</h2>
           <p>Your application, payments, tasks and results, all in one place.</p>
         </aside>

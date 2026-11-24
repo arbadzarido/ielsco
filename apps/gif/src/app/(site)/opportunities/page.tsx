@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
-import { balanceOf, mentoringPrice } from "@/lib/settings";
+import { redirect } from "next/navigation";
+import { balanceOf, mentoringPrice, promoted } from "@/lib/settings";
 import { CurrencyToggle, Price } from "@/components/Client";
 import { Eyebrow, FinalCta, PageHero, Pathways } from "@/components/Blocks";
 
@@ -10,6 +11,8 @@ export const revalidate = 300;
 
 export default async function Opportunities() {
   const s = await currentSettingsSafe();
+  // Self-Funded campaign (24 Nov 2026): no pathway comparison while only Self-Funded is promoted.
+  if (!promoted(s, "fully_funded") && !promoted(s, "mentoring")) redirect("/self-funded");
   const m = mentoringPrice(s);
   const bal = balanceOf(s);
   const rows: [string, React.ReactNode, React.ReactNode, React.ReactNode][] = [

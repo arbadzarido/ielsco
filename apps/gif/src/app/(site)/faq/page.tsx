@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { getContent } from "@/lib/cms";
+import { currentSettingsSafe } from "@/lib/cohort";
+import { visibleFaq } from "@/lib/content";
 import { FaqList, FinalCta, PageHero } from "@/components/Blocks";
 
-export const metadata: Metadata = { title: "FAQ", description: "Answers about GIF Summer 2027: pathways, payments, selection, mentoring and travel." };
+export const metadata: Metadata = { title: "FAQ", description: "Answers about GIF Summer 2027: the programme, the competition and prize pool, Self-Funded places, payments and travel." };
 export const revalidate = 300;
 
 export default async function FaqPage() {
-  const faq = await getContent("faq");
+  const faq = visibleFaq(await getContent("faq"), await currentSettingsSafe());
   const groups = [...new Set(faq.map((f) => f.group))];
   const ld = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) };
   return (

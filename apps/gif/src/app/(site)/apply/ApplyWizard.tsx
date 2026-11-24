@@ -13,9 +13,11 @@ type Draft = { pathway?: Pathway; mode?: "individual" | "team"; team_name?: stri
   project_idea?: string; experience?: string; motivation?: string; discovery_source?: string; step?: number };
 type Props = {
   email: string; initial: Draft; initialPathway?: Pathway;
+  // Pathways offered in the chooser (the public campaign); a pathway already chosen (link or draft) is always shown.
+  visible?: Pathway[];
   open: Record<string, { open: boolean; reason?: string }>;
   docs: Record<string, { slug: string; title: string; category: string }[]>;
-  prices: { elcoPro: number; elcoMonths: number; mentoring: Money; mentoringTier: string; total: Money; deposit: Money; balance: Money };
+  prices: { elcoPro: number; elcoMonths: number; mentoring: Money; mentoringTier: string; total: Money; deposit: Money; balance: Money; early?: Money; earlySlots?: number; regularSlots?: number };
 };
 
 const STEPS = ["Pathway", "Your profile", "Team", "Project", "Review and submit"];
@@ -24,10 +26,10 @@ const PERSON_FIELDS = ["legal_name", "email", "whatsapp", "nationality", "reside
 const blank = (): Person => Object.fromEntries(PERSON_FIELDS.map((f) => [f, ""]));
 const n = (v: number) => new Intl.NumberFormat("en-US").format(v);
 
-export default function ApplyWizard({ email, initial, initialPathway, open, docs, prices }: Props) {
+export default function ApplyWizard({ email, initial, initialPathway, open, docs, prices, visible }: Props) {
   const router = useRouter();
   const [d, setD] = useState<Draft>(() => ({
-    pathway: initialPathway ?? initial.pathway, mode: initial.mode ?? "individual", team_name: initial.team_name ?? "",
+    pathway: initialPathway ?? initial.pathway ?? (visible?.length === 1 ? visible[0] : undefined), mode: initial.mode ?? "individual", team_name: initial.team_name ?? "",
     leader: { ...blank(), ...(initial.leader ?? {}), email }, members: initial.members ?? [], project_title: initial.project_title ?? "",
     project_idea: initial.project_idea ?? "", experience: initial.experience ?? "", motivation: initial.motivation ?? "", discovery_source: initial.discovery_source ?? "",
   }));
@@ -101,7 +103,10 @@ export default function ApplyWizard({ email, initial, initialPathway, open, docs
               <div className="choice c3">
                 {([["fully_funded", "Fully Funded application", `Compete for 10 Fully Funded and 10 Partial Funded places. Phase 1 includes ${prices.elcoMonths} months of Elco Pro for IDR ${n(prices.elcoPro)}.`],
                   ["mentoring", "Project Mentoring Program", `15 weekly sessions, then straight to Phase 3. ${prices.mentoringTier === "early" ? "Early Bird" : "Regular"}: IDR ${n(prices.mentoring.IDR)} / USD ${n(prices.mentoring.USD)}.`],
-                  ["self_funded", "Self-Funded", `Direct registration. IDR ${n(prices.total.IDR)} / USD ${n(prices.total.USD)}; deposit confirms your seat.`]] as const).map(([v, t, desc]) => (
+                  ["self_funded", "Self-Funded", prices.early && prices.earlySlots
+                    ? `Direct registration. Super Early Bird IDR ${n(prices.early.IDR)} / USD ${n(prices.early.USD)} for the first ${prices.earlySlots} verified deposits, then Regular IDR ${n(prices.total.IDR)} / USD ${n(prices.total.USD)}. Your deposit confirms your seat.`
+                    : `Direct registration. IDR ${n(prices.total.IDR)} / USD ${n(prices.total.USD)}; deposit confirms your seat.`]] as const)
+                  .filter(([v]) => !visible || visible.includes(v) || pw === v).map(([v, t, desc]) => (
                   <label className="option" key={v} style={{ opacity: open[v].open ? 1 : 0.6 }}>
                     <input type="radio" name="pathway" value={v} checked={pw === v} disabled={!open[v].open} onChange={() => { set({ pathway: v }); track("pathway_select", { pathway: v }); }} />
                     <span><strong>{t}</strong><span className="small muted">{open[v].open ? desc : open[v].reason}</span></span>

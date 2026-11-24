@@ -24,18 +24,22 @@ export const GIF_PROGRAMME = {
   startsAt: "2027-07-27T00:00:00+07:00",
   endsAt: "2027-08-03T23:59:59+07:00",
   // Facts only (apps/gif content): eight days, three countries in that order, a project idea developed with peers and mentors.
-  description: "An eight-day international youth programme from Singapore through Malaysia to Thailand. Bring a project idea for your community and develop it with peers and mentors from across Southeast Asia.",
+  description: "An eight-day international youth programme from Singapore through Malaysia to Thailand. Develop a social-impact project through a three-stage competition; ten finalists pitch and exhibit at the Grand Finale in Bangkok, with a USD 5,000 total prize pool.",
   logo: "/images/logos/events/gif.png", // official GIF logo (238×87, same file as gif.ielsco.com brand/gif-logo.png)
 } as const;
 
 // The three ways to join (founder decisions 20–21 Nov 2026). Partial Funded is a result of the Fully Funded selection,
 // not a pathway of its own. Registration opened 20 Nov 2026 for Self-Funded and Mentoring; Fully Funded opens 25 Nov 2026.
-export type GifPathway = { key: "fully_funded" | "self_funded" | "mentoring"; name: string; line: string; opensAt: string };
+// promoted: featured on ielsco.com (24 Nov 2026 Self-Funded campaign; keep in sync with apps/gif settings.campaign).
+// A pathway that isn't promoted still works for anyone with a direct link; it just isn't advertised.
+export type GifPathway = { key: "fully_funded" | "self_funded" | "mentoring"; name: string; line: string; opensAt: string; promoted: boolean };
 export const GIF_PATHWAYS: GifPathway[] = [
-  { key: "fully_funded", name: "Fully Funded", line: "Competitive selection in three phases for funded places.", opensAt: "2026-11-25T00:00:00+07:00" },
-  { key: "self_funded", name: "Self-Funded", line: "Direct registration, subject to programme capacity.", opensAt: "2026-11-20T00:00:00+07:00" },
-  { key: "mentoring", name: "Project Mentoring", line: "Weekly mentoring to develop your project; mentees go straight to Phase 3.", opensAt: "2026-11-20T00:00:00+07:00" },
+  { key: "fully_funded", name: "Fully Funded", line: "Competitive selection in three phases for funded places.", opensAt: "2026-11-25T00:00:00+07:00", promoted: false },
+  { key: "self_funded", name: "Self-Funded", line: "Direct registration: 20 Super Early Bird places, then 50 Regular places.", opensAt: "2026-11-20T00:00:00+07:00", promoted: true },
+  { key: "mentoring", name: "Project Mentoring", line: "Weekly mentoring to develop your project; mentees go straight to Phase 3.", opensAt: "2026-11-20T00:00:00+07:00", promoted: false },
 ];
+export const GIF_PUBLIC_PATHWAYS = GIF_PATHWAYS.filter((p) => p.promoted);
+export const GIF_FULLY_FUNDED_PROMOTED = GIF_PATHWAYS.some((p) => p.key === "fully_funded" && p.promoted);
 
 export const pathwayOpen = (p: GifPathway, now = Date.now()) => now >= Date.parse(p.opensAt);
 export const pathwayStatus = (p: GifPathway, now = Date.now()) => {
