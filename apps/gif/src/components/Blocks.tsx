@@ -13,10 +13,14 @@ import { CAMPUS_PHOTOS, PLACES } from "@/lib/places";
 // Elco, the IELSco mascot, as a small companion (one per page, never in the hero). Decorative: aria-hidden.
 // Motion is CSS only (globals.css, "Elco companion"): a slow float, a rise-in on scroll, a hop on hover; off with reduced motion.
 export type ElcoPose = "thinking" | "trophy" | "explaining" | "presenting" | "writing" | "talking" | "reading" | "relaxed";
+// GIF Summer 2027 kit (25 Nov 2026): the designer's Elco poses in the GIF outfit (sky→teal neckerchief with the white GIF
+// logogram, teal GIF cap on some poses), the same kit as the S27 carousel in Figma ("Elco · GIF S27 kit").
+const ELCO_SIZE: Record<ElcoPose, [number, number]> = { thinking: [360, 512], trophy: [360, 288], explaining: [360, 274], presenting: [360, 416], writing: [360, 322], talking: [360, 389], reading: [360, 434], relaxed: [360, 393] };
 export function Elco({ pose, className = "" }: { pose: ElcoPose; className?: string }) {
+  const [w, h] = ELCO_SIZE[pose];
   return (
     <span className={`elco ${className}`.trim()} aria-hidden="true" data-pose={pose}>
-      <Image src={`/elco/${pose}.svg`} alt="" width={160} height={130} unoptimized />
+      <Image src={`/elco/gif/${pose}.webp`} alt="" width={w} height={h} unoptimized />
     </span>
   );
 }

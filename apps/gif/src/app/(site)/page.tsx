@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
 import { getContent } from "@/lib/cms";
-import { COMPETITION, PHOTOS, keyDates, visibleFaq } from "@/lib/content";
+import { COMPETITION, INSTAGRAM, PHOTOS, keyDates, visibleFaq } from "@/lib/content";
 import { minInstallment } from "@/lib/pricing";
 import { promoted } from "@/lib/settings";
 import { fmtRange } from "@/lib/format";
@@ -190,7 +190,7 @@ export default async function Home() {
               <Elco pose="thinking" />
             </div>
             <FaqList items={visibleFaq(faq, s).slice(0, 6)} />
-            <p className="small muted" style={{ marginTop: 16 }}>More in the <Link href="/faq">full FAQ</Link>, or write to <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>.</p>
+            <p className="small muted" style={{ marginTop: 16 }}>More in the <Link href="/faq">full FAQ</Link>, or write to <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>. GIF news: <a href={INSTAGRAM.gif.url} target="_blank" rel="noopener noreferrer">{INSTAGRAM.gif.handle}</a>.</p>
           </div>
           <aside className="dates-card" aria-labelledby="dates-h">
             <Eyebrow>Key dates</Eyebrow>
