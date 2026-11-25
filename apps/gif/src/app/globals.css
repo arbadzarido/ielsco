@@ -720,8 +720,8 @@ img[src*="places"], img[src*="photos"], .bw img { filter: grayscale(1) contrast(
 
 /* ── Elco companion: one per page, gentle motion only ─────────────────────────────────────────────────────────────── */
 .elco { display: inline-block; flex-shrink: 0; line-height: 0; }
-.elco img { display: block; width: 88px; height: auto; transform-origin: 50% 100%; }
-@media (min-width: 640px) { .elco img { width: 116px; } }
+.elco img { display: block; width: 92px; height: auto; max-height: 150px; object-fit: contain; transform-origin: 50% 100%; }
+@media (min-width: 640px) { .elco img { width: 122px; max-height: 176px; } }
 .elco.below { display: block; margin-top: 20px; }
 .elco.end { justify-self: end; align-self: end; }
 .elco.corner { display: none; }

@@ -14,7 +14,7 @@ export default async function FaqPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      <PageHero eyebrow="FAQ" title="Frequently asked questions." lead="Can't find your answer? Email hello@ielsco.com or message us on WhatsApp at +62 882-9725-3491." />
+      <PageHero eyebrow="FAQ" title="Frequently asked questions." lead="Can't find your answer? Email hello@ielsco.com or WhatsApp +62 882-9725-3491. Follow @iels.co on Instagram, and @gif.ielsco for GIF updates." />
       <section className="section">
         <div className="wrap narrow" style={{ maxWidth: 880, position: "relative" }}>
           <Elco pose="reading" className="corner" />

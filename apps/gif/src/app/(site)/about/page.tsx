@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { currentSettingsSafe } from "@/lib/cohort";
-import { COMPETITION } from "@/lib/content";
+import { COMPETITION, INSTAGRAM } from "@/lib/content";
 import { promoted } from "@/lib/settings";
 import { PHOTOS } from "@/lib/content";
 import { Elco, Eyebrow, Figure, FinalCta, PageHero } from "@/components/Blocks";
@@ -20,7 +20,7 @@ export default async function About() {
           <div><Eyebrow n="01">Who runs it</Eyebrow><h2>IELSco</h2><Elco pose="presenting" className="below" /></div>
           <div>
             <p className="lead">GIF is organised by IELSco (PT English Space Berkah Indonesia), an English learning community connecting young people in Southeast Asia with English practice and global opportunities.</p>
-            <p>IELSco also builds Elco, an AI English practice app. Contact: <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>, WhatsApp <a href="https://wa.me/6288297253491">+62 882-9725-3491</a>.</p>
+            <p>IELSco also builds Elco, an AI English practice app. Contact: <a href="mailto:hello@ielsco.com">hello@ielsco.com</a>, WhatsApp <a href="https://wa.me/6288297253491">+62 882-9725-3491</a>. Follow <a href={INSTAGRAM.main.url} target="_blank" rel="noopener noreferrer">{INSTAGRAM.main.handle}</a> on Instagram, and <a href={INSTAGRAM.gif.url} target="_blank" rel="noopener noreferrer">{INSTAGRAM.gif.handle}</a> for GIF updates.</p>
           </div>
         </div>
       </section>

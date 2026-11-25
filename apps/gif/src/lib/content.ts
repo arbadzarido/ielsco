@@ -21,6 +21,13 @@ export const NAV: { href: string; label: string; primary?: boolean }[] = [
 // USD 5,000 is the TOTAL prize pool across four award levels and ten award recipients, all from the Top 10 finalists.
 // Not decided yet (do not publish an invented answer): the amount per award level, individual vs team awards and how a
 // team's prize is shared, the final scorecard, the Public Choice Award and public voting, disbursement terms, the venue.
+// Instagram (25 Nov 2026): @iels.co is IELSco's main account and always comes first; @gif.ielsco is the official GIF
+// account, for GIF-specific updates only.
+export const INSTAGRAM = {
+  main: { handle: "@iels.co", url: "https://www.instagram.com/iels.co/" },
+  gif: { handle: "@gif.ielsco", url: "https://www.instagram.com/gif.ielsco/" },
+} as const;
+
 export const COMPETITION = {
   prizePoolUsd: 5000,
   finalists: 10,

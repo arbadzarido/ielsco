@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { DOCS } from "@/lib/legal";
+import { INSTAGRAM } from "@/lib/content";
 import { currentSettingsSafe } from "@/lib/cohort";
 import { promoted } from "@/lib/settings";
 
@@ -50,6 +51,8 @@ export default async function SiteFooter() {
               <ul>
                 <li><a href="mailto:hello@ielsco.com">hello@ielsco.com</a></li>
                 <li><a href="https://wa.me/6288297253491" rel="noopener noreferrer" target="_blank">WhatsApp</a></li>
+                <li><a href={INSTAGRAM.main.url} rel="noopener noreferrer" target="_blank">Instagram {INSTAGRAM.main.handle}</a></li>
+                <li><a href={INSTAGRAM.gif.url} rel="noopener noreferrer" target="_blank">GIF updates {INSTAGRAM.gif.handle}</a></li>
                 <li><a href="https://www.ielsco.com">ielsco.com</a></li>
               </ul>
             </div>
