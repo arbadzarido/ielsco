@@ -89,7 +89,7 @@ export function Milestones({ pj }: { pj: PortfolioProject }) {
       {pj.milestones.map((m) => {
         const id = /\((TL-\d{3})\)/.exec(m.label)?.[1];
         const live = id ? byId.get(id) : undefined;
-        const date = live?.due_date ?? (m.date === "TBC" ? null : m.date);
+        const date = m.date === "TBC" ? live?.due_date ?? null : m.date;
         return (
           <li key={m.label} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
             <span className={cn("w-24 shrink-0 tabular-nums", date && date < today && live?.status !== "Done" ? "font-medium text-[#A12D2F]" : "text-[#3A4B60]")}>{date ? fmtDate(date) : "TBC"}</span>

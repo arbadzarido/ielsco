@@ -153,10 +153,10 @@ export function TaskGrid({ view = "all", fixed = {}, initialGroup, compact = fal
       )}
       <ErrorLine message={err ?? tasks.error} />
       <div className="overflow-x-auto rounded-xl border border-[#E6E9EE] bg-white">
-        <table className="w-full min-w-[980px] border-collapse text-[13px]" data-testid={`${testId}-table`}>
+        <table className="w-full min-w-[1120px] table-fixed border-collapse text-[13px]" data-testid={`${testId}-table`}>
           <colgroup>
-            <col className="w-[30%]" /><col className="w-[118px]" /><col className="w-[120px]" /><col className="w-[110px]" /><col className="w-[118px]" />
-            <col className="w-[170px]" /><col className="w-[132px]" /><col className="w-[104px]" />
+            <col style={{ minWidth: 260 }} /><col style={{ width: 124 }} /><col style={{ width: 112 }} /><col style={{ width: 112 }} /><col style={{ width: 116 }} />
+            <col style={{ width: 176 }} /><col style={{ width: 138 }} /><col style={{ width: 96 }} />
           </colgroup>
           <thead>
             <tr>

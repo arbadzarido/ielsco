@@ -348,7 +348,7 @@ export function PeopleWorkflow() {
   return (
     <div className="space-y-6" data-testid="os-wf-people">
       <Section title="Recruitment pipeline (2027 cohort)" action={<Link href="/os/recruitment" className={btn}>Open Recruitment</Link>}>
-        {stages.error ? <p className={cn("text-sm", muted)}>You need a recruitment grant to see candidates. A founder gives it in Admin → Access grants.</p> : (
+        {stages.loading && !stages.data ? <Loading /> : stages.error ? <p className={cn("text-sm", muted)}>You need a recruitment grant to see candidates. A founder gives it in Admin → Access grants.</p> : (
           <div className="grid grid-cols-2 gap-2 md:grid-cols-7">{STAGES.map(([k, l]) => <Stat key={k} label={l} value={by(k)} href={`/os/recruitment?stage=${k}`} />)}</div>
         )}
         <p className={cn("mt-1.5 text-xs", muted)}>Applications close 29 Nov 23:59 WIB · schedule sent 30 Nov · group sessions 1–4 Dec · review 5–8 Dec · decisions 9 Dec · onboarding 10–18 Dec.</p>
