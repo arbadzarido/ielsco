@@ -9,13 +9,15 @@ export interface MyWorkspace {
   is_member: boolean; is_manager: boolean; is_lead: boolean;
 }
 
-export type WsSection = "overview" | "projects" | "tasks" | "meetings" | "metrics" | "documents" | "requests" | "access"
+export type WsSection = "overview" | "guide" | "workflow" | "projects" | "tasks" | "meetings" | "metrics" | "documents" | "requests" | "access"
   | "ledger" | "budgets" | "cashflow" | "setup" | "letters" | "agreements" | "compliance" | "numbering";
 export interface WsNavItem { key: string; label: string; href: string; icon: "home" | "briefcase" | "check" | "file" | "inbox" | "shield" | "megaphone" | "handshake" | "users" | "userplus" | "scroll"
   | "wallet" | "piggy" | "chart" | "settings" | "mail" | "signature" | "calendar" | "hash" }
 
 const SECTION: Record<WsSection, { label: string; icon: WsNavItem["icon"] }> = {
   overview: { label: "Overview", icon: "home" },
+  guide: { label: "Guide", icon: "scroll" },
+  workflow: { label: "Workflow", icon: "check" },
   projects: { label: "Projects", icon: "briefcase" },
   tasks: { label: "Tasks", icon: "check" },
   meetings: { label: "Meetings", icon: "users" },
@@ -37,6 +39,7 @@ export const SECTION_LABEL: Record<WsSection, string> = Object.fromEntries(Objec
 /** Existing Company OS modules that belong to one division's workspace. */
 const DIVISION_MODULES: Record<string, { label: string; href: string; icon: WsNavItem["icon"]; needs?: "recruitment" }[]> = {
   GRO: [{ label: "Campaigns", href: "/os/campaigns", icon: "megaphone" }],
+  MKT: [{ label: "Campaigns", href: "/os/campaigns", icon: "megaphone" }],
   PAR: [{ label: "Partnerships", href: "/os/partnerships", icon: "handshake" }],
   PPL: [
     { label: "People", href: "/os/people", icon: "users" },
@@ -45,6 +48,9 @@ const DIVISION_MODULES: Record<string, { label: string; href: string; icon: WsNa
   ],
 };
 
+/** The six HQ divisions (26 Nov 2026 structure) get a Workflow and a Guide tab. */
+export const HQ_DIVISIONS = ["OPS", "PAR", "PPL", "GRO", "MKT", "CRE"];
+
 export const workspaceHref = (code: string, section: WsSection = "overview") => `/os/d/${code.toLowerCase()}${section === "overview" ? "" : `?tab=${section}`}`;
 
 /** Sections of a workspace, in sidebar order. Finance and Legal have their registers instead of project and task lists;
@@ -52,7 +58,9 @@ export const workspaceHref = (code: string, section: WsSection = "overview") => 
 export function workspaceSections(ws: Pick<MyWorkspace, "privacy"> & { code?: string }, opts: { requests?: boolean } = {}): WsSection[] {
   const base: WsSection[] = ws.code === "FIN" ? ["overview", "ledger", "budgets", "cashflow", "meetings", "documents"]
     : ws.code === "LEG" ? ["overview", "letters", "agreements", "compliance", "meetings", "documents"]
-    : ws.privacy === "restricted" ? ["overview", "meetings", "documents"] : ["overview", "projects", "tasks", "meetings", "metrics", "documents"];
+    : ws.privacy === "restricted" ? ["overview", "meetings", "documents"]
+    : HQ_DIVISIONS.includes(ws.code ?? "") ? ["overview", "workflow", "guide", "tasks", "projects", "meetings", "metrics", "documents"]
+    : ["overview", "projects", "tasks", "meetings", "metrics", "documents"];
   const tail: WsSection[] = ws.code === "FIN" ? ["setup"] : ws.code === "LEG" ? ["numbering"] : [];
   return [...base, ...(opts.requests ? ["requests" as const] : []), ...tail, "access"];
 }

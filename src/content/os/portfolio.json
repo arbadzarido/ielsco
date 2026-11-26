@@ -1,0 +1,809 @@
+{
+ "asOf": "26 November 2026",
+ "projects": [
+  {
+   "key": "circle",
+   "rank": 1,
+   "name": "IELS Circle",
+   "os_project": "PRJ-0032",
+   "accent": "CIRCLE",
+   "logo": "circleblue.png",
+   "one_liner": "Free English speaking community for young people across Southeast Asia.",
+   "what": [
+    "Recurring speaking practice every Wednesday 19:00 WIB and Saturday 13:00 WIB (SITE)",
+    "Cohort programmes: the Oct–Dec 2026 cohort runs 8 weekly themes with speaking clubs and quizzes (SITE)",
+    "Member stories, community channels (Discord, Instagram) and in-dashboard check-ins (SITE)"
+   ],
+   "audience": "Southeast Asian youth who want to use English with confidence (SITE).",
+   "status": "Active in Company OS (PRJ-0032). Oct–Dec 2026 cohort in week 8; Graduation Day 12 Dec 2026 (SITE). Next cohort dates TBC.",
+   "milestones": [
+    {
+     "date": "2026-12-06",
+     "label": "Cohort week 8 ends: Podcasts & Lectures",
+     "source": "SITE"
+    },
+    {
+     "date": "2026-12-12",
+     "label": "Grand Finale: Graduation Day and e-certificates",
+     "source": "SITE"
+    },
+    {
+     "date": "2027-01-22",
+     "label": "Story intake and consent form ready (TL-063)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-02-05",
+     "label": "Community onboarding and activation flow (TL-064)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-02-15",
+     "label": "GIF interest list via Circle (TL-066) — timing to re-check: GIF registration opened 20 Nov",
+     "source": "OS"
+    },
+    {
+     "date": "2027-04-16",
+     "label": "Campus and country expansion pilot (TL-068)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-05-21",
+     "label": "Applicant education sessions for GIF (TL-070)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-08-27",
+     "label": "Community calendar and member feedback cycle ends (TL-072)",
+     "source": "OS"
+    }
+   ],
+   "live": [
+    "Registrations for the Oct 2026 cohort (event_registrations, event circle-2026-oct)",
+    "Session check-ins per Wednesday/Saturday session (circle_session_checkins)",
+    "Circle groups and members (circles, circle_members)"
+   ],
+   "kpis": [
+    "Cohort registrations and attendance (live)",
+    "Session check-ins per week (live)",
+    "Member stories collected with consent",
+    "Targets: none approved — TBC"
+   ],
+   "divisions": {
+    "PPL": {
+     "role": "Lead",
+     "contribution": "Community nurturing, member care, stories with consent, onboarding of new members"
+    },
+    "GRO": {
+     "role": "Support",
+     "contribution": "Member growth, distribution, Community Growth role"
+    },
+    "MKT": {
+     "role": "Support",
+     "contribution": "Content pillar ‘Community & connection’, session topics and promotion plan"
+    },
+    "CRE": {
+     "role": "Support",
+     "contribution": "Session decks, posters, certificates"
+    },
+    "OPS": {
+     "role": "Support",
+     "contribution": "Session calendar, run sheet, cohort logistics, reporting"
+    },
+    "PAR": {
+     "role": "Support",
+     "contribution": "Community and academic partners for campus expansion"
+    }
+   },
+   "dependencies": [
+    "Next cohort dates and format (founders)",
+    "Community Experience / Community Growth hires (recruitment)",
+    "GIF applicant education depends on GIF timeline"
+   ],
+   "risks": [
+    "Former Community division items in the Master Timeline have no lead division now",
+    "Member counts in older decks disagree (2K / 8.7K / 19K): do not publish numbers until verified"
+   ],
+   "tbc": [
+    "Lead division and PIC after the restructure (proposed: People)",
+    "Next cohort dates, size and registration form",
+    "Targets for members, attendance and retention",
+    "Budget (none recorded)"
+   ],
+   "background": [
+    "IELS Circle is IELSco's free English speaking club and community across Southeast Asia (SITE).",
+    "It runs on two fixed weekly slots (Wednesday 19:00 WIB, Saturday 13:00 WIB) with a curated topic rotation: speaking, scholarships, careers, ASEAN, study and work abroad (SITE).",
+    "Cohorts add structure: the Oct–Dec 2026 cohort (registration closed 9 Oct) runs 8 weekly themes from daily conversation to podcasts and lectures, ending with Graduation Day on 12 Dec (SITE).",
+    "Circle is also the entry point to IELSco's other projects: it is included in IELS Course and is the planned channel for GIF applicant education (SITE, OS)."
+   ],
+   "ops": [
+    "Session calendar for every Wednesday and Saturday, with a host/moderator per session",
+    "Session deck and topic for each slot (Creative + Marketing)",
+    "Check-in and attendance recording in the dashboard",
+    "Cohort registration, weekly quiz and certificate workflow",
+    "Member stories collected only with written consent",
+    "Community channels moderated (Discord, Instagram)"
+   ],
+   "next": [
+    "Run cohort week 8 and Graduation Day on 12 Dec; issue e-certificates",
+    "Agree the Circle lead division and PIC after the restructure",
+    "Decide the next cohort dates and registration form",
+    "Re-check TL-066 (GIF interest list, 15 Feb) against GIF registration already open"
+   ],
+   "recruitment": null
+  },
+  {
+   "key": "gif",
+   "rank": 2,
+   "name": "Global Impact Fellowship",
+   "short": "GIF",
+   "os_project": "PRJ-0033",
+   "accent": "TEAL",
+   "logo": "gif_navy.png",
+   "one_liner": "Summer 2027: an 8-day international programme across Singapore, Malaysia and Thailand.",
+   "what": [
+    "Programme 27 July – 3 August 2027 (8 days, 7 nights): Singapore → Malaysia → Thailand (OS facts)",
+    "Grand Finale on Day 7 (2 Aug 2027) in Bangkok: Global Impact Conference & Innovation Expo (FND)",
+    "Self-Funded is the promoted pathway: Super Early Bird 20 places USD 799 / IDR 13,000,000; Regular 50 places USD 999 / IDR 17,000,000 (FND, 24 Nov)",
+    "USD 5,000 total prize pool across 10 awards: 1 Grand, 2 Gold, 3 Silver, 4 Bronze (FND)",
+    "Apply and pay in the IELSco Dashboard (ielsco.com/dashboard/gif); site gif.ielsco.com (OS facts)"
+   ],
+   "audience": "High school and university students; international participants, mainly from Southeast Asia (OS facts).",
+   "status": "Active (PRJ-0033), 121 tasks in Company OS. Registration open since 20 Nov 2026. Live: 4 participants, 3 seats confirmed, 1 awaiting payment, 6 drafts (OS live stats, 26 Nov).",
+   "milestones": [
+    {
+     "date": "2026-12-11",
+     "label": "G0 programme baseline gate (TL-107)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-01-15",
+     "label": "Route, cities and day split decided (TL-108)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-01-22",
+     "label": "Institutional requests sent (TL-110)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-02-26",
+     "label": "Transport and accommodation quotes in (TL-112)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-03-12",
+     "label": "G1 partner gate (TL-113)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-04-09",
+     "label": "G2 budget and funding gate (TL-114)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-04-30",
+     "label": "Local coordinators confirmed, 3 countries (TL-115)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-06-01",
+     "label": "Selection results (TL-119)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-06-04",
+     "label": "G4 commitment gate: bookings signed (TL-120)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-06-08",
+     "label": "Itinerary shared with confirmed delegates (TL-121)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-06-30",
+     "label": "Balance due (TL-124)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-07-13",
+     "label": "G5 final readiness review (TL-126)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-07-27",
+     "label": "GIF Summer 2027 programme starts (TL-128)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-08-31",
+     "label": "Financial reconciliation and impact report (TL-130)",
+     "source": "OS"
+    }
+   ],
+   "live": [
+    "Applications by pathway and status, participants, confirmed seats (gif schema via os_programme_live_stats)",
+    "Paid totals: founders and programme approvers only"
+   ],
+   "kpis": [
+    "KPI-0059 GIF interest registrations",
+    "KPI-0060 GIF applications started",
+    "KPI-0061 GIF applications submitted",
+    "KPI-0067 GIF delegates completing the program",
+    "Capacity 100 (proposed); planning scenarios 20 / 50 / 80 Self-Funded (estimates)"
+   ],
+   "divisions": {
+    "OPS": {
+     "role": "Lead",
+     "contribution": "Programme plan, logistics, run sheet, gates G0–G5, risk register, delegate operations"
+    },
+    "PAR": {
+     "role": "Lead (partners)",
+     "contribution": "Universities, local coordinators, sponsors and venues; written confirmation before any public naming"
+    },
+    "PPL": {
+     "role": "Support",
+     "contribution": "Delegate support and service, guardian consent follow-up, team capacity in the May–July peak"
+    },
+    "GRO": {
+     "role": "Support",
+     "contribution": "Registration funnel, KOL/UGC, distribution, GIF funnel report"
+    },
+    "MKT": {
+     "role": "Support",
+     "contribution": "Self-Funded campaign plan, content calendar, briefs"
+    },
+    "CRE": {
+     "role": "Support",
+     "contribution": "Campaign assets, guidebook, certificates, on-site media"
+    }
+   },
+   "dependencies": [
+    "Partner confirmations (G1) before itinerary and campaign claims",
+    "Budget and funding gate (G2) before bookings",
+    "Insurance minimum cover, visa support letters, minors’ supervision rules",
+    "Counsel review of legal drafts"
+   ],
+   "risks": [
+    "No university is confirmed in writing yet (NUS, UM, UTM, Chulalongkorn are ‘planned engagement’)",
+    "Malaysia city, transport between countries and day split not decided",
+    "Company OS price facts still show USD 899; the website uses USD 799/999 since 24 Nov — update the facts register"
+   ],
+   "tbc": [
+    "Award amount per level and judging scorecard",
+    "Minimum viable cohort",
+    "Bank details for invoice payments",
+    "Whether Fully Funded and Mentoring stay hidden",
+    "Insurance minimum cover",
+    "Minors: supervision, rooming, curfew"
+   ],
+   "background": [
+    "GIF is IELSco's international fellowship. The Winter 2026 edition ran in Company OS as PRJ-0034 (Feb–Nov 2026) (OS).",
+    "Summer 2027 is the largest project in Company OS: 121 tasks, a programme register (facts, decisions, risks, budget, outputs, country plans) and gates G0–G5 (OS).",
+    "Participants apply and pay in the IELSco Dashboard, which opens the GIF engine by single sign-on; gif.ielsco.com is the public site (OS facts).",
+    "Founders decided on 24 Nov 2026 to promote Self-Funded only, with Fully Funded and Mentoring hidden, and a USD 5,000 total prize pool (FND)."
+   ],
+   "ops": [
+    "Programme design and day-by-day itinerary (not approved yet)",
+    "Route, cities and transport between Singapore, Malaysia and Thailand",
+    "Institutions and local coordinators per country (written confirmation before public naming)",
+    "Registrants → applicants → confirmed delegates: payments, deposits and balance by 30 Jun",
+    "Delegate support: guardian consent for under-18s, insurance, visa letters",
+    "Pre-departure briefings (19 Jun, 10 Jul), manifests and rooming lists (20 Jul), run sheets",
+    "Awards and judging for the Grand Finale (2 Aug, Bangkok)"
+   ],
+   "next": [
+    "G0 programme baseline gate on 11 Dec",
+    "Partner research for NUS, UTM, Chulalongkorn (TL-020, to 18 Dec)",
+    "Update the facts register to the 24 Nov prices (USD 799 / 999)",
+    "Self-Funded campaign content calendar for December (Marketing → Creative)"
+   ],
+   "recruitment": null
+  },
+  {
+   "key": "elco",
+   "rank": 3,
+   "name": "Elco AI",
+   "os_project": null,
+   "accent": "NAVY",
+   "logo": "happy.png",
+   "one_liner": "AI English practice app: speaking, games and test preparation (PT Elco Edukasi Berkah Indonesia).",
+   "what": [
+    "General English practice with Call (voice), roleplay, quizzes and games, including 1v1 Arena (SITE / product)",
+    "Test preparation modes: TOEFL ITP, IELTS, TOEIC (live; exam billing switched off) (FND)",
+    "Elco Pro (IDR 98,000 for 3 months) is part of the GIF Fully Funded Phase 1 requirement (OS facts)",
+    "Linked to IELSco accounts: IELSco members get Elco benefits through account linking (SITE)"
+   ],
+   "audience": "Indonesian and Southeast Asian learners who want daily English practice (TBC: no approved segment document).",
+   "status": "Live at www.elcoai.com. Founder-reported traction in Nov 2026 funding proposals: 200 pilot users, 50 paying in 3 weeks (verify before quoting). No Elco project exists in Company OS yet: this release adds one.",
+   "milestones": [
+    {
+     "date": "2027-02-26",
+     "label": "Elco GIF-preparation pathway defined (TL-074)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-02-26",
+     "label": "Consent and referral handoff design (TL-075)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-04-26",
+     "label": "Elco pathway available to opted-in GIF applicants (TL-077)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-05-21",
+     "label": "Elco content for applicants (TL-076)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-08-13",
+     "label": "Post-event Elco continuation offer (TL-079)",
+     "source": "OS"
+    },
+    {
+     "date": "2027-08-27",
+     "label": "Activation and retention tracking (TL-078)",
+     "source": "OS"
+    }
+   ],
+   "live": [
+    "Linked IELSco ↔ Elco accounts and active Elco benefit grants (IELSco database)",
+    "Elco users, subscriptions and usage live in Elco’s own database: not readable from Company OS yet"
+   ],
+   "kpis": [
+    "KPI-0063 to KPI-0066 Elco sign-ups, activation, retention and paid conversion from the GIF source (reported separately)",
+    "Targets: none approved — TBC"
+   ],
+   "divisions": {
+    "GRO": {
+     "role": "Lead",
+     "contribution": "Acquisition, KOL & UGC creators (5 KOL & UGC Manager places), experiments"
+    },
+    "MKT": {
+     "role": "Support",
+     "contribution": "Elco content pillars: product explainers, practice through games, practical English, updates"
+    },
+    "CRE": {
+     "role": "Support",
+     "contribution": "Product visuals, short-form video, app-store and social assets"
+    },
+    "PAR": {
+     "role": "Support",
+     "contribution": "Corporate and academic partnerships (candidate English training, schools)"
+    },
+    "OPS": {
+     "role": "Support",
+     "contribution": "GIF pathway operations, support process, reporting"
+    },
+    "PPL": {
+     "role": "Support",
+     "contribution": "Learning content roles hiring (TBC)"
+    }
+   },
+   "dependencies": [
+    "Elco data access for dashboards (export or API from Elco’s database)",
+    "Exam content rights before publishing",
+    "Funding proposals in progress (founders only)"
+   ],
+   "risks": [
+    "Former ‘Courses & Learning’ items have no lead division now",
+    "Third-party exam content is not rights-cleared"
+   ],
+   "tbc": [
+    "Project owner and PIC per division",
+    "2027 targets (users, paying users, MRR)",
+    "Launch and campaign calendar Dec–Aug",
+    "Where the Learning Content Developer role sits"
+   ],
+   "background": [
+    "Elco AI is an AI English practice app operated by PT Elco Edukasi Berkah Indonesia, a separate company from IELSco (PT English Space Berkah Indonesia) (SITE).",
+    "The product covers General English practice (voice Call, roleplay, quizzes, games and 1v1 Arena) and test preparation modes for TOEFL ITP, IELTS and TOEIC (FND).",
+    "IELSco members can link their Elco account to receive benefits; Elco Pro is part of the GIF Fully Funded Phase 1 requirement (SITE, OS facts).",
+    "The Master Timeline plans an Elco GIF-preparation pathway and post-event continuation offer in 2027 (OS)."
+   ],
+   "ops": [
+    "Acquisition plan with KOL and UGC creators (KOL & UGC Manager, 5 places)",
+    "Content calendar for Elco's four pillars",
+    "App-store, social and short-form video assets",
+    "Support process for users (WhatsApp support line)",
+    "GIF pathway: consent, referral handoff, applicant content",
+    "Activation and retention tracking (needs Elco data access)"
+   ],
+   "next": [
+    "Create the Elco AI project owner and PICs in Company OS",
+    "Agree 2027 targets (users, paying users, MRR) with the founders",
+    "KOL/UGC shortlist in the Growth creator tracker",
+    "Decide where the Learning Content Developer role sits"
+   ],
+   "recruitment": null
+  },
+  {
+   "key": "course",
+   "rank": 4,
+   "name": "IELS Course",
+   "os_project": null,
+   "accent": "CORAL",
+   "logo": null,
+   "one_liner": "Paid English classes: Collective, Studio and One (IELScourse).",
+   "what": [
+    "Collective: public group up to 20, Rp199,000 a month, 3 live sessions a week (SITE)",
+    "Studio: small group of 3–5, Rp399,000 a month, 1 live session a week (SITE)",
+    "One: private 1-on-1 packages Rp179,000 / 329,000 / 599,000 (2, 4 or 8 sessions) (SITE)",
+    "Includes Elco AI while active and IELS Circle access (SITE); online payment through Midtrans, switched on 23 Nov 2026 (FND)"
+   ],
+   "audience": "Learners who want guided classes with a mentor (SITE). Lead English Mentor: Arbadza Rido.",
+   "status": "Checkout is live; no cohort has been created yet, so nobody can be placed in a Collective or Studio class. First real payment not yet verified (FND).",
+   "milestones": [
+    {
+     "date": "TBC",
+     "label": "First Collective and Studio cohorts created with real schedules",
+     "source": "FND"
+    },
+    {
+     "date": "TBC",
+     "label": "First verified payment and receipt",
+     "source": "FND"
+    },
+    {
+     "date": "TBC",
+     "label": "Tutor rates and session length decided",
+     "source": "SITE docs"
+    }
+   ],
+   "live": [
+    "Active memberships by product, cohorts and their capacity, waitlist (course_* tables)",
+    "1-on-1 enrolments (tutoring_enrolments)"
+   ],
+   "kpis": [
+    "KPI-0033 Lead-to-enrolment conversion",
+    "Active members per product (live)",
+    "Waitlist size (live)",
+    "Targets: none approved — TBC"
+   ],
+   "divisions": {
+    "OPS": {
+     "role": "Lead",
+     "contribution": "Cohort set-up, schedules, tutor coordination, attendance and reporting (Course Manager role)"
+    },
+    "MKT": {
+     "role": "Support",
+     "contribution": "Course campaign and content"
+    },
+    "GRO": {
+     "role": "Support",
+     "contribution": "Lead generation and lead-to-enrolment conversion"
+    },
+    "CRE": {
+     "role": "Support",
+     "contribution": "Course posters and materials design"
+    },
+    "PPL": {
+     "role": "Support",
+     "contribution": "Tutor and mentor onboarding"
+    },
+    "PAR": {
+     "role": "Support",
+     "contribution": "School and academic partners"
+    }
+   },
+   "dependencies": [
+    "Real cohort schedules before promotion",
+    "Tutor rates (unit economics: One loses money above ~Rp70,000 per session)",
+    "Course Manager hire (recruitment)"
+   ],
+   "risks": [
+    "No Master Timeline items exist for IELS Course",
+    "Promotion before a cohort exists would sell places nobody can join"
+   ],
+   "tbc": [
+    "Project owner and PIC",
+    "Cohort calendar Dec 2026–Aug 2027",
+    "Targets",
+    "Session length for Collective"
+   ],
+   "background": [
+    "IELS Course (IELScourse) is IELSco's paid English classes, relaunched in Nov 2026 with three products: Collective, Studio and One (SITE).",
+    "Tagline: “Learn English. Practice Daily. Connect Globally.” Lead English Mentor: Arbadza Rido (SITE).",
+    "Online checkout through Midtrans was switched on in production on 23 Nov 2026 (FND).",
+    "Collective and Studio need real cohorts with schedules before anyone can be placed; none exist yet (FND)."
+   ],
+   "ops": [
+    "Cohort creation: product, tutor, capacity (20 or 5), schedule, meeting link",
+    "Tutor/mentor registry, rates and onboarding",
+    "Payments verified before activation; receipts",
+    "Attendance, materials, announcements per cohort",
+    "Waitlist when no cohort is open",
+    "Elco AI and IELS Circle access for active members"
+   ],
+   "next": [
+    "Decide tutor rates and Collective session length",
+    "Create the first real cohorts with schedules",
+    "One founder-approved real payment to verify webhook and receipt",
+    "Course campaign only after a cohort exists (Marketing → Creative)"
+   ],
+   "recruitment": null
+  }
+ ],
+ "divisions": {
+  "OPS": {
+   "name": "Operations",
+   "manager": "Ren",
+   "dept": "operations",
+   "purpose": "Project plans, milestones, logistics, SOPs, workflows, operational reporting and risk.",
+   "kpis": [
+    "KPI-0001 Overdue open tasks",
+    "KPI-0002 On-time task completion",
+    "KPI-0031 Events delivered as planned",
+    "KPI-0067 GIF delegates completing the program"
+   ]
+  },
+  "PAR": {
+   "name": "Business",
+   "manager": "Shafira",
+   "dept": "operations",
+   "purpose": "Partnerships in five categories: media, corporate, academic, community and recruitment.",
+   "kpis": [
+    "KPI-0034 Signed institutional partners",
+    "KPI-0035 Partnership proposals sent",
+    "KPI-0036 Active media partners",
+    "KPI-0068 Partners formally confirmed in writing"
+   ]
+  },
+  "PPL": {
+   "name": "People",
+   "manager": "Yasmine",
+   "dept": "operations",
+   "purpose": "HR and people operations: recruitment, onboarding, engagement, plus delegate and community care.",
+   "kpis": [
+    "KPI-0062 Volunteer applications received"
+   ]
+  },
+  "GRO": {
+   "name": "Growth",
+   "manager": "Didi",
+   "dept": "growth",
+   "purpose": "Social media distribution, audience growth, KOLs, UGC creators and growth experiments.",
+   "kpis": [
+    "KPI-0033 Lead-to-enrolment conversion",
+    "KPI-0059 GIF interest registrations",
+    "KPI-0060 GIF applications started",
+    "KPI-0061 GIF applications submitted"
+   ]
+  },
+  "MKT": {
+   "name": "Marketing",
+   "manager": "Acha",
+   "dept": "growth",
+   "purpose": "Content strategy: pillars, calendar, campaigns, briefs to Creative, review and approval.",
+   "kpis": [
+    "KPI-0037 Instagram followers",
+    "KPI-0038 LinkedIn followers",
+    "KPI-0039 TikTok followers",
+    "KPI-0040 Short-form videos published",
+    "KPI-0054 Launch campaign sign-ups"
+   ]
+  },
+  "CRE": {
+   "name": "Creative",
+   "manager": "Mojo",
+   "dept": "growth",
+   "purpose": "Design and creative production: requests, production queue, revisions and final assets.",
+   "kpis": [
+    "KPI-0040 Short-form videos published",
+    "KPI-0038 LinkedIn followers"
+   ]
+  }
+ },
+ "commonKpis": [
+  "KPI-0055 Weekly status report on time",
+  "KPI-0056 Own task adherence",
+  "KPI-0057 Tracker hygiene"
+ ],
+ "recruitment": {
+  "name": "IELSco & Elco AI Open Recruitment 2027",
+  "window": "9 – 29 November 2026 (closes 29 Nov, 23:59 WIB)",
+  "applications": 38,
+  "applications_note": "38 submitted applications (8–26 Nov); all 38 are still at stage “New application”, none screened yet.",
+  "structure": "3 months probation, then 6 months volunteership; fully remote; 10–12 hours a week incl. one weekly team meeting.",
+  "timeline": [
+   [
+    "29 Nov",
+    "Applications close",
+    "23:59 WIB"
+   ],
+   [
+    "30 Nov",
+    "Session schedule sent",
+    "to every complete application; Arba approves the message"
+   ],
+   [
+    "1 – 4 Dec",
+    "Group sessions",
+    "small online information + group-interview sessions, ~10–15 people"
+   ],
+   [
+    "5 – 8 Dec",
+    "Review",
+    "answers, availability and role preferences, per division"
+   ],
+   [
+    "9 Dec",
+    "Decisions and offers",
+    "founders decide; results by email"
+   ],
+   [
+    "10 – 18 Dec",
+    "Acceptance and onboarding",
+    "orientation, Company OS walkthrough"
+   ],
+   [
+    "4 – 10 Jan",
+    "Assignments",
+    "role, manager and first 30-day goals"
+   ],
+   [
+    "11 Jan 2027",
+    "First cycle starts",
+    ""
+   ]
+  ],
+  "roles": [
+   {
+    "id": "G1",
+    "title": "Content Writer",
+    "scope": "IELSco & Elco AI",
+    "places": 2,
+    "published": "Growth",
+    "proposed": "MKT",
+    "firstChoice": 2
+   },
+   {
+    "id": "G2",
+    "title": "Social Media Manager",
+    "scope": "IELSco & Elco AI",
+    "places": 1,
+    "published": "Growth",
+    "proposed": "GRO",
+    "firstChoice": 0
+   },
+   {
+    "id": "G3",
+    "title": "KOL & UGC Manager",
+    "scope": "Elco AI",
+    "places": 5,
+    "published": "Growth",
+    "proposed": "GRO",
+    "firstChoice": 2
+   },
+   {
+    "id": "G4",
+    "title": "Content Creator",
+    "scope": "IELSco & Elco AI",
+    "places": null,
+    "published": "Growth",
+    "proposed": "MKT",
+    "firstChoice": 2
+   },
+   {
+    "id": "K1",
+    "title": "Graphic Designer",
+    "scope": "IELSco & Elco AI",
+    "places": 3,
+    "published": "Creative",
+    "proposed": "CRE",
+    "firstChoice": 0
+   },
+   {
+    "id": "K2",
+    "title": "Video Designer",
+    "scope": "IELSco & Elco AI",
+    "places": 1,
+    "published": "Creative",
+    "proposed": "CRE",
+    "firstChoice": 0
+   },
+   {
+    "id": "C1",
+    "title": "Community Experience",
+    "scope": "IELSco",
+    "places": 2,
+    "published": "Community",
+    "proposed": "PPL",
+    "firstChoice": 5
+   },
+   {
+    "id": "C2",
+    "title": "Community Growth",
+    "scope": "IELSco",
+    "places": 2,
+    "published": "Community",
+    "proposed": "GRO",
+    "firstChoice": 6
+   },
+   {
+    "id": "L1",
+    "title": "Learning Content Developer",
+    "scope": "Elco AI",
+    "places": 2,
+    "published": "Learning",
+    "proposed": null,
+    "firstChoice": 1
+   },
+   {
+    "id": "L2",
+    "title": "Course Manager",
+    "scope": "Elco AI",
+    "places": 2,
+    "published": "Learning",
+    "proposed": "OPS",
+    "firstChoice": 1
+   },
+   {
+    "id": "R1",
+    "title": "Academic Partnerships",
+    "scope": "IELSco & Elco AI",
+    "places": 1,
+    "published": "Partnerships",
+    "proposed": "PAR",
+    "firstChoice": 4
+   },
+   {
+    "id": "R2",
+    "title": "Media Partnerships",
+    "scope": "IELSco & Elco AI",
+    "places": 1,
+    "published": "Partnerships",
+    "proposed": "PAR",
+    "firstChoice": 3
+   },
+   {
+    "id": "R3",
+    "title": "Corporate Partnerships",
+    "scope": "IELSco & Elco AI",
+    "places": 1,
+    "published": "Partnerships",
+    "proposed": "PAR",
+    "firstChoice": 1
+   },
+   {
+    "id": "O1",
+    "title": "Project Manager",
+    "scope": "IELSco",
+    "places": 2,
+    "published": "Operations",
+    "proposed": "OPS",
+    "firstChoice": 7
+   },
+   {
+    "id": "O2",
+    "title": "Delegate Experience",
+    "scope": "IELSco",
+    "places": 2,
+    "published": "Operations",
+    "proposed": "OPS",
+    "firstChoice": 2
+   },
+   {
+    "id": "P1",
+    "title": "People Branding",
+    "scope": "IELSco & Elco AI",
+    "places": 2,
+    "published": "People",
+    "proposed": "PPL",
+    "firstChoice": 0
+   },
+   {
+    "id": "P2",
+    "title": "People Development",
+    "scope": "IELSco & Elco AI",
+    "places": 2,
+    "published": "People",
+    "proposed": "PPL",
+    "firstChoice": 2
+   }
+  ]
+ }
+}
