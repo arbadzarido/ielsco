@@ -22,6 +22,10 @@ import { ROLE_LABELS, SECTION_LABEL, accessLabel, grantableRoles, workspaceHref,
 import { FinanceBudgets, FinanceCashflow, FinanceLedger, FinanceOverview, FinanceSetup } from "@/components/os/finance-workspace";
 import { LegalAgreements, LegalCompliance, LegalLetters, LegalNumbering, LegalOverview } from "@/components/os/legal";
 import { cn } from "@/lib/utils";
+import { BusinessWorkflow, CreativeWorkflow, GrowthWorkflow, MarketingWorkflow, OperationsWorkflow, PeopleWorkflow } from "@/components/os/division-workflows";
+import { HandbookDocument, HandbookList } from "@/components/os/handbook";
+import { HANDBOOK } from "@/content/os/handbook";
+import { departmentByKey, divisionByCode } from "@/lib/os/org";
 
 // One division's workspace. Every list below is an ordinary query as the signed-in person, so RLS decides what appears;
 // a restricted workspace (Finance, Legal) returns nothing to someone without a role or grant there.
@@ -69,6 +73,8 @@ export default function DivisionWorkspacePage({ params }: { params: Promise<{ co
       {tab === "agreements" && <LegalAgreements />}
       {tab === "compliance" && <LegalCompliance />}
       {tab === "numbering" && <LegalNumbering />}
+      {tab === "workflow" && <DivisionWorkflow code={ws.code} />}
+      {tab === "guide" && <DivisionGuide code={ws.code} />}
       {tab === "projects" && <Projects ws={ws} />}
       {tab === "tasks" && <Tasks ws={ws} />}
       {tab === "meetings" && <WorkspaceMeetings ws={ws} />}
@@ -128,6 +134,33 @@ function Projects({ ws }: { ws: MyWorkspace }) {
 }
 
 type WsTask = TaskRow & { subdivision_id: number | null };
+
+function DivisionWorkflow({ code }: { code: string }) {
+  switch (code) {
+    case "GRO": return <GrowthWorkflow />;
+    case "MKT": return <MarketingWorkflow />;
+    case "CRE": return <CreativeWorkflow />;
+    case "PAR": return <BusinessWorkflow />;
+    case "PPL": return <PeopleWorkflow />;
+    case "OPS": return <OperationsWorkflow />;
+    default: return <Empty title="No workflow for this workspace" />;
+  }
+}
+
+function DivisionGuide({ code }: { code: string }) {
+  const doc = HANDBOOK.find((d) => d.kind === "Division guide" && d.division === code);
+  const div = divisionByCode(code);
+  const dept = departmentByKey(div?.department);
+  return (
+    <div className="space-y-5" data-testid="os-ws-guide">
+      {dept && <p className="text-sm">Part of the <Link href={`/os/departments/${dept.key}`} className="font-medium underline-offset-2 hover:underline">{dept.name}</Link> (with {dept.lead}).{div?.previously ? ` Previously called ${div.previously}.` : ""}</p>}
+      <Section title="SOPs, workflows and guides for this division">
+        <HandbookList filter={(d) => d.division === code && d.kind !== "Division guide"} empty="No division-specific SOPs yet." />
+      </Section>
+      {doc ? <HandbookDocument doc={doc} /> : <Empty title="No guide yet" />}
+    </div>
+  );
+}
 
 function Tasks({ ws }: { ws: MyWorkspace }) {
   const dir = useDirectory();

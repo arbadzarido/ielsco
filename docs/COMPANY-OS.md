@@ -20,6 +20,7 @@ links out to Drive.
 | People, Reviews | Directory, profiles (title, responsibilities, reporting line, location), memberships, projects, open tasks, KPIs. Employment and reviews are private: the person, their manager(s), founders, and a People Lead with an explicit `people` grant. Only founders change reporting lines. Reviews: cycles, self-assessment, manager assessment, KPI and objective achievement, strengths, development areas and plan, completion, acknowledgement. No scores, ranks or ratings; task counts are labelled as not a measure of performance. |
 | Partnerships, Campaigns | Opportunity pipeline (list and stage board; Confidential, Partnerships division by default) and the content calendar. |
 | Assistant `/os/assistant` | Company Assistant, Operations, Partnerships and Growth. See below. |
+| Departments, Project dashboards, Handbook, task table | The HQ structure (Operations and Growth departments), division Workflow and Guide tabs, the four project dashboards, the Handbook and the spreadsheet-style task table. See [COMPANY-OS-OPERATING-SYSTEM.md](COMPANY-OS-OPERATING-SYSTEM.md). |
 | Admin | People & accounts, divisions, security & sessions, access grants (including People Lead), Drive folder routes, AI usage & budget, integration health, audit log. |
 
 ### AI agents

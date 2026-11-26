@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Company OS internal presentations are read from disk by /os/api/files/[key] (staff only); ship them with that route.
+  outputFileTracingIncludes: { "/os/api/files/[key]": ["./src/content/os/files/**"] },
+
   // 3. OPTIMASI RAM (Penting buat RAM 8GB lo)
   // swcMinify Dihapus karena sudah default di Next.js 15/16
   experimental: {

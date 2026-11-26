@@ -12,48 +12,59 @@ import { RecordSheet } from "@/components/os/records";
 import { Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, Tabs, btnPrimary, input, muted, panel } from "@/components/os/ui";
 import { EVIDENCE_STATUSES, OPP_STAGES, SENSITIVITIES, WORKSPACES, companyName, fmtDate, personLabel, relativeDue } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { PARTNER_CATEGORIES, partnerCategoryLabel } from "@/lib/os/org";
 
 type Opp = { id: string; company_code: string; division_id: string | null; opportunity_type: string | null; organisation: string; contact: string | null; source: string | null;
   stage: string; evidence_status: string | null; owner_person_id: string | null; estimated_value: number | null; value_basis: string | null; probability: number | null;
-  next_action: string | null; follow_up_date: string | null; related_project_id: string | null; outcome: string | null; closed_on: string | null; notes: string | null; sensitivity: string };
-const COLS = "id, company_code, division_id, opportunity_type, organisation, contact, source, stage, evidence_status, owner_person_id, estimated_value, value_basis, probability, next_action, follow_up_date, related_project_id, outcome, closed_on, notes, sensitivity";
+  next_action: string | null; follow_up_date: string | null; related_project_id: string | null; outcome: string | null; closed_on: string | null; notes: string | null; sensitivity: string; partner_category: string | null };
+const COLS = "id, company_code, division_id, partner_category, opportunity_type, organisation, contact, source, stage, evidence_status, owner_person_id, estimated_value, value_basis, probability, next_action, follow_up_date, related_project_id, outcome, closed_on, notes, sensitivity";
 const OPEN = (s: string) => !["6 Won", "7 Lost"].includes(s);
 
 export default function PartnershipsPage() {
   const params = useSearchParams();
-  const view = params.get("view") === "pipeline" ? "pipeline" : "list";
+  const view = params.get("view") === "pipeline" ? "pipeline" : params.get("view") === "category" ? "category" : "list";
   const dir = useDirectory();
   const defCompany = useDefaultCompany();
   const opps = useQuery<Opp[]>((s) => s.from("os_partnerships").select(COLS).order("follow_up_date", { nullsFirst: false }), []);
   const [q, setQ] = useState("");
   const [company, setCompany] = useState("");
   const [stage, setStage] = useState("");
+  const [category, setCategory] = useState(params.get("category") ?? "");
+  const [project, setProject] = useState(params.get("project") ?? "");
+  const projects = useQuery<{ id: string; name: string; status: string }[]>((s) => s.from("os_projects").select("id, name, status").order("name"), []);
+  const projectName = new Map((projects.data ?? []).map((p) => [p.id, p.name]));
+  const projectOptions = (projects.data ?? []).filter((p) => !["Completed", "Cancelled"].includes(p.status)).map((p) => ({ value: p.id, label: p.name }));
   const [showClosed, setShowClosed] = useState(false);
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(params.get("open"));
   const all = opps.data ?? [];
   const rows = all.filter((o) => (showClosed || OPEN(o.stage)) && (!company || o.company_code === company) && (!stage || o.stage === stage)
+    && (!category || (o.partner_category ?? "none") === category) && (!project || (o.related_project_id ?? "none") === project)
     && (!q || `${o.id} ${o.organisation} ${o.contact ?? ""} ${o.opportunity_type ?? ""}`.toLowerCase().includes(q.toLowerCase())));
   const editing = all.find((o) => o.id === openId) ?? null;
   const people = dir?.peopleById ?? new Map();
 
   const fields = [
-    { key: "organisation", label: "Organisation", required: true }, { key: "opportunity_type", label: "Type", hint: "Sponsor, venue, school, media, institution…" },
+    { key: "organisation", label: "Organisation", required: true },
+    { key: "partner_category", label: "Partnership category", kind: "select" as const, options: PARTNER_CATEGORIES, hint: "Media, Corporate, Academic, Community or Recruitment" },
+    { key: "related_project_id", label: "Project", kind: "select" as const, options: projectOptions },
+    { key: "opportunity_type", label: "Type", hint: "Sponsor, venue, school, media, institution…" },
+    { key: "next_action", label: "Potential collaboration and next action", hint: "What we could do together, and the very next step" },
     { key: "contact", label: "Contact" }, { key: "source", label: "Source" },
     { key: "stage", label: "Stage", kind: "select" as const, options: OPP_STAGES, required: true },
     { key: "evidence_status", label: "Evidence", kind: "select" as const, options: EVIDENCE_STATUSES, hint: "How firm it is. Only 5 is confirmed in writing." },
     { key: "owner_person_id", label: "Owner", kind: "person" as const }, { key: "division_id", label: "Division", kind: "division" as const },
     { key: "estimated_value", label: "Estimated value (IDR)", hint: "Only with a basis below." }, { key: "value_basis", label: "Value basis" },
-    { key: "next_action", label: "Next action" }, { key: "follow_up_date", label: "Follow up on", kind: "date" as const },
+    { key: "follow_up_date", label: "Follow up on", kind: "date" as const },
     { key: "outcome", label: "Outcome" }, { key: "closed_on", label: "Closed on", kind: "date" as const },
     { key: "notes", label: "Notes", kind: "textarea" as const }, { key: "sensitivity", label: "Sensitivity", kind: "select" as const, options: SENSITIVITIES, required: true },
   ];
 
   return (
     <div>
-      <PageTitle title="Partnerships" description="Sponsors, venues, schools and institutions in the pipeline. Confidential by default; visible to the Partnerships division, owners and founders."
+      <PageTitle title="Partnerships" description="Business division pipeline in five categories: media, corporate, academic, community and recruitment. Confidential by default; visible to Business, owners and founders. Communication history is in each record's comments."
         actions={<button type="button" className={btnPrimary} onClick={() => setCreating(true)} data-testid="os-new-opp"><Plus size={16} aria-hidden="true" />Opportunity</button>} />
-      <Tabs label="Partnership views" current={view} hrefFor={(k) => `/os/partnerships${k === "list" ? "" : `?view=${k}`}`} tabs={[{ key: "list", label: "List" }, { key: "pipeline", label: "Pipeline" }]} />
+      <Tabs label="Partnership views" current={view} hrefFor={(k) => `/os/partnerships${k === "list" ? "" : `?view=${k}`}`} tabs={[{ key: "list", label: "List" }, { key: "category", label: "By category" }, { key: "pipeline", label: "Pipeline" }]} />
       <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
         <label className="relative col-span-2 md:w-64">
           <span className="sr-only">Search opportunities</span>
@@ -61,15 +72,30 @@ export default function PartnershipsPage() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search organisations" className={cn(input, "pl-8")} />
         </label>
         <Select ariaLabel="Company" value={company} onChange={setCompany} options={WORKSPACES.map((w) => ({ value: w.code, label: w.name }))} placeholder="All companies" className="md:w-36" />
-        {view === "list" && <Select ariaLabel="Stage" value={stage} onChange={setStage} options={OPP_STAGES} placeholder="Any stage" className="md:w-52" />}
+        <Select ariaLabel="Category" value={category} onChange={setCategory} options={[...PARTNER_CATEGORIES, { value: "none", label: "Uncategorised" }]} placeholder="All categories" className="md:w-52" />
+        <Select ariaLabel="Project" value={project} onChange={setProject} options={[...projectOptions, { value: "none", label: "No project" }]} placeholder="All projects" className="md:w-52" />
+        {view !== "pipeline" && <Select ariaLabel="Stage" value={stage} onChange={setStage} options={OPP_STAGES} placeholder="Any stage" className="md:w-52" />}
         <label className="col-span-2 flex min-h-10 items-center gap-2 text-sm text-[#3A4B60]"><input type="checkbox" className="h-4 w-4" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} />Show won and lost</label>
       </div>
       <ErrorLine message={opps.error} />
-      {opps.loading && !opps.data ? <Loading /> : view === "list" ? (
+      {opps.loading && !opps.data ? <Loading /> : view === "category" ? (
+        <div className="space-y-4" data-testid="os-opp-categories">
+          {[...PARTNER_CATEGORIES.map((c) => c.value as string), "none"].map((c) => { const col = rows.filter((o) => (o.partner_category ?? "none") === c); return (
+            <section key={c} className={cn(panel, "p-3")}>
+              <h2 className="mb-2 flex items-center justify-between text-sm font-semibold">{c === "none" ? "Uncategorised" : partnerCategoryLabel(c)}<span className="font-normal text-[#66768A]">{col.length}</span></h2>
+              {col.length ? <ul className="divide-y divide-[#EEF1F5]">{col.map((o) => (
+                <li key={o.id} className="flex flex-wrap items-center gap-x-3 py-1.5 text-sm"><button type="button" className="min-w-0 flex-1 truncate text-left font-medium hover:underline" onClick={() => setOpenId(o.id)}>{o.organisation}</button>
+                  <span className="text-xs text-[#66768A]">{o.related_project_id ? projectName.get(o.related_project_id) ?? o.related_project_id : "No project"}</span><StatusBadge value={o.stage} /><span className="w-24 text-xs">{personLabel(people, o.owner_person_id)}</span><span className="w-24 text-xs">{fmtDate(o.follow_up_date)}</span></li>
+              ))}</ul> : <p className={cn("text-xs", muted)}>None.</p>}
+            </section>); })}
+        </div>
+      ) : view === "list" ? (
         <RowList testId="os-opp-list" rows={rows} rowKey={(o) => o.id}
           empty={<Empty title={all.length ? "No opportunities match" : "No opportunities you can see"} body={all.length ? "Clear the filters." : "Add the first partner conversation. Record only what's confirmed; evidence levels keep guesses apart from facts."} />}
           columns={[
             { key: "o", label: "Organisation", primary: true, className: "w-[28%]", render: (o) => <button type="button" className="truncate text-left font-medium hover:underline" onClick={() => setOpenId(o.id)}>{o.organisation}</button> },
+            { key: "k", label: "Category", className: "w-40", render: (o) => <span className="truncate text-xs">{partnerCategoryLabel(o.partner_category)}</span> },
+            { key: "p", label: "Project", className: "w-40", hideOnMobile: true, render: (o) => <span className="truncate text-xs text-[#66768A]">{o.related_project_id ? projectName.get(o.related_project_id) ?? o.related_project_id : "—"}</span> },
             { key: "s", label: "Stage", className: "w-44", render: (o) => <StatusBadge value={o.stage} /> },
             { key: "e", label: "Evidence", className: "w-40", hideOnMobile: true, render: (o) => <span className="truncate text-xs text-[#66768A]">{o.evidence_status ?? "—"}</span> },
             { key: "w", label: "Owner", className: "w-28", render: (o) => personLabel(people, o.owner_person_id) },

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  ArrowLeft, BarChart3, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
-  Hash, Home, Inbox, KeyRound, Layers, LineChart, LogOut, Mail, Megaphone, Menu, PenLine, PiggyBank, Plane, ScrollText, Settings, Shield, Target, UserPlus, Users, Wallet, X,
+  ArrowLeft, BarChart3, BookOpen, Bot, Briefcase, CalendarDays, CalendarRange, CheckSquare, ChevronsLeft, ChevronsRight, ChevronDown, FileText, Handshake,
+  FolderKanban, Hash, Home, Inbox, KeyRound, Layers, LineChart, LogOut, Mail, Megaphone, Menu, PenLine, PiggyBank, Plane, ScrollText, Settings, Shield, Target, UserPlus, Users, Wallet, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROLE_LABEL, type CompanyCode } from "@/lib/os/types";
@@ -37,9 +37,14 @@ const NAV: { group?: string; items: NavItem[] }[] = [
     { href: "/os/tasks?view=mine", label: "My tasks", icon: Inbox },
     { href: "/os/assistant", label: "Elco Assistant", icon: Bot },
   ] },
+  { group: "Organisation", items: [
+    { href: "/os/departments", label: "Departments", icon: Layers, match: /^\/os\/departments/ },
+    { href: "/os/portfolio", label: "Project dashboards", icon: FolderKanban, match: /^\/os\/portfolio/ },
+    { href: "/os/handbook", label: "Handbook", icon: BookOpen, match: /^\/os\/handbook/ },
+  ] },
   { group: "Work", items: [
+    { href: "/os/tasks?view=all", label: "Tasks", icon: CheckSquare },
     { href: "/os/projects", label: "Projects", icon: Briefcase },
-    { href: "/os/tasks?view=board", label: "Tasks", icon: CheckSquare },
     { href: "/os/calendar", label: "Calendar", icon: CalendarDays },
     { href: "/os/documents", label: "Documents", icon: FileText },
     { href: "/os/timeline", label: "Timeline", icon: CalendarRange },
@@ -51,7 +56,7 @@ const NAV: { group?: string; items: NavItem[] }[] = [
     { href: "/os/people", label: "People", icon: Users },
     { href: "/os/reviews", label: "Reviews", icon: ScrollText },
   ] },
-  { group: "Growth", items: [
+  { group: "Business and marketing", items: [
     { href: "/os/partnerships", label: "Partnerships", icon: Handshake },
     { href: "/os/campaigns", label: "Campaigns", icon: Megaphone },
   ] },

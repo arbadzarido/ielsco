@@ -11,6 +11,29 @@ import { TASK_COLUMNS, TaskSheet, type TaskRow } from "@/components/os/work-form
 import { Avatar, Badge, Empty, ErrorLine, Loading, PageTitle, RowList, Select, StatusBadge, Tabs, btnPrimary, input, panel, ring } from "@/components/os/ui";
 import { BOARD_COLUMNS, PRIORITIES, TASK_STATUSES, WORKSPACES, companyName, isOpenTask, personLabel, relativeDue, todayJakarta, addDays } from "@/lib/os/meta";
 import { cn } from "@/lib/utils";
+import { TASK_VIEWS, TaskGrid } from "@/components/os/task-grid";
+
+// Tasks: a compact table (one row per task, every field edited in the row) with saved views. The old card board and
+// the team list stay available as "Board" and "Team" for people who still use them.
+export default function TasksPage() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const raw = params.get("view") ?? "all";
+  const legacy = raw === "board" || raw === "team" || raw === "list";
+  const view = TASK_VIEWS.some((v) => v.key === raw) ? raw : legacy ? raw : "all";
+  const [creating, setCreating] = useState(params.get("new") === "1");
+  usePublishAssistantContext({ filters: { view } });
+  const tabs = [...TASK_VIEWS.map((v) => ({ key: v.key, label: v.label })), { key: "board", label: "Board" }];
+  return (
+    <div>
+      <PageTitle title="Tasks" description="One row per task. Change status, PIC, department, division, project, deadline or priority right in the row."
+        actions={<button type="button" className={btnPrimary} onClick={() => setCreating(true)} data-testid="os-new-task"><Plus size={16} aria-hidden="true" />New task</button>} />
+      <Tabs label="Task views" tabs={tabs} current={view === "list" ? "all" : view === "team" ? "board" : view} hrefFor={(k) => `/os/tasks?view=${k}`} />
+      {legacy ? <LegacyTasks forced={view === "list" ? "list" : view} /> : <TaskGrid key={view} view={view} />}
+      <TaskSheet open={creating} onClose={() => setCreating(false)} onSaved={(id) => { setCreating(false); router.push(`/os/tasks/${id}`); }} />
+    </div>
+  );
+}
 
 // Tasks: My tasks, Team tasks, a list of everything visible, a Kanban board and upcoming deadlines. All views read the
 // same RLS-filtered rows; the view only changes how they are filtered and arranged.
@@ -22,10 +45,10 @@ const VIEWS = [
   { key: "upcoming", label: "Upcoming deadlines" },
 ];
 
-export default function TasksPage() {
+function LegacyTasks({ forced }: { forced: string }) {
   const params = useSearchParams();
   const router = useRouter();
-  const view = VIEWS.some((v) => v.key === params.get("view")) ? params.get("view")! : "mine";
+  const view = forced;
   const { me, supabase } = useOsMe();
   const dir = useDirectory();
   const people = dir?.peopleById ?? new Map();
@@ -86,9 +109,7 @@ export default function TasksPage() {
 
   return (
     <div>
-      <PageTitle title="Tasks" description="Everything assigned to you and your teams, filtered by what you're allowed to see."
-        actions={<button type="button" className={btnPrimary} onClick={() => setCreating(true)} data-testid="os-new-task"><Plus size={16} aria-hidden="true" />New task</button>} />
-      <Tabs label="Task views" tabs={VIEWS} current={view} hrefFor={(k) => `/os/tasks?view=${k}`} />
+      <Tabs label="Board views" tabs={VIEWS.filter((v) => v.key === "board" || v.key === "team")} current={view} hrefFor={(k) => `/os/tasks?view=${k}`} />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
         <label className="relative col-span-2 md:w-64">
